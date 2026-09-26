@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="DCS gauges whose marks are unevenly spaced, with conversions rows for DCS Signal Converter worked out from each module's own gauge tables."
+    />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#ECEEF1" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#101418" media="(prefers-color-scheme: dark)" />
+    <title>Uneven Gauges</title>
+    <link rel="icon" href="img/icon.svg" type="image/svg+xml" />
+    <link rel="icon" href="img/icon.png" type="image/png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+    />
+    <link rel="stylesheet" href="site-bar.css" />
+    <style>
+      /* The language page's tokens and type, so the pages read as one site. */
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+      button,
+      input {
+        font: inherit;
+        color: inherit;
+      }
+      table {
+        border-collapse: collapse;
+      }
+      a {
+        color: var(--accent);
+      }
+      :root {
+        --ground: #eceef1;
+        --panel: #ffffff;
+        --panel-2: #f5f7f9;
+        --panel-3: #e3e7eb;
+        --ink: #16191d;
+        --ink-2: #4a5560;
+        --ink-3: #77828e;
+        --rule: #d3d9df;
+        --rule-2: #bfc7cf;
+        --accent: #c25e00;
+        --accent-wash: #fbeedf;
+        --btn-ink: #ffffff;
+        --live: #1f7a3d;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --ground: #101418;
+          --panel: #171c22;
+          --panel-2: #1d232a;
+          --panel-3: #262e36;
+          --ink: #e8ecf0;
+          --ink-2: #a6b2be;
+          --ink-3: #79848f;
+          --rule: #2a323a;
+          --rule-2: #39434d;
+          --accent: #f2a14b;
+          --accent-wash: #2a2118;
+          --btn-ink: #12161a;
+          --live: #6fcf8e;
+        }
+      }
+      :root[data-theme="dark"] {
+        --ground: #101418;
+        --panel: #171c22;
+        --panel-2: #1d232a;
+        --panel-3: #262e36;
+        --ink: #e8ecf0;
+        --ink-2: #a6b2be;
+        --ink-3: #79848f;
+        --rule: #2a323a;
+        --rule-2: #39434d;
+        --accent: #f2a14b;
+        --accent-wash: #2a2118;
+        --btn-ink: #12161a;
+        --live: #6fcf8e;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        background: var(--ground);
+        color: var(--ink);
+        font-family: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+        font-size: 17px;
+        line-height: 1.62;
+        margin: 0;
+        -webkit-font-smoothing: antialiased;
+      }
+      .wrap {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 0 24px;
+      }
+      @media (max-width: 520px) {
+        .wrap {
+          padding: 0 16px;
+        }
+      }
+      .prose {
+        max-width: 66ch;
+      }
+      .prose p + p {
+        margin-top: 12px;
+      }
+      h1,
+      h2 {
+        font-family: "Barlow Condensed", system-ui, sans-serif;
+        text-wrap: balance;
+        margin: 0;
+      }
+      h1 {
+        font-weight: 700;
+        font-size: clamp(2.4rem, 6.4vw, 3.8rem);
+        line-height: 1;
+        letter-spacing: -0.015em;
+      }
+      h2 {
+        font-weight: 700;
+        font-size: clamp(1.4rem, 3vw, 1.8rem);
+        line-height: 1.08;
+      }
+      p {
+        margin: 0;
+      }
+      strong {
+        font-weight: 600;
+      }
+      .eyebrow {
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 0.7rem;
+        font-weight: 500;
+        letter-spacing: 0.19em;
+        text-transform: uppercase;
+        color: var(--ink-3);
+      }
+      code,
+      .mono {
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 0.88em;
+        font-variant-numeric: tabular-nums;
+      }
+      p code,
+      li code,
+      td code {
+        background: var(--panel-3);
+        padding: 1px 5px;
+        overflow-wrap: anywhere;
+      }
+      .note {
+        font-size: 0.86rem;
+        color: var(--ink-3);
+        line-height: 1.45;
+      }
+      a.self {
+        color: inherit;
+        text-decoration: none;
+      }
+      a.self::after {
+        content: "#";
+        margin-left: 0.3em;
+        color: var(--accent);
+        opacity: 0;
+        transition: opacity 0.12s;
+      }
+      a.self:hover::after,
+      a.self:focus-visible::after {
+        opacity: 1;
+      }
+
+      header.top {
+        padding: 54px 0 12px;
+      }
+      .lede {
+        font-size: clamp(1.08rem, 2.1vw, 1.26rem);
+        color: var(--ink-2);
+        margin-top: 18px;
+        max-width: 60ch;
+      }
+      .caution {
+        margin-top: 26px;
+        max-width: 72ch;
+        background: var(--accent-wash);
+        border-left: 3px solid var(--accent);
+        padding: 14px 18px;
+        font-size: 0.97rem;
+      }
+      .caution p + p {
+        margin-top: 8px;
+      }
+      section {
+        padding: 44px 0 8px;
+      }
+      section.mod {
+        padding: 22px 0 0;
+      }
+      .section-head {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 18px;
+      }
+      pre {
+        margin: 14px 0;
+        background: var(--panel-2);
+        border: 1px solid var(--rule);
+        padding: 12px 14px;
+        overflow-x: auto;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 0.8rem;
+        line-height: 1.55;
+      }
+
+      /* find and jump */
+      .tools {
+        position: sticky;
+        top: 52px;
+        z-index: 5;
+        background: var(--ground);
+        padding: 10px 0;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .tools input {
+        flex: 1;
+        min-width: 200px;
+        padding: 8px 11px;
+        font-size: 1rem;
+        background: var(--panel-2);
+        border: 1px solid var(--rule-2);
+      }
+      .count {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 0.76rem;
+        color: var(--ink-3);
+      }
+      .jump {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 6px 0 0;
+      }
+      button.chip {
+        background: var(--panel-2);
+        border: 1px solid var(--rule-2);
+        padding: 4px 11px;
+        font-size: 0.86rem;
+        cursor: pointer;
+      }
+      button.chip:hover {
+        border-color: var(--accent);
+      }
+      button.chip[aria-pressed="true"] {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: var(--btn-ink);
+      }
+      .jump .n {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 0.72rem;
+        opacity: 0.7;
+        margin-left: 4px;
+      }
+
+      /* reference tables */
+      .table-scroll {
+        overflow-x: auto;
+        border: 1px solid var(--rule);
+        background: var(--panel);
+        margin: 14px 0;
+      }
+      table.ref {
+        width: 100%;
+        font-size: 0.93rem;
+      }
+      table.ref th,
+      table.ref td {
+        text-align: left;
+        vertical-align: top;
+        padding: 9px 12px;
+        border-bottom: 1px solid var(--rule);
+      }
+      table.ref th {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 0.68rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        font-weight: 500;
+        color: var(--ink-3);
+        background: var(--panel-2);
+        white-space: nowrap;
+      }
+      table.ref tr:last-child td {
+        border-bottom: 0;
+      }
+      table.ref td:first-child {
+        min-width: 190px;
+      }
+      td.bp {
+        font-size: 0.8rem;
+        line-height: 1.7;
+        min-width: 280px;
+      }
+      td.bp span {
+        white-space: nowrap;
+      }
+      td.off {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 0.82rem;
+        white-space: nowrap;
+      }
+      button.copy {
+        background: var(--panel-2);
+        border: 1px solid var(--rule-2);
+        padding: 4px 11px;
+        font-size: 0.86rem;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      button.copy:hover {
+        border-color: var(--accent);
+      }
+      button.copy.done {
+        border-color: var(--live);
+        color: var(--live);
+      }
+      button:focus-visible,
+      input:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 1px;
+      }
+      .none {
+        padding: 18px;
+        color: var(--ink-3);
+      }
+
+      footer {
+        padding: 50px 0 70px;
+        border-top: 1px solid var(--rule);
+        margin-top: 60px;
+      }
+      .foot {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        justify-content: space-between;
+        align-items: baseline;
+        font-size: 0.9rem;
+        color: var(--ink-3);
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="site-bar" data-here="gauges" aria-label="Site"></nav>
+    <script src="site-bar.js"></script>
+
+    <main>
+      <header class="top">
+        <div class="wrap">
+          <span class="eyebrow">Reference</span>
+          <h1 style="margin-top: 10px">Uneven gauges</h1>
+          <p class="lede">
+            The DCS gauges whose marks are not evenly spaced, each with the <code>conversions</code> rows that
+            turn what DCS-BIOS sends into what the dial reads. Copy a gauge's rows into its reading.
+          </p>
+          <div class="caution" role="note">
+            <p>
+              <strong>This is parsed data, not flown.</strong> Every row here is worked out from the gauge
+              tables in each module's files and the limits in DCS-BIOS, by a script. It has not been checked
+              against each needle in the cockpit.
+            </p>
+            <p>
+              Expect to adjust it when you set a gauge up: use Learn with the needle on a mark and fix the row
+              that is off. A DCS module update or a new DCS-BIOS can move any of these numbers without notice.
+            </p>
+            <p class="note" id="versions"></p>
+          </div>
+        </div>
+      </header>
+
+      <section id="reading">
+        <div class="wrap">
+          <div class="section-head">
+            <span class="eyebrow">How to read it</span>
+            <h2><a class="self" href="#reading">From DCS's table to rows</a></h2>
+          </div>
+          <div class="prose">
+            <p>
+              Each module lists its gauges as pairs: a value, and where the needle points for it, with straight
+              lines in between. DCS-BIOS sends that needle position as 0 to 65535, spread over limits
+              <code>lo</code> to <code>hi</code> from its own module file:
+            </p>
+          </div>
+          <pre>raw = round((needle - lo) / (hi - lo) &times; 65535)</pre>
+          <div class="prose">
+            <p>
+              So a gauge whose DCS-BIOS limits are <code>{-1, 1}</code> puts a needle at 0 on raw 32768, not raw
+              0. The table shows each gauge's breakpoints as raw &rarr; reads, and <strong>Copy rows</strong>
+              gives the same breakpoints as <code>conversions</code> rows, one per section.
+            </p>
+            <p>
+              <strong>Straight line off by</strong> is how far a plain <code>reads</code> from one end to the
+              other would be wrong at its worst mark, as a share of the whole dial. Under 5% you may not need
+              rows at all.
+            </p>
+            <p>
+              Where a note says the first or last row is the needle's rest, that row is the needle lying off the
+              scale with the power off or the tank dry. Give it the same reads at both ends if you want the
+              screen to hold the scale's end instead.
+            </p>
+            <p>
+              Reads are in the dial's own units where the unit is known. Where DCS works in m/s, radians or
+              &deg;C and the dial does not, the reads are already converted and the note says so. A gauge
+              marked <em>DCS units</em> reads in DCS's numbers, which may not match the dial's marks.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="gauges">
+        <div class="wrap">
+          <div class="section-head">
+            <span class="eyebrow">By aircraft</span>
+            <h2><a class="self" href="#gauges">Gauges</a></h2>
+          </div>
+          <div class="tools">
+            <input type="search" id="find" placeholder="Find a gauge: fuel, VVI, PORT_FUEL_IN_G..." aria-label="Find a gauge" />
+            <span class="count" id="count"></span>
+          </div>
+          <div class="jump" id="jump" role="group" aria-label="Aircraft"></div>
+          <p class="none" id="status">Loading gauges.json...</p>
+          <div id="tables"></div>
+        </div>
+      </section>
+
+      <section id="left-out">
+        <div class="wrap">
+          <div class="section-head">
+            <span class="eyebrow">Not listed</span>
+            <h2><a class="self" href="#left-out">Left out, and why</a></h2>
+          </div>
+          <div class="prose">
+            <p>
+              These gauges are uneven in DCS but have no rows here. Aircraft whose gauges are all evenly spaced
+              need no rows, and modules that keep their gauges outside the files the script reads (the F-16C,
+              AH-64D, F-14 and F-4E among them) are not covered at all.
+            </p>
+          </div>
+          <div class="table-scroll">
+            <table class="ref">
+              <thead><tr><th>Aircraft</th><th>DCS gauge</th><th>Why</th></tr></thead>
+              <tbody id="left"></tbody>
+            </table>
+          </div>
+          <p class="note" id="even"></p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="wrap">
+        <div class="foot">
+          <span>
+            Built by <code>tools/gen_gauges.py</code> into <code>gauges.json</code>. How
+            <code>conversions</code> work is in <a href="language.html#readings">the profile language</a>.
+          </span>
+          <span><a href="./">DCS Signal Converter</a> &middot; <a href="https://github.com/cbass2404/wctrl-module-signal-converter">GitHub</a></span>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      "use strict";
+      const $ = (id) => document.getElementById(id);
+      const h = (tag, attrs = {}, ...kids) => {
+        const n = document.createElement(tag);
+        for (const [k, v] of Object.entries(attrs)) {
+          if (k === "class") n.className = v;
+          else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+          else if (v !== false && v != null) n.setAttribute(k, v === true ? "" : v);
+        }
+        n.append(...kids.filter((k) => k != null));
+        return n;
+      };
+      const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      // One conversions row per line, as the profile files read.
+      const rowsJson = (rows) => "[\n" + rows.map((r) => "  " + JSON.stringify(r).replace(/,/g, ", ").replace(/:/g, ": ")).join(",\n") + "\n]";
+
+      async function copy(btn, text) {
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch {
+          const t = h("textarea", {}, text);
+          document.body.append(t);
+          t.select();
+          document.execCommand("copy");
+          t.remove();
+        }
+        btn.textContent = "Copied";
+        btn.classList.add("done");
+        setTimeout(() => {
+          btn.textContent = "Copy rows";
+          btn.classList.remove("done");
+        }, 1400);
+      }
+
+      function breakpoints(rows) {
+        const pts = [[rows[0].raw[0], rows[0].reads[0]], ...rows.map((r) => [r.raw[1], r.reads[1]])];
+        const cell = h("td", { class: "bp mono" });
+        pts.forEach(([raw, reads], i) => {
+          if (i) cell.append(" · ");
+          cell.append(h("span", {}, `${raw} → ${reads}`));
+        });
+        return cell;
+      }
+
+      function gaugeRow(aircraft, g) {
+        const btn = h("button", { type: "button", class: "copy" }, "Copy rows");
+        btn.addEventListener("click", () => copy(btn, rowsJson(g.conversions)));
+        const bp = breakpoints(g.conversions);
+        if (g.notes.length) bp.append(h("div", { class: "note" }, g.notes.join("; ")));
+        const tr = h(
+          "tr",
+          {},
+          h("td", {}, h("code", {}, g.id), h("div", { class: "note" }, g.description)),
+          h("td", {}, g.unit),
+          bp,
+          h("td", { class: "off" }, `${g.straight_off_pct}%`),
+          h("td", {}, btn),
+        );
+        tr.dataset.find = `${aircraft} ${g.id} ${g.description} ${g.unit}`.toLowerCase();
+        return tr;
+      }
+
+      function draw(data) {
+        $("versions").textContent = `Parsed from DCS ${data.dcs} and DCS-BIOS ${data.dcs_bios}.`;
+        const tables = $("tables");
+        $("jump").append(h("button", { type: "button", class: "chip", "data-pick": "all", "aria-pressed": "false" }, "All"));
+        for (const a of data.aircraft) {
+          const id = slug(a.aircraft);
+          $("jump").append(
+            h(
+              "button",
+              { type: "button", class: "chip", "data-pick": id, "aria-pressed": "false" },
+              a.aircraft,
+              h("span", { class: "n" }, String(a.gauges.length)),
+            ),
+          );
+          const body = h("tbody", {}, ...a.gauges.map((g) => gaugeRow(a.aircraft, g)));
+          tables.append(
+            h(
+              "section",
+              { id, class: "mod" },
+              h("h2", {}, h("a", { class: "self", href: `#${id}` }, a.aircraft)),
+              h(
+                "div",
+                { class: "table-scroll" },
+                h(
+                  "table",
+                  { class: "ref" },
+                  h(
+                    "thead",
+                    {},
+                    h("tr", {}, ...["DCS-BIOS", "Unit", "Raw → reads", "Straight line off by", ""].map((t) => h("th", {}, t))),
+                  ),
+                  body,
+                ),
+              ),
+            ),
+          );
+        }
+        for (const l of data.left_out) {
+          $("left").append(h("tr", {}, h("td", {}, l.aircraft), h("td", {}, h("code", {}, l.dcs_gauge)), h("td", {}, l.why)));
+        }
+        if (data.none_found.length) $("even").textContent = `Every gauge even, so nothing to list: ${data.none_found.join(", ")}.`;
+        // A link to one aircraft opens on it; otherwise nothing shows until
+        // an aircraft is picked, so the page doesn't open on every table.
+        const linked = location.hash.slice(1);
+        if (linked === "all" || document.querySelector(`[data-pick="${CSS.escape(linked)}"]`)) pick = linked;
+        filter();
+      }
+
+      // Which aircraft show: none, one aircraft's id, or "all". A search
+      // looks through the picked aircraft, or every one while none is.
+      let pick = null;
+
+      function filter() {
+        const q = $("find").value.trim().toLowerCase();
+        let shown = 0;
+        let total = 0;
+        for (const sec of document.querySelectorAll("section.mod")) {
+          const picked = pick === "all" || pick === sec.id || (q && !pick);
+          let any = false;
+          for (const tr of sec.querySelectorAll("tbody tr")) {
+            const hit = picked && (!q || tr.dataset.find.includes(q));
+            tr.hidden = !hit;
+            any ||= hit;
+            total++;
+            if (hit) shown++;
+          }
+          sec.hidden = !any;
+        }
+        for (const b of $("jump").querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.pick === pick));
+        $("status").hidden = Boolean(q || pick);
+        $("status").textContent = "Pick an aircraft above, or All, to see its gauges.";
+        $("count").textContent = q ? `${shown} of ${total}` : `${total} gauges`;
+      }
+      $("find").addEventListener("input", filter);
+      $("jump").addEventListener("click", (e) => {
+        const b = e.target.closest("button");
+        if (!b) return;
+        pick = pick === b.dataset.pick ? null : b.dataset.pick;
+        history.replaceState(null, "", pick ? `#${pick}` : location.pathname);
+        filter();
+      });
+
+      fetch("gauges.json")
+        .then((r) => {
+          if (!r.ok) throw new Error(r.status);
+          return r.json();
+        })
+        .then(draw)
+        .catch(() => {
+          $("status").textContent =
+            "Couldn't load gauges.json. It sits next to this page; opened straight from disk, the browser won't read it, so serve the docs folder or open the site.";
+        });
+    </script>
+  </body>
+</html>

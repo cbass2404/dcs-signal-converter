@@ -1,0 +1,651 @@
+{
+  "module": "Mosquito",
+  "pages": [
+    {
+      "id": "hdk5h6",
+      "name": "Flight",
+      "display": "MCDU",
+      "fields": [
+        {
+          "cells": "48-71",
+          "content": [
+            {
+              "source": "PORT_FUEL_IN_G",
+              "width": 3,
+              "align": "right",
+              "conversions": [
+                {
+                  "raw": [
+                    0,
+                    32767
+                  ],
+                  "reads": [
+                    -1.0,
+                    -1.0
+                  ],
+                  "colour": "red"
+                },
+                {
+                  "raw": [
+                    32768,
+                    32768
+                  ],
+                  "reads": [
+                    0.0,
+                    0.0
+                  ],
+                  "colour": "red"
+                },
+                {
+                  "raw": [
+                    32769,
+                    39223
+                  ],
+                  "reads": [
+                    0.0,
+                    20.0
+                  ],
+                  "colour": "amber"
+                },
+                {
+                  "raw": [
+                    39224,
+                    48660
+                  ],
+                  "reads": [
+                    20.0,
+                    60.0
+                  ]
+                },
+                {
+                  "raw": [
+                    48661,
+                    57048
+                  ],
+                  "reads": [
+                    60.0,
+                    100.0
+                  ]
+                },
+                {
+                  "raw": [
+                    57049,
+                    61177
+                  ],
+                  "reads": [
+                    100.0,
+                    120.0
+                  ]
+                },
+                {
+                  "raw": [
+                    61178,
+                    63569
+                  ],
+                  "reads": [
+                    120.0,
+                    146.0
+                  ]
+                },
+                {
+                  "raw": [
+                    63570,
+                    65535
+                  ],
+                  "reads": [
+                    146.0,
+                    160.0
+                  ]
+                }
+              ],
+              "round": "down",
+              "value_aliases": {
+                "-1": {
+                  "text": "OFF",
+                  "colour": "red"
+                }
+              },
+              "colour": "green"
+            },
+            {
+              "text": "G",
+              "width": 1,
+              "colour": "white",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "source": "STBD_FUEL_IN_G",
+              "width": 3,
+              "align": "right",
+              "conversions": [
+                {
+                  "raw": [
+                    0,
+                    32767
+                  ],
+                  "reads": [
+                    -1.0,
+                    -1.0
+                  ],
+                  "colour": "red"
+                },
+                {
+                  "raw": [
+                    32768,
+                    32768
+                  ],
+                  "reads": [
+                    0.0,
+                    0.0
+                  ],
+                  "colour": "red"
+                },
+                {
+                  "raw": [
+                    32769,
+                    39223
+                  ],
+                  "reads": [
+                    0.0,
+                    20.0
+                  ],
+                  "colour": "amber"
+                },
+                {
+                  "raw": [
+                    39224,
+                    48660
+                  ],
+                  "reads": [
+                    20.0,
+                    60.0
+                  ]
+                },
+                {
+                  "raw": [
+                    48661,
+                    57048
+                  ],
+                  "reads": [
+                    60.0,
+                    100.0
+                  ]
+                },
+                {
+                  "raw": [
+                    57049,
+                    61177
+                  ],
+                  "reads": [
+                    100.0,
+                    120.0
+                  ]
+                },
+                {
+                  "raw": [
+                    61178,
+                    63569
+                  ],
+                  "reads": [
+                    120.0,
+                    146.0
+                  ]
+                },
+                {
+                  "raw": [
+                    63570,
+                    65535
+                  ],
+                  "reads": [
+                    146.0,
+                    160.0
+                  ]
+                }
+              ],
+              "round": "down",
+              "value_aliases": {
+                "-1": {
+                  "text": "OFF",
+                  "colour": "red"
+                }
+              },
+              "colour": "green"
+            },
+            {
+              "text": "G",
+              "width": 1,
+              "colour": "white",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "source": "CENTR_FUEL_G",
+              "width": 3,
+              "align": "right",
+              "conversions": [
+                {
+                  "raw": [
+                    0,
+                    32767
+                  ],
+                  "reads": [
+                    -1.0,
+                    -1.0
+                  ],
+                  "colour": "red"
+                },
+                {
+                  "raw": [
+                    32768,
+                    32768
+                  ],
+                  "reads": [
+                    0.0,
+                    0.0
+                  ],
+                  "colour": "red"
+                },
+                {
+                  "raw": [
+                    32769,
+                    36798
+                  ],
+                  "reads": [
+                    0.0,
+                    10.0
+                  ],
+                  "colour": "amber"
+                },
+                {
+                  "raw": [
+                    36799,
+                    42794
+                  ],
+                  "reads": [
+                    10.0,
+                    20.0
+                  ]
+                },
+                {
+                  "raw": [
+                    42795,
+                    49315
+                  ],
+                  "reads": [
+                    20.0,
+                    30.0
+                  ]
+                },
+                {
+                  "raw": [
+                    49316,
+                    55246
+                  ],
+                  "reads": [
+                    30.0,
+                    40.0
+                  ]
+                },
+                {
+                  "raw": [
+                    55247,
+                    61832
+                  ],
+                  "reads": [
+                    40.0,
+                    53.0
+                  ]
+                },
+                {
+                  "raw": [
+                    61833,
+                    65535
+                  ],
+                  "reads": [
+                    53.0,
+                    60.0
+                  ]
+                }
+              ],
+              "round": "down",
+              "value_aliases": {
+                "-1": {
+                  "text": "OFF",
+                  "colour": "red"
+                }
+              },
+              "colour": "green"
+            },
+            {
+              "text": "G",
+              "width": 1,
+              "colour": "white",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "source": "PORT_FUEL_OUT_G",
+              "width": 3,
+              "align": "right",
+              "conversions": [
+                {
+                  "raw": [
+                    0,
+                    32767
+                  ],
+                  "reads": [
+                    -1.0,
+                    -1.0
+                  ],
+                  "colour": "red"
+                },
+                {
+                  "raw": [
+                    32768,
+                    32768
+                  ],
+                  "reads": [
+                    0.0,
+                    0.0
+                  ],
+                  "colour": "red"
+                },
+                {
+                  "raw": [
+                    32769,
+                    36995
+                  ],
+                  "reads": [
+                    0.0,
+                    10.0
+                  ],
+                  "colour": "amber"
+                },
+                {
+                  "raw": [
+                    36996,
+                    43548
+                  ],
+                  "reads": [
+                    10.0,
+                    20.0
+                  ]
+                },
+                {
+                  "raw": [
+                    43549,
+                    51052
+                  ],
+                  "reads": [
+                    20.0,
+                    30.0
+                  ]
+                },
+                {
+                  "raw": [
+                    51053,
+                    58130
+                  ],
+                  "reads": [
+                    30.0,
+                    40.0
+                  ]
+                },
+                {
+                  "raw": [
+                    58131,
+                    62848
+                  ],
+                  "reads": [
+                    40.0,
+                    59.0
+                  ]
+                },
+                {
+                  "raw": [
+                    62849,
+                    65535
+                  ],
+                  "reads": [
+                    59.0,
+                    70.0
+                  ]
+                }
+              ],
+              "round": "down",
+              "value_aliases": {
+                "-1": {
+                  "text": "OFF",
+                  "colour": "red"
+                }
+              },
+              "colour": "green"
+            },
+            {
+              "text": "G",
+              "width": 1,
+              "colour": "white",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "source": "STBD_FUEL_OUT_G",
+              "width": 3,
+              "align": "right",
+              "conversions": [
+                {
+                  "raw": [
+                    0,
+                    32767
+                  ],
+                  "reads": [
+                    -1.0,
+                    -1.0
+                  ],
+                  "colour": "red"
+                },
+                {
+                  "raw": [
+                    32768,
+                    32768
+                  ],
+                  "reads": [
+                    0.0,
+                    0.0
+                  ],
+                  "colour": "red"
+                },
+                {
+                  "raw": [
+                    32769,
+                    36995
+                  ],
+                  "reads": [
+                    0.0,
+                    10.0
+                  ],
+                  "colour": "amber"
+                },
+                {
+                  "raw": [
+                    36996,
+                    43548
+                  ],
+                  "reads": [
+                    10.0,
+                    20.0
+                  ]
+                },
+                {
+                  "raw": [
+                    43549,
+                    51052
+                  ],
+                  "reads": [
+                    20.0,
+                    30.0
+                  ]
+                },
+                {
+                  "raw": [
+                    51053,
+                    58130
+                  ],
+                  "reads": [
+                    30.0,
+                    40.0
+                  ]
+                },
+                {
+                  "raw": [
+                    58131,
+                    62848
+                  ],
+                  "reads": [
+                    40.0,
+                    59.0
+                  ]
+                },
+                {
+                  "raw": [
+                    62849,
+                    65535
+                  ],
+                  "reads": [
+                    59.0,
+                    70.0
+                  ]
+                }
+              ],
+              "round": "down",
+              "value_aliases": {
+                "-1": {
+                  "text": "OFF",
+                  "colour": "red"
+                }
+              },
+              "colour": "green"
+            },
+            {
+              "text": "G",
+              "width": 1,
+              "colour": "white",
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "24-47",
+          "content": [
+            {
+              "text": "PORT",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "text": "STBD",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "text": "CNTR",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "text": "PORT",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "text": "STBD",
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "0-23",
+          "content": [
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "text": "INNER",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "PORT_FUEL_COCK",
+              "width": 1,
+              "value_aliases": {
+                "0": "O",
+                "1": {
+                  "text": "-",
+                  "colour": "red"
+                },
+                "2": "I"
+              },
+              "colour": "green"
+            },
+            {
+              "text": "-SRC-",
+              "small": true
+            },
+            {
+              "source": "STBD_FUEL_COCK",
+              "width": 1,
+              "value_aliases": {
+                "0": "O",
+                "1": {
+                  "text": "-",
+                  "colour": "red"
+                },
+                "2": "I"
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "OUTER",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 2
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

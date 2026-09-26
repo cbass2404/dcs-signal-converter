@@ -883,6 +883,7 @@ brightness, a field asks "which cells, fed by what" and resolves to characters.
     "source": "PLT_RV5_ALT",
     "reads": [0, 750],       // what the dial is marked with, numbers only
     "decimals": 0,
+    "digits": 3,             // pad with leading zeros: 001
     "round": "down",         // absent rounds to the nearest
     "wrap": 360,             // start again from 0 every this many
     "abs": true,             // draw the reading without its sign
@@ -910,9 +911,10 @@ The run is still the thing written to the file, because a region is only a
 label for one, and a field is free to take part of a region or a display that
 has no regions mapped.
 
-**`reads` is required for a number and refused for text.** DCS-BIOS reports a
+**`reads` is for a number and refused for text.** DCS-BIOS reports a
 needle as a position, 0 to 65535, and says nothing about what the face is
-marked with, so it is yours to give. Faces that start below zero or run
+marked with, so it is yours to give. Without it a number converts through the
+signal's own range, which draws the raw count. Faces that start below zero or run
 backwards both work: a g meter is `[-10, 12]`, and a gauge whose numbers
 descend is `[100, 0]`. A signal that already reports characters needs no
 conversion, and giving it a range is an error rather than a no-op.
@@ -938,6 +940,44 @@ rather than 360.
 The width check allows for the wrap: a reading that wraps is measured up to
 the last value before it starts over, not by the ends of `reads`.
 
+**`conversions` is `reads` in sections, for a dial with uneven marks.** A fuel
+gauge shaped by its tank crowds some marks together, so one straight line from
+end to end reads wrong between them. Each row is one stretch between two
+marks: the counts DCS-BIOS sends at each end, and what the dial reads there.
+
+```jsonc
+"conversions": [           // the Mosquito's inner tanks, in gallons
+  { "raw": [0, 12910],     "reads": [0, 20] },
+  { "raw": [12911, 31785], "reads": [20, 60] },
+  { "raw": [31786, 48561], "reads": [60, 100] },
+  { "raw": [48562, 56819], "reads": [100, 120] },
+  { "raw": [56820, 61603], "reads": [120, 146] },
+  { "raw": [61604, 65535], "reads": [146, 160], "colour": "red", "small": true },
+]
+```
+
+- Both ends of `raw` are claimed, so the next row starts one count on.
+- A piece has `reads` or `conversions`, never both, and a row whose `raw`
+  runs backwards is refused. `reads` inside a row may descend.
+- Rows that overlap are a caution, and the lower one converts the counts both
+  claim. A row past the most the signal sends is a caution too.
+- Counts no row claims are a caution, and read as the end of the nearest row,
+  the way a needle parked past its last mark points at that mark. The editor
+  offers a row for the first such run.
+- A row's `colour` and `small` apply while the reading is in it, on text
+  grids only. A band's colour wins over a row's, and either asking for small
+  is enough.
+- `decimals`, `digits`, `round`, `wrap`, `abs` and `value_aliases` all apply
+  after, exactly as they do after `reads`. The width check measures every
+  row's ends.
+
+Rows for many DCS gauges, worked out from each module's own gauge tables, are
+on the [uneven gauges](gauges.html) page.
+
+**`digits` pads a number with leading zeros.** A 000 to 999 counter at 1
+reads `001`, since a drum shows a digit whatever it reads. It is the fewest
+digits before the decimal point, and the sign stays in front of the zeros.
+
 **`value_aliases` draws a word in place of a number.** A knob reports its
 position, and `3` on a screen says less than `SEMI` does. A needle on a face
 marked each way from zero is read as a direction, and `-1.0` says less than
@@ -945,7 +985,8 @@ marked each way from zero is read as a direction, and `-1.0` says less than
 to draw for them; a reading no key claims draws as the number.
 
 The key is matched against **what the face reads**, not the raw count
-DCS-BIOS sends: `reads`, `decimals` and `wrap` all have their turn first. So a
+DCS-BIOS sends: `reads` or `conversions`, `decimals` and `wrap` all have
+their turn first. So a
 band is written in the units the dial is marked with and survives the range
 being retuned. A signal with no `reads` converts through its own range, which
 is the identity, so a key naming a position still names that position.
@@ -1254,6 +1295,14 @@ signal arrives, draws in `colour`.
 
 ### Dividers
 
+**This is the older spelling of a rule.** A rule is now a piece, `{ "gap":
+true, "rule": true }` (see "A rule between two pieces"), and a field of one
+rule piece draws exactly what a divider does. No shipped page has a divider.
+The engine still draws one, so a file written before is not refused, and the
+editor turns each one into a field of one rule piece as the page opens,
+carrying its `colour`, `small`, `label` and `label_colour` across. It is
+written that way at the next save.
+
 A field with `divider` draws a fixed rule instead of reading a signal, and is
 how a page that does not fill the screen gets an edge:
 
@@ -1272,11 +1321,10 @@ never changes, so a signal on one is a field somebody meant to finish. There is
 no range, no highlighting, no alignment and no seat worth setting, since it
 draws the same thing for every station and at every moment.
 
-**`colour` and `label` are what there is to choose**, and the editor offers
-both here and nowhere else. A field's colour belongs to the aircraft, matching
-what its own CDU draws, so the window leaves it alone; a rule is the user's own
-addition. A new one starts on the colour the display's other fields agree on.
-Black is the screen's own background, so a rule drawn in it cannot be seen.
+**`colour` and `label` are what there is to choose.** A field's colour
+belongs to the aircraft, matching what its own CDU draws, so the window leaves
+it alone; a rule is the user's own addition. A new rule piece starts on the
+colour the display's other fields agree on. Black is the screen's own background, so a rule drawn in it cannot be seen.
 
 **The rule is an unbroken run of dashes, corner to corner of its cells**,
 `--------`. Spaced dashes were tried first and read as a dotted line on the

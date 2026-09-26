@@ -1,6 +1,6 @@
 # Project status
 
-Written 2026-09-16, last updated 2026-09-25. Enough context to resume cold.
+Written 2026-09-16, last updated 2026-09-26. Enough context to resume cold.
 
 ## Resume here
 
@@ -11,7 +11,7 @@ checklist, for when that is all that is wanted.
 **Verify nothing has rotted** (30 seconds, no hardware, no DCS):
 
 ```powershell
-cargo test --workspace            # expect 493 passing
+cargo test --workspace            # expect 505 passing
 cargo run --bin dcs-signal -- devices
 cargo run --bin dcs-signal -- catalogue --aircraft F-4E-45MC --find hook
 ```
@@ -21,6 +21,25 @@ on this machine, and a catalogue from a different DCS-BIOS release reads the
 wrong addresses silently, because addresses are allocated sequentially as
 controls are defined. Nothing needs doing after a clone: every command that
 reads the catalogue builds it first if it is missing or out of date (see below).
+
+**Built and flown 2026-09-26: uneven gauges convert in sections.** `ba201c3` to
+`e649e88`. What users see is in [CHANGELOG.md](../CHANGELOG.md); the rules are
+in [CONFIG.md](CONFIG.md) and `docs/language.html`.
+
+- **`conversions` on a reading**, in place of `reads`: one stretch per pair
+  of marks, raw counts to what the dial reads, each with its own colour and
+  small. Both together is refused, a backwards stretch is refused; overlaps,
+  a stretch past the signal's max and unconverted counts are cautions.
+- **`digits`** pads a number with leading zeros after the sign.
+- **`docs/gauges.html`** lists uneven DCS gauges with ready rows, generated
+  by `tools/gen_gauges.py` into `docs/gauges.json` from each module's own
+  gauge tables. The docs pages share `site-bar.css` and `site-bar.js`.
+- **Flown on the Mosquito**, the proof, which ships in this release: a new
+  profile (`mosquitofbmkvi.json`) and its Flight page (`mosquito.json`), on
+  every MCDU and PFP name. One field shows five fuel needles, each at the
+  DCS gauge table's rows; No 12 (`LONG_FUEL_G`, argument 95) is left off,
+  as DCS does not appear to model it. The A-10C pages' row 4 rule moved
+  from a divider field to a rule piece in the same release.
 
 **Done 2026-09-25: the DED font is SimAppPro's, and glyph tables caution.**
 `c40713a` to `0463a48`. What users see is in [CHANGELOG.md](../CHANGELOG.md).
@@ -1654,9 +1673,9 @@ by device display name, then part in declared order, then hardware index.
    the face is marked with, which is why the range is the user's to supply.
    The open question it answers in part is whether 65535 is linear in the
    quantity or in needle angle. On a face that is linear in both, as this one
-   is, the two cannot be told apart; a gauge with a compressed or non-linear
-   scale would still read wrong, and there is no way to correct that without
-   per-gauge data we have decided not to carry.
+   is, the two cannot be told apart. A gauge with a compressed or non-linear
+   scale reads wrong through `reads`; since 2026-09-26 `conversions` corrects
+   it with rows the profile carries, per gauge, rather than data we ship.
 4. ~~**The editor cannot yet edit aliases or notes**~~ **Built 2026-09-17,**
    along with two things flying it made obvious:
 

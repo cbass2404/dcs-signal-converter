@@ -1316,23 +1316,6 @@ input.alias {
   font-family: var(--mono, ui-monospace, "Cascadia Mono", Consolas, monospace);
 }
 
-/* The rule a divider will draw, shown as the panel draws it. Monospaced
-   because the spacing is the whole of what it says, and on the glass's own
-   black rather than the page's, so a white rule is not invisible in light mode
-   and every colour reads the way it will on the panel. The colour itself is set
-   from the chosen one, which is the point of showing it at all. */
-.divider-preview {
-  flex-basis: 100%;
-  font-family: var(--mono, ui-monospace, "Cascadia Mono", Consolas, monospace);
-  letter-spacing: 0.05em;
-  background: #05070a;
-  padding: 5px 8px;
-  border: 1px solid var(--line);
-  border-radius: 5px;
-  white-space: pre;
-  overflow-x: auto;
-}
-
 /* The label set into a rule: the text and its colour side by side, with
    whatever is wrong with it underneath. The row wraps rather than squeezing
    the box, since a label is read as much as it is typed. */
@@ -1576,8 +1559,7 @@ tr.field-closed .region-name {
 }
 
 /* A closed field: what it reads, then the picture of what it draws. */
-tr.field-closed .preview-wrap,
-tr.field-closed .divider-preview {
+tr.field-closed .preview-wrap {
   margin-top: 5px;
 }
 

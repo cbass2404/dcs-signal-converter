@@ -1440,8 +1440,8 @@
           <code>reads</code> is a caution too: it usually means the band was written in DCS-BIOS's own numbers
           (0 to 65535) instead of the numbers on the dial.
           Two rows covering the same part of the dial is a caution, and the lower one wins. A piece can't have
-          both <code>reads</code> and <code>conversions</code>, and a row can't run from a higher number to a
-          lower one.
+          both <code>reads</code> and <code>conversions</code>, and a row's DCS-BIOS numbers can't run from
+          higher to lower (the dial's numbers can).
         </p>
       </div>
     </section>
@@ -2600,7 +2600,7 @@
           ["Decimals", "decimals", "Reading", "Places to show, 0 to 3. Also sets how close a reading must be to an alias to match it.", "readings"],
           ["Digits", "digits", "Reading", "Fill with leading zeros up to this many digits, so a counter at 1 shows 001.", "readings"],
           ["Disabled", "null", "Slot", "A slot not in use. Its key does nothing and leaves the page shown.", "pages"],
-          ["Divider", "divider", "Field", "A whole field drawn as a rule, reading nothing, the way a rule piece alone on its line draws.", "fields"],
+          ["Divider", "divider", "Field", "A whole field drawn as a rule, reading nothing, the way a rule piece alone on its line draws. Older files only: the editor turns one into a rule piece.", "fields"],
           ["Draw as", "value_aliases", "Reading", "Words in place of numbers, matched against what the dial reads: one value, a list, or a band with both ends included. Each may carry a colour or inverse.", "readings"],
           ["Drive this panel", "disabled_devices", "Panel", "Unticked, the aircraft never writes to that panel, which keeps whatever was last on it. Its rows are kept for when it is ticked again.", "panels"],
           ["Font", "font", "Profile", "The text grid font for an aircraft with no CDU of its own. An aircraft with one draws in its own font, which wins.", "glass"],

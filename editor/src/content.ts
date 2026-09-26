@@ -37,13 +37,8 @@ const FLAT = [
   "replace",
 ] as const;
 
-/**
- * The pieces of a field, however the profile happened to write it.
- *
- * Empty for a divider, which draws a rule and holds no content.
- */
+/** The pieces of a field, however the profile happened to write it. */
 export function contentOf(readout: Readout): Span[] {
-  if (readout.divider) return [];
   if (readout.content && readout.content.length > 0) return readout.content;
   const one: Span = {};
   if (readout.text) one.text = readout.text;
@@ -80,6 +75,27 @@ export function setContent(readout: Readout, spans: Span[]): void {
   // `source` is not optional on the type, because every field had one before
   // chains existed and a good deal of the window still reads it.
   readout.source = "";
+}
+
+/**
+ * A whole-field divider, from a file written before a rule was a piece, made
+ * into a field of one rule piece, which draws the same line.
+ *
+ * Run on every field as it reaches the window, so nothing past this point has
+ * a divider to draw or edit. Only the window's copy changes: the file keeps
+ * its divider, which the engine still draws, until the page is next saved.
+ */
+export function ruleFromDivider(readout: Readout): void {
+  if (!readout.divider) return;
+  const rule: Span = { gap: true, rule: true };
+  if (readout.colour) rule.colour = readout.colour;
+  if (readout.small) rule.small = readout.small;
+  if (readout.label) rule.label = readout.label;
+  if (readout.label_colour) rule.label_colour = readout.label_colour;
+  delete readout.divider;
+  delete readout.label;
+  delete readout.label_colour;
+  setContent(readout, [rule]);
 }
 
 /** A new empty piece of the kind asked for. */

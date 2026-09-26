@@ -35,7 +35,6 @@ import type {
   Profile,
   Readout,
   RegionInfo,
-  RuleCell,
   ShapeArt,
   SignalView,
   Span,
@@ -104,7 +103,7 @@ export function cellProblem(
     if (self.seat !== undefined && other.seat !== undefined && self.seat !== other.seat) continue;
     const r = parseCells(other.cells);
     if (r && first <= r[1] && r[0] <= last) {
-      const taken = other.divider ? "a divider" : other.source || "another field";
+      const taken = other.source || "another field";
       return `${describe(other.cells, display)} is already taken by ${taken}.`;
     }
   }
@@ -1042,89 +1041,6 @@ function valueAliasEditor(
 }
 
 /**
- * What a divider shows, in place of a signal picker.
- *
- * There is nothing to choose: it reads no signal, so it has no range, no
- * highlighting and no alignment. What it does have is a width, which is what
- * decides where the dashes fall, so the rule is drawn here as the panel will
- * draw it. The backend works it out; one rule written twice is one rule that
- * can drift.
- */
-function dividerCell(opts: RowOptions): { node: HTMLElement; refresh: () => void } {
-  const { readout, display, profile, onChange } = opts;
-  const rule = rulePreview(readout);
-  const refresh = rule.refresh;
-
-  const node = el(
-    "div",
-    { class: "readout-extras" },
-    explained(
-      el("span", { class: "meta" }, "A rule. It reads nothing and never changes."),
-      "About rules",
-      "A blank cell at each end and an unbroken line between them, so it sits " +
-        "clear of whatever is beside it. It is on the glass from the moment " +
-        "the aircraft loads, which is what makes it an edge for a page that " +
-        "does not fill the screen.",
-    ),
-    rule.node,
-    colourChooser(readout, display, () => {
-      refresh();
-      onChange();
-    }),
-    labelEditor(
-      readout,
-      () => cellCount(readout.cells),
-      display,
-      profile,
-      () => {
-        refresh();
-        onChange();
-      },
-    ).node,
-    noteEditor(readout, "field", onChange),
-  );
-  node.append(...resetButtons(opts));
-  return { node, refresh };
-}
-
-/** A rule as the panel will draw it, at its width and with its label. */
-function rulePreview(readout: Readout): { node: HTMLElement; refresh: () => void } {
-  const preview = el("div", { class: "divider-preview" });
-  const paint = (cells: RuleCell[]): void => {
-    preview.textContent = "";
-    for (const cell of cells) {
-      const colour = cell.label ? readout.label_colour ?? readout.colour : readout.colour;
-      // Spaces carry the shape here, so they have to survive being drawn in
-      // HTML, which collapses a run of them to one.
-      const piece = el("span", {}, cell.text.replace(/ /g, "\u00a0"));
-      piece.style.color = SWATCH[colour ?? "white"] ?? "";
-      preview.append(piece);
-    }
-  };
-  // What the last request was for. The user keeps typing while one is in
-  // flight, and a late answer about a shorter label must not be painted over
-  // the rule they are looking at.
-  let asked = "";
-  const refresh = (): void => {
-    const range = parseCells(readout.cells);
-    const width = range ? range[1] - range[0] + 1 : 0;
-    const label = readout.label ?? "";
-    const mine = `${width}\u0000${label}`;
-    asked = mine;
-    void dividerRule(width, label).then(
-      (cells) => {
-        if (asked === mine) paint(cells);
-      },
-      () => {
-        if (asked === mine) preview.textContent = "";
-      },
-    );
-  };
-  refresh();
-  return { node: preview, refresh };
-}
-
-/**
  * What the rule is dividing, set into the middle of it.
  *
  * A rule ends a page and a labelled rule says what the page was, which is what
@@ -1231,36 +1147,6 @@ function labelEditor(
   };
 }
 
-/**
- * What colour the glass draws this rule in.
- *
- * Offered on a divider and nowhere else. A field's colour is the aircraft's
- * business, matching what its own CDU draws, and is left as the profile has it;
- * a rule is the user's own addition, so its colour is theirs to pick. The list
- * comes from the backend, so it cannot offer one the panel has no index for.
- */
-function colourChooser(
-  readout: Readout,
-  display: DisplayInfo,
-  onChange: () => void,
-): HTMLElement {
-  const menu = el("select", { class: "colour" });
-  for (const name of display.colours) {
-    menu.append(el("option", { value: name }, name));
-  }
-  menu.value = readout.colour ?? "white";
-  menu.addEventListener("change", () => {
-    readout.colour = menu.value;
-    onChange();
-  });
-  return explained(
-    el("label", { class: "meta" }, "drawn in ", menu),
-    "About the colour",
-    "Match the page it is ruling. Black is the screen's own background, so a " +
-        "rule drawn in it is a rule nobody can see.",
-  );
-}
-
 interface RowOptions {
   readout: Readout;
   display: DisplayInfo;
@@ -1334,12 +1220,6 @@ function canonical(value: unknown): unknown {
 function fieldShape(r: Readout): string {
   return JSON.stringify(
     canonical({
-      divider: r.divider,
-      // Only a rule keeps a colour of its own. On anything else that key holds
-      // the one part's colour, and `contentOf` has already taken it there.
-      colour: r.divider ? r.colour : undefined,
-      label: r.divider ? r.label : undefined,
-      label_colour: r.divider ? r.label_colour : undefined,
       seat: r.seat,
       align: r.align,
       note: r.note,
@@ -2700,9 +2580,6 @@ const readsLine = (text: string): HTMLElement =>
 
 /** What a field reads, a line per signal, for a row that is not open. */
 function fieldReads(readout: Readout, signals: SignalView[]): HTMLElement[] {
-  if (readout.divider) {
-    return [readsLine(readout.label ? `A rule labelled ${readout.label}. It reads nothing.` : "A rule. It reads nothing.")];
-  }
   const ids = [
     ...new Set(
       contentOf(readout)
@@ -2735,7 +2612,7 @@ function closedRow(opts: RowOptions): HTMLTableRowElement {
     el("span", { class: "region-name" }, region?.name ?? "Somewhere else"),
     el("div", { class: "meta" }, extent(readout.cells)),
   );
-  const preview = readout.divider ? rulePreview(readout) : glyphPreview(readout, display, profile, signals);
+  const preview = glyphPreview(readout, display, profile, signals);
   preview.refresh();
   const shows = el(
     "td",
@@ -2764,22 +2641,12 @@ function row(opts: RowOptions): HTMLTableRowElement {
   const { readout, display, all, onChange } = opts;
   const tr = el("tr");
 
-  // A divider's preview follows its width, so a change of cells has to reach
-  // it. Everything else in a row reads the cells only when it is drawn.
-  const rule = readout.divider ? dividerCell(opts) : null;
   let rebuild = (): void => {};
   const changed = (): void => {
-    rule?.refresh();
     rebuild();
     onChange();
   };
   tr.append(cellChooser(readout, display, all, changed));
-
-  if (rule) {
-    tr.append(el("td", {}, rule.node));
-    tr.append(el("td", { class: "num" }, rowActions(opts)));
-    return tr;
-  }
 
   const shows = el("td");
   const draw = (): void => {
@@ -2802,9 +2669,6 @@ function row(opts: RowOptions): HTMLTableRowElement {
  */
 function describeField(readout: Readout, display: DisplayInfo): string {
   const where = describe(readout.cells, display);
-  if (readout.divider) {
-    return readout.label ? `The rule on ${where}, labelled ${readout.label}.` : `The rule on ${where}.`;
-  }
   const pieces = contentOf(readout).map((s) => {
     const held = s.width ? ` held to ${s.width} cells` : "";
     if (s.rule) return s.label ? `a rule labelled ${s.label}${held}` : `a rule${held}`;
@@ -2846,7 +2710,7 @@ function describeField(readout: Readout, display: DisplayInfo): string {
  */
 function removeButton(opts: RowOptions): HTMLElement {
   const { readout, display } = opts;
-  const what = readout.divider ? "rule" : "field";
+  const what = "field";
   return iconButton("trash", "\u{1F5D1}", `Delete this ${what}`, () => {
     const consequence = opts.shipped
       ? "\n\nThis one shipped with the page, so the area it sits in will offer it back."
@@ -3008,7 +2872,8 @@ export function fieldTable(
         // Every first piece starts a chain, a rule included. A rule made
         // here used to be a whole-field divider, which holds no pieces, so
         // nothing could be added beside it and its kind could not be
-        // changed. A divider already in a profile still loads and edits.
+        // changed. One in an older file arrives as a rule piece, turned
+        // into one by `ruleFromDivider` as the page opens.
         const first = newSpan(kind);
         if (kind === "rule") first.colour = agreedColour(mine());
         setContent(fresh, [first]);

@@ -266,12 +266,11 @@ export interface Readout {
   replace?: Record<string, string>;
   colours?: { source: string; codes: Record<string, string> };
   /**
-   * Draw a fixed rule across these cells instead of reading a signal.
+   * A whole-field rule, from a file written before a rule was a piece.
    *
-   * A screen only half used has no edge to it: the Apache exports only its
-   * keyboard unit and the A-10C's CDU starts ten lines down, so the rest of
-   * the glass is dark and the page runs off into it. A rule gives it one.
-   * Text grids only, which is what `text_grid` on the display decides.
+   * Never seen past the page API: `ruleFromDivider` turns one into a field
+   * of one rule piece as it arrives, which draws the same line. It, `label`
+   * and `label_colour` are here only for that.
    */
   divider?: boolean;
   /**

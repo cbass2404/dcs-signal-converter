@@ -22,7 +22,7 @@ import { contentOf, isLiteral, kindOf, newSpan, setContent } from "./content";
 import type { SpanKind } from "./content";
 import { cautionSlot, flagSlot } from "./flags";
 import { noteEditor } from "./note";
-import { signalPicker } from "./typeahead";
+import { infoIcon, signalPicker } from "./typeahead";
 import { aliasColour, aliasInverse, aliasOf, aliasText } from "./types";
 import type {
   AliasDraw,
@@ -455,15 +455,13 @@ function conversionRow(
   return el(
     "div",
     {},
-    el("div", { class: "test-row" }, select),
-    converted ? stretches : "",
-    converted ? offer : "",
-    converted ? el("div", { class: "test-row" }, values) : "",
-    valueAliasEditor(span, signal, set, colours, inverse, edited),
     el(
-      "span",
-      { class: "meta block" },
-      converted
+      "div",
+      { class: "test-row" },
+      select,
+      infoIcon(
+        "About converting the number",
+        converted
         ? `DCS-BIOS sends the needle's position as 0 to ${max}. Each row says ` +
             "what the dial reads for part of that range. One row covering all of " +
             "it suits a dial with evenly spaced marks. If the marks bunch up, " +
@@ -477,7 +475,12 @@ function conversionRow(
             "compass is 0 to 360 wrapping at 360."
         : `The number DCS-BIOS sends, 0 to ${max}, drawn as it is. Right for ` +
             "a count or a selector. A needle wants converting.",
+      ),
     ),
+    converted ? stretches : "",
+    converted ? offer : "",
+    converted ? el("div", { class: "test-row" }, values) : "",
+    valueAliasEditor(span, signal, set, colours, inverse, edited),
   );
 }
 
@@ -601,18 +604,12 @@ function seatChooser(
     else readout.seat = Number(menu.value);
     onChange();
   });
-  return el(
-    "label",
-    { class: "meta" },
-    "shown in ",
-    menu,
-    el(
-      "span",
-      { class: "meta block" },
-      "This aircraft reports which station you are in, and DCS-BIOS exports " +
+  return explained(
+    el("label", { class: "meta" }, "shown in ", menu),
+    "About the seat",
+    "This aircraft reports which station you are in, and DCS-BIOS exports " +
         "both of them at once. Pick one and the field paints only from that " +
         "seat, which is what lets two fields share the same cells.",
-    ),
   );
 }
 
@@ -748,6 +745,17 @@ function cellChooser(
 }
 
 /**
+ * A control with its explanation behind an info icon beside it.
+ *
+ * Beside the label rather than inside it, because a click anywhere in a label
+ * toggles its checkbox, and reading the explanation should not change a
+ * setting.
+ */
+function explained(control: HTMLElement, label: string, ...content: (Node | string)[]): HTMLElement {
+  return el("span", { class: "with-info" }, control, infoIcon(label, ...content));
+}
+
+/**
  * Values the module words differently from the glyph table.
  *
  * The case this exists for is real and was found by flying: DCS-BIOS reports
@@ -816,16 +824,15 @@ function aliasEditor(span: Span, onChange: () => void): HTMLElement {
 
   draw();
   wrap.append(
-    el("label", { class: "meta" }, "substitutions"),
-    rows,
-    add,
-    el(
-      "span",
-      { class: "meta block" },
+    explained(
+      el("label", { class: "meta" }, "substitutions"),
+      "About substitutions",
       "For a value this display cannot draw. DCS-BIOS reports the Hornet " +
         "scratchpad cursor as -- where the cockpit shows _, and -- is not a " +
         "glyph, so without a substitution the cell goes dark.",
     ),
+    rows,
+    add,
   );
   return wrap;
 }
@@ -959,7 +966,14 @@ function valueAliasEditor(
         draw();
         store();
       });
-      const cell = el("div", { class: "alias-row" }, band, el("span", { class: "meta" }, "shows as"), alias);
+      // Phrases, so a narrow window breaks the row between them and never
+      // between "in" and the colour it names.
+      const cell = el(
+        "div",
+        { class: "alias-row band" },
+        el("span", { class: "phrase" }, band, el("span", { class: "meta" }, "shows as"), alias),
+      );
+      const look = el("span", { class: "phrase" });
       // Only where the glass has colours to draw. A band's colour is the point
       // of banding a caution, but on segments there is nothing to pick from.
       if (colours.length > 0) {
@@ -971,7 +985,7 @@ function valueAliasEditor(
           row.colour = pick.value;
           store();
         });
-        cell.append(el("span", { class: "meta" }, "in"), pick);
+        look.append(el("span", { class: "meta" }, "in"), pick);
       }
       // The same box a piece of text gets, and only where the glass draws
       // inverse. On a screen with no colours it is the way a band stands out,
@@ -983,8 +997,9 @@ function valueAliasEditor(
           row.inverse = flip.checked;
           store();
         });
-        cell.append(el("label", { class: "meta" }, flip, " inverse"));
+        look.append(el("label", { class: "meta" }, flip, " inverse"));
       }
+      if (look.childNodes.length > 0) cell.append(look);
       cell.append(drop, trouble);
       check();
       rows.append(cell);
@@ -1010,18 +1025,19 @@ function valueAliasEditor(
   });
 
   draw();
-  wrap.append(el("label", { class: "meta" }, "aliases"), rows, add);
-  if (held.length === 0 && Object.keys(named).length > 0) wrap.append(fill);
   wrap.append(
-    el(
-      "span",
-      { class: "meta block" },
+    explained(
+      el("label", { class: "meta" }, "aliases"),
+      "About aliases",
       "What to draw instead of the number. A row claims one reading (3), a " +
         'list of them (0,1,2) or a band ("-1.5..-0.1"), in what the face ' +
         "reads rather than the number DCS-BIOS sends. A reading no row claims " +
         "is drawn as the number, and two rows claiming one reading is refused.",
     ),
+    rows,
+    add,
   );
+  if (held.length === 0 && Object.keys(named).length > 0) wrap.append(fill);
   return wrap;
 }
 
@@ -1042,7 +1058,14 @@ function dividerCell(opts: RowOptions): { node: HTMLElement; refresh: () => void
   const node = el(
     "div",
     { class: "readout-extras" },
-    el("span", { class: "meta" }, "A rule. It reads nothing and never changes."),
+    explained(
+      el("span", { class: "meta" }, "A rule. It reads nothing and never changes."),
+      "About rules",
+      "A blank cell at each end and an unbroken line between them, so it sits " +
+        "clear of whatever is beside it. It is on the glass from the moment " +
+        "the aircraft loads, which is what makes it an edge for a page that " +
+        "does not fill the screen.",
+    ),
     rule.node,
     colourChooser(readout, display, () => {
       refresh();
@@ -1058,14 +1081,6 @@ function dividerCell(opts: RowOptions): { node: HTMLElement; refresh: () => void
         onChange();
       },
     ).node,
-    el(
-      "span",
-      { class: "meta block" },
-      "A blank cell at each end and an unbroken line between them, so it sits " +
-        "clear of whatever is beside it. It is on the glass from the moment " +
-        "the aircraft loads, which is what makes it an edge for a page that " +
-        "does not fill the screen.",
-    ),
     noteEditor(readout, "field", onChange),
   );
   node.append(...resetButtons(opts));
@@ -1238,17 +1253,11 @@ function colourChooser(
     readout.colour = menu.value;
     onChange();
   });
-  return el(
-    "label",
-    { class: "meta" },
-    "drawn in ",
-    menu,
-    el(
-      "span",
-      { class: "meta block" },
-      "Match the page it is ruling. Black is the screen's own background, so a " +
+  return explained(
+    el("label", { class: "meta" }, "drawn in ", menu),
+    "About the colour",
+    "Match the page it is ruling. Black is the screen's own background, so a " +
         "rule drawn in it is a rule nobody can see.",
-    ),
   );
 }
 
@@ -2167,9 +2176,9 @@ function spanEditor(
     body.append(spanRule(spans, index, opts, edited));
   } else if (span.gap) {
     body.append(
-      el(
-        "span",
-        { class: "meta block" },
+      explained(
+        el("span", { class: "meta" }, "blank space"),
+        "About gaps",
         "Blank, and as wide as whatever the rest of the row leaves. Put one " +
           "between two pieces to push them to opposite ends, or use two to " +
           "space three pieces evenly. It draws nothing itself, so it has " +
@@ -2296,18 +2305,12 @@ function spanEditor(
       onChange();
     });
     style.append(
-      el(
-        "label",
-        { class: "meta" },
-        small,
-        " small",
-        el(
-          "span",
-          { class: "meta block" },
-          "The grid's small font, which a CDU uses for its labels. It draws " +
+      explained(
+        el("label", { class: "meta" }, small, " small"),
+        "About the small font",
+        "The grid's small font, which a CDU uses for its labels. It draws " +
             "fewer characters than the large one, so a character that was fine " +
             "may stop being drawn.",
-        ),
       ),
     );
   }
@@ -2413,9 +2416,9 @@ function spanRule(
   return el(
     "div",
     { class: "readout-extras" },
-    el(
-      "span",
-      { class: "meta block" },
+    explained(
+      el("span", { class: "meta" }, "a line of dashes"),
+      "About rules",
       "A line of dashes, as wide as whatever the rest of the row leaves. It " +
         "reads nothing, so it is on the glass from the moment the aircraft " +
         "loads. Give it a fixed width below to hold it to a size, which is " +
@@ -2498,16 +2501,15 @@ function boxControls(span: Span, readout: Readout, edited: () => void): HTMLElem
   return el(
     "div",
     { class: "span-box" },
-    el("label", { class: "meta" }, "width ", width),
-    el("label", { class: "meta" }, "aligned ", align),
-    el(
-      "span",
-      { class: "meta block" },
+    explained(
+      el("label", { class: "meta" }, "width ", width),
+      "About the width",
       "Cells this piece takes whatever it draws, so the pieces after it stay " +
         "where they are as it changes width. 0 leaves it as wide as its " +
         "value. Anything too long for the box is cropped from the end the " +
         "alignment anchors away from.",
     ),
+    el("label", { class: "meta" }, "aligned ", align),
     trouble,
   );
 }
@@ -2534,17 +2536,11 @@ function spanFormatChooser(
     else delete span.format;
     onChange();
   });
-  return el(
-    "label",
-    { class: "meta" },
-    box,
-    ` highlighting${twin ? ` from ${twin}` : ""}`,
-    el(
-      "span",
-      { class: "meta block" },
-      "A second signal the module sends beside this one, one character for " +
+  return explained(
+    el("label", { class: "meta" }, box, ` highlighting${twin ? ` from ${twin}` : ""}`),
+    "About highlighting",
+    "A second signal the module sends beside this one, one character for " +
         "one, marking which characters to draw inverse.",
-    ),
   );
 }
 
@@ -2654,19 +2650,13 @@ function chainEditor(opts: RowOptions, refreshPreview: () => void): HTMLElement 
         onChange();
       });
       extras.append(
-        el(
-          "label",
-          { class: "meta" },
-          "aligned ",
-          align,
-          el(
-            "span",
-            { class: "meta block" },
-            "Which end of the run the whole line anchors to. A scratchpad " +
+        explained(
+          el("label", { class: "meta" }, "aligned ", align),
+          "About the alignment",
+          "Which end of the run the whole line anchors to. A scratchpad " +
               "wants right: digits enter at the last cell, and DCS-BIOS can " +
               "send more characters than there are cells. To hold one piece " +
               "in place rather than the line, give that piece a width instead.",
-          ),
         ),
       );
     }

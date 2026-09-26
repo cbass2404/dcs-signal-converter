@@ -38,3 +38,9 @@ unless this says what moved.
   stopping at a fixed width, and a converted reading's options take fewer
   lines when there is room. A row's colour and small setting always stay
   together.
+
+- **A reading's signal stays put.** The signal box, and a text piece's box,
+  now sit at the top left of the piece at one width, with the other
+  controls below. Before, resizing the window moved them from beside the
+  controls to above them and could squeeze Learn over the signal name. In a
+  narrow window the page no longer runs off the right-hand side.

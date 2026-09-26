@@ -832,6 +832,14 @@ button.result .id {
   display: block;
 }
 
+/* A control and the info icon explaining it, kept together so a wrapping row
+   never strands the icon on a line of its own. */
+.with-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .hint .values {
   margin-top: 5px;
   display: flex;
@@ -1291,8 +1299,12 @@ input.cells.bad {
   gap: 8px;
 }
 
-/* A stretch of a dial is four numbers and its style, wider than a panel. */
-.alias-row.stretch {
+/* A stretch of a dial is four numbers and its style, wider than a panel,
+   and an alias is two boxes and its style. Both wrap between phrases, so a
+   narrow window takes them on two lines rather than pushing the page wider
+   than the window. */
+.alias-row.stretch,
+.alias-row.band {
   flex-wrap: wrap;
   row-gap: 6px;
 }
@@ -1460,11 +1472,30 @@ select.span-kind {
   font-size: 12.5px;
 }
 
+/* A piece's controls, one under the other. The signal or the text is always
+   the first line, at the top left and at one width, so it is in the same place
+   in every piece and at every width of the window. Beside the controls, it
+   jumped between their side and their top as the window was resized, and was
+   squeezed until Learn covered it. */
 .span-body {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px 18px;
-  align-items: center;
+  flex-direction: column;
+  gap: 6px;
+  align-items: stretch;
+}
+
+.span-body > .signal-row {
+  align-self: flex-start;
+}
+
+.span-body > .signal-row > .signal-box {
+  flex: none;
+  width: 250px;
+}
+
+.span-body > input.span-text {
+  align-self: flex-start;
+  width: 250px;
 }
 
 .span-body label {
@@ -1473,18 +1504,12 @@ select.span-kind {
   gap: 6px;
 }
 
-.span-body .block,
 .span-style .block {
-  flex-basis: 100%;
-}
-
-.span-body .aliases {
   flex-basis: 100%;
 }
 
 input.span-text {
   font-family: var(--mono, ui-monospace, "Cascadia Mono", Consolas, monospace);
-  min-width: 12em;
 }
 
 .span-style {

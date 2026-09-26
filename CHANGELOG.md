@@ -29,3 +29,8 @@ unless this says what moved.
   one claims the reading.
 - **Leading zeros on a number.** Set digits to fill a reading with zeros, so
   a 000 to 999 counter at 1 shows 001 rather than 1.
+
+### Fixed
+
+- **A profile opens at the top.** Picking a profile from further down the
+  list opened its page scrolled down as far as the list had been.

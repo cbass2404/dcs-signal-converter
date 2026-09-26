@@ -13,48 +13,66 @@ release shipped it is brought up to the new one for you. A fix to something
 you have touched only reaches you if you reset it, and you cannot decide to
 unless this says what moved.
 
-## 1.0.0-alpha.010
+## 1.0.0-alpha.011
 
 ### Added
 
-- **Undo unsaved changes, on one lamp or one page field.** Puts it back the
-  way it was last saved and leaves everything else alone. It shows only while
-  there is something to undo, on your own profiles and pages as well as the
-  shipped ones. A shipped lamp or field with changes offers both this and
-  Reset, which goes back to how it shipped. A field deleted from a page since
-  its last save is offered back in its empty area.
-- **Reset a field on a shipped page.** Each field of a page that shipped
-  can be put back the way it shipped, and a shipped field you deleted is
-  offered back in its empty area.
-- **A caution on characters the UFC or DED cannot draw.** Text you type into
-  a field on either screen, including an alias or a substitution, is checked
-  against what those cells can show, such as a letter on the scratchpad's
-  digits. The field is flagged and the profile still loads, since the panel
-  may draw it anyway.
+- **Gauges with uneven marks read correctly.** Some dials have marks that
+  bunch up, like the Mosquito's fuel gauges, where the first 20 gallons take
+  up far more of the dial than the last 20. A converted reading can now be
+  given as one row per section between two marks, saying what the dial reads
+  there, instead of one straight line from end to end. If your rows don't
+  reach the end of the dial yet, the editor offers a button to add the rest.
+- **A colour and small text for each section of a dial.** Each row of a
+  converted reading can draw in its own colour and in small text, so the last
+  few gallons of a tank can show in red. An alias's colour still wins where
+  one claims the reading.
+- **Leading zeros on a number.** Set digits to fill a reading with zeros, so
+  a 000 to 999 counter at 1 shows 001 rather than 1.
 
-### Changed
+### Shipped profile changes
 
-- **Page fields open for editing one at a time.** Each field in the page
-  editor is a line saying which signals it reads, with a picture of what it
-  draws. The pencil opens it, the tick keeps the change and the cross puts
-  it back as it was when opened, the way a lamp's conditions work. A field
-  you add opens by itself. While a field is open, its preview stays just
-  above Save page as you scroll through its settings.
-- **The DED preview is in the DED's own colours.** A field on the ICP's
-  screen was previewed white on black. It is now black on green, as the
-  glass shows it, and an inverse field green on black.
-- **Merging takes whole page slots, not single screen lines.** Merge from...
-  and a merged import no longer list a screen's lines to tick one by one.
-  A screen's content comes across as the page slots you tick, the way pages
-  are shared everywhere else.
-- **Shipped profiles: A-10C and A-10C2.** The notes on the PTO2's CTR, LI,
-  LO, RO and RI lamps now say what those lamps show, the NMSP EGI, STEER PT,
-  TCN, ILS and ANCHR modes, where they still named the fire lamps they
-  replaced. What the lamps do is unchanged.
+Each change below reaches you on its own if you have not touched that row,
+slot or setting. If you have, it is left as you made it, and Reset is how to
+take the new one.
+
+**A-10C and A-10C2**
+
+- **The amber rule on row 4 of the A-10C CDU and A-10C2 CDU pages** is now a
+  rule piece across the row instead of a divider field. It draws the same
+  line.
+
+**Mosquito FB VI** (new)
+
+- **Fuel on the MCDU and every PFP**, in gallons, read from the dials'
+  uneven marks: the port and starboard inner tanks, the No 10 centre tank,
+  and the port and starboard No 4 wing tanks. Each reads red when empty and
+  amber in its lowest stretch. The inner tanks show OFF, and the others go
+  blank, while the needles rest off the scale. The No 12 centre tank is not
+  shown, since DCS does not report it.
+- **PTO2**: LEFT, NOSE and RIGHT light with the port wheel, tail wheel and
+  starboard wheel on the ground; FLAPS with any flap, HALF at half flap and
+  FULL at full; HOOK once the bomb doors are fully open, from the cockpit's
+  bomb door lamp. With the bomb panel cover open, LI and RI show the wing
+  ordnance 1 and 2 switches and LO and RO the fuselage bombs 3 and 4
+  switches.
+- Every backlight follows the MFD C's, held on.
 
 ### Fixed
 
-- **Every character on the F-16's DED is now drawn as SimAppPro draws it.**
-  27 were our own drawings, and several were wrong: J, K, Y, the slash,
-  the apostrophe, the up and down arrows and most punctuation. The DED now
-  uses SimAppPro's own font throughout.
+- **A profile opens at the top.** Picking a profile from further down the
+  list opened its page scrolled down as far as the list had been.
+- **The editor uses a wide window.** Pages grow with the window instead of
+  stopping at a fixed width, and a converted reading's options take fewer
+  lines when there is room. A row's colour and small setting always stay
+  together.
+- **A reading's signal stays put.** The signal box, and a text piece's box,
+  now sit at the top left of the piece at one width, with the other
+  controls below. Before, resizing the window moved them from beside the
+  controls to above them and could squeeze Learn over the signal name. In a
+  narrow window the page no longer runs off the right-hand side.
+- **A rule from an older page shows and edits like any other.** A page
+  saved before rules were pieces kept its rules as a different kind of
+  field, whose preview drew wrongly. The editor now turns each one into a
+  rule piece as the page opens, keeping its colour, size and label, and
+  saves it that way. It draws the same line on the panel.

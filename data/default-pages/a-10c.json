@@ -7,24 +7,18 @@
       "display": "MCDU",
       "fields": [
         {
-          "cells": "72-95",
-          "divider": true,
-          "colour": "amber",
-          "note": "A rule on row 4, where the page starts. The A-10C's CDU is ten lines and the MCDU is fourteen, so rows 1 to 3 stay dark and the content below needs a top edge to read as a page."
-        },
-        {
           "cells": "96-119",
           "source": "CDU_LINE0",
           "colour": "green",
           "replace": {
-            "«": "←",
-            "©": "^",
-            "»": "→",
-            "¡": "☐",
-            "?": "%",
-            "±": "_",
             "®": "Δ",
-            "¶": "⬡"
+            "?": "%",
+            "¶": "⬡",
+            "©": "^",
+            "«": "←",
+            "¡": "☐",
+            "»": "→",
+            "±": "_"
           },
           "note": "CDU line 1. The ten CDU lines sit on rows 5 to 14, so the CDU's line select keys, beside its lines 3, 5, 7 and 9, land beside MCDU rows 7, 9, 11 and 13, and the scratchpad on line 10 lands on the MCDU's scratchpad row."
         },
@@ -33,12 +27,12 @@
           "source": "CDU_LINE1",
           "colour": "green",
           "replace": {
-            "±": "_",
-            "©": "^",
-            "?": "%",
             "»": "→",
-            "¡": "☐",
+            "?": "%",
+            "©": "^",
             "®": "Δ",
+            "±": "_",
+            "¡": "☐",
             "«": "←",
             "¶": "⬡"
           },
@@ -49,14 +43,14 @@
           "source": "CDU_LINE2",
           "colour": "green",
           "replace": {
-            "«": "←",
-            "¡": "☐",
-            "©": "^",
-            "±": "_",
-            "®": "Δ",
             "¶": "⬡",
-            "»": "→",
-            "?": "%"
+            "?": "%",
+            "©": "^",
+            "®": "Δ",
+            "¡": "☐",
+            "«": "←",
+            "±": "_",
+            "»": "→"
           }
         },
         {
@@ -64,14 +58,14 @@
           "source": "CDU_LINE3",
           "colour": "green",
           "replace": {
-            "?": "%",
-            "©": "^",
-            "¶": "⬡",
-            "±": "_",
-            "®": "Δ",
-            "»": "→",
             "«": "←",
-            "¡": "☐"
+            "»": "→",
+            "±": "_",
+            "¶": "⬡",
+            "®": "Δ",
+            "¡": "☐",
+            "©": "^",
+            "?": "%"
           }
         },
         {
@@ -79,14 +73,14 @@
           "source": "CDU_LINE4",
           "colour": "green",
           "replace": {
-            "©": "^",
-            "±": "_",
-            "«": "←",
-            "®": "Δ",
-            "?": "%",
             "»": "→",
+            "±": "_",
             "¶": "⬡",
-            "¡": "☐"
+            "¡": "☐",
+            "©": "^",
+            "®": "Δ",
+            "«": "←",
+            "?": "%"
           }
         },
         {
@@ -94,12 +88,12 @@
           "source": "CDU_LINE5",
           "colour": "green",
           "replace": {
-            "?": "%",
-            "»": "→",
-            "«": "←",
-            "¶": "⬡",
             "©": "^",
             "®": "Δ",
+            "«": "←",
+            "»": "→",
+            "¶": "⬡",
+            "?": "%",
             "¡": "☐",
             "±": "_"
           }
@@ -109,14 +103,14 @@
           "source": "CDU_LINE6",
           "colour": "green",
           "replace": {
-            "¶": "⬡",
-            "®": "Δ",
-            "?": "%",
-            "©": "^",
-            "¡": "☐",
             "«": "←",
+            "©": "^",
+            "®": "Δ",
+            "¡": "☐",
+            "»": "→",
             "±": "_",
-            "»": "→"
+            "¶": "⬡",
+            "?": "%"
           }
         },
         {
@@ -124,14 +118,14 @@
           "source": "CDU_LINE7",
           "colour": "green",
           "replace": {
-            "»": "→",
-            "?": "%",
-            "±": "_",
             "¡": "☐",
-            "¶": "⬡",
             "©": "^",
+            "±": "_",
+            "«": "←",
             "®": "Δ",
-            "«": "←"
+            "?": "%",
+            "»": "→",
+            "¶": "⬡"
           }
         },
         {
@@ -139,14 +133,14 @@
           "source": "CDU_LINE8",
           "colour": "green",
           "replace": {
-            "¡": "☐",
-            "»": "→",
+            "±": "_",
             "«": "←",
             "®": "Δ",
-            "±": "_",
+            "¡": "☐",
+            "?": "%",
             "©": "^",
             "¶": "⬡",
-            "?": "%"
+            "»": "→"
           }
         },
         {
@@ -154,14 +148,14 @@
           "source": "CDU_LINE9",
           "colour": "green",
           "replace": {
-            "»": "→",
+            "®": "Δ",
+            "©": "^",
+            "¶": "⬡",
+            "¡": "☐",
             "«": "←",
             "±": "_",
-            "¡": "☐",
-            "?": "%",
-            "®": "Δ",
-            "¶": "⬡",
-            "©": "^"
+            "»": "→",
+            "?": "%"
           },
           "note": "CDU line 10, the scratchpad."
         },
@@ -232,6 +226,16 @@
             },
             {
               "source": "UHF_PRESET",
+              "colour": "amber"
+            }
+          ]
+        },
+        {
+          "cells": "72-95",
+          "content": [
+            {
+              "gap": true,
+              "rule": true,
               "colour": "amber"
             }
           ]
@@ -384,24 +388,18 @@
       "display": "MCDU",
       "fields": [
         {
-          "cells": "72-95",
-          "divider": true,
-          "colour": "amber",
-          "note": "A rule on row 4, where the page starts. The A-10C's CDU is ten lines and the MCDU is fourteen, so rows 1 to 3 stay dark and the content below needs a top edge to read as a page."
-        },
-        {
           "cells": "96-119",
           "source": "CDU_LINE0",
           "colour": "green",
           "replace": {
-            "»": "→",
-            "®": "Δ",
+            "±": "_",
             "¶": "⬡",
             "¡": "☐",
-            "?": "%",
             "«": "←",
             "©": "^",
-            "±": "_"
+            "»": "→",
+            "?": "%",
+            "®": "Δ"
           },
           "note": "CDU line 1. The ten CDU lines sit on rows 5 to 14, so the CDU's line select keys, beside its lines 3, 5, 7 and 9, land beside MCDU rows 7, 9, 11 and 13, and the scratchpad on line 10 lands on the MCDU's scratchpad row."
         },
@@ -410,14 +408,14 @@
           "source": "CDU_LINE1",
           "colour": "green",
           "replace": {
-            "®": "Δ",
-            "±": "_",
-            "¶": "⬡",
-            "¡": "☐",
-            "«": "←",
-            "»": "→",
             "?": "%",
-            "©": "^"
+            "®": "Δ",
+            "©": "^",
+            "¡": "☐",
+            "±": "_",
+            "«": "←",
+            "¶": "⬡",
+            "»": "→"
           },
           "note": "DCS-BIOS sends the CDU's symbols as single bytes above ASCII (A-10C.lua, cdu_replace_map). replace turns each into the character whose glyph the A-10C font draws for it: the arrows, the box, the up-down arrow (Delta), the cursor block (hexagon), and ? whose glyph is the % slot. Taken from WCtrlDcsBiosBridge's A-10C listener."
         },
@@ -426,14 +424,14 @@
           "source": "CDU_LINE2",
           "colour": "green",
           "replace": {
-            "©": "^",
-            "±": "_",
             "?": "%",
-            "¡": "☐",
-            "«": "←",
             "®": "Δ",
+            "¡": "☐",
+            "¶": "⬡",
+            "±": "_",
+            "©": "^",
             "»": "→",
-            "¶": "⬡"
+            "«": "←"
           }
         },
         {
@@ -441,14 +439,14 @@
           "source": "CDU_LINE3",
           "colour": "green",
           "replace": {
-            "¶": "⬡",
-            "±": "_",
-            "¡": "☐",
-            "«": "←",
-            "®": "Δ",
-            "?": "%",
+            "©": "^",
             "»": "→",
-            "©": "^"
+            "¡": "☐",
+            "?": "%",
+            "±": "_",
+            "¶": "⬡",
+            "®": "Δ",
+            "«": "←"
           }
         },
         {
@@ -456,14 +454,14 @@
           "source": "CDU_LINE4",
           "colour": "green",
           "replace": {
-            "©": "^",
-            "?": "%",
-            "¡": "☐",
             "«": "←",
-            "¶": "⬡",
             "»": "→",
+            "¶": "⬡",
+            "¡": "☐",
+            "®": "Δ",
+            "?": "%",
             "±": "_",
-            "®": "Δ"
+            "©": "^"
           }
         },
         {
@@ -471,13 +469,13 @@
           "source": "CDU_LINE5",
           "colour": "green",
           "replace": {
-            "»": "→",
-            "?": "%",
             "¡": "☐",
-            "¶": "⬡",
             "©": "^",
             "«": "←",
+            "»": "→",
+            "?": "%",
             "±": "_",
+            "¶": "⬡",
             "®": "Δ"
           }
         },
@@ -486,14 +484,14 @@
           "source": "CDU_LINE6",
           "colour": "green",
           "replace": {
+            "®": "Δ",
+            "«": "←",
+            "±": "_",
+            "?": "%",
             "»": "→",
             "¡": "☐",
-            "®": "Δ",
-            "¶": "⬡",
-            "?": "%",
             "©": "^",
-            "±": "_",
-            "«": "←"
+            "¶": "⬡"
           }
         },
         {
@@ -501,14 +499,14 @@
           "source": "CDU_LINE7",
           "colour": "green",
           "replace": {
-            "±": "_",
+            "¡": "☐",
             "«": "←",
-            "®": "Δ",
-            "?": "%",
             "»": "→",
             "¶": "⬡",
             "©": "^",
-            "¡": "☐"
+            "±": "_",
+            "®": "Δ",
+            "?": "%"
           }
         },
         {
@@ -518,12 +516,12 @@
           "replace": {
             "±": "_",
             "©": "^",
-            "¡": "☐",
-            "«": "←",
-            "¶": "⬡",
-            "?": "%",
             "®": "Δ",
-            "»": "→"
+            "«": "←",
+            "»": "→",
+            "¶": "⬡",
+            "¡": "☐",
+            "?": "%"
           }
         },
         {
@@ -531,13 +529,13 @@
           "source": "CDU_LINE9",
           "colour": "green",
           "replace": {
-            "?": "%",
-            "»": "→",
-            "®": "Δ",
             "«": "←",
-            "©": "^",
+            "?": "%",
             "¶": "⬡",
             "¡": "☐",
+            "©": "^",
+            "®": "Δ",
+            "»": "→",
             "±": "_"
           },
           "note": "CDU line 10, the scratchpad."
@@ -658,6 +656,16 @@
             },
             {
               "source": "UHF_PRESET",
+              "colour": "amber"
+            }
+          ]
+        },
+        {
+          "cells": "72-95",
+          "content": [
+            {
+              "gap": true,
+              "rule": true,
               "colour": "amber"
             }
           ]

@@ -3,6 +3,8 @@
 
 import { invoke } from "@tauri-apps/api/core";
 
+import { ruleFromDivider } from "./content";
+
 import type {
   CatalogueStatus,
   CellDraw,
@@ -102,8 +104,18 @@ export const saveProfile = (file: string, profile: Profile) =>
  */
 export const checkProfile = (profile: Profile, working: Page | null, device: string | null) =>
   invoke<Findings>("check_profile", { profile, working, device });
+/**
+ * Every field of a module's pages as the window works with them: a divider
+ * from an older file arrives as the rule piece that draws the same line.
+ */
+function rulesNotDividers(view: PagesView): PagesView {
+  for (const page of [...view.pages, ...view.shipped]) page.fields.forEach(ruleFromDivider);
+  return view;
+}
+
 /** One module's pages, and where the saved profiles use them. */
-export const openPages = (module: string) => invoke<PagesView>("open_pages", { module });
+export const openPages = (module: string) =>
+  invoke<PagesView>("open_pages", { module }).then(rulesNotDividers);
 /** An id no page has, nor any of `avoid`, the new pages not saved yet. */
 export const newPageId = (avoid: string[]) => invoke<string>("new_page_id", { avoid });
 /**
@@ -111,14 +123,16 @@ export const newPageId = (avoid: string[]) => invoke<string>("new_page_id", { av
  * it. Returns the module's pages as they now are.
  */
 export const savePage = (profile: Profile, page: Page, device: string) =>
-  invoke<PagesView>("save_page", { profile, page, device });
+  invoke<PagesView>("save_page", { profile, page, device }).then(rulesNotDividers);
 /**
  * Delete a page from the library, emptying its slots in every other saved
  * profile on the module, which it names. The open profile's slots are the
  * window's to empty.
  */
 export const deletePage = (module: string, id: string, current: string) =>
-  invoke<[PagesView, string[]]>("delete_page", { module, id, current });
+  invoke<[PagesView, string[]]>("delete_page", { module, id, current }).then(
+    ([view, emptied]): [PagesView, string[]] => [rulesNotDividers(view), emptied],
+  );
 export const resetProfile = (file: string) => invoke<void>("reset_profile", { file });
 /**
  * Delete a profile, first giving its aircraft to `giveTo` if one is named. It

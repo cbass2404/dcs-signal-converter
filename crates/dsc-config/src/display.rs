@@ -1328,6 +1328,66 @@ impl From<String> for AliasDraw {
     }
 }
 
+/// One stretch of a needle's travel, and what the dial is marked with along it.
+///
+/// `reads` is a straight line from one end of the signal to the other, which is
+/// right for an evenly marked dial and wrong for one that is not. A fuel gauge
+/// shaped by its tank crowds its top marks together: the Mosquito's inner tanks
+/// put 0 to 20 gallons across a fifth of the travel and 120 to 146 across less
+/// than a tenth. A chain of these is the dial as it is marked, each stretch a
+/// straight line of its own between two marks.
+///
+/// `raw` is in the counts DCS-BIOS sends, because that is what Learn shows and
+/// what a module's cockpit scripts can be turned into. Both ends are claimed,
+/// so the next stretch starts one count on: 0 to 12910, then 12911 to 31785.
+///
+/// A stretch can carry its own colour and size, which the piece's own give way
+/// to, so a gauge can draw its last few gallons red and small.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Conversion {
+    /// The counts at each end of this stretch, lowest first.
+    pub raw: [u16; 2],
+    /// What the dial reads at each of those ends, in the same order.
+    pub reads: [f64; 2],
+    /// The colour a reading in this stretch draws in. Text grids only.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub colour: Option<Colour>,
+    /// Draw a reading in this stretch in the small font. Text grids only.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub small: bool,
+}
+
+impl Conversion {
+    /// Whether `value` is one of the counts this stretch claims.
+    pub fn claims(&self, value: u16) -> bool {
+        self.raw[0] <= value && value <= self.raw[1]
+    }
+
+    /// How far `value` is from this stretch, in counts: 0 inside it.
+    fn distance(&self, value: u16) -> u16 {
+        if value < self.raw[0] {
+            self.raw[0] - value
+        } else {
+            value.saturating_sub(self.raw[1])
+        }
+    }
+
+    /// What the dial reads at `value`, and half of one count in those units.
+    ///
+    /// A count outside the stretch reads as the nearer end, the way a needle
+    /// parked past its last mark still points at that mark.
+    fn convert(&self, value: u16) -> (f64, f64) {
+        let [a, b] = self.raw;
+        let [lo, hi] = self.reads;
+        let counts = f64::from(b.saturating_sub(a));
+        if counts == 0.0 {
+            return (lo, 0.0);
+        }
+        let travel = ((f64::from(value) - f64::from(a)) / counts).clamp(0.0, 1.0);
+        (lo + travel * (hi - lo), (hi - lo).abs() / counts / 2.0)
+    }
+}
+
 /// How a converted number lands on its last decimal place.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -1551,9 +1611,25 @@ pub struct Span {
     /// for one that is not.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reads: Option<[f64; 2]>,
+    /// What the gauge reads along each stretch of its travel, for a dial whose
+    /// marks are not evenly spaced. In place of `reads`, never beside it.
+    ///
+    /// A count no stretch claims reads as the end of the nearest one, and
+    /// `problems` says which counts those are, so the editor can offer a
+    /// stretch for them.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub conversions: Vec<Conversion>,
     /// Decimal places for a numeric source.
     #[serde(default, skip_serializing_if = "is_zero_u8")]
     pub decimals: u8,
+    /// The fewest digits before the decimal point, made up with leading zeros.
+    ///
+    /// A counter shows every drum whatever it reads: a 000 to 999 barrel at 1
+    /// reads 001, and drawing 1 would leave two drums blank that are not. The
+    /// sign stays in front of the zeros. 0 pads nothing, which is every number
+    /// written before this existed.
+    #[serde(default, skip_serializing_if = "is_zero_u8")]
+    pub digits: u8,
     /// How a number lands on its last decimal place: to the nearest, or down.
     ///
     /// Nearest is right for a needle, where 4.6 is closer to 5 than to 4.
@@ -1667,7 +1743,9 @@ impl Span {
     /// places, rounding, a wrap or a dropped sign.
     pub fn shapes_a_number(&self) -> bool {
         self.reads.is_some()
+            || !self.conversions.is_empty()
             || self.decimals != 0
+            || self.digits != 0
             || self.round != Round::Nearest
             || self.wrap.is_some()
             || self.abs
@@ -1722,19 +1800,93 @@ impl Span {
     /// dropped for `abs`, so a band written for negative readings still
     /// matches on a piece that draws magnitudes.
     pub fn format_reading(&self, value: u16, max: u16) -> (String, Option<&AliasDraw>) {
-        let [low, high] = self.reads.unwrap_or([0.0, max as f64]);
-        let travel = if max == 0 { 0.0 } else { value as f64 / max as f64 };
-        // Half of one raw step, in what the face reads. DCS-BIOS sends the
-        // nearest step to where the drum is, so a drum sitting exactly on its
-        // 7 can arrive a hair short of it, and rounding down must not make
-        // that a 6.
-        let half_step = if max == 0 { 0.0 } else { (high - low).abs() / max as f64 / 2.0 };
-        let reading = self.settle(low + travel * (high - low), half_step);
+        let (reading, half_step) = self.convert(value, max);
+        let reading = self.settle(reading, half_step);
         if let Some(drawn) = self.band_for(reading) {
             return (drawn.text.clone(), Some(drawn));
         }
         let shown = if self.abs { reading.abs() } else { reading };
         (self.format_number_at(shown), None)
+    }
+
+    /// What the dial reads at a raw count, before rounding, and half of one
+    /// count in those units.
+    ///
+    /// The half count is there because DCS-BIOS sends the nearest count to
+    /// where the drum is, so a drum sitting exactly on its 7 can arrive a hair
+    /// short of it, and rounding down must not make that a 6. On a dial with
+    /// stretches it is the stretch's own, since a count is worth more of the
+    /// face where the marks are crowded.
+    fn convert(&self, value: u16, max: u16) -> (f64, f64) {
+        if let Some(stretch) = self.conversion_for(value) {
+            return stretch.convert(value);
+        }
+        let [low, high] = self.reads.unwrap_or([0.0, f64::from(max)]);
+        if max == 0 {
+            return (low, 0.0);
+        }
+        let travel = f64::from(value) / f64::from(max);
+        (low + travel * (high - low), (high - low).abs() / f64::from(max) / 2.0)
+    }
+
+    /// The stretch that converts a raw count, where this dial has stretches.
+    ///
+    /// The one claiming it, and failing that the nearest, whose end is what a
+    /// count past it reads. Two claiming one count is a caution, and the lower
+    /// one converts it, the same bargain two bands make.
+    pub fn conversion_for(&self, value: u16) -> Option<&Conversion> {
+        self.conversions
+            .iter()
+            .filter(|c| c.claims(value))
+            .min_by_key(|c| c.raw[0])
+            .or_else(|| self.conversions.iter().min_by_key(|c| (c.distance(value), c.raw[0])))
+    }
+
+    /// What the dial is marked with at each end of its travel: `reads` as it
+    /// was written, the lowest and highest a chain of stretches reaches, or
+    /// the signal's own range where there is neither.
+    pub fn face(&self, max: u16) -> [f64; 2] {
+        if self.conversions.is_empty() {
+            return self.reads.unwrap_or([0.0, f64::from(max)]);
+        }
+        let ends = self.face_ends(max);
+        let lo = ends.iter().copied().fold(f64::INFINITY, f64::min);
+        let hi = ends.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+        [lo, hi]
+    }
+
+    /// Every reading at the end of a straight stretch of the face, which is
+    /// where the widest number it draws has to be.
+    fn face_ends(&self, max: u16) -> Vec<f64> {
+        if self.conversions.is_empty() {
+            return self.face(max).to_vec();
+        }
+        self.conversions.iter().flat_map(|c| c.reads).collect()
+    }
+
+    /// The counts from 0 to `max` no stretch claims, as closed runs.
+    ///
+    /// Empty for a dial with no stretches, which converts its whole range.
+    pub fn unconverted(&self, max: u16) -> Vec<[u16; 2]> {
+        if self.conversions.is_empty() {
+            return Vec::new();
+        }
+        let mut runs: Vec<[u16; 2]> = self.conversions.iter().map(|c| c.raw).collect();
+        runs.sort();
+        let mut out = Vec::new();
+        // The next count nothing has claimed yet. u32 so that a stretch ending
+        // on 65535 can move it past the end.
+        let mut next: u32 = 0;
+        for [a, b] in runs {
+            if u32::from(a) > next && next <= u32::from(max) {
+                out.push([next as u16, (a - 1).min(max)]);
+            }
+            next = next.max(u32::from(b) + 1);
+        }
+        if next <= u32::from(max) {
+            out.push([next as u16, max]);
+        }
+        out
     }
 
     /// Whether the bands between them claim every reading this face can show.
@@ -1877,13 +2029,13 @@ impl Span {
             .map(|a| a.text.chars().count())
             .max()
             .unwrap_or(0);
-        let [low, high] = self.reads.unwrap_or([0.0, f64::from(max)]);
+        let [low, high] = self.face(max);
         // Bands covering the whole face mean no number is ever drawn, so only
         // the bands count. Bands that stop short leave the rest as numbers.
         if self.bands_cover(low, high) {
             return Some(longest_alias);
         }
-        let mut ends = vec![self.settle(low, 0.0), self.settle(high, 0.0)];
+        let mut ends: Vec<f64> = self.face_ends(max).into_iter().map(|end| self.settle(end, 0.0)).collect();
         // A reading that starts over somewhere between its ends can draw
         // anything up to the last value before it does, whatever the ends
         // themselves come to.
@@ -1909,7 +2061,17 @@ impl Span {
     /// The characters this part would draw for one real reading, used to
     /// measure the ends of its range.
     fn format_number_at(&self, reading: f64) -> String {
-        format!("{:.*}", self.decimals as usize, reading)
+        let places = self.decimals as usize;
+        if self.digits == 0 {
+            return format!("{reading:.places$}");
+        }
+        // Padded as a magnitude, so the zeros go after the sign rather than
+        // before it. The reading is already settled, so it is never -0.
+        let magnitude = format!("{:.places$}", reading.abs());
+        let whole = magnitude.find('.').unwrap_or(magnitude.len());
+        let zeros = "0".repeat(usize::from(self.digits).saturating_sub(whole));
+        let sign = if reading < 0.0 { "-" } else { "" };
+        format!("{sign}{zeros}{magnitude}")
     }
 
     /// What a gap puts in the cells it was given: blanks, or a rule.
@@ -2115,8 +2277,12 @@ struct ReadoutRepr {
     seat: Option<u32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     reads: Option<[f64; 2]>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    conversions: Vec<Conversion>,
     #[serde(default, skip_serializing_if = "is_zero_u8")]
     decimals: u8,
+    #[serde(default, skip_serializing_if = "is_zero_u8")]
+    digits: u8,
     #[serde(default, skip_serializing_if = "is_nearest")]
     round: Round,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2165,7 +2331,9 @@ impl From<ReadoutRepr> for Readout {
                 source: r.source,
                 gap: r.gap,
                 reads: r.reads,
+                conversions: r.conversions,
                 decimals: r.decimals,
+                digits: r.digits,
                 round: r.round,
                 wrap: r.wrap,
                 abs: r.abs,
@@ -2237,7 +2405,9 @@ impl From<Readout> for ReadoutRepr {
             gap: span.gap,
             seat: r.seat,
             reads: span.reads,
+            conversions: span.conversions,
             decimals: span.decimals,
+            digits: span.digits,
             round: span.round,
             wrap: span.wrap,
             abs: span.abs,
@@ -2460,6 +2630,11 @@ impl Readout {
             // A band drawn inverse adds to the piece's own, the way a format
             // signal does: any of them asking is enough.
             let mut band_inverse = false;
+            // The same for the stretch of the dial the needle is in: its
+            // colour gives way to a band's, which names this exact reading,
+            // and asking for small is enough whoever asks.
+            let mut stretched: Option<Colour> = None;
+            let mut small = span.small;
             let value = if span.is_signal() {
                 match read(&span.source) {
                     Some(Reading::Text(t)) => t,
@@ -2467,6 +2642,10 @@ impl Readout {
                         let (text, band) = span.format_reading(value, max);
                         banded = band.and_then(|b| b.colour);
                         band_inverse = band.is_some_and(|b| b.inverse);
+                        if let Some(stretch) = span.conversion_for(value) {
+                            stretched = stretch.colour;
+                            small |= stretch.small;
+                        }
                         text
                     }
                     None => {
@@ -2518,8 +2697,8 @@ impl Readout {
             if width == 1 {
                 glyphs.push(Glyph {
                     text: span.alias(&value).to_string(),
-                    colour: colours.first().copied().flatten().or(banded).or(span.colour),
-                    small: span.small,
+                    colour: colours.first().copied().flatten().or(banded).or(stretched).or(span.colour),
+                    small,
                     inverse: span.inverse
                         || band_inverse
                         || inverse.first().copied().unwrap_or(false),
@@ -2532,8 +2711,8 @@ impl Readout {
                 let one = ch.to_string();
                 glyphs.push(Glyph {
                     text: span.alias(&one).to_string(),
-                    colour: colours.get(i).copied().flatten().or(banded).or(span.colour),
-                    small: span.small,
+                    colour: colours.get(i).copied().flatten().or(banded).or(stretched).or(span.colour),
+                    small,
                     inverse: span.inverse
                         || band_inverse
                         || inverse.get(i).copied().unwrap_or(false),

@@ -45,6 +45,7 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
     />
+    <link rel="stylesheet" href="site-bar.css" />
 
     <style>
       /* --- minimal reset (the hosted version got this from its container) --- */
@@ -255,32 +256,6 @@
         gap: 14px;
         align-items: center;
         margin: 34px 0 12px;
-      }
-      .btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        text-decoration: none;
-        font-family: "Barlow Condensed", sans-serif;
-        font-weight: 700;
-        font-size: 1.16rem;
-        letter-spacing: 0.03em;
-        text-transform: uppercase;
-        padding: 13px 26px;
-        background: var(--accent);
-        color: var(--btn-ink);
-        border: 1px solid var(--accent);
-        transition:
-          transform 0.12s ease,
-          filter 0.12s ease;
-      }
-      .btn:hover {
-        filter: brightness(1.07);
-        transform: translateY(-1px);
-      }
-      .btn:focus-visible {
-        outline: 3px solid var(--ink);
-        outline-offset: 3px;
       }
       .btn-note {
         font-size: 0.94rem;
@@ -672,22 +647,6 @@
         color: var(--ink-2);
         line-height: 1.5;
       }
-      .btn-ghost {
-        background: transparent;
-        color: var(--accent);
-        border-color: var(--accent);
-      }
-      .btn-ghost:hover {
-        background: var(--accent-wash);
-        filter: none;
-      }
-      .btn-ghost svg {
-        width: 21px;
-        height: 21px;
-        flex: none;
-        stroke: currentColor;
-      }
-
       @media (prefers-reduced-motion: no-preference) {
         .rise {
           animation: rise 0.62s cubic-bezier(0.2, 0.7, 0.3, 1) both;
@@ -726,12 +685,15 @@
         color: var(--accent);
       }
       .btn-note a,
+      .support-txt a,
       .foot-note a {
         color: var(--accent);
       }
     </style>
   </head>
   <body>
+    <nav class="site-bar" data-here="home" aria-label="Site"></nav>
+    <script src="site-bar.js"></script>
     <header>
       <div class="wrap">
         <div class="rise">
@@ -762,16 +724,9 @@
             and they follow the Apache. Quit DCS and they go dark.
           </p>
           <div class="cta-row">
-            <a
-              class="btn"
-              href="https://github.com/cbass2404/wctrl-module-signal-converter/releases/latest"
-              >Get the latest release from GitHub</a
-            >
-            <a class="btn btn-ghost" href="language.html"
-              >Learn the profile language</a
-            >
             <span class="btn-note"
-              >Run the <span class="mono">setup.exe</span>. No admin prompt, no
+              >Download the latest release from the top of the page and run
+              the <span class="mono">setup.exe</span>. No admin prompt, no
               SimAppPro.</span
             >
           </div>
@@ -1426,11 +1381,6 @@
           </p>
         </div>
         <div class="cta-row" style="margin-top: 30px">
-          <a
-            class="btn"
-            href="https://github.com/cbass2404/wctrl-module-signal-converter/releases/latest"
-            >Get the latest release from GitHub</a
-          >
           <span class="btn-note"
             >Full setup and troubleshooting are in the
             <a
@@ -1453,30 +1403,14 @@
             <p>
               No ads, no trackers, no paid tier. If it got your panels following
               the cockpit and you back to flying, you can put something in the
-              tip jar. Entirely optional; every part of this stays free either
-              way.
+              <a
+                href="https://www.buymeacoffee.com/cbass2404"
+                target="_blank"
+                rel="noopener noreferrer"
+                >tip jar</a
+              >. Entirely optional; every part of this stays free either way.
             </p>
           </div>
-          <a
-            class="btn btn-ghost"
-            href="https://www.buymeacoffee.com/cbass2404"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke-width="1.7"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M4.2 9h12.6v5.6a5 5 0 0 1-5 5H9.2a5 5 0 0 1-5-5V9Z" />
-              <path d="M16.8 10.2h1.5a2.4 2.4 0 0 1 0 4.8h-1.5" />
-              <path d="M8.4 2.6v2.3M12.6 2.6v2.3" />
-            </svg>
-            Buy me a coffee
-          </a>
         </div>
       </div>
     </section>

@@ -19,6 +19,7 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
     />
+    <link rel="stylesheet" href="site-bar.css" />
     <style>
       /* The landing page's tokens and type, so the two pages read as one site. */
       html {
@@ -196,7 +197,8 @@
         position: sticky;
         top: 52px;
         align-self: start;
-        max-height: calc(100vh - 52px);
+        /* the whole height under the bar, so its rule runs to the bottom */
+        height: calc(100vh - 52px);
         overflow-y: auto;
         padding: 40px 12px 40px 24px;
         border-right: 1px solid var(--rule);
@@ -246,9 +248,6 @@
         .layout {
           grid-template-columns: minmax(0, 1fr);
         }
-        .bar .wrap {
-          justify-content: space-between;
-        }
         .menu {
           display: inline-flex;
           align-items: center;
@@ -261,11 +260,6 @@
           letter-spacing: 0.08em;
           text-transform: uppercase;
           cursor: pointer;
-        }
-        .menu::before {
-          content: "\2630";
-          font-size: 0.95rem;
-          letter-spacing: 0;
         }
         .menu[aria-expanded="true"] {
           border-color: var(--accent);
@@ -304,12 +298,6 @@
           background: rgba(0, 0, 0, 0.45);
         }
       }
-      @media (min-width: 1001px) {
-        /* the brand over the sidebar's edge rather than the text column's */
-        .bar .wrap {
-          max-width: 1280px;
-        }
-      }
 
       /* a heading is a link to itself */
       a.self {
@@ -329,36 +317,6 @@
       }
       .demo:target {
         outline: 2px solid var(--accent);
-      }
-
-      /* ---------------------------------------------------------- top bar */
-      .bar {
-        position: sticky;
-        top: 0;
-        z-index: 20;
-        background: var(--ground);
-        box-shadow: 0 1px 0 var(--rule);
-      }
-      .bar .wrap {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        height: 52px;
-      }
-      .home {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        text-decoration: none;
-        color: var(--ink);
-        font-family: "Barlow Condensed", sans-serif;
-        font-weight: 700;
-        font-size: 1.1rem;
-        flex: none;
-      }
-      .home img {
-        width: 26px;
-        height: 26px;
       }
 
       header.top {
@@ -999,12 +957,10 @@
     </style>
   </head>
   <body>
-    <nav class="bar" aria-label="Sections">
-      <div class="wrap">
-        <a class="home" href="./"><img src="img/icon.svg" alt="" width="26" height="26" /><span>DCS Signal Converter</span></a>
-        <button type="button" class="menu" id="menu" aria-controls="side" aria-expanded="false">Contents</button>
-      </div>
+    <nav class="site-bar" data-here="language" aria-label="Site">
+      <button type="button" class="menu" id="menu" aria-controls="side" aria-expanded="false">Contents</button>
     </nav>
+    <script src="site-bar.js"></script>
 
     <div class="layout">
       <aside class="side" id="side" aria-label="On this page"></aside>
@@ -1104,8 +1060,9 @@
           </div>
         </div>
         <p class="note">
-          <strong>Scaled across</strong> ignores On: it spreads its range over the lamp's whole travel. To cap a
-          backlight, hold it with <span class="ed">Always on</span> instead, or scale across a wider range.
+          <strong>Scaled across</strong> ignores On: the lamp goes from off to fully bright as the signal moves
+          through the range you give. To keep a backlight dimmer than full, use <span class="ed">Always on</span>
+          with a lower On instead, or scale across a wider range.
         </p>
       </div>
     </section>
@@ -1121,13 +1078,15 @@
           <p>
             <span class="ed">+ Add condition</span> adds a test that must <em>also</em> hold.
             <span class="ed">+ Add alternative (or)</span> adds another way to light the lamp. Together they
-            make a list of ANDs joined by OR, which says any rule you need with no brackets to misread.
+            let you say "light it when this and this are true, or when that is true", which covers any rule you
+            need.
           </p>
           <p>
-            Each has a one sentence rule. <strong>Within a group, the lamp takes the dimmest value any
-            condition asks for.</strong> For on and off tests that is AND; for a scaled backlight it is a
-            dimmer behind a switch. <strong>Across alternatives, the brightest group wins.</strong> For on and
-            off that is OR; for dimmers, the live branch supplies the value while the gated ones sit at zero.
+            Two rules decide the brightness. <strong>Within a group, the dimmest condition wins.</strong> For
+            simple on and off lamps that means every condition must hold. For a backlight it works like a switch
+            in front of a dimmer: the switch has to be on before the dimmer counts. <strong>Between
+            alternatives, the brightest group wins.</strong> For on and off lamps that means any one group is
+            enough.
           </p>
         </div>
 
@@ -1213,8 +1172,9 @@
           </div>
         </div>
         <p class="note">
-          Until a knob is actually turned, the brightest branch lights the lamp: the values that arrive when the
-          aircraft loads are a baseline, not a movement. Which knob moved last is forgotten on an aircraft change.
+          Until someone actually turns a knob, the brightest one lights the lamp. The knob positions that arrive
+          when the aircraft loads don't count as turning. Which knob moved last is forgotten when you change
+          aircraft.
         </p>
       </div>
     </section>
@@ -1248,14 +1208,14 @@
   "led": "INST_PNL_Backlight",
   <span class="k">"same_as"</span>: "INST_PNL_Backlight",
   <span class="k">"same_as_device"</span>: "CarrierAce_MFD_C" }</pre>
-            <p class="use"><b>Use it for</b> every backlight on one knob. Dimmers only, both ends, and no chains: the lamp matched must read signals of its own.</p>
+            <p class="use"><b>Use it for</b> every backlight on one knob. Both lamps must be dimmers, and the lamp you match must have its own conditions rather than matching a third one.</p>
           </div>
           <div class="card">
             <h3>At zero: a floor</h3>
             <p>When a row resolves to zero, the lamp shows its At zero value instead. A lamp matching another keeps its own.</p>
             <pre>{ "led": "FLAG", <span class="k">"same_as"</span>: "Backlight",
   <span class="k">"off"</span>: 255 }</pre>
-            <p class="use"><b>Use it for</b> lamps that must stay readable by day. The PTO2's <code>SL</code> and <code>FLAG</code> are gates over other lamps; at 0 they hide them, and the editor cautions.</p>
+            <p class="use"><b>Use it for</b> lamps that must stay readable by day. On the PTO2, <code>SL</code> and <code>FLAG</code> control whether other lamps can show at all, so at 0 they hide them, and the editor warns you.</p>
           </div>
           <div class="card">
             <h3>Not set yet</h3>
@@ -1307,8 +1267,8 @@
             <h3>Drive this panel</h3>
             <p>
               Untick it and this aircraft never writes to that panel, which keeps whatever was last on it. Its
-              rows stay in the profile, so ticking it again restores them. An unbound panel is different: it is
-              still swept dark.
+              rows stay in the profile, so ticking it again restores them. A panel with no rows at all is
+              different: it is still turned off when the aircraft loads.
             </p>
             <pre><span class="k">"disabled_devices"</span>: ["CarrierAce_UFC"]</pre>
             <p class="use"><b>Use it for</b> the UFC and ICP on one swing arm, where one covers the other, or leaving a panel to another program.</p>
@@ -1323,7 +1283,7 @@
             <pre><span class="k">"follows"</span>: {
   "MCDU_CoPilot": "MCDU_Captain",
   "CarrierAce_MFD_L": "CarrierAce_MFD_C" }</pre>
-            <p class="use"><b>Use it for</b> setting a panel up once. One step deep: a panel that follows cannot be followed. Every shipped profile does this.</p>
+            <p class="use"><b>Use it for</b> setting a panel up once. Only one step: a panel that uses another can't itself be used by a third. Every shipped profile does this.</p>
           </div>
         </div>
       </div>
@@ -1387,7 +1347,7 @@
           </div>
           <div class="card">
             <h3>Too long</h3>
-            <p>A run is a fixed width. Content past it is cropped from the end the alignment anchors away from, and the editor warns with the count ahead of time.</p>
+            <p>A field has a fixed number of cells. Anything that doesn't fit is cut off on the side away from its alignment, so a right-aligned field loses its left end. The editor tells you ahead of time how many characters won't fit. A decimal point takes a cell of its own.</p>
             <p class="use"><b>Use it for</b> nothing: fix it with a width, a shorter label, or a wider run.</p>
           </div>
         </div>
@@ -1405,19 +1365,41 @@
           <p>
             DCS-BIOS sends a needle as a position, 0 to 65535, and says nothing about what the dial is marked
             with. <span class="ed">as sent</span> draws the number it sends, which suits counters and
-            selectors. <span class="ed">converted</span> spreads that travel across the numbers on the face,
-            in a straight line, and then applies each step below in this order.
+            selectors. <span class="ed">converted</span> turns the needle's position into the numbers printed on
+            the dial, in a straight line from one end to the other, and then applies each step below in order.
+          </p>
+          <p>
+            That works when the marks on the dial are evenly spaced. Some are not. On the Mosquito's fuel
+            gauges the marks bunch up towards the top, so the first 20 gallons take up much more of the dial
+            than the last 20. Converting that in one straight line puts the reading off by a dozen gallons.
+          </p>
+          <p>
+            For a dial like that, give it one row per section between two marks: "from here to here on the
+            dial, it reads 0 to 20", then "from here to here, it reads 20 to 60", and so on. Use Learn to see
+            the number DCS-BIOS sends with the needle on a mark. When your rows don't reach the end of the
+            dial yet, the editor offers a button to add the rest. Each row can also have its own colour and
+            small text, so the last few gallons can show in red.
+          </p>
+          <p>
+            <a href="gauges.html">Uneven gauges</a> lists the uneven dials in each aircraft with rows worked
+            out from the module's own files, ready to copy. They are parsed, not flown, so check them with Learn.
+          </p>
+          <p>
+            A counter that always shows every drum, like 001 on a 000 to 999 barrel, wants
+            <span class="ed">digits</span> set to 3. It fills the missing digits with zeros.
           </p>
         </div>
         <div class="table-scroll">
           <table class="ref">
             <thead><tr><th>Step</th><th>File</th><th>What it does</th></tr></thead>
             <tbody>
-              <tr><td>1. Convert</td><td><code>reads</code></td><td>Both ends of the face. May start below zero (<code>[-10, 12]</code>) or run backwards (<code>[100, 0]</code>).</td></tr>
+              <tr><td>1. Convert</td><td><code>reads</code></td><td>What the dial reads at each end. May start below zero (<code>[-10, 12]</code>) or run backwards (<code>[100, 0]</code>).</td></tr>
+              <tr><td>1. Convert</td><td><code>conversions</code></td><td>Instead of <code>reads</code>, for a dial with uneven marks. One row per section of the dial: <code>{"raw": [0, 12910], "reads": [0, 20]}</code>. Each can have its own colour and small text. A part of the dial no row covers shows the nearest row's end, and the editor warns about it. Rows for many aircraft are on <a href="gauges.html">Uneven gauges</a>.</td></tr>
               <tr><td>2. Round</td><td><code>decimals</code>, <code>round</code></td><td>To that many places, to the nearest, or <code>"down"</code> so a drum shows a digit only once it has reached it.</td></tr>
               <tr><td>3. Wrap</td><td><code>wrap</code></td><td>Start again from 0 every this many. After rounding, so 359.7 draws 0, not 360.</td></tr>
               <tr><td>4. Draw as</td><td><code>value_aliases</code></td><td>A word in place of the number, matched against what the face reads. <code>"3"</code>, <code>"0,1,2"</code> or a band <code>"-1.5..-0.1"</code>, ends included. Each may take a colour, or inverse.</td></tr>
               <tr><td>5. Sign</td><td><code>abs</code></td><td><span class="ed">without its sign</span>: only when no alias claimed the reading, so a band written for negatives still matches.</td></tr>
+              <tr><td>6. Pad</td><td><code>digits</code></td><td>Fill with zeros up to this many digits, so a 000 to 999 counter at 1 shows <code>001</code>.</td></tr>
             </tbody>
           </table>
         </div>
@@ -1434,8 +1416,12 @@
                   <button type="button" data-v="converted" aria-pressed="true">converted</button>
                 </div>
               </div>
-              <div class="row" data-conv><span class="lbl">reads</span><input type="number" id="r-lo" step="any" /> to <input type="number" id="r-hi" step="any" /></div>
+              <div class="row" data-conv data-line><span class="lbl">reads</span><input type="number" id="r-lo" step="any" /> to <input type="number" id="r-hi" step="any" /></div>
+              <div class="row" data-conv data-stretch><span class="lbl">sections</span><span class="note">from, to on the dial, then what it reads there</span></div>
+              <div class="pieces" data-conv data-stretch id="r-stretches"></div>
+              <div class="row" data-conv><button type="button" class="chip" id="r-addstretch">+ section</button></div>
               <div class="row" data-conv><span class="lbl">decimals</span><input type="number" id="r-dp" min="0" max="3" /><span class="lbl" style="min-width: 0">round</span><select id="r-round"><option value="nearest">to the nearest</option><option value="down">down</option></select></div>
+              <div class="row" data-conv><span class="lbl">digits</span><input type="number" id="r-digits" min="0" max="9" placeholder="any" /></div>
               <div class="row" data-conv><span class="lbl">wrap</span><input type="number" id="r-wrap" min="0" step="any" placeholder="never" /></div>
               <div class="row" data-conv id="r-absrow"><span class="lbl">sign</span><label><input type="checkbox" id="r-abs" /> without its sign</label></div>
               <div class="row"><span class="lbl">draw as</span><span class="note">reads, then what to draw and its colour</span></div>
@@ -1451,7 +1437,11 @@
         </div>
         <p class="note">
           Two aliases claiming one reading is a caution, and the lower one draws. An alias wholly outside
-          <code>reads</code> is a caution too: it is usually a band written in raw counts on a converted face.
+          <code>reads</code> is a caution too: it usually means the band was written in DCS-BIOS's own numbers
+          (0 to 65535) instead of the numbers on the dial.
+          Two rows covering the same part of the dial is a caution, and the lower one wins. A piece can't have
+          both <code>reads</code> and <code>conversions</code>, and a row's DCS-BIOS numbers can't run from
+          higher to lower (the dial's numbers can).
         </p>
       </div>
     </section>
@@ -2232,6 +2222,25 @@
           "Fuel drum digit (F-16)": { id: "FUELTOTALIZER_1K", max: 65535, raw: 27200, reads: [0, 10], dp: 0, round: "down", wrap: 10, aliases: [] },
           "Radar altimeter (Mi-24P)": { id: "PLT_RV5_ALT", max: 65535, raw: 8738, reads: [0, 750], dp: 0, round: "nearest", aliases: [] },
           "Heading, once round": { id: "A_HEADING_NEEDLE", max: 65535, raw: 65400, reads: [0, 360], dp: 0, round: "nearest", wrap: 360, aliases: [] },
+          // The module's own marks, from FuelGaugeInnerPort in its
+          // mainpanel_init.lua, each needle position times 65535.
+          "Inner fuel tank, in sections (Mosquito)": {
+            id: "FUEL_INNER_PORT",
+            max: 65535,
+            raw: 22347,
+            stretches: [
+              [0, 12910, 0, 20, ""],
+              [12911, 31785, 20, 60, ""],
+              [31786, 48561, 60, 100, ""],
+              [48562, 56819, 100, 120, ""],
+              [56820, 61603, 120, 146, ""],
+              [61604, 65535, 146, 160, "red"],
+            ],
+            dp: 0,
+            round: "nearest",
+            aliases: [],
+          },
+          "Counter, 000 to 999": { id: "COUNTER", max: 65535, raw: 66, reads: [0, 1000], dp: 0, digits: 3, round: "down", wrap: 1000, aliases: [] },
           "Pitch trim direction (F-16)": {
             id: "PITCHTRIMIND",
             max: 65535,
@@ -2262,34 +2271,66 @@
           },
         };
         let cfg;
+        const converted = () => !!(cfg.reads || cfg.stretches);
         const sel = $("r-preset");
         for (const k of Object.keys(presets)) sel.append(h("option", { value: k }, k));
         const mode = seg("r-mode", () => {
-          if (mode.get() === "converted" && !cfg.reads) cfg.reads = [0, cfg.max];
-          if (mode.get() === "sent") cfg.reads = null;
+          if (mode.get() === "converted" && !converted()) cfg.reads = [0, cfg.max];
+          if (mode.get() === "sent") (cfg.reads = null), (cfg.stretches = null);
           fill();
         });
 
         function load() {
           const p = presets[sel.value];
-          cfg = { ...p, reads: p.sent ? null : [...p.reads], aliases: p.aliases.map((a) => [...a]) };
+          cfg = {
+            ...p,
+            reads: p.sent || p.stretches ? null : [...p.reads],
+            stretches: p.stretches ? p.stretches.map((s) => [...s]) : null,
+            aliases: p.aliases.map((a) => [...a]),
+          };
           fill();
         }
         function fill() {
-          mode.set(cfg.reads ? "converted" : "sent");
+          mode.set(converted() ? "converted" : "sent");
           const raw = $("r-raw");
           raw.max = cfg.max;
           raw.value = cfg.raw;
-          for (const r of document.querySelectorAll("[data-conv]")) r.hidden = !cfg.reads;
+          for (const r of document.querySelectorAll("[data-conv]")) r.hidden = !converted();
+          for (const r of document.querySelectorAll("[data-line]")) r.hidden = !cfg.reads;
+          for (const r of document.querySelectorAll("[data-stretch]")) r.hidden = !cfg.stretches;
           if (cfg.reads) {
             $("r-lo").value = cfg.reads[0];
             $("r-hi").value = cfg.reads[1];
+          }
+          if (converted()) {
             $("r-dp").value = cfg.dp || 0;
+            $("r-digits").value = cfg.digits || "";
             $("r-round").value = cfg.round || "nearest";
             $("r-wrap").value = cfg.wrap || "";
             $("r-abs").checked = !!cfg.abs;
           }
+          stretches();
           aliases();
+        }
+        function stretches() {
+          const host = $("r-stretches");
+          host.textContent = "";
+          for (const [i, s] of (cfg.stretches || []).entries()) {
+            const box = (at, label) => {
+              const b = h("input", { type: "number", value: s[at], step: "any", "aria-label": label });
+              b.addEventListener("input", () => ((s[at] = Number(b.value) || 0), draw()));
+              return b;
+            };
+            const col = h("select", { "aria-label": "colour" });
+            col.append(h("option", { value: "" }, "piece's colour"));
+            for (const c of Object.keys(INK)) col.append(h("option", { value: c }, c));
+            col.value = s[4];
+            col.addEventListener("change", () => ((s[4] = col.value), draw()));
+            host.append(
+              h("div", { class: "piece" }, box(0, "from count"), h("span", {}, "to"), box(1, "to count"), h("span", {}, "→"), box(2, "reads from"), h("span", {}, "to"), box(3, "reads to"), col,
+                h("button", { type: "button", class: "x", title: "Remove this section", onclick: () => (cfg.stretches.length > 1 && cfg.stretches.splice(i, 1), stretches(), draw()) }, "×")),
+            );
+          }
         }
         function aliases() {
           const host = $("r-aliases");
@@ -2314,12 +2355,22 @@
           cfg.aliases.push(["", "", ""]);
           aliases();
         });
+        // A line becomes stretches the moment a second one is wanted: the
+        // first keeps the line, and the new one takes the counts left over.
+        $("r-addstretch").addEventListener("click", () => {
+          if (!cfg.stretches) cfg.stretches = [[0, cfg.max, ...(cfg.reads || [0, cfg.max]), ""]], (cfg.reads = null);
+          const last = cfg.stretches[cfg.stretches.length - 1];
+          if (last[1] >= cfg.max) last[1] = Math.floor((last[0] + cfg.max) / 2);
+          cfg.stretches.push([last[1] + 1, cfg.max, last[3], last[3], ""]);
+          fill();
+        });
         sel.addEventListener("change", load);
         $("r-raw").addEventListener("input", () => ((cfg.raw = Number($("r-raw").value)), draw()));
-        for (const id of ["r-lo", "r-hi", "r-dp", "r-round", "r-wrap", "r-abs"]) {
+        for (const id of ["r-lo", "r-hi", "r-dp", "r-digits", "r-round", "r-wrap", "r-abs"]) {
           $(id).addEventListener(id === "r-round" || id === "r-abs" ? "change" : "input", () => {
-            cfg.reads = [Number($("r-lo").value) || 0, Number($("r-hi").value) || 0];
+            if (cfg.reads) cfg.reads = [Number($("r-lo").value) || 0, Number($("r-hi").value) || 0];
             cfg.dp = Math.min(3, Math.max(0, Number($("r-dp").value) || 0));
+            cfg.digits = Math.min(9, Math.max(0, Math.round(Number($("r-digits").value) || 0)));
             cfg.round = $("r-round").value;
             cfg.wrap = Number($("r-wrap").value) || undefined;
             cfg.abs = $("r-abs").checked;
@@ -2343,20 +2394,45 @@
           const s = x.toFixed(dp);
           return Number(s) === 0 ? (0).toFixed(dp) : s;
         };
+        /** As the engine writes a number: leading zeros after the sign. */
+        const padded = (x, dp, digits) => {
+          const s = fmt(Math.abs(x), dp);
+          const point = s.indexOf(".");
+          const whole = point < 0 ? s.length : point;
+          return (x < 0 && Number(fmt(x, dp)) !== 0 ? "-" : "") + "0".repeat(Math.max(0, digits - whole)) + s;
+        };
+
+        /**
+         * The stretch converting a count: the one claiming it, else the
+         * nearest, whose end a count past it reads.
+         */
+        function stretchFor(raw) {
+          const all = cfg.stretches || [];
+          const claims = all.filter((s) => s[0] <= raw && raw <= s[1]).sort((a, b) => a[0] - b[0])[0];
+          if (claims) return claims;
+          const away = (s) => (raw < s[0] ? s[0] - raw : raw - s[1]);
+          return [...all].sort((a, b) => away(a) - away(b) || a[0] - b[0])[0];
+        }
 
         function draw() {
           const raw = cfg.raw;
           $("r-rawtext").textContent = raw;
-          const dp = cfg.reads ? cfg.dp || 0 : 0;
-          const [lo, hi] = cfg.reads || [0, cfg.max];
-          const signed = cfg.reads && (lo < 0 || hi < 0);
+          const conv = converted();
+          const dp = conv ? cfg.dp || 0 : 0;
+          const digits = conv ? cfg.digits || 0 : 0;
+          const stretch = cfg.stretches ? stretchFor(raw) : null;
+          const [a, b] = stretch ? [stretch[0], stretch[1]] : [0, cfg.max];
+          const [lo, hi] = stretch ? [stretch[2], stretch[3]] : cfg.reads || [0, cfg.max];
+          const ends = cfg.stretches ? cfg.stretches.flatMap((s) => [s[2], s[3]]) : [lo, hi];
+          const signed = conv && ends.some((e) => e < 0);
           $("r-absrow").hidden = !signed;
-          const travel = raw / cfg.max;
-          const converted = lo + travel * (hi - lo);
-          const half = Math.abs(hi - lo) / cfg.max / 2;
+          const counts = b - a;
+          const travel = counts > 0 ? Math.min(1, Math.max(0, (raw - a) / counts)) : 0;
+          const value = lo + travel * (hi - lo);
+          const half = counts > 0 ? Math.abs(hi - lo) / counts / 2 : 0;
           const k = 10 ** dp;
-          const rounded = cfg.round === "down" && cfg.reads ? Math.floor((converted + half) * k) / k : Number(converted.toFixed(dp));
-          const every = cfg.reads ? cfg.wrap : undefined;
+          const rounded = cfg.round === "down" && conv ? Math.floor((value + half) * k) / k : Number(value.toFixed(dp));
+          const every = conv ? cfg.wrap : undefined;
           const wrapped = every > 0 ? ((rounded % every) + every) % every : rounded;
           const reading = Object.is(wrapped, -0) || wrapped === 0 ? 0 : wrapped;
           const tol = 10 ** -dp / 2;
@@ -2366,16 +2442,17 @@
             .sort((x, y) => (x.b.lo ?? Math.min(...x.b.list)) - (y.b.lo ?? Math.min(...y.b.list)));
           const hit = bands.find(({ b }) => (b.list ? b.list.some((v) => Math.abs(v - reading) <= tol) : reading >= b.lo - tol && reading <= b.hi + tol));
           const signless = signed && cfg.abs && !hit ? Math.abs(reading) : reading;
-          const drawn = hit ? hit.a[1] : fmt(signless, dp);
-          const colour = hit && hit.a[2] ? hit.a[2] : "amber";
+          const drawn = hit ? hit.a[1] : padded(signless, dp, digits);
+          const colour = hit && hit.a[2] ? hit.a[2] : stretch && stretch[4] ? stretch[4] : "amber";
 
           const step = (s, v, skip) => h("div", {}, h("span", { class: "s" }, s), h("span", { class: skip ? "v skip" : "v" }, v));
           const pipe = $("r-pipe");
           pipe.textContent = "";
           pipe.append(step("DCS sends", `${raw} of ${cfg.max}`));
-          if (cfg.reads) {
+          if (conv) {
+            const where = stretch ? `in ${a} to ${b}: ` : "";
             pipe.append(
-              step("Convert", `${(travel * 100).toFixed(1)}% of ${lo} to ${hi} = ${converted.toFixed(4).replace(/\.?0+$/, "")}`),
+              step("Convert", `${where}${(travel * 100).toFixed(1)}% of ${lo} to ${hi} = ${value.toFixed(4).replace(/\.?0+$/, "")}`),
               step("Round", `${cfg.round === "down" ? "down" : "to the nearest"}, ${dp} place${dp === 1 ? "" : "s"}: ${fmt(rounded, dp)}`),
               step("Wrap", every > 0 ? `every ${every}: ${fmt(reading, dp)}` : "never", !(every > 0)),
             );
@@ -2385,15 +2462,20 @@
           const bad = cfg.aliases.filter((a) => parseBand(a[0]) === "bad").length;
           pipe.append(step("Draw as", hit ? `"${hit.a[0]}" claims it: "${hit.a[1]}"${hit.a[2] ? ` in ${hit.a[2]}` : ""}` : cfg.aliases.length ? `no alias claims ${fmt(reading, dp)}${bad ? `; ${bad} not understood` : ""}` : "no aliases", !hit));
           if (signed) pipe.append(step("Sign", cfg.abs ? (hit ? "an alias drew it, sign unused" : `dropped: ${fmt(signless, dp)}`) : "kept", !cfg.abs || !!hit));
-          pipe.append(step("Screen draws", `"${drawn}"`));
+          if (conv) pipe.append(step("Pad", digits && !hit ? `to ${digits} digits: ${drawn}` : "no", !digits || !!hit));
+          pipe.append(step("Screen draws", `"${drawn}"${stretch && stretch[4] && !(hit && hit.a[2]) ? ` in ${stretch[4]}, the stretch's colour` : ""}`));
 
           const glyphs = fitTo([...drawn].map((ch) => ({ ch, colour })), 8, "right");
           paint($("r-cells"), glyphs, 8);
 
           const span = { source: cfg.id };
-          if (cfg.reads) {
-            span.reads = cfg.reads;
+          if (conv) {
+            if (cfg.reads) span.reads = cfg.reads;
+            if (cfg.stretches) {
+              span.conversions = cfg.stretches.map(([a, b, lo, hi, c]) => (c ? { raw: [a, b], reads: [lo, hi], colour: c } : { raw: [a, b], reads: [lo, hi] }));
+            }
             if (dp) span.decimals = dp;
+            if (digits) span.digits = digits;
             if (cfg.round === "down") span.round = "down";
             if (every > 0) span.wrap = every;
             if (signed && cfg.abs) span.abs = true;
@@ -2506,22 +2588,24 @@
           ["Aligned", "align", "Field or piece", "Where content sits: left, right or centre. On a piece, inside its width; on a field, across its cells. Centre puts the odd blank on the left.", "fields"],
           ["As sent", "(no reads)", "Reading", "Draw the number DCS-BIOS sends, unconverted. For counters, selectors and anything already in the units you want.", "readings"],
           ["Blank", '{"page": null}', "Slot", "A slot that takes the screen dark on purpose. Its key blanks the screen.", "pages"],
-          ["Brightest one", "pick absent", "Lamp", "How alternatives combine by default: the brightest group wins. For on and off tests this is OR.", "combining"],
-          ["Caution", "", "Editor", "Yellow: the profile loads but probably does not do what was meant, such as a gate that goes dark at night. Never stops a save.", "other-ways"],
+          ["Brightest one", "pick absent", "Lamp", "How alternatives combine by default: the brightest group wins. For on and off lamps, any one group is enough.", "combining"],
+          ["Caution", "", "Editor", "Yellow: the profile loads but probably does not do what you meant, such as a lamp that hides others going dark at night. Never stops a save.", "other-ways"],
           ["Cells", "cells", "Field", "One cell, \"34\", or a run, \"24-47\". On the MCDU, cell n is row n / 24 and column n % 24, from 0. The editor offers named areas instead.", "fields"],
-          ["Chain", "content", "Field", "The pieces a field draws end to end. A field with one piece is written flat, without content.", "fields"],
+          ["Chain", "content", "Field", "The pieces a field draws one after another. A field with only one piece is saved without the content list.", "fields"],
           ["Colour", "colour", "Piece", "One of eleven, on a text grid. White when left out.", "glass"],
           ["Colours from a signal", "colours", "Piece", "A second signal with one letter per cell, and what each letter means. Letters not listed, and every cell until it arrives, take the piece's colour.", "glass"],
           ["Condition", "conditions", "Lamp", "One signal and one test. Every condition in a group must hold; the lamp takes the dimmest value any of them asks for.", "tests"],
-          ["Converted", "reads", "Reading", "Spread the signal's travel across what the dial is marked with. Required for a number you convert, refused on text.", "readings"],
+          ["Converted", "reads", "Reading", "Turn the needle's position into the numbers printed on the dial. For numbers only, not text.", "readings"],
+          ["Converted, in sections", "conversions", "Reading", "For a dial with uneven marks: one row per section between two marks, saying what the dial reads there. Each row can have its own colour and small text. Used instead of reads.", "readings"],
           ["Decimals", "decimals", "Reading", "Places to show, 0 to 3. Also sets how close a reading must be to an alias to match it.", "readings"],
+          ["Digits", "digits", "Reading", "Fill with leading zeros up to this many digits, so a counter at 1 shows 001.", "readings"],
           ["Disabled", "null", "Slot", "A slot not in use. Its key does nothing and leaves the page shown.", "pages"],
-          ["Divider", "divider", "Field", "A whole field drawn as a rule, reading nothing, the way a rule piece alone on its line draws.", "fields"],
-          ["Draw as", "value_aliases", "Reading", "Words in place of numbers, matched against what the face reads: one value, a list, or a band with both ends included. Each may carry a colour or inverse.", "readings"],
+          ["Divider", "divider", "Field", "A whole field drawn as a rule, reading nothing, the way a rule piece alone on its line draws. Older files only: the editor turns one into a rule piece.", "fields"],
+          ["Draw as", "value_aliases", "Reading", "Words in place of numbers, matched against what the dial reads: one value, a list, or a band with both ends included. Each may carry a colour or inverse.", "readings"],
           ["Drive this panel", "disabled_devices", "Panel", "Unticked, the aircraft never writes to that panel, which keeps whatever was last on it. Its rows are kept for when it is ticked again.", "panels"],
           ["Font", "font", "Profile", "The text grid font for an aircraft with no CDU of its own. An aircraft with one draws in its own font, which wins.", "glass"],
-          ["Gap", "gap", "Piece", "Blanks that take whatever the line leaves, measured last. Several split it evenly, the remainder to the earlier ones. With a width, a fixed spacer.", "fields"],
-          ["Gate", "governs", "Panel lamp", "A lamp that hides others at 0, such as the PTO2's SL and FLAG. The editor cautions when one goes dark with every signal at 0.", "other-ways"],
+          ["Gap", "gap", "Piece", "Blank space that fills whatever the rest of the line leaves. Several gaps share it evenly. With a width, a fixed spacer.", "fields"],
+          ["Gate", "governs", "Panel lamp", "A lamp that hides other lamps when it is at 0, such as the PTO2's SL and FLAG. The editor warns when one would go dark with every signal at 0.", "other-ways"],
           ["Inverse", "inverse, format", "Piece", "A filled box with the character knocked out, on glass that draws it: the DED. format names a signal marking which cells.", "glass"],
           ["is at least", "gte", "Test", "The signal is at or above a number. Gauges and knobs.", "tests"],
           ["is at most", "lte", "Test", "The signal is at or below a number. Gauges and knobs.", "tests"],
@@ -2532,7 +2616,7 @@
           ["Learn", "", "Editor", "Press it, move a control in the cockpit, and what moved rises to the top of the signal list, ranked by how often it moved. Reads only; safe mid-mission.", "tests"],
           ["Match another lamp", "same_as, same_as_device", "Lamp", "Follow another dimmer's value, on this panel or another. Dimmers only, and the lamp matched must read signals of its own.", "other-ways"],
           ["Module", "module", "Profile", "The DCS-BIOS catalogue the profile's signals come from. Pages are shared by every profile on the same module.", "pages"],
-          ["Moved last", "pick: latest", "Lamp", "Alternatives follow the branch whose signals changed most recently, dark or not. For a knob per seat with no seat signal.", "combining"],
+          ["Moved last", "pick: latest", "Lamp", "The lamp follows whichever group's signals changed most recently, even if that makes it dark. For aircraft with a knob per seat and no way to tell which seat you're in.", "combining"],
           ["Note", "note", "Lamp or field", "Why a row is set the way it is, in your words. Profiles are shared, and a signal id does not say why.", "other-ways"],
           ["On", "on", "Lamp", "How bright the lamp goes when its test holds. Defaults to the lamp's top. Ignored by scaled across.", "tests"],
           ["Page", "pages[]", "Library", "A named screen's worth of fields for one display, kept apart from profiles and shared across a module. Saved with Save page.", "pages"],
@@ -2541,10 +2625,10 @@
           ["Piece", "content[]", "Field", "One part of a chain: typed text, a reading, a gap or a rule. Styling belongs to the piece, so one line can mix colours and sizes.", "fields"],
           ["Problem", "", "Editor", "Red: the converter would refuse the profile. Save waits until there are none.", "tests"],
           ["Reading", "source", "Piece", "A signal drawn as characters: a string as it comes, or a number as sent or converted.", "readings"],
-          ["Reads", "reads", "Reading", "Both ends of the face, as marked on the dial. May start below zero or run backwards.", "readings"],
+          ["Reads", "reads", "Reading", "What the dial reads at each end. May start below zero or run backwards.", "readings"],
           ["Round", "round", "Reading", "To the nearest, or down, so a drum shows a digit only once it has reached it. Before wrap.", "readings"],
           ["Rule", "gap + rule", "Piece", "A gap drawn as dashes, corner to corner, with an optional label. Text grids only.", "fields"],
-          ["Scaled across", "scale", "Test", "No threshold: brightness follows the signal, its range spread over the lamp's whole travel. For backlights.", "tests"],
+          ["Scaled across", "scale", "Test", "No threshold: brightness follows the signal, from off to fully bright across the range you give. For backlights.", "tests"],
           ["Seat", "seat", "Field", "Draw only for one crew station. Only on modules exporting SEAT_POSITION; dark until the seat is known.", "glass"],
           ["Signal", "source", "Everywhere", "Anything DCS-BIOS exports for the aircraft: lamps, switches, selectors, gauges, strings. Not only lamps.", "tests"],
           ["Slot", "slots[]", "Profile", "One per page key: a page, Blank, or Disabled. Slot n is the panel's nth page key.", "pages"],
@@ -2553,8 +2637,8 @@
           ["Substitutions", "replace", "Piece", "One character for another inside a line, for symbols a module sends as stand-ins.", "glass"],
           ["Text", "text", "Piece", "Characters you type, drawn as they are. Checked against what the glass draws: refused where an MCDU font lacks one, a caution on the UFC and DED, which may still draw it.", "fields"],
           ["Uses", "follows", "Panel", "Drive this panel with a copy of another of the same hardware under another name, such as the MCDU Co-Pilot using the Captain. One step deep.", "panels"],
-          ["Width", "width", "Piece", "Hold a piece to that many cells whatever it reads, so what follows stays put. Content longer than it is cropped from the end its alignment anchors away from.", "fields"],
-          ["Without its sign", "abs", "Reading", "Draw the magnitude. Only when no alias claimed the reading, and offered only on a face that runs below zero.", "readings"],
+          ["Width", "width", "Piece", "Keep a piece to that many cells whatever it reads, so what follows stays put. Anything longer is cut off on the side away from its alignment. A decimal point takes a cell.", "fields"],
+          ["Without its sign", "abs", "Reading", "Drop the minus sign, so -1.5 shows as 1.5. Only when no alias claimed the reading, and offered only on a dial that goes below zero.", "readings"],
           ["Wrap", "wrap", "Reading", "Start again from 0 every this many: a drum digit at 10, a compass at 360. After rounding.", "readings"],
         ];
         const slug = (s) => "d-" + s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");

@@ -5,6 +5,8 @@
 // which cells a CDU's lines land on, and none of it reached the window. The
 // same question asked of two kinds of row, so one control rather than two.
 
+import { infoIcon } from "./typeahead";
+
 /** Anything in a profile that carries a note. A binding and a readout both do. */
 interface Annotated {
   note?: string;
@@ -66,16 +68,19 @@ export function noteEditor(row: Annotated, what: string, onChange: () => void): 
       onChange();
     });
     wrap.append(
-      el("label", { class: "meta" }, "note"),
-      box,
       el(
         "span",
-        { class: "meta block" },
-        "Nothing reads this but the next person to open the profile, which is " +
+        { class: "with-info" },
+        el("label", { class: "meta" }, "note"),
+        infoIcon(
+          "About notes",
+          "Nothing reads this but the next person to open the profile, which is " +
           "usually you. The shipped profiles use it for the reasoning a row " +
           "cannot show on its own: why a lamp is left unassigned, or which " +
           "cells a display's lines were chosen to land on.",
+        ),
       ),
+      box,
     );
   };
 

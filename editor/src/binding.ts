@@ -9,7 +9,7 @@
 import { confirmAction } from "./confirm";
 import { flagSlot } from "./flags";
 import { noteEditor } from "./note";
-import { hintFor, signalPicker } from "./typeahead";
+import { hintFor, infoIcon, signalPicker } from "./typeahead";
 import type { Binding, Branch, Condition, Led, OnWhen, SignalView } from "./types";
 
 type TestKind = "equals" | "in" | "gte" | "lte" | "between" | "scale";
@@ -755,15 +755,22 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
         el("option", { value: "latest" }, "the one whose signal moved last"),
       );
       pick.value = binding.pick ?? "brightest";
-      pick.title =
-        "The one whose signal moved last suits a knob per seat with no signal for which seat is in use: the knob turned last drives the lamp. Until one moves, the brightest does.";
       pick.addEventListener("change", () => {
         if (pick.value === "latest") binding.pick = "latest";
         else delete binding.pick;
         changed();
       });
       host.append(
-        el("div", { class: "meta" }, "When more than one alternative could light the lamp, use ", pick, "."),
+        el(
+          "div",
+          { class: "meta with-info" },
+          "When more than one alternative could light the lamp, use ",
+          pick,
+          infoIcon(
+            "About picking an alternative",
+            "The one whose signal moved last suits a knob per seat with no signal for which seat is in use: the knob turned last drives the lamp. Until one moves, the brightest does.",
+          ),
+        ),
         el("div", { class: "meta" }, "Within an alternative, every condition must hold."),
       );
     } else if ((groups[0]?.conditions.length ?? 0) > 1) {

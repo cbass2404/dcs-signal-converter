@@ -1745,7 +1745,10 @@ impl Trace {
                     .readouts
                     .iter()
                     .flat_map(|r| r.content.iter())
-                    .find(|s| s.source == source && (s.reads.is_some() || !s.value_aliases.is_empty()))
+                    .find(|s| {
+                        s.source == source
+                            && (s.reads.is_some() || !s.conversions.is_empty() || !s.value_aliases.is_empty())
+                    })
                 {
                     let max = o.number_max();
                     self.converts

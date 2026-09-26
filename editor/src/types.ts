@@ -80,6 +80,20 @@ export interface Binding {
  */
 export type AliasDraw = string | { text: string; colour?: string; inverse?: boolean };
 
+/**
+ * One stretch of a needle's travel and what the dial reads along it, for a
+ * dial whose marks are not evenly spaced. `raw` is in the counts DCS-BIOS
+ * sends, both ends claimed, so the next stretch starts one count on.
+ */
+export interface Conversion {
+  raw: [number, number];
+  reads: [number, number];
+  /** The colour a reading in this stretch draws in. Text grids only. */
+  colour?: string;
+  /** Draw a reading in this stretch small. Text grids only. */
+  small?: boolean;
+}
+
 /** The characters an alias draws, whichever shape it is written in. */
 export function aliasText(drawn: AliasDraw): string {
   return typeof drawn === "string" ? drawn : drawn.text;
@@ -136,7 +150,14 @@ export interface Span {
   gap?: boolean;
   /** What the gauge reads at each end of its travel. Numbers only. */
   reads?: [number, number];
+  /**
+   * What the gauge reads along each stretch of its travel, in place of
+   * `reads`, for a dial whose marks are not evenly spaced.
+   */
+  conversions?: Conversion[];
   decimals?: number;
+  /** The fewest digits before the point, made up with leading zeros: 001. */
+  digits?: number;
   /**
    * How a number lands on its last decimal place. Absent is to the nearest,
    * which a needle wants; `down` is for a drum or anything else that clicks
@@ -245,12 +266,11 @@ export interface Readout {
   replace?: Record<string, string>;
   colours?: { source: string; codes: Record<string, string> };
   /**
-   * Draw a fixed rule across these cells instead of reading a signal.
+   * A whole-field rule, from a file written before a rule was a piece.
    *
-   * A screen only half used has no edge to it: the Apache exports only its
-   * keyboard unit and the A-10C's CDU starts ten lines down, so the rest of
-   * the glass is dark and the page runs off into it. A rule gives it one.
-   * Text grids only, which is what `text_grid` on the display decides.
+   * Never seen past the page API: `ruleFromDivider` turns one into a field
+   * of one rule piece as it arrives, which draws the same line. It, `label`
+   * and `label_colour` are here only for that.
    */
   divider?: boolean;
   /**
@@ -287,7 +307,14 @@ export interface Readout {
    * zero, and ones that run backwards.
    */
   reads?: [number, number];
+  /**
+   * What the gauge reads along each stretch of its travel, in place of
+   * `reads`, for a dial whose marks are not evenly spaced.
+   */
+  conversions?: Conversion[];
   decimals?: number;
+  /** The fewest digits before the point, made up with leading zeros: 001. */
+  digits?: number;
   round?: "down";
   wrap?: number;
   /** Draw a converted reading without its sign. */

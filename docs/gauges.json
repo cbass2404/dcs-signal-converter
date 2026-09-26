@@ -1,0 +1,2881 @@
+{
+  "dcs": "2.9.29.27468",
+  "dcs_bios": "2026.09.18-nightly",
+  "aircraft": [
+    {
+      "aircraft": "A-10C / A-10C II",
+      "bios_module": "A-10C",
+      "gauges": [
+        {
+          "id": "VVI",
+          "description": "Vertical Velocity Indicator",
+          "unit": "ft/min",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}"
+          ],
+          "straight_off_pct": 8,
+          "dcs_gauge": "Variometer",
+          "argument": 12,
+          "conversions": [
+            {"raw": [0, 16384], "reads": [-6000, -2000]},
+            {"raw": [16385, 23265], "reads": [-2000, -1000]},
+            {"raw": [23266, 42270], "reads": [-1000, 1000]},
+            {"raw": [42271, 49151], "reads": [1000, 2000]},
+            {"raw": [49152, 65535], "reads": [2000, 6000]}
+          ]
+        },
+        {
+          "id": "L_ENG_FAN",
+          "description": "Left Engine Fan Speed",
+          "unit": "%",
+          "notes": [],
+          "straight_off_pct": 37,
+          "dcs_gauge": "EngineLeftFanSpeed",
+          "argument": 76,
+          "conversions": [
+            {"raw": [0, 8192], "reads": [0, 25]},
+            {"raw": [8193, 16384], "reads": [25, 50]},
+            {"raw": [16385, 24576], "reads": [50, 75]},
+            {"raw": [24577, 32768], "reads": [75, 80]},
+            {"raw": [32769, 40959], "reads": [80, 85]},
+            {"raw": [40960, 49151], "reads": [85, 90]},
+            {"raw": [49152, 57343], "reads": [90, 95]},
+            {"raw": [57344, 65535], "reads": [95, 100]}
+          ]
+        },
+        {
+          "id": "R_ENG_FAN",
+          "description": "Right Engine Fan Speed",
+          "unit": "%",
+          "notes": [],
+          "straight_off_pct": 37,
+          "dcs_gauge": "EngineRightFanSpeed",
+          "argument": 77,
+          "conversions": [
+            {"raw": [0, 8192], "reads": [0, 25]},
+            {"raw": [8193, 16384], "reads": [25, 50]},
+            {"raw": [16385, 24576], "reads": [50, 75]},
+            {"raw": [24577, 32768], "reads": [75, 80]},
+            {"raw": [32769, 40959], "reads": [80, 85]},
+            {"raw": [40960, 49151], "reads": [85, 90]},
+            {"raw": [49152, 57343], "reads": [90, 95]},
+            {"raw": [57344, 65535], "reads": [95, 100]}
+          ]
+        }
+      ]
+    },
+    {
+      "aircraft": "AJS37 Viggen",
+      "bios_module": "AJS37",
+      "gauges": [
+        {
+          "id": "AIRSPEED_MS",
+          "description": "Airspeed m/s",
+          "unit": "km/h",
+          "notes": [
+            "DCS sends m/s, converted"
+          ],
+          "straight_off_pct": 13,
+          "dcs_gauge": "IndicatedAirSpeed",
+          "argument": 100,
+          "conversions": [
+            {"raw": [0, 6403], "reads": [0, 199.8]},
+            {"raw": [6404, 11862], "reads": [199.8, 250]},
+            {"raw": [11863, 16908], "reads": [250, 299.9]},
+            {"raw": [16909, 24772], "reads": [299.9, 400]},
+            {"raw": [24773, 30847], "reads": [400, 499.7]},
+            {"raw": [30848, 36529], "reads": [499.7, 599.8]},
+            {"raw": [36530, 41182], "reads": [599.8, 699.8]},
+            {"raw": [41183, 45422], "reads": [699.8, 799.9]},
+            {"raw": [45423, 49289], "reads": [799.9, 900]},
+            {"raw": [49290, 52933], "reads": [900, 1000]},
+            {"raw": [52934, 59643], "reads": [1000, 1200]},
+            {"raw": [59644, 65535], "reads": [1200, 1400]}
+          ]
+        },
+        {
+          "id": "BACKUP_INDICATED_AIRSPEED",
+          "description": "Backup Indicated Airspeed",
+          "unit": "km/h",
+          "notes": [
+            "DCS sends m/s, converted"
+          ],
+          "straight_off_pct": 25,
+          "dcs_gauge": "IndicatedAirSpeedBackup",
+          "argument": 138,
+          "conversions": [
+            {"raw": [0, 66], "reads": [0, 199.8]},
+            {"raw": [67, 10505], "reads": [199.8, 250]},
+            {"raw": [10506, 19320], "reads": [250, 299.9]},
+            {"raw": [19321, 32912], "reads": [299.9, 400]},
+            {"raw": [32913, 43030], "reads": [400, 499.7]},
+            {"raw": [43031, 51701], "reads": [499.7, 599.8]},
+            {"raw": [51702, 59060], "reads": [599.8, 699.8]},
+            {"raw": [59061, 62665], "reads": [699.8, 750]},
+            {"raw": [62666, 65535], "reads": [750, 799.9]}
+          ]
+        }
+      ]
+    },
+    {
+      "aircraft": "Bf 109 K-4",
+      "bios_module": "Bf-109K-4",
+      "gauges": [
+        {
+          "id": "FUEL_TANK_FUSELAGE",
+          "description": "Fuel_Tank_Fuselage",
+          "unit": "L",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}",
+            "First row is the needle's rest off the scale"
+          ],
+          "straight_off_pct": 50,
+          "dcs_gauge": "Fuel_Tank_Fuselage",
+          "argument": 33,
+          "conversions": [
+            {"raw": [0, 32768], "reads": [-1, 0]},
+            {"raw": [32769, 35061], "reads": [0, 100]},
+            {"raw": [35062, 38502], "reads": [100, 150]},
+            {"raw": [38503, 42925], "reads": [150, 200]},
+            {"raw": [42926, 49807], "reads": [200, 250]},
+            {"raw": [49808, 56688], "reads": [250, 300]},
+            {"raw": [56689, 61603], "reads": [300, 350]},
+            {"raw": [61604, 65535], "reads": [350, 400]}
+          ]
+        }
+      ]
+    },
+    {
+      "aircraft": "CH-47F",
+      "bios_module": "CH-47F",
+      "gauges": [
+        {
+          "id": "RAD_ALT_BUG_LO",
+          "description": "Low Altitude Bug",
+          "unit": "DCS units",
+          "notes": [
+            "The needle wraps past the end of the dial; the counts it never shows have no row"
+          ],
+          "straight_off_pct": 74,
+          "dcs_gauge": "RALT_LO_Index",
+          "argument": 1196,
+          "conversions": [
+            {"raw": [0, 48758], "reads": [0, 0.744]},
+            {"raw": [63569, 64880], "reads": [-0.02, -0.01]},
+            {"raw": [64881, 65535], "reads": [-0.01, 0]}
+          ]
+        }
+      ]
+    },
+    {
+      "aircraft": "Christen Eagle II",
+      "bios_module": "Christen Eagle II",
+      "gauges": [
+        {
+          "id": "IAS_NEEDLE",
+          "description": "IAS Needle",
+          "unit": "mph",
+          "notes": [
+            "DCS sends m/s, converted",
+            "DCS-BIOS limits {0, 0.959}"
+          ],
+          "straight_off_pct": 14,
+          "dcs_gauge": "IAS_needle",
+          "argument": 301,
+          "conversions": [
+            {"raw": [0, 2255], "reads": [0, 40]},
+            {"raw": [2256, 4169], "reads": [40, 50]},
+            {"raw": [4170, 6424], "reads": [50, 60]},
+            {"raw": [6425, 11822], "reads": [60, 80]},
+            {"raw": [11823, 15034], "reads": [80, 90]},
+            {"raw": [15035, 18383], "reads": [90, 100]},
+            {"raw": [18384, 21663], "reads": [100, 110]},
+            {"raw": [21664, 25763], "reads": [110, 120]},
+            {"raw": [25764, 29248], "reads": [120, 130]},
+            {"raw": [29249, 32802], "reads": [130, 140]},
+            {"raw": [32803, 36765], "reads": [140, 150]},
+            {"raw": [36766, 40114], "reads": [150, 160]},
+            {"raw": [40115, 43462], "reads": [160, 170]},
+            {"raw": [43463, 47152], "reads": [170, 180]},
+            {"raw": [47153, 50364], "reads": [180, 190]},
+            {"raw": [50365, 53508], "reads": [190, 200]},
+            {"raw": [53509, 56651], "reads": [200, 210]},
+            {"raw": [56652, 59043], "reads": [210, 220]},
+            {"raw": [59044, 61093], "reads": [220, 230]},
+            {"raw": [61094, 63075], "reads": [230, 240]},
+            {"raw": [63076, 65330], "reads": [240, 250]}
+          ]
+        },
+        {
+          "id": "ACCEL_CURR",
+          "description": "Acceleration Current",
+          "unit": "g",
+          "notes": [
+            "DCS-BIOS limits {-1, 0.987}"
+          ],
+          "straight_off_pct": 7,
+          "dcs_gauge": "ACCEL_CURRENT_needle",
+          "argument": 304,
+          "conversions": [
+            {"raw": [0, 5475], "reads": [-6, -4]},
+            {"raw": [5476, 14116], "reads": [-4, -2.5]},
+            {"raw": [14117, 22461], "reads": [-2.5, -1]},
+            {"raw": [22462, 33345], "reads": [-1, 1]},
+            {"raw": [33346, 36808], "reads": [1, 2]},
+            {"raw": [36809, 43800], "reads": [2, 4]},
+            {"raw": [43801, 50627], "reads": [4, 6]},
+            {"raw": [50628, 58015], "reads": [6, 8]},
+            {"raw": [58016, 65535], "reads": [8, 10]}
+          ]
+        },
+        {
+          "id": "ACCEL_MAX",
+          "description": "Acceleration Max",
+          "unit": "g",
+          "notes": [
+            "DCS-BIOS limits {-1, 0.987}"
+          ],
+          "straight_off_pct": 7,
+          "dcs_gauge": "ACCEL_MAX_needle",
+          "argument": 305,
+          "conversions": [
+            {"raw": [0, 5475], "reads": [-6, -4]},
+            {"raw": [5476, 14116], "reads": [-4, -2.5]},
+            {"raw": [14117, 22461], "reads": [-2.5, -1]},
+            {"raw": [22462, 33345], "reads": [-1, 1]},
+            {"raw": [33346, 36808], "reads": [1, 2]},
+            {"raw": [36809, 43800], "reads": [2, 4]},
+            {"raw": [43801, 50627], "reads": [4, 6]},
+            {"raw": [50628, 58015], "reads": [6, 8]},
+            {"raw": [58016, 65535], "reads": [8, 10]}
+          ]
+        },
+        {
+          "id": "ACCEL_MIN",
+          "description": "Acceleration Min",
+          "unit": "g",
+          "notes": [
+            "DCS-BIOS limits {-1, 0.987}"
+          ],
+          "straight_off_pct": 7,
+          "dcs_gauge": "ACCEL_MIN_needle",
+          "argument": 306,
+          "conversions": [
+            {"raw": [0, 5475], "reads": [-6, -4]},
+            {"raw": [5476, 14116], "reads": [-4, -2.5]},
+            {"raw": [14117, 22461], "reads": [-2.5, -1]},
+            {"raw": [22462, 33345], "reads": [-1, 1]},
+            {"raw": [33346, 36808], "reads": [1, 2]},
+            {"raw": [36809, 43800], "reads": [2, 4]},
+            {"raw": [43801, 50627], "reads": [4, 6]},
+            {"raw": [50628, 58015], "reads": [6, 8]},
+            {"raw": [58016, 65535], "reads": [8, 10]}
+          ]
+        },
+        {
+          "id": "OIL_TEMP",
+          "description": "OIL Temperature",
+          "unit": "°F",
+          "notes": [],
+          "straight_off_pct": 24,
+          "dcs_gauge": "OIL_temperature",
+          "argument": 315,
+          "conversions": [
+            {"raw": [0, 5964], "reads": [40, 100]},
+            {"raw": [5965, 12386], "reads": [100, 140]},
+            {"raw": [12387, 22347], "reads": [140, 180]},
+            {"raw": [22348, 28442], "reads": [180, 200]},
+            {"raw": [28443, 35913], "reads": [200, 220]},
+            {"raw": [35914, 44498], "reads": [220, 240]},
+            {"raw": [44499, 54394], "reads": [240, 260]},
+            {"raw": [54395, 65535], "reads": [260, 280]}
+          ]
+        },
+        {
+          "id": "FUEL_FLOW",
+          "description": "Fuel Flow",
+          "unit": "gal/h",
+          "notes": [],
+          "straight_off_pct": 24,
+          "dcs_gauge": "FUEL_flow",
+          "argument": 317,
+          "conversions": [
+            {"raw": [0, 3080], "reads": [0, 4]},
+            {"raw": [3081, 6881], "reads": [4, 6]},
+            {"raw": [6882, 12779], "reads": [6, 8]},
+            {"raw": [12780, 19005], "reads": [8, 10]},
+            {"raw": [19006, 27918], "reads": [10, 12]},
+            {"raw": [27919, 37289], "reads": [12, 14]},
+            {"raw": [37290, 48037], "reads": [14, 16]},
+            {"raw": [48038, 61013], "reads": [16, 18]},
+            {"raw": [61014, 65535], "reads": [18, 19]}
+          ]
+        },
+        {
+          "id": "EGT",
+          "description": "EGT",
+          "unit": "°F",
+          "notes": [
+            "DCS sends °C, converted",
+            "DCS-BIOS limits {0, 0.979}"
+          ],
+          "straight_off_pct": 9,
+          "dcs_gauge": "EGT",
+          "argument": 319,
+          "conversions": [
+            {"raw": [0, 17405], "reads": [1200, 1299]},
+            {"raw": [17406, 32199], "reads": [1299, 1400]},
+            {"raw": [32200, 44248], "reads": [1400, 1499]},
+            {"raw": [44249, 54891], "reads": [1499, 1600]},
+            {"raw": [54892, 65535], "reads": [1600, 1699]}
+          ]
+        },
+        {
+          "id": "EGT_MAX",
+          "description": "EGT Max",
+          "unit": "°F",
+          "notes": [
+            "DCS sends °C, converted",
+            "DCS-BIOS limits {0, 0.992}"
+          ],
+          "straight_off_pct": 11,
+          "dcs_gauge": "EGT_max",
+          "argument": 320,
+          "conversions": [
+            {"raw": [0, 19092], "reads": [1200, 1299]},
+            {"raw": [19093, 33362], "reads": [1299, 1400]},
+            {"raw": [33363, 44659], "reads": [1400, 1499]},
+            {"raw": [44660, 55361], "reads": [1499, 1600]},
+            {"raw": [55362, 65535], "reads": [1600, 1699]}
+          ]
+        }
+      ]
+    },
+    {
+      "aircraft": "F-5E",
+      "bios_module": "F-5E-3",
+      "gauges": [
+        {
+          "id": "AIRSPEED",
+          "description": "Airspeed",
+          "unit": "kt",
+          "notes": [],
+          "straight_off_pct": 20,
+          "dcs_gauge": "Airspeed",
+          "argument": 8,
+          "conversions": [
+            {"raw": [0, 2851], "reads": [0, 80]},
+            {"raw": [2852, 6554], "reads": [80, 100]},
+            {"raw": [6555, 20840], "reads": [100, 170]},
+            {"raw": [20841, 24543], "reads": [170, 190]},
+            {"raw": [24544, 26017], "reads": [190, 200]},
+            {"raw": [26018, 29458], "reads": [200, 230]},
+            {"raw": [29459, 31588], "reads": [230, 250]},
+            {"raw": [31589, 35389], "reads": [250, 290]},
+            {"raw": [35390, 36241], "reads": [290, 300]},
+            {"raw": [36242, 40271], "reads": [300, 350]},
+            {"raw": [40272, 43122], "reads": [350, 390]},
+            {"raw": [43123, 43777], "reads": [390, 400]},
+            {"raw": [43778, 49872], "reads": [400, 500]},
+            {"raw": [49873, 52494], "reads": [500, 550]},
+            {"raw": [52495, 57474], "reads": [550, 650]},
+            {"raw": [57475, 59571], "reads": [650, 700]},
+            {"raw": [59572, 61734], "reads": [700, 750]},
+            {"raw": [61735, 63700], "reads": [750, 800]},
+            {"raw": [63701, 65535], "reads": [800, 850]}
+          ]
+        },
+        {
+          "id": "AIRSPEED_MAX",
+          "description": "Max Airspeed",
+          "unit": "kt",
+          "notes": [],
+          "straight_off_pct": 20,
+          "dcs_gauge": "MaxAirspeed",
+          "argument": 178,
+          "conversions": [
+            {"raw": [0, 2851], "reads": [0, 80]},
+            {"raw": [2852, 6554], "reads": [80, 100]},
+            {"raw": [6555, 20840], "reads": [100, 170]},
+            {"raw": [20841, 24543], "reads": [170, 190]},
+            {"raw": [24544, 26017], "reads": [190, 200]},
+            {"raw": [26018, 29458], "reads": [200, 230]},
+            {"raw": [29459, 31588], "reads": [230, 250]},
+            {"raw": [31589, 35389], "reads": [250, 290]},
+            {"raw": [35390, 36241], "reads": [290, 300]},
+            {"raw": [36242, 40271], "reads": [300, 350]},
+            {"raw": [40272, 43122], "reads": [350, 390]},
+            {"raw": [43123, 43777], "reads": [390, 400]},
+            {"raw": [43778, 49872], "reads": [400, 500]},
+            {"raw": [49873, 52494], "reads": [500, 550]},
+            {"raw": [52495, 57474], "reads": [550, 650]},
+            {"raw": [57475, 59571], "reads": [650, 700]},
+            {"raw": [59572, 61734], "reads": [700, 750]},
+            {"raw": [61735, 63700], "reads": [750, 800]},
+            {"raw": [63701, 65535], "reads": [800, 850]}
+          ]
+        },
+        {
+          "id": "MACH",
+          "description": "MachIndicator",
+          "unit": "Mach",
+          "notes": [
+            "DCS-BIOS limits {1, 0.4}"
+          ],
+          "straight_off_pct": 18,
+          "dcs_gauge": "MachIndicator",
+          "argument": 179,
+          "conversions": [
+            {"raw": [0, 7755], "reads": [0.5, 0.6]},
+            {"raw": [7756, 14090], "reads": [0.6, 0.7]},
+            {"raw": [14091, 20097], "reads": [0.7, 0.8]},
+            {"raw": [20098, 25668], "reads": [0.8, 0.9]},
+            {"raw": [25669, 29818], "reads": [0.9, 1]},
+            {"raw": [29819, 34624], "reads": [1, 1.1]},
+            {"raw": [34625, 38993], "reads": [1.1, 1.2]},
+            {"raw": [38994, 42489], "reads": [1.2, 1.3]},
+            {"raw": [42490, 45656], "reads": [1.3, 1.4]},
+            {"raw": [45657, 49042], "reads": [1.4, 1.5]},
+            {"raw": [49043, 51882], "reads": [1.5, 1.6]},
+            {"raw": [51883, 54612], "reads": [1.6, 1.7]},
+            {"raw": [54613, 65535], "reads": [1.7, 2.2]}
+          ]
+        },
+        {
+          "id": "VARIOMETER",
+          "description": "Variometer",
+          "unit": "ft/min",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}"
+          ],
+          "straight_off_pct": 8,
+          "dcs_gauge": "Variometer",
+          "argument": 24,
+          "conversions": [
+            {"raw": [0, 11796], "reads": [-6000, -3000]},
+            {"raw": [11797, 16384], "reads": [-3000, -2000]},
+            {"raw": [16385, 23265], "reads": [-2000, -1000]},
+            {"raw": [23266, 32768], "reads": [-1000, 0]},
+            {"raw": [32769, 42270], "reads": [0, 1000]},
+            {"raw": [42271, 49151], "reads": [1000, 2000]},
+            {"raw": [49152, 53739], "reads": [2000, 3000]},
+            {"raw": [53740, 65535], "reads": [3000, 6000]}
+          ]
+        },
+        {
+          "id": "EXHAUST_TEMP_L",
+          "description": "Exhaust Gas Temp Left",
+          "unit": "°C",
+          "notes": [],
+          "straight_off_pct": 14,
+          "dcs_gauge": "EGT_Left",
+          "argument": 12,
+          "conversions": [
+            {"raw": [0, 1966], "reads": [0, 140]},
+            {"raw": [1967, 6554], "reads": [140, 200]},
+            {"raw": [6555, 17957], "reads": [200, 500]},
+            {"raw": [17958, 51117], "reads": [500, 800]},
+            {"raw": [51118, 65535], "reads": [800, 1200]}
+          ]
+        },
+        {
+          "id": "EXHAUST_TEMP_R",
+          "description": "Exhaust Gas Temp Right",
+          "unit": "°C",
+          "notes": [],
+          "straight_off_pct": 14,
+          "dcs_gauge": "EGT_Right",
+          "argument": 14,
+          "conversions": [
+            {"raw": [0, 1966], "reads": [0, 140]},
+            {"raw": [1967, 6554], "reads": [140, 200]},
+            {"raw": [6555, 17957], "reads": [200, 500]},
+            {"raw": [17958, 51117], "reads": [500, 800]},
+            {"raw": [51118, 65535], "reads": [800, 1200]}
+          ]
+        }
+      ]
+    },
+    {
+      "aircraft": "F-86F Sabre",
+      "bios_module": "F-86F Sabre",
+      "gauges": [
+        {
+          "id": "AIRSPEEDM1INDICATOR",
+          "description": "AirSpeedM1Indicator",
+          "unit": "kt",
+          "notes": [
+            "DCS sends m/s, converted",
+            "DCS-BIOS limits {0, 0.697}"
+          ],
+          "straight_off_pct": 6,
+          "dcs_gauge": "AirspeeedM1",
+          "argument": 8,
+          "conversions": [
+            {"raw": [0, 1880], "reads": [0, 50]},
+            {"raw": [1881, 9402], "reads": [50, 100]},
+            {"raw": [9403, 56415], "reads": [100, 600]},
+            {"raw": [56416, 65535], "reads": [600, 650]}
+          ]
+        },
+        {
+          "id": "VARIOMETER",
+          "description": "Variometer",
+          "unit": "ft/min",
+          "notes": [
+            "DCS sends m/s, converted",
+            "DCS-BIOS limits {-1, 1}"
+          ],
+          "straight_off_pct": 8,
+          "dcs_gauge": "Variometer",
+          "argument": 24,
+          "conversions": [
+            {"raw": [0, 16384], "reads": [-6000, -2000]},
+            {"raw": [16385, 23265], "reads": [-2000, -1000]},
+            {"raw": [23266, 32768], "reads": [-1000, 0]},
+            {"raw": [32769, 42270], "reads": [0, 1000]},
+            {"raw": [42271, 49151], "reads": [1000, 2000]},
+            {"raw": [49152, 65535], "reads": [2000, 6000]}
+          ]
+        },
+        {
+          "id": "MACHNUMBER",
+          "description": "MachNumber",
+          "unit": "Mach",
+          "notes": [
+            "DCS-BIOS limits {0.0515, 0.965}"
+          ],
+          "straight_off_pct": 3,
+          "dcs_gauge": "MachNumber",
+          "argument": 179,
+          "conversions": [
+            {"raw": [0, 2439], "reads": [0.5, 0.55]},
+            {"raw": [2440, 5058], "reads": [0.55, 0.6]},
+            {"raw": [5059, 7856], "reads": [0.6, 0.65]},
+            {"raw": [7857, 10869], "reads": [0.65, 0.7]},
+            {"raw": [10870, 14097], "reads": [0.7, 0.75]},
+            {"raw": [14098, 17469], "reads": [0.75, 0.8]},
+            {"raw": [17470, 20841], "reads": [0.8, 0.85]},
+            {"raw": [20842, 24392], "reads": [0.85, 0.9]},
+            {"raw": [24393, 27943], "reads": [0.9, 0.95]},
+            {"raw": [27944, 31673], "reads": [0.95, 1]},
+            {"raw": [31674, 39134], "reads": [1, 1.1]},
+            {"raw": [39135, 46452], "reads": [1.1, 1.2]},
+            {"raw": [46453, 53411], "reads": [1.2, 1.3]},
+            {"raw": [53412, 59652], "reads": [1.3, 1.4]},
+            {"raw": [59653, 65535], "reads": [1.4, 1.5]}
+          ]
+        }
+      ]
+    },
+    {
+      "aircraft": "F4U-1D Corsair",
+      "bios_module": "F4U-1D",
+      "gauges": [
+        {
+          "id": "AIRSPEED_INDICATOR",
+          "description": "Airspeed Indicator",
+          "unit": "kt",
+          "notes": [
+            "DCS sends m/s, converted"
+          ],
+          "straight_off_pct": 7,
+          "dcs_gauge": "IAS_INSTRUMENT",
+          "argument": 11,
+          "conversions": [
+            {"raw": [0, 4784], "reads": [0, 60]},
+            {"raw": [4785, 6422], "reads": [60, 70.2]},
+            {"raw": [6423, 8192], "reads": [70.2, 80]},
+            {"raw": [8193, 10289], "reads": [80, 90]},
+            {"raw": [10290, 12452], "reads": [90, 100]},
+            {"raw": [12453, 14942], "reads": [100, 110]},
+            {"raw": [14943, 17563], "reads": [110, 120]},
+            {"raw": [17564, 19988], "reads": [120, 130]},
+            {"raw": [19989, 22544], "reads": [130, 140]},
+            {"raw": [22545, 25165], "reads": [140, 150]},
+            {"raw": [25166, 27394], "reads": [150, 160]},
+            {"raw": [27395, 29556], "reads": [160, 170]},
+            {"raw": [29557, 31719], "reads": [170, 180]},
+            {"raw": [31720, 35454], "reads": [180, 200]},
+            {"raw": [35455, 42008], "reads": [200, 250]},
+            {"raw": [42009, 49413], "reads": [250, 300]},
+            {"raw": [49414, 56950], "reads": [300, 350]},
+            {"raw": [56951, 63110], "reads": [350, 400]},
+            {"raw": [63111, 65535], "reads": [400, 420]}
+          ]
+        },
+        {
+          "id": "CLIMB_INDICATOR",
+          "description": "Climb Indicator",
+          "unit": "ft/min",
+          "notes": [
+            "DCS sends m/s, converted",
+            "DCS-BIOS limits {-1, 1}"
+          ],
+          "straight_off_pct": 12,
+          "dcs_gauge": "VARIOMETER",
+          "argument": 29,
+          "conversions": [
+            {"raw": [0, 5308], "reads": [-5998, -3998]},
+            {"raw": [5309, 14319], "reads": [-3998, -2000]},
+            {"raw": [14320, 21332], "reads": [-2000, -999.6]},
+            {"raw": [21333, 26247], "reads": [-999.6, -499.8]},
+            {"raw": [26248, 33062], "reads": [-499.8, 0]},
+            {"raw": [33063, 39681], "reads": [0, 499.8]},
+            {"raw": [39682, 44400], "reads": [499.8, 999.6]},
+            {"raw": [44401, 51117], "reads": [999.6, 2000]},
+            {"raw": [51118, 59407], "reads": [2000, 3998]},
+            {"raw": [59408, 65142], "reads": [3998, 5998]}
+          ]
+        },
+        {
+          "id": "ACCELEROMETER_CURRENT_G_NEEDLE",
+          "description": "Accelerometer Current G Needle",
+          "unit": "g",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}"
+          ],
+          "straight_off_pct": 19,
+          "dcs_gauge": "ACCEL_CURRENT_g",
+          "argument": 206,
+          "conversions": [
+            {"raw": [2294, 8323], "reads": [-5, -4]},
+            {"raw": [8324, 20054], "reads": [-4, -2]},
+            {"raw": [20055, 32768], "reads": [-2, 0]},
+            {"raw": [32769, 37781], "reads": [0, 2]},
+            {"raw": [37782, 43286], "reads": [2, 4]},
+            {"raw": [43287, 48791], "reads": [4, 6]},
+            {"raw": [48792, 54525], "reads": [6, 8]},
+            {"raw": [54526, 60325], "reads": [8, 10]},
+            {"raw": [60326, 65535], "reads": [10, 11.9]}
+          ]
+        },
+        {
+          "id": "CYLINDER_TEMPERATURE_INDICATOR",
+          "description": "Cylinder Temperature Indicator",
+          "unit": "°C",
+          "notes": [],
+          "straight_off_pct": 4,
+          "dcs_gauge": "CYLINDER_HEAD_TEMPERATURE",
+          "argument": 21,
+          "conversions": [
+            {"raw": [0, 9175], "reads": [0, 50]},
+            {"raw": [9176, 17760], "reads": [50, 100]},
+            {"raw": [17761, 28180], "reads": [100, 150]},
+            {"raw": [28181, 38272], "reads": [150, 200]},
+            {"raw": [38273, 50462], "reads": [200, 250]},
+            {"raw": [50463, 61144], "reads": [250, 300]},
+            {"raw": [61145, 65535], "reads": [300, 320]}
+          ]
+        },
+        {
+          "id": "FUEL_QUANTITY_GAUGE",
+          "description": "Fuel Quantity Gauge",
+          "unit": "gal",
+          "notes": [],
+          "straight_off_pct": 10,
+          "dcs_gauge": "FUEL_TANK_MAIN",
+          "argument": 7,
+          "conversions": [
+            {"raw": [0, 7209], "reads": [0, 20]},
+            {"raw": [7210, 14024], "reads": [20, 40]},
+            {"raw": [14025, 18612], "reads": [40, 60]},
+            {"raw": [18613, 23462], "reads": [60, 80]},
+            {"raw": [23463, 31457], "reads": [80, 100]},
+            {"raw": [31458, 40501], "reads": [100, 120]},
+            {"raw": [40502, 49872], "reads": [120, 160]},
+            {"raw": [49873, 59768], "reads": [160, 200]},
+            {"raw": [59769, 65535], "reads": [200, 230]}
+          ]
+        }
+      ]
+    },
+    {
+      "aircraft": "F/A-18C",
+      "bios_module": "FA-18C_hornet",
+      "gauges": [
+        {
+          "id": "STBY_ASI_AIRSPEED",
+          "description": "Airspeed",
+          "unit": "kt",
+          "notes": [],
+          "straight_off_pct": 35,
+          "dcs_gauge": "Airspeed",
+          "argument": 217,
+          "conversions": [
+            {"raw": [0, 2916], "reads": [0, 60]},
+            {"raw": [2917, 9830], "reads": [60, 100]},
+            {"raw": [9831, 22806], "reads": [100, 150]},
+            {"raw": [22807, 38404], "reads": [150, 200]},
+            {"raw": [38405, 41680], "reads": [200, 250]},
+            {"raw": [41681, 44105], "reads": [250, 300]},
+            {"raw": [44106, 46858], "reads": [300, 350]},
+            {"raw": [46859, 49020], "reads": [350, 400]},
+            {"raw": [49021, 51248], "reads": [400, 450]},
+            {"raw": [51249, 53673], "reads": [450, 500]},
+            {"raw": [53674, 55639], "reads": [500, 550]},
+            {"raw": [55640, 57015], "reads": [550, 600]},
+            {"raw": [57016, 58850], "reads": [600, 650]},
+            {"raw": [58851, 60423], "reads": [650, 700]},
+            {"raw": [60424, 62258], "reads": [700, 750]},
+            {"raw": [62259, 63962], "reads": [750, 800]},
+            {"raw": [63963, 65535], "reads": [800, 850]}
+          ]
+        },
+        {
+          "id": "VSI",
+          "description": "Vertical Speed",
+          "unit": "ft/min",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}"
+          ],
+          "straight_off_pct": 14,
+          "dcs_gauge": "Variometer",
+          "argument": 225,
+          "conversions": [
+            {"raw": [0, 5570], "reads": [-6000, -4000]},
+            {"raw": [5571, 8847], "reads": [-4000, -3000]},
+            {"raw": [8848, 12943], "reads": [-3000, -2000]},
+            {"raw": [12944, 19660], "reads": [-2000, -1000]},
+            {"raw": [19661, 25559], "reads": [-1000, -500]},
+            {"raw": [25560, 32768], "reads": [-500, 0]},
+            {"raw": [32769, 39976], "reads": [0, 500]},
+            {"raw": [39977, 45874], "reads": [500, 1000]},
+            {"raw": [45875, 52592], "reads": [1000, 2000]},
+            {"raw": [52593, 56688], "reads": [2000, 3000]},
+            {"raw": [56689, 59965], "reads": [3000, 4000]},
+            {"raw": [59966, 65535], "reads": [4000, 6000]}
+          ]
+        },
+        {
+          "id": "RADALT_ALT_PTR",
+          "description": "Altitude Pointer",
+          "unit": "ft",
+          "notes": [],
+          "straight_off_pct": 62,
+          "dcs_gauge": "Altitude_Pointer_ID2163A",
+          "argument": 286,
+          "conversions": [
+            {"raw": [0, 3146], "reads": [-10, 0]},
+            {"raw": [3147, 11206], "reads": [0, 100]},
+            {"raw": [11207, 19398], "reads": [100, 200]},
+            {"raw": [19399, 27263], "reads": [200, 300]},
+            {"raw": [27264, 34734], "reads": [300, 400]},
+            {"raw": [34735, 40370], "reads": [400, 600]},
+            {"raw": [40371, 46268], "reads": [600, 800]},
+            {"raw": [46269, 52362], "reads": [800, 1000]},
+            {"raw": [52363, 58064], "reads": [1000, 3000]},
+            {"raw": [58065, 63831], "reads": [3000, 5000]},
+            {"raw": [63832, 64224], "reads": [5000, 5100]}
+          ]
+        }
+      ]
+    },
+    {
+      "aircraft": "Fw 190 A-8",
+      "bios_module": "FW-190A8",
+      "gauges": [
+        {
+          "id": "VERTICALSPEED",
+          "description": "VerticalSpeed",
+          "unit": "m/s",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}"
+          ],
+          "straight_off_pct": 11,
+          "dcs_gauge": "Variometer",
+          "argument": 42,
+          "conversions": [
+            {"raw": [0, 7537], "reads": [-30, -20]},
+            {"raw": [7538, 14483], "reads": [-20, -10]},
+            {"raw": [14484, 21692], "reads": [-10, -5]},
+            {"raw": [21693, 43843], "reads": [-5, 5]},
+            {"raw": [43844, 51052], "reads": [5, 10]},
+            {"raw": [51053, 57998], "reads": [10, 20]},
+            {"raw": [57999, 65535], "reads": [20, 30]}
+          ]
+        },
+        {
+          "id": "ENGINE_RPM",
+          "description": "Engine_RPM",
+          "unit": "rpm",
+          "notes": [],
+          "straight_off_pct": 3,
+          "dcs_gauge": "Engine_RPM",
+          "argument": 47,
+          "conversions": [
+            {"raw": [0, 7537], "reads": [600, 1000]},
+            {"raw": [7538, 18350], "reads": [1000, 1500]},
+            {"raw": [18351, 31457], "reads": [1500, 2000]},
+            {"raw": [31458, 43450], "reads": [2000, 2500]},
+            {"raw": [43451, 48496], "reads": [2500, 2700]},
+            {"raw": [48497, 55049], "reads": [2700, 3000]},
+            {"raw": [55050, 65535], "reads": [3000, 3500]}
+          ]
+        },
+        {
+          "id": "COOLANT_TEMPERATURE",
+          "description": "Coolant_Temperature",
+          "unit": "°C",
+          "notes": [
+            "DCS-BIOS limits {0.07, 1}"
+          ],
+          "straight_off_pct": 5,
+          "dcs_gauge": "Coolant_Temperature",
+          "argument": 96,
+          "conversions": [
+            {"raw": [0, 4299], "reads": [10, 20]},
+            {"raw": [4300, 9584], "reads": [20, 30]},
+            {"raw": [9585, 15432], "reads": [30, 40]},
+            {"raw": [15433, 21634], "reads": [40, 50]},
+            {"raw": [21635, 28046], "reads": [50, 60]},
+            {"raw": [28047, 34811], "reads": [60, 70]},
+            {"raw": [34812, 41224], "reads": [70, 80]},
+            {"raw": [41225, 47072], "reads": [80, 90]},
+            {"raw": [47073, 52217], "reads": [90, 100]},
+            {"raw": [52218, 57924], "reads": [100, 110]},
+            {"raw": [57925, 61730], "reads": [110, 120]},
+            {"raw": [61731, 65535], "reads": [120, 130]}
+          ]
+        },
+        {
+          "id": "OIL_TEMPERATURE",
+          "description": "Oil_Temperature",
+          "unit": "°C",
+          "notes": [
+            "DCS-BIOS limits {0.07, 1}"
+          ],
+          "straight_off_pct": 5,
+          "dcs_gauge": "Oil_Temperature",
+          "argument": 97,
+          "conversions": [
+            {"raw": [0, 4299], "reads": [10, 20]},
+            {"raw": [4300, 9584], "reads": [20, 30]},
+            {"raw": [9585, 15432], "reads": [30, 40]},
+            {"raw": [15433, 21634], "reads": [40, 50]},
+            {"raw": [21635, 28046], "reads": [50, 60]},
+            {"raw": [28047, 34811], "reads": [60, 70]},
+            {"raw": [34812, 41224], "reads": [70, 80]},
+            {"raw": [41225, 47072], "reads": [80, 90]},
+            {"raw": [47073, 52217], "reads": [90, 100]},
+            {"raw": [52218, 57924], "reads": [100, 110]},
+            {"raw": [57925, 61730], "reads": [110, 120]},
+            {"raw": [61731, 65535], "reads": [120, 130]}
+          ]
+        },
+        {
+          "id": "FUELMETER",
+          "description": "FuelMeter",
+          "unit": "L",
+          "notes": [],
+          "straight_off_pct": 4,
+          "dcs_gauge": "FuelScaleUpper",
+          "argument": 98,
+          "conversions": [
+            {"raw": [0, 8520], "reads": [0, 50]},
+            {"raw": [8521, 20185], "reads": [50, 100]},
+            {"raw": [20186, 32768], "reads": [100, 150]},
+            {"raw": [32769, 45874], "reads": [150, 200]},
+            {"raw": [45875, 57015], "reads": [200, 250]},
+            {"raw": [57016, 65535], "reads": [250, 300]}
+          ]
+        }
+      ]
+    },
+    {
+      "aircraft": "Fw 190 D-9",
+      "bios_module": "FW-190D9",
+      "gauges": [
+        {
+          "id": "IAS",
+          "description": "IAS",
+          "unit": "km/h",
+          "notes": [
+            "DCS-BIOS limits {0, 0.988}"
+          ],
+          "straight_off_pct": 8,
+          "dcs_gauge": "AirspeedNeedle",
+          "argument": 36,
+          "conversions": [
+            {"raw": [0, 2521], "reads": [0, 100]},
+            {"raw": [2522, 5837], "reads": [100, 150]},
+            {"raw": [5838, 9950], "reads": [150, 200]},
+            {"raw": [9951, 14327], "reads": [200, 250]},
+            {"raw": [14328, 18440], "reads": [250, 300]},
+            {"raw": [18441, 22088], "reads": [300, 350]},
+            {"raw": [22089, 26201], "reads": [350, 400]},
+            {"raw": [26202, 35155], "reads": [400, 500]},
+            {"raw": [35156, 43778], "reads": [500, 600]},
+            {"raw": [43779, 51539], "reads": [600, 700]},
+            {"raw": [51540, 55453], "reads": [700, 750]},
+            {"raw": [55454, 59167], "reads": [750, 800]},
+            {"raw": [59168, 62218], "reads": [800, 850]},
+            {"raw": [62219, 65535], "reads": [850, 900]}
+          ]
+        },
+        {
+          "id": "VERTICALSPEED",
+          "description": "VerticalSpeed",
+          "unit": "m/s",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}"
+          ],
+          "straight_off_pct": 11,
+          "dcs_gauge": "Variometer",
+          "argument": 42,
+          "conversions": [
+            {"raw": [0, 7537], "reads": [-30, -20]},
+            {"raw": [7538, 14483], "reads": [-20, -10]},
+            {"raw": [14484, 21692], "reads": [-10, -5]},
+            {"raw": [21693, 43843], "reads": [-5, 5]},
+            {"raw": [43844, 51052], "reads": [5, 10]},
+            {"raw": [51053, 57998], "reads": [10, 20]},
+            {"raw": [57999, 65535], "reads": [20, 30]}
+          ]
+        },
+        {
+          "id": "ENGINE_RPM",
+          "description": "Engine_RPM",
+          "unit": "rpm",
+          "notes": [
+            "DCS-BIOS limits {0, 0.983}"
+          ],
+          "straight_off_pct": 21,
+          "dcs_gauge": "Engine_RPM",
+          "argument": 47,
+          "conversions": [
+            {"raw": [0, 2133], "reads": [0, 500]},
+            {"raw": [2134, 5467], "reads": [500, 1000]},
+            {"raw": [5468, 13734], "reads": [1000, 1500]},
+            {"raw": [13735, 26001], "reads": [1500, 2000]},
+            {"raw": [26002, 40068], "reads": [2000, 2500]},
+            {"raw": [40069, 52601], "reads": [2500, 3000]},
+            {"raw": [52602, 64068], "reads": [3000, 3500]},
+            {"raw": [64069, 65535], "reads": [3500, 3600]}
+          ]
+        },
+        {
+          "id": "COOLANT_TEMPERATURE",
+          "description": "Coolant_Temperature",
+          "unit": "°C",
+          "notes": [
+            "DCS-BIOS limits {0.07, 1}"
+          ],
+          "straight_off_pct": 5,
+          "dcs_gauge": "Coolant_Temperature",
+          "argument": 96,
+          "conversions": [
+            {"raw": [0, 4299], "reads": [10, 20]},
+            {"raw": [4300, 9584], "reads": [20, 30]},
+            {"raw": [9585, 15432], "reads": [30, 40]},
+            {"raw": [15433, 21634], "reads": [40, 50]},
+            {"raw": [21635, 28046], "reads": [50, 60]},
+            {"raw": [28047, 34811], "reads": [60, 70]},
+            {"raw": [34812, 41224], "reads": [70, 80]},
+            {"raw": [41225, 47072], "reads": [80, 90]},
+            {"raw": [47073, 52217], "reads": [90, 100]},
+            {"raw": [52218, 57924], "reads": [100, 110]},
+            {"raw": [57925, 61730], "reads": [110, 120]},
+            {"raw": [61731, 65535], "reads": [120, 130]}
+          ]
+        },
+        {
+          "id": "OIL_TEMPERATURE",
+          "description": "Oil_Temperature",
+          "unit": "°C",
+          "notes": [
+            "DCS-BIOS limits {0.07, 1}"
+          ],
+          "straight_off_pct": 5,
+          "dcs_gauge": "Oil_Temperature",
+          "argument": 97,
+          "conversions": [
+            {"raw": [0, 4299], "reads": [10, 20]},
+            {"raw": [4300, 9584], "reads": [20, 30]},
+            {"raw": [9585, 15432], "reads": [30, 40]},
+            {"raw": [15433, 21634], "reads": [40, 50]},
+            {"raw": [21635, 28046], "reads": [50, 60]},
+            {"raw": [28047, 34811], "reads": [60, 70]},
+            {"raw": [34812, 41224], "reads": [70, 80]},
+            {"raw": [41225, 47072], "reads": [80, 90]},
+            {"raw": [47073, 52217], "reads": [90, 100]},
+            {"raw": [52218, 57924], "reads": [100, 110]},
+            {"raw": [57925, 61730], "reads": [110, 120]},
+            {"raw": [61731, 65535], "reads": [120, 130]}
+          ]
+        },
+        {
+          "id": "FUELMETER",
+          "description": "FuelMeter",
+          "unit": "L",
+          "notes": [],
+          "straight_off_pct": 4,
+          "dcs_gauge": "FuelScaleUpper",
+          "argument": 98,
+          "conversions": [
+            {"raw": [0, 8520], "reads": [0, 50]},
+            {"raw": [8521, 20185], "reads": [50, 100]},
+            {"raw": [20186, 32768], "reads": [100, 150]},
+            {"raw": [32769, 45874], "reads": [150, 200]},
+            {"raw": [45875, 57015], "reads": [200, 250]},
+            {"raw": [57016, 65535], "reads": [250, 300]}
+          ]
+        },
+        {
+          "id": "TARGETDIST",
+          "description": "TargetDist",
+          "unit": "m",
+          "notes": [],
+          "straight_off_pct": 28,
+          "dcs_gauge": "TargetDist",
+          "argument": 133,
+          "conversions": [
+            {"raw": [0, 21168], "reads": [10, 100]},
+            {"raw": [21169, 37224], "reads": [100, 300]},
+            {"raw": [37225, 46464], "reads": [300, 600]},
+            {"raw": [46465, 53280], "reads": [600, 700]},
+            {"raw": [53281, 60096], "reads": [700, 800]},
+            {"raw": [60097, 65535], "reads": [800, 1000]}
+          ]
+        }
+      ]
+    },
+    {
+      "aircraft": "Ka-50",
+      "bios_module": "Ka-50",
+      "gauges": [
+        {
+          "id": "ALT_QFE_PRESS",
+          "description": "QFE pressure scale",
+          "unit": "mmHg",
+          "notes": [],
+          "straight_off_pct": 5,
+          "dcs_gauge": "VM_15PV_BaroPressure",
+          "argument": 88,
+          "conversions": [
+            {"raw": [0, 7864], "reads": [600, 620]},
+            {"raw": [7865, 11665], "reads": [620, 630]},
+            {"raw": [11666, 15466], "reads": [630, 640]},
+            {"raw": [15467, 19005], "reads": [640, 650]},
+            {"raw": [19006, 25952], "reads": [650, 670]},
+            {"raw": [25953, 35454], "reads": [670, 700]},
+            {"raw": [35455, 41811], "reads": [700, 720]},
+            {"raw": [41812, 48103], "reads": [720, 740]},
+            {"raw": [48104, 51117], "reads": [740, 750]},
+            {"raw": [51118, 57015], "reads": [750, 770]},
+            {"raw": [57016, 65535], "reads": [770, 800]}
+          ]
+        },
+        {
+          "id": "RALT_ALT",
+          "description": "Altitude",
+          "unit": "m",
+          "notes": [],
+          "straight_off_pct": 33,
+          "dcs_gauge": "A_036_RALT",
+          "argument": 94,
+          "conversions": [
+            {"raw": [0, 12045], "reads": [0, 20]},
+            {"raw": [12046, 30349], "reads": [20, 50]},
+            {"raw": [30350, 49420], "reads": [50, 150]},
+            {"raw": [49421, 54591], "reads": [150, 200]},
+            {"raw": [54592, 61138], "reads": [200, 300]},
+            {"raw": [61139, 65535], "reads": [300, 350]}
+          ]
+        },
+        {
+          "id": "RALT_SAFE_ALT_BUG",
+          "description": "Safe altitude treshold bug",
+          "unit": "m",
+          "notes": [],
+          "straight_off_pct": 33,
+          "dcs_gauge": "A_036_DangerRALT_index",
+          "argument": 93,
+          "conversions": [
+            {"raw": [0, 12045], "reads": [0, 20]},
+            {"raw": [12046, 30349], "reads": [20, 50]},
+            {"raw": [30350, 49420], "reads": [50, 150]},
+            {"raw": [49421, 54591], "reads": [150, 200]},
+            {"raw": [54592, 61138], "reads": [200, 300]},
+            {"raw": [61139, 65535], "reads": [300, 350]}
+          ]
+        }
+      ]
+    },
+    {
+      "aircraft": "L-39",
+      "bios_module": "L-39",
+      "gauges": [
+        {
+          "id": "FRONT_RALT",
+          "description": "Front Radar Altimeter",
+          "unit": "m",
+          "notes": [
+            "DCS-BIOS limits {0, 0.955}"
+          ],
+          "straight_off_pct": 33,
+          "dcs_gauge": "RV_5_RALT",
+          "argument": 58,
+          "conversions": [
+            {"raw": [0, 5902], "reads": [0, 20]},
+            {"raw": [5903, 30126], "reads": [20, 100]},
+            {"raw": [30127, 60251], "reads": [100, 700]},
+            {"raw": [60252, 65535], "reads": [700, 800]}
+          ]
+        },
+        {
+          "id": "BACK_RALT",
+          "description": "Back Radar Altimeter",
+          "unit": "m",
+          "notes": [
+            "DCS-BIOS limits {0, 0.955}"
+          ],
+          "straight_off_pct": 33,
+          "dcs_gauge": "RV_5_2_RALT",
+          "argument": 396,
+          "conversions": [
+            {"raw": [0, 5902], "reads": [0, 20]},
+            {"raw": [5903, 30126], "reads": [20, 100]},
+            {"raw": [30127, 60251], "reads": [100, 700]},
+            {"raw": [60252, 65535], "reads": [700, 800]}
+          ]
+        },
+        {
+          "id": "FRONT_VARIOMETER",
+          "description": "Front Variometer",
+          "unit": "m/s",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}"
+          ],
+          "straight_off_pct": 26,
+          "dcs_gauge": "Variometer",
+          "argument": 74,
+          "conversions": [
+            {"raw": [0, 4096], "reads": [-80, -50]},
+            {"raw": [4097, 7373], "reads": [-50, -20]},
+            {"raw": [7374, 18350], "reads": [-20, -10]},
+            {"raw": [18351, 32768], "reads": [-10, 0]},
+            {"raw": [32769, 47185], "reads": [0, 10]},
+            {"raw": [47186, 58162], "reads": [10, 20]},
+            {"raw": [58163, 61439], "reads": [20, 50]},
+            {"raw": [61440, 65535], "reads": [50, 80]}
+          ]
+        },
+        {
+          "id": "BACK_VARIOMETER",
+          "description": "Back Variometer",
+          "unit": "m/s",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}"
+          ],
+          "straight_off_pct": 26,
+          "dcs_gauge": "Variometer_2",
+          "argument": 416,
+          "conversions": [
+            {"raw": [0, 4096], "reads": [-80, -50]},
+            {"raw": [4097, 7373], "reads": [-50, -20]},
+            {"raw": [7374, 18350], "reads": [-20, -10]},
+            {"raw": [18351, 32768], "reads": [-10, 0]},
+            {"raw": [32769, 47185], "reads": [0, 10]},
+            {"raw": [47186, 58162], "reads": [10, 20]},
+            {"raw": [58163, 61439], "reads": [20, 50]},
+            {"raw": [61440, 65535], "reads": [50, 80]}
+          ]
+        },
+        {
+          "id": "FRONT_IAS",
+          "description": "Front IAS (indicated)",
+          "unit": "km/h",
+          "notes": [],
+          "straight_off_pct": 22,
+          "dcs_gauge": "IAS",
+          "argument": 49,
+          "conversions": [
+            {"raw": [0, 5243], "reads": [0, 100]},
+            {"raw": [5244, 12190], "reads": [100, 150]},
+            {"raw": [12191, 19398], "reads": [150, 200]},
+            {"raw": [19399, 28573], "reads": [200, 300]},
+            {"raw": [28574, 36044], "reads": [300, 400]},
+            {"raw": [36045, 41615], "reads": [400, 500]},
+            {"raw": [41616, 46202], "reads": [500, 600]},
+            {"raw": [46203, 50134], "reads": [600, 700]},
+            {"raw": [50135, 54001], "reads": [700, 800]},
+            {"raw": [54002, 65535], "reads": [800, 1200]}
+          ]
+        },
+        {
+          "id": "FRONT_TAS",
+          "description": "Front TAS (true)",
+          "unit": "km/h",
+          "notes": [],
+          "straight_off_pct": 22,
+          "dcs_gauge": "TAS",
+          "argument": 50,
+          "conversions": [
+            {"raw": [0, 5243], "reads": [0, 100]},
+            {"raw": [5244, 12190], "reads": [100, 150]},
+            {"raw": [12191, 19398], "reads": [150, 200]},
+            {"raw": [19399, 28573], "reads": [200, 300]},
+            {"raw": [28574, 36044], "reads": [300, 400]},
+            {"raw": [36045, 41615], "reads": [400, 500]},
+            {"raw": [41616, 46202], "reads": [500, 600]},
+            {"raw": [46203, 50134], "reads": [600, 700]},
+            {"raw": [50135, 54001], "reads": [700, 800]},
+            {"raw": [54002, 65535], "reads": [800, 1200]}
+          ]
+        },
+        {
+          "id": "BACK_IAS",
+          "description": "Back IAS (indicated)",
+          "unit": "km/h",
+          "notes": [],
+          "straight_off_pct": 22,
+          "dcs_gauge": "IAS_2",
+          "argument": 386,
+          "conversions": [
+            {"raw": [0, 5374], "reads": [0, 100]},
+            {"raw": [5375, 11927], "reads": [100, 150]},
+            {"raw": [11928, 19202], "reads": [150, 200]},
+            {"raw": [19203, 28311], "reads": [200, 300]},
+            {"raw": [28312, 36044], "reads": [300, 400]},
+            {"raw": [36045, 41615], "reads": [400, 500]},
+            {"raw": [41616, 45874], "reads": [500, 600]},
+            {"raw": [45875, 50003], "reads": [600, 700]},
+            {"raw": [50004, 53739], "reads": [700, 800]},
+            {"raw": [53740, 65535], "reads": [800, 1200]}
+          ]
+        },
+        {
+          "id": "BACK_TAS",
+          "description": "Back TAS (true)",
+          "unit": "km/h",
+          "notes": [],
+          "straight_off_pct": 22,
+          "dcs_gauge": "TAS_2",
+          "argument": 387,
+          "conversions": [
+            {"raw": [0, 5374], "reads": [0, 100]},
+            {"raw": [5375, 11927], "reads": [100, 150]},
+            {"raw": [11928, 19202], "reads": [150, 200]},
+            {"raw": [19203, 28311], "reads": [200, 300]},
+            {"raw": [28312, 36044], "reads": [300, 400]},
+            {"raw": [36045, 41615], "reads": [400, 500]},
+            {"raw": [41616, 45874], "reads": [500, 600]},
+            {"raw": [45875, 50003], "reads": [600, 700]},
+            {"raw": [50004, 53739], "reads": [700, 800]},
+            {"raw": [53740, 65535], "reads": [800, 1200]}
+          ]
+        },
+        {
+          "id": "FRONT_PRESS_DIFF",
+          "description": "Front Differantial Cabine Pressure",
+          "unit": "DCS units",
+          "notes": [],
+          "straight_off_pct": 18,
+          "dcs_gauge": "PressDiffFwd",
+          "argument": 96,
+          "conversions": [
+            {"raw": [0, 6685], "reads": [-0.04, -0.02]},
+            {"raw": [6686, 13238], "reads": [-0.02, 0]},
+            {"raw": [13239, 26083], "reads": [0, 0.1]},
+            {"raw": [26084, 51052], "reads": [0.1, 0.4]},
+            {"raw": [51053, 65535], "reads": [0.4, 0.6]}
+          ]
+        },
+        {
+          "id": "BACK_PRESS_DIFF",
+          "description": "Back Differantial Cabine Pressure",
+          "unit": "DCS units",
+          "notes": [],
+          "straight_off_pct": 18,
+          "dcs_gauge": "PressDiffAft",
+          "argument": 551,
+          "conversions": [
+            {"raw": [0, 6685], "reads": [-0.04, -0.02]},
+            {"raw": [6686, 13238], "reads": [-0.02, 0]},
+            {"raw": [13239, 26083], "reads": [0, 0.1]},
+            {"raw": [26084, 51052], "reads": [0.1, 0.4]},
+            {"raw": [51053, 65535], "reads": [0.4, 0.6]}
+          ]
+        },
+        {
+          "id": "FRONT_FUEL_QUANT",
+          "description": "Front Fuel Quantity",
+          "unit": "L",
+          "notes": [],
+          "straight_off_pct": 5,
+          "dcs_gauge": "Fuel_Quantity",
+          "argument": 91,
+          "conversions": [
+            {"raw": [0, 8323], "reads": [0, 100]},
+            {"raw": [8324, 15663], "reads": [100, 200]},
+            {"raw": [15664, 22937], "reads": [200, 300]},
+            {"raw": [22938, 30015], "reads": [300, 400]},
+            {"raw": [30016, 36700], "reads": [400, 500]},
+            {"raw": [36701, 44891], "reads": [500, 600]},
+            {"raw": [44892, 53739], "reads": [600, 700]},
+            {"raw": [53740, 65535], "reads": [700, 825]}
+          ]
+        },
+        {
+          "id": "FRONT_FUEL_PRESS",
+          "description": "Front Fuel Pressure",
+          "unit": "DCS units",
+          "notes": [
+            "First row is the needle's rest off the scale"
+          ],
+          "straight_off_pct": 8,
+          "dcs_gauge": "Fuel_Press",
+          "argument": 81,
+          "conversions": [
+            {"raw": [0, 3932], "reads": [-1, 0]},
+            {"raw": [3933, 9699], "reads": [0, 20]},
+            {"raw": [9700, 21168], "reads": [20, 40]},
+            {"raw": [21169, 35848], "reads": [40, 60]},
+            {"raw": [35849, 43188], "reads": [60, 70]},
+            {"raw": [43189, 52494], "reads": [70, 80]},
+            {"raw": [52495, 65535], "reads": [80, 100]}
+          ]
+        },
+        {
+          "id": "BACK_FUEL_PRESS",
+          "description": "Back Fuel Pressure",
+          "unit": "DCS units",
+          "notes": [
+            "First row is the needle's rest off the scale"
+          ],
+          "straight_off_pct": 8,
+          "dcs_gauge": "Fuel_Press_2",
+          "argument": 421,
+          "conversions": [
+            {"raw": [0, 2884], "reads": [0, 0.1]},
+            {"raw": [2885, 9699], "reads": [0.1, 20]},
+            {"raw": [9700, 21168], "reads": [20, 40]},
+            {"raw": [21169, 35848], "reads": [40, 60]},
+            {"raw": [35849, 43188], "reads": [60, 70]},
+            {"raw": [43189, 52494], "reads": [70, 80]},
+            {"raw": [52495, 65535], "reads": [80, 100]}
+          ]
+        }
+      ]
+    },
+    {
+      "aircraft": "Mi-24P",
+      "bios_module": "Mi-24P",
+      "gauges": [
+        {
+          "id": "PLT_VARIOMETER",
+          "description": "PILOT Variometer",
+          "unit": "m/s",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}"
+          ],
+          "straight_off_pct": 6,
+          "dcs_gauge": "Variometer",
+          "argument": 95,
+          "conversions": [
+            {"raw": [0, 7274], "reads": [-30, -20]},
+            {"raw": [7275, 9470], "reads": [-20, -18]},
+            {"raw": [9471, 18186], "reads": [-18, -10]},
+            {"raw": [18187, 25722], "reads": [-10, -5]},
+            {"raw": [25723, 32768], "reads": [-5, 0]},
+            {"raw": [32769, 39813], "reads": [0, 5]},
+            {"raw": [39814, 47349], "reads": [5, 10]},
+            {"raw": [47350, 56065], "reads": [10, 18]},
+            {"raw": [56066, 58261], "reads": [18, 20]},
+            {"raw": [58262, 65535], "reads": [20, 30]}
+          ]
+        },
+        {
+          "id": "PLT_GMETER",
+          "description": "PILOT G-Meter",
+          "unit": "g",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}"
+          ],
+          "straight_off_pct": 17,
+          "dcs_gauge": "GMeter",
+          "argument": 17,
+          "conversions": [
+            {"raw": [0, 32768], "reads": [-2, 0]},
+            {"raw": [32769, 42467], "reads": [0, 1]},
+            {"raw": [42468, 51347], "reads": [1, 2]},
+            {"raw": [51348, 58424], "reads": [2, 3]},
+            {"raw": [58425, 65535], "reads": [3, 4]}
+          ]
+        },
+        {
+          "id": "PLT_IAS",
+          "description": "PILOT IAS Speed",
+          "unit": "km/h",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}"
+          ],
+          "straight_off_pct": 17,
+          "dcs_gauge": "IAS_Pilot",
+          "argument": 790,
+          "conversions": [
+            {"raw": [24805, 32768], "reads": [-200, 0]},
+            {"raw": [32769, 33718], "reads": [0, 50]},
+            {"raw": [33719, 36405], "reads": [50, 100]},
+            {"raw": [36406, 40206], "reads": [100, 150]},
+            {"raw": [40207, 44040], "reads": [150, 200]},
+            {"raw": [44041, 47906], "reads": [200, 250]},
+            {"raw": [47907, 51805], "reads": [250, 300]},
+            {"raw": [51806, 55705], "reads": [300, 350]},
+            {"raw": [55706, 57278], "reads": [350, 370]},
+            {"raw": [57279, 60227], "reads": [370, 400]},
+            {"raw": [60228, 65240], "reads": [400, 450]}
+          ]
+        },
+        {
+          "id": "OP_IAS",
+          "description": "OPERATOR IAS Speed",
+          "unit": "km/h",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}"
+          ],
+          "straight_off_pct": 17,
+          "dcs_gauge": "IAS_Operator",
+          "argument": 776,
+          "conversions": [
+            {"raw": [24805, 32768], "reads": [-200, 0]},
+            {"raw": [32769, 33718], "reads": [0, 50]},
+            {"raw": [33719, 36405], "reads": [50, 100]},
+            {"raw": [36406, 40206], "reads": [100, 150]},
+            {"raw": [40207, 44040], "reads": [150, 200]},
+            {"raw": [44041, 47906], "reads": [200, 250]},
+            {"raw": [47907, 51805], "reads": [250, 300]},
+            {"raw": [51806, 55705], "reads": [300, 350]},
+            {"raw": [55706, 57278], "reads": [350, 370]},
+            {"raw": [57279, 60227], "reads": [370, 400]},
+            {"raw": [60228, 65240], "reads": [400, 450]}
+          ]
+        },
+        {
+          "id": "PLT_RV5_ALT",
+          "description": "PILOT Radar Altitude",
+          "unit": "m",
+          "notes": [],
+          "straight_off_pct": 34,
+          "dcs_gauge": "UV_5_RALT",
+          "argument": 32,
+          "conversions": [
+            {"raw": [0, 2785], "reads": [0, 10]},
+            {"raw": [2786, 5734], "reads": [10, 20]},
+            {"raw": [5735, 11796], "reads": [20, 40]},
+            {"raw": [11797, 17826], "reads": [40, 60]},
+            {"raw": [17827, 23855], "reads": [60, 80]},
+            {"raw": [23856, 29884], "reads": [80, 100]},
+            {"raw": [29885, 34602], "reads": [100, 200]},
+            {"raw": [34603, 39321], "reads": [200, 300]},
+            {"raw": [39322, 43908], "reads": [300, 400]},
+            {"raw": [43909, 48824], "reads": [400, 500]},
+            {"raw": [48825, 53411], "reads": [500, 600]},
+            {"raw": [53412, 57998], "reads": [600, 700]},
+            {"raw": [57999, 65535], "reads": [700, 850]}
+          ]
+        },
+        {
+          "id": "PLT_AICE_CURR",
+          "description": "PILOT AntiIceCurrent",
+          "unit": "A",
+          "notes": [],
+          "straight_off_pct": 26,
+          "dcs_gauge": "AntiIceCurrent",
+          "argument": 118,
+          "conversions": [
+            {"raw": [0, 10649], "reads": [0, 20]},
+            {"raw": [10650, 22544], "reads": [20, 30]},
+            {"raw": [22545, 39452], "reads": [30, 40]},
+            {"raw": [39453, 65535], "reads": [40, 50]}
+          ]
+        },
+        {
+          "id": "PLT_ELEC_VOLT_AC",
+          "description": "PILOT Voltmeter AC",
+          "unit": "V",
+          "notes": [],
+          "straight_off_pct": 25,
+          "dcs_gauge": "ELEC_Volt_AC",
+          "argument": 90,
+          "conversions": [
+            {"raw": [0, 10486], "reads": [0, 100]},
+            {"raw": [10487, 22610], "reads": [100, 150]},
+            {"raw": [22611, 39649], "reads": [150, 200]},
+            {"raw": [39650, 65535], "reads": [200, 250]}
+          ]
+        }
+      ]
+    },
+    {
+      "aircraft": "Mi-8MTV2",
+      "bios_module": "Mi-8MT",
+      "gauges": [
+        {
+          "id": "VARIOMETER_L",
+          "description": "Variometer_L",
+          "unit": "m/s",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}"
+          ],
+          "straight_off_pct": 5,
+          "dcs_gauge": "Variometer_L",
+          "argument": 16,
+          "conversions": [
+            {"raw": [0, 9503], "reads": [-30, -20]},
+            {"raw": [9504, 18677], "reads": [-20, -10]},
+            {"raw": [18678, 25231], "reads": [-10, -5]},
+            {"raw": [25232, 29818], "reads": [-5, -2]},
+            {"raw": [29819, 31129], "reads": [-2, -1]},
+            {"raw": [31130, 32768], "reads": [-1, 0]},
+            {"raw": [32769, 34406], "reads": [0, 1]},
+            {"raw": [34407, 35717], "reads": [1, 2]},
+            {"raw": [35718, 40304], "reads": [2, 5]},
+            {"raw": [40305, 46858], "reads": [5, 10]},
+            {"raw": [46859, 56032], "reads": [10, 20]},
+            {"raw": [56033, 65535], "reads": [20, 30]}
+          ]
+        },
+        {
+          "id": "VARIOMETER_R",
+          "description": "Variometer_R",
+          "unit": "m/s",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}"
+          ],
+          "straight_off_pct": 5,
+          "dcs_gauge": "Variometer_R",
+          "argument": 95,
+          "conversions": [
+            {"raw": [0, 9503], "reads": [-30, -20]},
+            {"raw": [9504, 18677], "reads": [-20, -10]},
+            {"raw": [18678, 25231], "reads": [-10, -5]},
+            {"raw": [25232, 29818], "reads": [-5, -2]},
+            {"raw": [29819, 31129], "reads": [-2, -1]},
+            {"raw": [31130, 32768], "reads": [-1, 0]},
+            {"raw": [32769, 34406], "reads": [0, 1]},
+            {"raw": [34407, 35717], "reads": [1, 2]},
+            {"raw": [35718, 40304], "reads": [2, 5]},
+            {"raw": [40305, 46858], "reads": [5, 10]},
+            {"raw": [46859, 56032], "reads": [10, 20]},
+            {"raw": [56033, 65535], "reads": [20, 30]}
+          ]
+        },
+        {
+          "id": "IAS_L",
+          "description": "IAS_L",
+          "unit": "km/h",
+          "notes": [
+            "DCS sends m/s, converted"
+          ],
+          "straight_off_pct": 10,
+          "dcs_gauge": "IAS_L",
+          "argument": 24,
+          "conversions": [
+            {"raw": [0, 2228], "reads": [-36, 0]},
+            {"raw": [2229, 4587], "reads": [0, 50]},
+            {"raw": [4588, 13041], "reads": [50, 100]},
+            {"raw": [13042, 20054], "reads": [100, 150]},
+            {"raw": [20055, 27394], "reads": [150, 200]},
+            {"raw": [27395, 34734], "reads": [200, 250]},
+            {"raw": [34735, 41942], "reads": [250, 300]},
+            {"raw": [41943, 49282], "reads": [300, 350]},
+            {"raw": [49283, 56557], "reads": [350, 400]},
+            {"raw": [56558, 63634], "reads": [400, 450]},
+            {"raw": [63635, 65535], "reads": [450, 465.1]}
+          ]
+        },
+        {
+          "id": "IAS_R",
+          "description": "IAS_R",
+          "unit": "km/h",
+          "notes": [
+            "DCS sends m/s, converted"
+          ],
+          "straight_off_pct": 10,
+          "dcs_gauge": "IAS_R",
+          "argument": 790,
+          "conversions": [
+            {"raw": [0, 2228], "reads": [-36, 0]},
+            {"raw": [2229, 4587], "reads": [0, 50]},
+            {"raw": [4588, 13041], "reads": [50, 100]},
+            {"raw": [13042, 20054], "reads": [100, 150]},
+            {"raw": [20055, 27394], "reads": [150, 200]},
+            {"raw": [27395, 34734], "reads": [200, 250]},
+            {"raw": [34735, 41942], "reads": [250, 300]},
+            {"raw": [41943, 49282], "reads": [300, 350]},
+            {"raw": [49283, 56557], "reads": [350, 400]},
+            {"raw": [56558, 63634], "reads": [400, 450]},
+            {"raw": [63635, 65535], "reads": [450, 465.1]}
+          ]
+        },
+        {
+          "id": "APU_TEMPERATURE",
+          "description": "APU_temperature",
+          "unit": "°C",
+          "notes": [],
+          "straight_off_pct": 5,
+          "dcs_gauge": "APU_temperature",
+          "argument": 402,
+          "conversions": [
+            {"raw": [0, 13107], "reads": [0, 200]},
+            {"raw": [13108, 27525], "reads": [200, 400]},
+            {"raw": [27526, 45219], "reads": [400, 600]},
+            {"raw": [45220, 61603], "reads": [600, 800]},
+            {"raw": [61604, 65535], "reads": [800, 900]}
+          ]
+        },
+        {
+          "id": "FUEL_METER",
+          "description": "fuel_meter",
+          "unit": "L",
+          "notes": [
+            "First row is the needle's rest off the scale"
+          ],
+          "straight_off_pct": 13,
+          "dcs_gauge": "FuelScaleUpper",
+          "argument": 62,
+          "conversions": [
+            {"raw": [0, 4915], "reads": [0, 1]},
+            {"raw": [4916, 9175], "reads": [1, 200]},
+            {"raw": [9176, 15401], "reads": [200, 400]},
+            {"raw": [15402, 26214], "reads": [400, 800]},
+            {"raw": [26215, 42401], "reads": [800, 1600]},
+            {"raw": [42402, 50790], "reads": [1600, 2000]},
+            {"raw": [50791, 58982], "reads": [2000, 2400]},
+            {"raw": [58983, 63569], "reads": [2400, 2800]}
+          ]
+        },
+        {
+          "id": "SALONTEMPERATURE",
+          "description": "SalonTemperature",
+          "unit": "°C",
+          "notes": [
+            "DCS-BIOS limits {-0.7, 0.693}"
+          ],
+          "straight_off_pct": 3,
+          "dcs_gauge": "SalonTemperature",
+          "argument": 63,
+          "conversions": [
+            {"raw": [0, 5034], "reads": [-70, -60]},
+            {"raw": [5035, 19007], "reads": [-60, -30]},
+            {"raw": [19008, 22253], "reads": [-30, -20]},
+            {"raw": [22254, 27051], "reads": [-20, -10]},
+            {"raw": [27052, 33073], "reads": [-10, 0]},
+            {"raw": [33074, 39142], "reads": [0, 10]},
+            {"raw": [39143, 43894], "reads": [10, 20]},
+            {"raw": [43895, 47140], "reads": [20, 30]},
+            {"raw": [47141, 61301], "reads": [30, 60]},
+            {"raw": [61302, 65535], "reads": [60, 70]}
+          ]
+        }
+      ]
+    },
+    {
+      "aircraft": "MiG-15bis",
+      "bios_module": "MiG-15bis",
+      "gauges": [
+        {
+          "id": "VARIOMETER",
+          "description": "Variometer",
+          "unit": "m/s",
+          "notes": [],
+          "straight_off_pct": 6,
+          "dcs_gauge": "Variometer",
+          "argument": 14,
+          "conversions": [
+            {"raw": [0, 4915], "reads": [-75, -60]},
+            {"raw": [4916, 9896], "reads": [-60, -45]},
+            {"raw": [9897, 15728], "reads": [-45, -30]},
+            {"raw": [15729, 23068], "reads": [-30, -15]},
+            {"raw": [23069, 26280], "reads": [-15, -10]},
+            {"raw": [26281, 29360], "reads": [-10, -5]},
+            {"raw": [29361, 32768], "reads": [-5, 0]},
+            {"raw": [32769, 36241], "reads": [0, 5]},
+            {"raw": [36242, 39321], "reads": [5, 10]},
+            {"raw": [39322, 42532], "reads": [10, 15]},
+            {"raw": [42533, 49807], "reads": [15, 30]},
+            {"raw": [49808, 55574], "reads": [30, 45]},
+            {"raw": [55575, 60620], "reads": [45, 60]},
+            {"raw": [60621, 65535], "reads": [60, 75]}
+          ]
+        },
+        {
+          "id": "FUEL_QUANTITY",
+          "description": "Fuel Quantity",
+          "unit": "L",
+          "notes": [],
+          "straight_off_pct": 17,
+          "dcs_gauge": "FuelQuantity",
+          "argument": 47,
+          "conversions": [
+            {"raw": [0, 3080], "reads": [-100, 0]},
+            {"raw": [3081, 8913], "reads": [0, 100]},
+            {"raw": [8914, 14418], "reads": [100, 200]},
+            {"raw": [14419, 24903], "reads": [200, 300]},
+            {"raw": [24904, 34078], "reads": [300, 400]},
+            {"raw": [34079, 41353], "reads": [400, 500]},
+            {"raw": [41354, 49479], "reads": [500, 600]},
+            {"raw": [49480, 56950], "reads": [600, 700]},
+            {"raw": [56951, 60358], "reads": [700, 800]},
+            {"raw": [60359, 65535], "reads": [800, 1050]}
+          ]
+        },
+        {
+          "id": "ARC5_FREQ",
+          "description": "ARC-5 Freq Scale",
+          "unit": "DCS units",
+          "notes": [],
+          "straight_off_pct": 24,
+          "dcs_gauge": "ARC5_FreqScale",
+          "argument": 239,
+          "conversions": [
+            {"raw": [0, 4555], "reads": [0, 0.5]},
+            {"raw": [4556, 9175], "reads": [0.5, 1]},
+            {"raw": [9176, 18776], "reads": [1, 1.5]},
+            {"raw": [18777, 28180], "reads": [1.5, 2]},
+            {"raw": [28181, 46890], "reads": [2, 2.5]},
+            {"raw": [46891, 65535], "reads": [2.5, 3]}
+          ]
+        }
+      ]
+    },
+    {
+      "aircraft": "MiG-21bis",
+      "bios_module": "MiG-21Bis",
+      "gauges": [
+        {
+          "id": "RALT_ND",
+          "description": "Radio Altimeter Needle",
+          "unit": "m",
+          "notes": [],
+          "straight_off_pct": 43,
+          "dcs_gauge": "RADIO_ALTIMETER_indicator",
+          "argument": 103,
+          "conversions": [
+            {"raw": [0, 2490], "reads": [0, 10]},
+            {"raw": [2491, 4279], "reads": [10, 20]},
+            {"raw": [4280, 6685], "reads": [20, 30]},
+            {"raw": [6686, 8212], "reads": [30, 40]},
+            {"raw": [8213, 11482], "reads": [40, 50]},
+            {"raw": [11483, 13500], "reads": [50, 60]},
+            {"raw": [13501, 15794], "reads": [60, 70]},
+            {"raw": [15795, 16842], "reads": [70, 80]},
+            {"raw": [16843, 19202], "reads": [80, 90]},
+            {"raw": [19203, 20840], "reads": [90, 100]},
+            {"raw": [20841, 30474], "reads": [100, 150]},
+            {"raw": [30475, 38600], "reads": [150, 200]},
+            {"raw": [38601, 44236], "reads": [200, 250]},
+            {"raw": [44237, 47775], "reads": [250, 300]},
+            {"raw": [47776, 52756], "reads": [300, 400]},
+            {"raw": [52757, 56491], "reads": [400, 500]},
+            {"raw": [56492, 59309], "reads": [500, 600]},
+            {"raw": [59310, 65535], "reads": [600, 1000]}
+          ]
+        },
+        {
+          "id": "AOA_ND",
+          "description": "AOA Gauge",
+          "unit": "°",
+          "notes": [
+            "DCS sends radians, converted",
+            "DCS-BIOS limits {-0.3, 1}"
+          ],
+          "straight_off_pct": 3,
+          "dcs_gauge": "UUA_indicator",
+          "argument": 105,
+          "conversions": [
+            {"raw": [0, 8066], "reads": [-10, -5]},
+            {"raw": [8067, 15123], "reads": [-5, 0]},
+            {"raw": [15124, 22836], "reads": [0, 5]},
+            {"raw": [22837, 29743], "reads": [5, 10]},
+            {"raw": [29744, 36800], "reads": [10, 16.7]},
+            {"raw": [36801, 43858], "reads": [16.7, 20]},
+            {"raw": [43859, 50764], "reads": [20, 25]},
+            {"raw": [50765, 57973], "reads": [25, 30]},
+            {"raw": [57974, 65535], "reads": [30, 35]}
+          ]
+        },
+        {
+          "id": "DA200_VVI",
+          "description": "DA-200 VVI Needle",
+          "unit": "m/s",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}"
+          ],
+          "straight_off_pct": 25,
+          "dcs_gauge": "DA200_VerticalVelocity",
+          "argument": 106,
+          "conversions": [
+            {"raw": [0, 4096], "reads": [-400, -200]},
+            {"raw": [4097, 8225], "reads": [-200, -100]},
+            {"raw": [8226, 14090], "reads": [-100, -50]},
+            {"raw": [14091, 16646], "reads": [-50, -20]},
+            {"raw": [16647, 24969], "reads": [-20, -10]},
+            {"raw": [24970, 33292], "reads": [-10, 0]},
+            {"raw": [33293, 41189], "reads": [0, 10]},
+            {"raw": [41190, 49118], "reads": [10, 20]},
+            {"raw": [49119, 51379], "reads": [20, 50]},
+            {"raw": [51380, 57310], "reads": [50, 100]},
+            {"raw": [57311, 61308], "reads": [100, 200]},
+            {"raw": [61309, 65535], "reads": [200, 400]}
+          ]
+        },
+        {
+          "id": "ACCEL_ND",
+          "description": "Accelerometer Needle",
+          "unit": "g",
+          "notes": [
+            "DCS-BIOS limits {-0.394, 1}",
+            "Last row is the needle's rest off the scale"
+          ],
+          "straight_off_pct": 5,
+          "dcs_gauge": "ACCELEROMETER",
+          "argument": 110,
+          "conversions": [
+            {"raw": [0, 3996], "reads": [-5, -4]},
+            {"raw": [3997, 7334], "reads": [-4, -3]},
+            {"raw": [7335, 11001], "reads": [-3, -2]},
+            {"raw": [11002, 14715], "reads": [-2, -1]},
+            {"raw": [14716, 18523], "reads": [-1, 0]},
+            {"raw": [18524, 22660], "reads": [0, 1]},
+            {"raw": [22661, 27314], "reads": [1, 2]},
+            {"raw": [27315, 32156], "reads": [2, 3]},
+            {"raw": [32157, 36764], "reads": [3, 4]},
+            {"raw": [36765, 41653], "reads": [4, 5]},
+            {"raw": [41654, 46871], "reads": [5, 6]},
+            {"raw": [46872, 51525], "reads": [6, 7]},
+            {"raw": [51526, 56227], "reads": [7, 8]},
+            {"raw": [56228, 60928], "reads": [8, 9]},
+            {"raw": [60929, 65206], "reads": [9, 10]},
+            {"raw": [65207, 65535], "reads": [10, 10]}
+          ]
+        },
+        {
+          "id": "ENGINE_TEMP",
+          "description": "EGT Needle",
+          "unit": "°C",
+          "notes": [],
+          "straight_off_pct": 12,
+          "dcs_gauge": "ENGINE_TEMP",
+          "argument": 51,
+          "conversions": [
+            {"raw": [0, 7012], "reads": [300, 400]},
+            {"raw": [7013, 15991], "reads": [400, 500]},
+            {"raw": [15992, 24969], "reads": [500, 600]},
+            {"raw": [24970, 33095], "reads": [600, 650]},
+            {"raw": [33096, 41222], "reads": [650, 700]},
+            {"raw": [41223, 48037], "reads": [700, 750]},
+            {"raw": [48038, 55705], "reads": [750, 800]},
+            {"raw": [55706, 61275], "reads": [800, 850]},
+            {"raw": [61276, 65535], "reads": [850, 900]}
+          ]
+        },
+        {
+          "id": "ASP_MSL_DIST",
+          "description": "ASP Missile Target Distance Needle",
+          "unit": "km",
+          "notes": [],
+          "straight_off_pct": 29,
+          "dcs_gauge": "ASP_DISTANCE_MISSILE",
+          "argument": 552,
+          "conversions": [
+            {"raw": [0, 655], "reads": [0, 1]},
+            {"raw": [656, 4915], "reads": [1, 2]},
+            {"raw": [4916, 22937], "reads": [2, 2.5]},
+            {"raw": [22938, 34734], "reads": [2.5, 3]},
+            {"raw": [34735, 45023], "reads": [3, 3.5]},
+            {"raw": [45024, 51445], "reads": [3.5, 4]},
+            {"raw": [51446, 57409], "reads": [4, 4.5]},
+            {"raw": [57410, 62520], "reads": [4.5, 5]},
+            {"raw": [62521, 65535], "reads": [5, 5.5]}
+          ]
+        },
+        {
+          "id": "PIT_PRES_GAUGE",
+          "description": "Cockpit Pressure Gauge",
+          "unit": "kgf/cm²",
+          "notes": [],
+          "straight_off_pct": 2,
+          "dcs_gauge": "COCKPIT_PRESSURE",
+          "argument": 656,
+          "conversions": [
+            {"raw": [0, 11141], "reads": [0, 0.1]},
+            {"raw": [11142, 22937], "reads": [0.1, 0.2]},
+            {"raw": [22938, 32768], "reads": [0.2, 0.3]},
+            {"raw": [32769, 43253], "reads": [0.3, 0.4]},
+            {"raw": [43254, 53739], "reads": [0.4, 0.5]},
+            {"raw": [53740, 65535], "reads": [0.5, 0.6]}
+          ]
+        }
+      ]
+    },
+    {
+      "aircraft": "Mosquito FB VI",
+      "bios_module": "Mosquito",
+      "gauges": [
+        {
+          "id": "PORT_BOOST_G",
+          "description": "Boost Gauge Port",
+          "unit": "lb/in²",
+          "notes": [],
+          "straight_off_pct": 10,
+          "dcs_gauge": "PortBoostGauge",
+          "argument": 54,
+          "conversions": [
+            {"raw": [0, 2294], "reads": [-7, -6]},
+            {"raw": [2295, 18350], "reads": [-6, 0]},
+            {"raw": [18351, 32964], "reads": [0, 6]},
+            {"raw": [32965, 41222], "reads": [6, 10]},
+            {"raw": [41223, 47382], "reads": [10, 14]},
+            {"raw": [47383, 50986], "reads": [14, 16]},
+            {"raw": [50987, 54656], "reads": [16, 18]},
+            {"raw": [54657, 58130], "reads": [18, 20]},
+            {"raw": [58131, 60882], "reads": [20, 22]},
+            {"raw": [60883, 64224], "reads": [22, 24]},
+            {"raw": [64225, 65535], "reads": [24, 25]}
+          ]
+        },
+        {
+          "id": "STBD_BOOST_G",
+          "description": "Boost Gauge Starboard",
+          "unit": "lb/in²",
+          "notes": [],
+          "straight_off_pct": 10,
+          "dcs_gauge": "StbdBoostGauge",
+          "argument": 55,
+          "conversions": [
+            {"raw": [0, 2294], "reads": [-7, -6]},
+            {"raw": [2295, 18350], "reads": [-6, 0]},
+            {"raw": [18351, 32964], "reads": [0, 6]},
+            {"raw": [32965, 41222], "reads": [6, 10]},
+            {"raw": [41223, 47382], "reads": [10, 14]},
+            {"raw": [47383, 50986], "reads": [14, 16]},
+            {"raw": [50987, 54656], "reads": [16, 18]},
+            {"raw": [54657, 58130], "reads": [18, 20]},
+            {"raw": [58131, 60882], "reads": [20, 22]},
+            {"raw": [60883, 64224], "reads": [22, 24]},
+            {"raw": [64225, 65535], "reads": [24, 25]}
+          ]
+        },
+        {
+          "id": "PORT_RAD_TEMP_G",
+          "description": "Radiator Temperature Gauge Port",
+          "unit": "°C",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}",
+            "First row is the needle's rest off the scale"
+          ],
+          "straight_off_pct": 49,
+          "dcs_gauge": "PortRadTempGauge",
+          "argument": 60,
+          "conversions": [
+            {"raw": [0, 32768], "reads": [39, 40]},
+            {"raw": [32769, 35389], "reads": [40, 60]},
+            {"raw": [35390, 39321], "reads": [60, 80]},
+            {"raw": [39322, 42270], "reads": [80, 90]},
+            {"raw": [42271, 45547], "reads": [90, 100]},
+            {"raw": [45548, 49151], "reads": [100, 110]},
+            {"raw": [49152, 53739], "reads": [110, 120]},
+            {"raw": [53740, 65535], "reads": [120, 140]}
+          ]
+        },
+        {
+          "id": "STBD_RAD_TEMP_G",
+          "description": "Radiator Temperature Gauge Starboard",
+          "unit": "°C",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}",
+            "First row is the needle's rest off the scale"
+          ],
+          "straight_off_pct": 49,
+          "dcs_gauge": "StbdRadTempGauge",
+          "argument": 61,
+          "conversions": [
+            {"raw": [0, 32768], "reads": [39, 40]},
+            {"raw": [32769, 35389], "reads": [40, 60]},
+            {"raw": [35390, 39321], "reads": [60, 80]},
+            {"raw": [39322, 42270], "reads": [80, 90]},
+            {"raw": [42271, 45547], "reads": [90, 100]},
+            {"raw": [45548, 49151], "reads": [100, 110]},
+            {"raw": [49152, 53739], "reads": [110, 120]},
+            {"raw": [53740, 65535], "reads": [120, 140]}
+          ]
+        },
+        {
+          "id": "PORT_FUEL_IN_G",
+          "description": "Inner Fuel Gauge Port",
+          "unit": "gal",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}",
+            "First row is the needle's rest off the scale"
+          ],
+          "straight_off_pct": 49,
+          "dcs_gauge": "FuelGaugeInnerPort",
+          "argument": 92,
+          "conversions": [
+            {"raw": [0, 32768], "reads": [-1, 0]},
+            {"raw": [32769, 39223], "reads": [0, 20]},
+            {"raw": [39224, 48660], "reads": [20, 60]},
+            {"raw": [48661, 57048], "reads": [60, 100]},
+            {"raw": [57049, 61177], "reads": [100, 120]},
+            {"raw": [61178, 63569], "reads": [120, 146]},
+            {"raw": [63570, 65535], "reads": [146, 160]}
+          ]
+        },
+        {
+          "id": "STBD_FUEL_IN_G",
+          "description": "Inner Fuel Gauge Starboard",
+          "unit": "gal",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}",
+            "First row is the needle's rest off the scale"
+          ],
+          "straight_off_pct": 49,
+          "dcs_gauge": "FuelGaugeInnerStbd",
+          "argument": 93,
+          "conversions": [
+            {"raw": [0, 32768], "reads": [-1, 0]},
+            {"raw": [32769, 39223], "reads": [0, 20]},
+            {"raw": [39224, 48660], "reads": [20, 60]},
+            {"raw": [48661, 57048], "reads": [60, 100]},
+            {"raw": [57049, 61177], "reads": [100, 120]},
+            {"raw": [61178, 63569], "reads": [120, 146]},
+            {"raw": [63570, 65535], "reads": [146, 160]}
+          ]
+        },
+        {
+          "id": "PORT_FUEL_OUT_G",
+          "description": "Outer Fuel Gauge Port",
+          "unit": "gal",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}",
+            "First row is the needle's rest off the scale"
+          ],
+          "straight_off_pct": 49,
+          "dcs_gauge": "FuelGaugeOuterPort",
+          "argument": 96,
+          "conversions": [
+            {"raw": [0, 32768], "reads": [-1, 0]},
+            {"raw": [32769, 36995], "reads": [0, 10]},
+            {"raw": [36996, 43548], "reads": [10, 20]},
+            {"raw": [43549, 51052], "reads": [20, 30]},
+            {"raw": [51053, 58130], "reads": [30, 40]},
+            {"raw": [58131, 62848], "reads": [40, 59]},
+            {"raw": [62849, 65535], "reads": [59, 70]}
+          ]
+        },
+        {
+          "id": "STBD_FUEL_OUT_G",
+          "description": "Outer Fuel Gauge Starboard",
+          "unit": "gal",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}",
+            "First row is the needle's rest off the scale"
+          ],
+          "straight_off_pct": 49,
+          "dcs_gauge": "FuelGaugeOuterStbd",
+          "argument": 97,
+          "conversions": [
+            {"raw": [0, 32768], "reads": [-1, 0]},
+            {"raw": [32769, 36995], "reads": [0, 10]},
+            {"raw": [36996, 43548], "reads": [10, 20]},
+            {"raw": [43549, 51052], "reads": [20, 30]},
+            {"raw": [51053, 58130], "reads": [30, 40]},
+            {"raw": [58131, 62848], "reads": [40, 59]},
+            {"raw": [62849, 65535], "reads": [59, 70]}
+          ]
+        },
+        {
+          "id": "CENTR_FUEL_G",
+          "description": "Fuel Gauge Central",
+          "unit": "gal",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}",
+            "First row is the needle's rest off the scale"
+          ],
+          "straight_off_pct": 48,
+          "dcs_gauge": "FuelGaugeCentral",
+          "argument": 94,
+          "conversions": [
+            {"raw": [0, 32768], "reads": [-1, 0]},
+            {"raw": [32769, 36798], "reads": [0, 10]},
+            {"raw": [36799, 42794], "reads": [10, 20]},
+            {"raw": [42795, 49315], "reads": [20, 30]},
+            {"raw": [49316, 55246], "reads": [30, 40]},
+            {"raw": [55247, 61832], "reads": [40, 53]},
+            {"raw": [61833, 65535], "reads": [53, 60]}
+          ]
+        },
+        {
+          "id": "LONG_FUEL_G",
+          "description": "Fuel Gauge Long Range",
+          "unit": "gal",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}",
+            "First row is the needle's rest off the scale"
+          ],
+          "straight_off_pct": 49,
+          "dcs_gauge": "FuelGaugeLongRange",
+          "argument": 95,
+          "conversions": [
+            {"raw": [0, 32768], "reads": [-1, 0]},
+            {"raw": [32769, 35389], "reads": [0, 5]},
+            {"raw": [35390, 38764], "reads": [5, 10]},
+            {"raw": [38765, 44891], "reads": [10, 20]},
+            {"raw": [44892, 49938], "reads": [20, 30]},
+            {"raw": [49939, 59473], "reads": [30, 50]},
+            {"raw": [59474, 65535], "reads": [50, 70]}
+          ]
+        },
+        {
+          "id": "T1154_C2_G",
+          "description": "T.1154 C2 Gauge",
+          "unit": "DCS units",
+          "notes": [
+            "DCS-BIOS limits {0, 0.937}"
+          ],
+          "straight_off_pct": 10,
+          "dcs_gauge": "T1154C2Gauge",
+          "argument": 207,
+          "conversions": [
+            {"raw": [0, 2728], "reads": [5.2, 5.3]},
+            {"raw": [2729, 8883], "reads": [5.3, 5.6]},
+            {"raw": [8884, 15247], "reads": [5.6, 6]},
+            {"raw": [15248, 22451], "reads": [6, 6.5]},
+            {"raw": [22452, 29096], "reads": [6.5, 7]},
+            {"raw": [29097, 35111], "reads": [7, 7.5]},
+            {"raw": [35112, 40426], "reads": [7.5, 8]},
+            {"raw": [40427, 45812], "reads": [8, 8.5]},
+            {"raw": [45813, 51337], "reads": [8.5, 9]},
+            {"raw": [51338, 56023], "reads": [9, 9.5]},
+            {"raw": [56024, 60639], "reads": [9.5, 10]},
+            {"raw": [60640, 65535], "reads": [10, 10.4]}
+          ]
+        },
+        {
+          "id": "T1154_C4_G",
+          "description": "T.1154 C4 Gauge",
+          "unit": "DCS units",
+          "notes": [
+            "DCS-BIOS limits {0, 0.912}"
+          ],
+          "straight_off_pct": 8,
+          "dcs_gauge": "T1154C4Gauge",
+          "argument": 206,
+          "conversions": [
+            {"raw": [0, 4096], "reads": [2.9, 3]},
+            {"raw": [4097, 16671], "reads": [3, 3.4]},
+            {"raw": [16672, 18899], "reads": [3.4, 3.5]},
+            {"raw": [18900, 21486], "reads": [3.5, 3.6]},
+            {"raw": [21487, 24001], "reads": [3.6, 3.7]},
+            {"raw": [24002, 26228], "reads": [3.7, 3.8]},
+            {"raw": [26229, 28743], "reads": [3.8, 3.9]},
+            {"raw": [28744, 31187], "reads": [3.9, 4]},
+            {"raw": [31188, 42253], "reads": [4, 4.5]},
+            {"raw": [42254, 52888], "reads": [4.5, 5]},
+            {"raw": [52889, 61726], "reads": [5, 5.5]},
+            {"raw": [61727, 65535], "reads": [5.5, 5.7]}
+          ]
+        },
+        {
+          "id": "T1154_C17_G",
+          "description": "T.1154 C17 Gauge",
+          "unit": "DCS units",
+          "notes": [
+            "DCS-BIOS limits {0, 0.912}"
+          ],
+          "straight_off_pct": 22,
+          "dcs_gauge": "T1154C17Gauge",
+          "argument": 205,
+          "conversions": [
+            {"raw": [0, 9845], "reads": [180, 200]},
+            {"raw": [9846, 17318], "reads": [200, 220]},
+            {"raw": [17319, 25941], "reads": [220, 250]},
+            {"raw": [25942, 37510], "reads": [250, 300]},
+            {"raw": [37511, 46205], "reads": [300, 350]},
+            {"raw": [46206, 50732], "reads": [350, 380]},
+            {"raw": [50733, 55259], "reads": [380, 420]},
+            {"raw": [55260, 59427], "reads": [420, 460]},
+            {"raw": [59428, 63164], "reads": [460, 500]},
+            {"raw": [63165, 65535], "reads": [500, 520]}
+          ]
+        },
+        {
+          "id": "T1154_M2_G",
+          "description": "T.1154 M2 Gauge",
+          "unit": "DCS units",
+          "notes": [],
+          "straight_off_pct": 26,
+          "dcs_gauge": "T1154M2Gauge",
+          "argument": 105,
+          "conversions": [
+            {"raw": [0, 1049], "reads": [0, 0.05]},
+            {"raw": [1050, 4850], "reads": [0.05, 0.1]},
+            {"raw": [4851, 10813], "reads": [0.1, 0.15]},
+            {"raw": [10814, 20578], "reads": [0.15, 0.2]},
+            {"raw": [20579, 33095], "reads": [0.2, 0.25]},
+            {"raw": [33096, 47775], "reads": [0.25, 0.3]},
+            {"raw": [47776, 65535], "reads": [0.3, 0.35]}
+          ]
+        },
+        {
+          "id": "T1154_M3_G",
+          "description": "T.1154 M3 Gauge",
+          "unit": "DCS units",
+          "notes": [],
+          "straight_off_pct": 25,
+          "dcs_gauge": "T1154M3Gauge",
+          "argument": 106,
+          "conversions": [
+            {"raw": [0, 2097], "reads": [0, 0.05]},
+            {"raw": [2098, 4522], "reads": [0.05, 0.1]},
+            {"raw": [4523, 9765], "reads": [0.1, 0.15]},
+            {"raw": [9766, 16384], "reads": [0.15, 0.2]},
+            {"raw": [16385, 25428], "reads": [0.2, 0.25]},
+            {"raw": [25429, 36634], "reads": [0.25, 0.3]},
+            {"raw": [36635, 49872], "reads": [0.3, 0.35]},
+            {"raw": [49873, 65535], "reads": [0.35, 0.4]}
+          ]
+        }
+      ]
+    },
+    {
+      "aircraft": "OH-58D",
+      "bios_module": "OH-58D",
+      "gauges": [
+        {
+          "id": "AIRSPEED_NEEDLE",
+          "description": "Needle",
+          "unit": "kt",
+          "notes": [],
+          "straight_off_pct": 8,
+          "dcs_gauge": "IAS_Needle",
+          "argument": 60,
+          "conversions": [
+            {"raw": [459, 4063], "reads": [0, 20]},
+            {"raw": [4064, 7930], "reads": [20, 25]},
+            {"raw": [7931, 10944], "reads": [25, 30]},
+            {"raw": [10945, 14024], "reads": [30, 35]},
+            {"raw": [14025, 17367], "reads": [35, 40]},
+            {"raw": [17368, 20119], "reads": [40, 45]},
+            {"raw": [20120, 22937], "reads": [45, 50]},
+            {"raw": [22938, 25624], "reads": [50, 55]},
+            {"raw": [25625, 28311], "reads": [55, 60]},
+            {"raw": [28312, 30343], "reads": [60, 65]},
+            {"raw": [30344, 32309], "reads": [65, 70]},
+            {"raw": [32310, 34406], "reads": [70, 75]},
+            {"raw": [34407, 36372], "reads": [75, 80]},
+            {"raw": [36373, 38469], "reads": [80, 85]},
+            {"raw": [38470, 40370], "reads": [85, 90]},
+            {"raw": [40371, 42336], "reads": [90, 95]},
+            {"raw": [42337, 44236], "reads": [95, 100]},
+            {"raw": [44237, 46137], "reads": [100, 105]},
+            {"raw": [46138, 48234], "reads": [105, 110]},
+            {"raw": [48235, 50134], "reads": [110, 115]},
+            {"raw": [50135, 51969], "reads": [115, 120]},
+            {"raw": [51970, 54263], "reads": [120, 126]},
+            {"raw": [54264, 55836], "reads": [126, 130]},
+            {"raw": [55837, 57802], "reads": [130, 135]},
+            {"raw": [57803, 59702], "reads": [135, 140]},
+            {"raw": [59703, 61537], "reads": [140, 145]},
+            {"raw": [61538, 63176], "reads": [145, 150]}
+          ]
+        },
+        {
+          "id": "FAT_NEEDLE",
+          "description": "Guage Needle",
+          "unit": "°C",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}"
+          ],
+          "straight_off_pct": 5,
+          "dcs_gauge": "External_Temp_Needle",
+          "argument": 244,
+          "conversions": [
+            {"raw": [1147, 1901], "reads": [-70, -68]},
+            {"raw": [1902, 2621], "reads": [-68, -66]},
+            {"raw": [2622, 3473], "reads": [-66, -64]},
+            {"raw": [3474, 4161], "reads": [-64, -62]},
+            {"raw": [4162, 4948], "reads": [-62, -60]},
+            {"raw": [4949, 5767], "reads": [-60, -58]},
+            {"raw": [5768, 6553], "reads": [-58, -56]},
+            {"raw": [6554, 7438], "reads": [-56, -54]},
+            {"raw": [7439, 8192], "reads": [-54, -52]},
+            {"raw": [8193, 9044], "reads": [-52, -50]},
+            {"raw": [9045, 9896], "reads": [-50, -48]},
+            {"raw": [9897, 10813], "reads": [-48, -46]},
+            {"raw": [10814, 11632], "reads": [-46, -44]},
+            {"raw": [11633, 12615], "reads": [-44, -42]},
+            {"raw": [12616, 13435], "reads": [-42, -40]},
+            {"raw": [13436, 14352], "reads": [-40, -38]},
+            {"raw": [14353, 15335], "reads": [-38, -36]},
+            {"raw": [15336, 16253], "reads": [-36, -34]},
+            {"raw": [16254, 17170], "reads": [-34, -32]},
+            {"raw": [17171, 18022], "reads": [-32, -30]},
+            {"raw": [18023, 19005], "reads": [-30, -28]},
+            {"raw": [19006, 19955], "reads": [-28, -26]},
+            {"raw": [19956, 20906], "reads": [-26, -24]},
+            {"raw": [20907, 21889], "reads": [-24, -22]},
+            {"raw": [21890, 22741], "reads": [-22, -20]},
+            {"raw": [22742, 23822], "reads": [-20, -18]},
+            {"raw": [23823, 24772], "reads": [-18, -16]},
+            {"raw": [24773, 25690], "reads": [-16, -14]},
+            {"raw": [25691, 26706], "reads": [-14, -12]},
+            {"raw": [26707, 27689], "reads": [-12, -10]},
+            {"raw": [27690, 28672], "reads": [-10, -8]},
+            {"raw": [28673, 29655], "reads": [-8, -6]},
+            {"raw": [29656, 30592], "reads": [-6, -4]},
+            {"raw": [30593, 31719], "reads": [-4, -2]},
+            {"raw": [31720, 32768], "reads": [-2, 0]},
+            {"raw": [32769, 33947], "reads": [0, 2]},
+            {"raw": [33948, 34930], "reads": [2, 4]},
+            {"raw": [34931, 35913], "reads": [4, 6]},
+            {"raw": [35914, 36995], "reads": [6, 8]},
+            {"raw": [36996, 38240], "reads": [8, 10]},
+            {"raw": [38241, 39354], "reads": [10, 12]},
+            {"raw": [39355, 40468], "reads": [12, 14]},
+            {"raw": [40469, 41451], "reads": [14, 16]},
+            {"raw": [41452, 42696], "reads": [16, 18]},
+            {"raw": [42697, 43777], "reads": [18, 20]},
+            {"raw": [43778, 44891], "reads": [20, 22]},
+            {"raw": [44892, 45874], "reads": [22, 24]},
+            {"raw": [45875, 46989], "reads": [24, 26]},
+            {"raw": [46990, 48201], "reads": [26, 28]},
+            {"raw": [48202, 49315], "reads": [28, 30]},
+            {"raw": [49316, 50396], "reads": [30, 32]},
+            {"raw": [50397, 51412], "reads": [32, 34]},
+            {"raw": [51413, 52494], "reads": [34, 36]},
+            {"raw": [52495, 53575], "reads": [36, 38]},
+            {"raw": [53576, 54591], "reads": [38, 40]},
+            {"raw": [54592, 55705], "reads": [40, 42]},
+            {"raw": [55706, 56688], "reads": [42, 44]},
+            {"raw": [56689, 57736], "reads": [44, 46]},
+            {"raw": [57737, 58752], "reads": [46, 48]},
+            {"raw": [58753, 59719], "reads": [48, 50]}
+          ]
+        }
+      ]
+    },
+    {
+      "aircraft": "P-47D",
+      "bios_module": "P-47D",
+      "gauges": [
+        {
+          "id": "CARB_TEMP",
+          "description": "Carburettor Temperature Gauge",
+          "unit": "°C",
+          "notes": [
+            "DCS-BIOS limits {-0.5, 1}",
+            "First row is the needle's rest off the scale"
+          ],
+          "straight_off_pct": 8,
+          "dcs_gauge": "Carbair",
+          "argument": 102,
+          "conversions": [
+            {"raw": [0, 5461], "reads": [-71, -70]},
+            {"raw": [5462, 25340], "reads": [-70, 0]},
+            {"raw": [25341, 36700], "reads": [0, 50]},
+            {"raw": [36701, 48496], "reads": [50, 100]},
+            {"raw": [48497, 65535], "reads": [100, 150]}
+          ]
+        }
+      ]
+    },
+    {
+      "aircraft": "P-51D / TF-51D",
+      "bios_module": "P-51D",
+      "gauges": [
+        {
+          "id": "FUEL_TANK_LEFT",
+          "description": "Fuel Tank Left",
+          "unit": "gal",
+          "notes": [],
+          "straight_off_pct": 20,
+          "dcs_gauge": "Fuel_Tank_Left",
+          "argument": 155,
+          "conversions": [
+            {"raw": [0, 13107], "reads": [0, 5]},
+            {"raw": [13108, 23593], "reads": [5, 15]},
+            {"raw": [23594, 34078], "reads": [15, 30]},
+            {"raw": [34079, 42598], "reads": [30, 45]},
+            {"raw": [42599, 50462], "reads": [45, 60]},
+            {"raw": [50463, 60292], "reads": [60, 75]},
+            {"raw": [60293, 65535], "reads": [75, 92]}
+          ]
+        },
+        {
+          "id": "FUEL_TANK_RIGHT",
+          "description": "Fuel Tank Right",
+          "unit": "gal",
+          "notes": [],
+          "straight_off_pct": 20,
+          "dcs_gauge": "Fuel_Tank_Right",
+          "argument": 156,
+          "conversions": [
+            {"raw": [0, 13107], "reads": [0, 5]},
+            {"raw": [13108, 23593], "reads": [5, 15]},
+            {"raw": [23594, 34078], "reads": [15, 30]},
+            {"raw": [34079, 42598], "reads": [30, 45]},
+            {"raw": [42599, 50462], "reads": [45, 60]},
+            {"raw": [50463, 60292], "reads": [60, 75]},
+            {"raw": [60293, 65535], "reads": [75, 92]}
+          ]
+        },
+        {
+          "id": "FUEL_TANK_FUSELAGE",
+          "description": "Fuel Tank Fuselage",
+          "unit": "gal",
+          "notes": [],
+          "straight_off_pct": 5,
+          "dcs_gauge": "Fuel_Tank_Fuselage",
+          "argument": 160,
+          "conversions": [
+            {"raw": [0, 7864], "reads": [0, 10]},
+            {"raw": [7865, 18350], "reads": [10, 20]},
+            {"raw": [18351, 26214], "reads": [20, 30]},
+            {"raw": [26215, 33423], "reads": [30, 40]},
+            {"raw": [33424, 40632], "reads": [40, 50]},
+            {"raw": [40633, 47185], "reads": [50, 60]},
+            {"raw": [47186, 54394], "reads": [60, 70]},
+            {"raw": [54395, 62914], "reads": [70, 80]},
+            {"raw": [62915, 65535], "reads": [80, 85]}
+          ]
+        }
+      ]
+    },
+    {
+      "aircraft": "SA342 Gazelle",
+      "bios_module": "SA342",
+      "gauges": [
+        {
+          "id": "CLOCK_MINI",
+          "description": "Clock Mini",
+          "unit": "DCS units",
+          "notes": [],
+          "straight_off_pct": 5,
+          "dcs_gauge": "CLOCK_MINI",
+          "argument": 44,
+          "conversions": [
+            {"raw": [0, 2097], "reads": [0, 1]},
+            {"raw": [2098, 4260], "reads": [1, 2]},
+            {"raw": [4261, 6422], "reads": [2, 3]},
+            {"raw": [6423, 8585], "reads": [3, 4]},
+            {"raw": [8586, 10748], "reads": [4, 5]},
+            {"raw": [10749, 12976], "reads": [5, 6]},
+            {"raw": [12977, 15139], "reads": [6, 7]},
+            {"raw": [15140, 17301], "reads": [7, 8]},
+            {"raw": [17302, 19464], "reads": [8, 9]},
+            {"raw": [19465, 21692], "reads": [9, 10]},
+            {"raw": [21693, 23855], "reads": [10, 11]},
+            {"raw": [23856, 26017], "reads": [11, 12]},
+            {"raw": [26018, 28180], "reads": [12, 13]},
+            {"raw": [28181, 30408], "reads": [13, 14]},
+            {"raw": [30409, 32571], "reads": [14, 15]},
+            {"raw": [32572, 34275], "reads": [15, 16]},
+            {"raw": [34276, 36110], "reads": [16, 17]},
+            {"raw": [36111, 37748], "reads": [17, 18]},
+            {"raw": [37749, 39649], "reads": [18, 19]},
+            {"raw": [39650, 41287], "reads": [19, 20]},
+            {"raw": [41288, 43188], "reads": [20, 21]},
+            {"raw": [43189, 44826], "reads": [21, 22]},
+            {"raw": [44827, 46792], "reads": [22, 23]},
+            {"raw": [46793, 49676], "reads": [23, 24]},
+            {"raw": [49677, 52166], "reads": [24, 25]},
+            {"raw": [52167, 54918], "reads": [25, 26]},
+            {"raw": [54919, 57605], "reads": [26, 27]},
+            {"raw": [57606, 60292], "reads": [27, 28]},
+            {"raw": [60293, 62783], "reads": [28, 29]},
+            {"raw": [62784, 65535], "reads": [29, 30]}
+          ]
+        },
+        {
+          "id": "RADAR_ALTIMETER",
+          "description": "Radar Altimeter (raw)",
+          "unit": "ft",
+          "notes": [
+            "DCS-BIOS limits {0, 0.87}"
+          ],
+          "straight_off_pct": 41,
+          "dcs_gauge": "Radar_Altimeter",
+          "argument": 94,
+          "conversions": [
+            {"raw": [0, 1431], "reads": [0, 5]},
+            {"raw": [1432, 2636], "reads": [5, 10]},
+            {"raw": [2637, 5424], "reads": [10, 20]},
+            {"raw": [5425, 8211], "reads": [20, 30]},
+            {"raw": [8212, 11073], "reads": [30, 40]},
+            {"raw": [11074, 13559], "reads": [40, 50]},
+            {"raw": [13560, 16120], "reads": [50, 60]},
+            {"raw": [16121, 18606], "reads": [60, 70]},
+            {"raw": [18607, 21318], "reads": [70, 80]},
+            {"raw": [21319, 23804], "reads": [80, 90]},
+            {"raw": [23805, 25988], "reads": [90, 100]},
+            {"raw": [25989, 28323], "reads": [100, 110]},
+            {"raw": [28324, 30658], "reads": [110, 120]},
+            {"raw": [30659, 32993], "reads": [120, 130]},
+            {"raw": [32994, 35329], "reads": [130, 140]},
+            {"raw": [35330, 37739], "reads": [140, 150]},
+            {"raw": [37740, 42485], "reads": [150, 200]},
+            {"raw": [42486, 45649], "reads": [200, 250]},
+            {"raw": [45650, 48812], "reads": [250, 300]},
+            {"raw": [48813, 50921], "reads": [300, 350]},
+            {"raw": [50922, 53181], "reads": [350, 400]},
+            {"raw": [53182, 55140], "reads": [400, 450]},
+            {"raw": [55141, 56948], "reads": [450, 500]},
+            {"raw": [56949, 58379], "reads": [500, 550]},
+            {"raw": [58380, 59810], "reads": [550, 600]},
+            {"raw": [59811, 61091], "reads": [600, 650]},
+            {"raw": [61092, 62447], "reads": [650, 700]},
+            {"raw": [62448, 63501], "reads": [700, 750]},
+            {"raw": [63502, 64631], "reads": [750, 800]},
+            {"raw": [64632, 65535], "reads": [800, 850]}
+          ]
+        },
+        {
+          "id": "RADAR_ALTIMETER_BUG",
+          "description": "Radar Altimeter Bug",
+          "unit": "ft",
+          "notes": [
+            "DCS-BIOS limits {0, 0.8693}"
+          ],
+          "straight_off_pct": 41,
+          "dcs_gauge": "DangerRALT_index",
+          "argument": 93,
+          "conversions": [
+            {"raw": [0, 1319], "reads": [0, 5]},
+            {"raw": [1320, 2548], "reads": [5, 10]},
+            {"raw": [2549, 5390], "reads": [10, 20]},
+            {"raw": [5391, 8217], "reads": [20, 30]},
+            {"raw": [8218, 11082], "reads": [30, 40]},
+            {"raw": [11083, 13721], "reads": [40, 50]},
+            {"raw": [13722, 16208], "reads": [50, 60]},
+            {"raw": [16209, 18621], "reads": [60, 70]},
+            {"raw": [18622, 21259], "reads": [70, 80]},
+            {"raw": [21260, 23747], "reads": [80, 90]},
+            {"raw": [23748, 25971], "reads": [90, 100]},
+            {"raw": [25972, 28421], "reads": [100, 110]},
+            {"raw": [28422, 30683], "reads": [110, 120]},
+            {"raw": [30684, 33095], "reads": [120, 130]},
+            {"raw": [33096, 35432], "reads": [130, 140]},
+            {"raw": [35433, 37732], "reads": [140, 150]},
+            {"raw": [37733, 42429], "reads": [150, 200]},
+            {"raw": [42430, 45625], "reads": [200, 250]},
+            {"raw": [45626, 48701], "reads": [250, 300]},
+            {"raw": [48702, 50887], "reads": [300, 350]},
+            {"raw": [50888, 53209], "reads": [350, 400]},
+            {"raw": [53210, 55147], "reads": [400, 450]},
+            {"raw": [55148, 56918], "reads": [450, 500]},
+            {"raw": [56919, 58403], "reads": [500, 550]},
+            {"raw": [58404, 59783], "reads": [550, 600]},
+            {"raw": [59784, 61042], "reads": [600, 650]},
+            {"raw": [61043, 62361], "reads": [650, 700]},
+            {"raw": [62362, 63515], "reads": [700, 750]},
+            {"raw": [63516, 64645], "reads": [750, 800]},
+            {"raw": [64646, 65535], "reads": [800, 850]}
+          ]
+        },
+        {
+          "id": "FUEL",
+          "description": "Fuel",
+          "unit": "L",
+          "notes": [
+            "DCS-BIOS limits {0.093, 0.932}"
+          ],
+          "straight_off_pct": 13,
+          "dcs_gauge": "QComb",
+          "argument": 137,
+          "conversions": [
+            {"raw": [0, 11717], "reads": [0, 50]},
+            {"raw": [11718, 20387], "reads": [50, 100]},
+            {"raw": [20388, 26167], "reads": [100, 150]},
+            {"raw": [26168, 33431], "reads": [150, 200]},
+            {"raw": [33432, 41243], "reads": [200, 250]},
+            {"raw": [41244, 46788], "reads": [250, 300]},
+            {"raw": [46789, 52959], "reads": [300, 350]},
+            {"raw": [52960, 57880], "reads": [350, 400]},
+            {"raw": [57881, 65535], "reads": [400, 500]}
+          ]
+        },
+        {
+          "id": "VOLT_METER",
+          "description": "Volt Meter",
+          "unit": "V",
+          "notes": [
+            "DCS-BIOS limits {0.045, 0.724}"
+          ],
+          "straight_off_pct": 30,
+          "dcs_gauge": "Voltmetre",
+          "argument": 14,
+          "conversions": [
+            {"raw": [0, 2799], "reads": [0, 5]},
+            {"raw": [2800, 5598], "reads": [5, 10]},
+            {"raw": [5599, 8493], "reads": [10, 15]},
+            {"raw": [8494, 11389], "reads": [15, 16]},
+            {"raw": [11390, 14188], "reads": [16, 17]},
+            {"raw": [14189, 16987], "reads": [17, 18]},
+            {"raw": [16988, 19786], "reads": [18, 19]},
+            {"raw": [19787, 22778], "reads": [19, 20]},
+            {"raw": [22779, 25577], "reads": [20, 21]},
+            {"raw": [25578, 28376], "reads": [21, 22]},
+            {"raw": [28377, 31175], "reads": [22, 23]},
+            {"raw": [31176, 34167], "reads": [23, 24]},
+            {"raw": [34168, 37063], "reads": [24, 25]},
+            {"raw": [37064, 39861], "reads": [25, 26]},
+            {"raw": [39862, 42757], "reads": [26, 27]},
+            {"raw": [42758, 45653], "reads": [27, 28]},
+            {"raw": [45654, 48452], "reads": [28, 29]},
+            {"raw": [48453, 51250], "reads": [29, 30]},
+            {"raw": [51251, 54049], "reads": [30, 31]},
+            {"raw": [54050, 56945], "reads": [31, 32]},
+            {"raw": [56946, 59744], "reads": [32, 33]},
+            {"raw": [59745, 62736], "reads": [33, 34]},
+            {"raw": [62737, 65535], "reads": [34, 35]}
+          ]
+        },
+        {
+          "id": "QUATRE",
+          "description": "Quatre",
+          "unit": "°C",
+          "notes": [
+            "DCS-BIOS limits {0.1575, 0.8625}"
+          ],
+          "straight_off_pct": 5,
+          "dcs_gauge": "TQuatre",
+          "argument": 15,
+          "conversions": [
+            {"raw": [0, 6554], "reads": [0, 100]},
+            {"raw": [6555, 13246], "reads": [100, 200]},
+            {"raw": [13247, 21101], "reads": [200, 300]},
+            {"raw": [21102, 29328], "reads": [300, 400]},
+            {"raw": [29329, 38996], "reads": [400, 500]},
+            {"raw": [38997, 48198], "reads": [500, 600]},
+            {"raw": [48199, 57122], "reads": [600, 700]},
+            {"raw": [57123, 65535], "reads": [700, 800]}
+          ]
+        },
+        {
+          "id": "AUX_FUEL_TANK",
+          "description": "Auxiliary Fuel Tank",
+          "unit": "DCS units",
+          "notes": [],
+          "straight_off_pct": 30,
+          "dcs_gauge": "Gauge_RSupp",
+          "argument": 152,
+          "conversions": [
+            {"raw": [0, 13238], "reads": [-1, 0]},
+            {"raw": [13239, 27918], "reads": [0, 0.25]},
+            {"raw": [27919, 41287], "reads": [0.25, 0.5]},
+            {"raw": [41288, 52494], "reads": [0.5, 0.75]},
+            {"raw": [52495, 65535], "reads": [0.75, 1]}
+          ]
+        }
+      ]
+    },
+    {
+      "aircraft": "UH-1H",
+      "bios_module": "UH-1H",
+      "gauges": [
+        {
+          "id": "IAS_NOSE",
+          "description": "IAS Front",
+          "unit": "kt",
+          "notes": [],
+          "straight_off_pct": 6,
+          "dcs_gauge": "AIRSPEED_Nose",
+          "argument": 117,
+          "conversions": [
+            {"raw": [0, 4915], "reads": [0, 20]},
+            {"raw": [4916, 12452], "reads": [20, 30]},
+            {"raw": [12453, 20971], "reads": [30, 40]},
+            {"raw": [20972, 25886], "reads": [40, 50]},
+            {"raw": [25887, 28835], "reads": [50, 60]},
+            {"raw": [28836, 36044], "reads": [60, 80]},
+            {"raw": [36045, 54066], "reads": [80, 120]},
+            {"raw": [54067, 65535], "reads": [120, 150]}
+          ]
+        },
+        {
+          "id": "IAS_ROOF",
+          "description": "IAS Roof",
+          "unit": "kt",
+          "notes": [],
+          "straight_off_pct": 6,
+          "dcs_gauge": "AIRSPEED_Roof",
+          "argument": 118,
+          "conversions": [
+            {"raw": [0, 4915], "reads": [0, 20]},
+            {"raw": [4916, 12452], "reads": [20, 30]},
+            {"raw": [12453, 20971], "reads": [30, 40]},
+            {"raw": [20972, 25886], "reads": [40, 50]},
+            {"raw": [25887, 28835], "reads": [50, 60]},
+            {"raw": [28836, 36044], "reads": [60, 80]},
+            {"raw": [36045, 54066], "reads": [80, 120]},
+            {"raw": [54067, 65535], "reads": [120, 150]}
+          ]
+        },
+        {
+          "id": "ENG_OIL_TEMP",
+          "description": "Engine Oil Temperature",
+          "unit": "°C",
+          "notes": [],
+          "straight_off_pct": 6,
+          "dcs_gauge": "EngOilTemp",
+          "argument": 114,
+          "conversions": [
+            {"raw": [0, 8520], "reads": [-70, -50]},
+            {"raw": [8521, 24903], "reads": [-50, 0]},
+            {"raw": [24904, 46530], "reads": [0, 100]},
+            {"raw": [46531, 65535], "reads": [100, 150]}
+          ]
+        },
+        {
+          "id": "TRANS_OIL_TEMP",
+          "description": "Transmission Oil Temperature",
+          "unit": "°C",
+          "notes": [],
+          "straight_off_pct": 6,
+          "dcs_gauge": "TransmOilTemp",
+          "argument": 116,
+          "conversions": [
+            {"raw": [0, 8520], "reads": [-70, -50]},
+            {"raw": [8521, 24903], "reads": [-50, 0]},
+            {"raw": [24904, 46530], "reads": [0, 100]},
+            {"raw": [46531, 65535], "reads": [100, 150]}
+          ]
+        },
+        {
+          "id": "VVI_P",
+          "description": "Vertical Velocity Indicator (Pilot)",
+          "unit": "ft/min",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}"
+          ],
+          "straight_off_pct": 8,
+          "dcs_gauge": "VertVelocPilot",
+          "argument": 134,
+          "conversions": [
+            {"raw": [0, 6226], "reads": [-4000, -3000]},
+            {"raw": [6227, 15073], "reads": [-3000, -1500]},
+            {"raw": [15074, 20971], "reads": [-1500, -1000]},
+            {"raw": [20972, 44564], "reads": [-1000, 1000]},
+            {"raw": [44565, 50462], "reads": [1000, 1500]},
+            {"raw": [50463, 59309], "reads": [1500, 3000]},
+            {"raw": [59310, 65535], "reads": [3000, 4000]}
+          ]
+        },
+        {
+          "id": "VVI_O",
+          "description": "Vertical Velocity Indicator (Operator)",
+          "unit": "ft/min",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}"
+          ],
+          "straight_off_pct": 8,
+          "dcs_gauge": "VertVelocCopilot",
+          "argument": 251,
+          "conversions": [
+            {"raw": [0, 6226], "reads": [-4000, -3000]},
+            {"raw": [6227, 15073], "reads": [-3000, -1500]},
+            {"raw": [15074, 20971], "reads": [-1500, -1000]},
+            {"raw": [20972, 44564], "reads": [-1000, 1000]},
+            {"raw": [44565, 50462], "reads": [1000, 1500]},
+            {"raw": [50463, 59309], "reads": [1500, 3000]},
+            {"raw": [59310, 65535], "reads": [3000, 4000]}
+          ]
+        },
+        {
+          "id": "RALT_LO_IDX",
+          "description": "LO Index",
+          "unit": "DCS units",
+          "notes": [
+            "The needle wraps past the end of the dial; the counts it never shows have no row"
+          ],
+          "straight_off_pct": 74,
+          "dcs_gauge": "RALT_LO_Index",
+          "argument": 444,
+          "conversions": [
+            {"raw": [0, 48758], "reads": [0, 0.744]},
+            {"raw": [63569, 64880], "reads": [-0.02, -0.01]},
+            {"raw": [64881, 65535], "reads": [-0.01, 0]}
+          ]
+        }
+      ]
+    },
+    {
+      "aircraft": "Yak-52",
+      "bios_module": "Yak-52",
+      "gauges": [
+        {
+          "id": "MANIFOLD_TEMP",
+          "description": "Manifold Temperature Gauge",
+          "unit": "°C",
+          "notes": [
+            "DCS-BIOS limits {-1, 0.6}",
+            "First row is the needle's rest off the scale"
+          ],
+          "straight_off_pct": 62,
+          "dcs_gauge": "ManifoldTemperatureGauge",
+          "argument": 160,
+          "conversions": [
+            {"raw": [0, 40959], "reads": [-71, -70]},
+            {"raw": [40960, 45055], "reads": [-70, -50]},
+            {"raw": [45056, 49151], "reads": [-50, 0]},
+            {"raw": [49152, 53247], "reads": [0, 50]},
+            {"raw": [53248, 57343], "reads": [50, 100]},
+            {"raw": [57344, 61439], "reads": [100, 150]},
+            {"raw": [61440, 65535], "reads": [150, 200]}
+          ]
+        }
+      ]
+    }
+  ],
+  "left_out": [
+    {
+      "aircraft": "A-10C / A-10C II",
+      "dcs_gauge": "ILS_window_wheel_KHz",
+      "why": "DCS-BIOS sends no gauge for argument 252"
+    },
+    {
+      "aircraft": "Christen Eagle II",
+      "dcs_gauge": "VERTICAL_SPEED_needle",
+      "why": "DCS-BIOS sends no gauge for argument 303"
+    },
+    {
+      "aircraft": "F-86F Sabre",
+      "dcs_gauge": "Throttle",
+      "why": "the throttle lever, not a gauge"
+    },
+    {
+      "aircraft": "F4U-1D Corsair",
+      "dcs_gauge": "FUEL_FLOW",
+      "why": "shares argument 21 with cylinder head temperature in DCS, so DCS-BIOS has no fuel flow of its own"
+    },
+    {
+      "aircraft": "Fw 190 A-8",
+      "dcs_gauge": "FuelScaleLower",
+      "why": "a second scale on the fuel gauge's needle; the upper scale is listed"
+    },
+    {
+      "aircraft": "Fw 190 D-9",
+      "dcs_gauge": "FuelScaleLower",
+      "why": "a second scale on the fuel gauge's needle; the upper scale is listed"
+    },
+    {
+      "aircraft": "Mi-24P",
+      "dcs_gauge": "TrimHat",
+      "why": "a switch's positions, not a gauge; draw them with value_aliases"
+    },
+    {
+      "aircraft": "Mi-8MTV2",
+      "dcs_gauge": "FuelScaleLower",
+      "why": "a second scale on the fuel gauge's needle; the upper scale is listed"
+    }
+  ],
+  "none_found": [
+    "C-130J",
+    "MB-339",
+    "Spitfire LF Mk IX"
+  ]
+}

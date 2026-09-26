@@ -22,11 +22,12 @@ import { contentOf, isLiteral, kindOf, newSpan, setContent } from "./content";
 import type { SpanKind } from "./content";
 import { cautionSlot, flagSlot } from "./flags";
 import { noteEditor } from "./note";
-import { signalPicker } from "./typeahead";
+import { infoIcon, signalPicker } from "./typeahead";
 import { aliasColour, aliasInverse, aliasOf, aliasText } from "./types";
 import type {
   AliasDraw,
   CellDraw,
+  Conversion,
   Device,
   DisplayInfo,
   FontChoice,
@@ -34,7 +35,6 @@ import type {
   Profile,
   Readout,
   RegionInfo,
-  RuleCell,
   ShapeArt,
   SignalView,
   Span,
@@ -103,7 +103,7 @@ export function cellProblem(
     if (self.seat !== undefined && other.seat !== undefined && self.seat !== other.seat) continue;
     const r = parseCells(other.cells);
     if (r && first <= r[1] && r[0] <= last) {
-      const taken = other.divider ? "a divider" : other.source || "another field";
+      const taken = other.source || "another field";
       return `${describe(other.cells, display)} is already taken by ${taken}.`;
     }
   }
@@ -225,7 +225,9 @@ function startReading(span: Span, signal: SignalView | undefined): void {
  */
 function clearReading(span: Span): void {
   delete span.reads;
+  delete span.conversions;
   delete span.decimals;
+  delete span.digits;
   delete span.round;
   delete span.wrap;
   delete span.abs;
@@ -254,7 +256,7 @@ function conversionRow(
   for (const kind of Object.keys(READING_LABELS) as ReadingKind[]) {
     select.append(el("option", { value: kind }, READING_LABELS[kind]));
   }
-  select.value = span.reads ? "converted" : "sent";
+  select.value = isConverted(span) ? "converted" : "sent";
   select.addEventListener("change", () => {
     // Converting starts from the signal's own range, which draws exactly what
     // as sent did, so the choice changes nothing until a number is changed.
@@ -264,14 +266,146 @@ function conversionRow(
     rebuild();
   });
 
-  const values = el("span", { class: "values-row" });
-  const after = el("span", { class: "values-row" });
-  if (span.reads) {
-    const number = (value: number, attrs: Record<string, string> = {}): HTMLInputElement =>
+  const stretches = el("div", { class: "alias-rows" });
+  const offer = el("button", { class: "add small" });
+  const values = el("span", { class: "values-row flow" });
+  const converted = isConverted(span);
+  if (converted) {
+    const number = (value: number | string, attrs: Record<string, string> = {}): HTMLInputElement =>
       el("input", { type: "number", class: "value", value: String(value), ...attrs });
-    const low = number(span.reads[0]);
-    const high = number(span.reads[1]);
+    const said = (text: string): HTMLElement => el("span", { class: "meta" }, text);
+    // A phrase that wraps as one piece, so a narrow panel breaks a line
+    // between phrases and never between "in" and the colour it names.
+    const phrase = (...parts: (Node | string)[]): HTMLElement => el("span", { class: "phrase" }, ...parts);
+    // Every conversion is a list of stretches here. A list of one across the
+    // whole signal with no styling is written as `reads`, the shape every
+    // profile had before stretches, so opening one and saving it changes
+    // nothing.
+    const held: StretchRow[] = span.conversions?.length
+      ? span.conversions.map((c) => ({
+          raw: [c.raw[0], c.raw[1]],
+          reads: [c.reads[0], c.reads[1]],
+          colour: c.colour ?? "",
+          small: c.small === true,
+        }))
+      : [{ raw: [0, max], reads: span.reads ? [span.reads[0], span.reads[1]] : [0, max], colour: "", small: false }];
+    const plain = (): boolean => {
+      const only = held[0];
+      return held.length === 1 && !!only && only.raw[0] === 0 && only.raw[1] === max && !only.colour && !only.small;
+    };
+    const store = (): void => {
+      const only = held[0];
+      if (plain() && only) {
+        span.reads = [only.reads[0], only.reads[1]];
+        delete span.conversions;
+        return;
+      }
+      delete span.reads;
+      span.conversions = held.map((row) => {
+        const c: Conversion = { raw: [row.raw[0], row.raw[1]], reads: [row.reads[0], row.reads[1]] };
+        if (row.colour) c.colour = row.colour;
+        if (row.small) c.small = true;
+        return c;
+      });
+    };
+    // Offered for the first run of counts nothing converts, so a table can be
+    // built a mark at a time: pull the first stretch's top end down to the
+    // first mark, and the rest of the signal is offered back as the next.
+    const offerRest = (): void => {
+      const rest = unconverted(held, max)[0];
+      offer.hidden = !rest;
+      if (rest) offer.textContent = `Add a row for ${rest[0]} to ${rest[1]}`;
+    };
+    offer.addEventListener("click", () => {
+      const rest = unconverted(held, max)[0];
+      if (!rest) return;
+      // Starting where the stretch below ends, so the dial runs on without a
+      // jump until the user says what the next mark reads.
+      const below = held.filter((r) => r.raw[1] < rest[0]).sort((a, b) => b.raw[1] - a.raw[1])[0];
+      const from = below ? below.reads[1] : 0;
+      held.push({ raw: [rest[0], rest[1]], reads: [from, from], colour: "", small: false });
+      held.sort((a, b) => a.raw[0] - b.raw[0]);
+      store();
+      rebuild();
+    });
+
+    // Only offered on a face that runs below zero, because that is the only
+    // face it does anything to and an offer that changes nothing is a question
+    // the user has to answer for no reason. Checked as the ends are typed, so
+    // a face made signed by typing -3 offers it without being drawn again.
+    const signed = (): boolean => held.some((row) => row.reads.some((end) => end < 0));
+    const abs = el("input", { type: "checkbox" });
+    abs.checked = span.abs === true;
+    const unsign = el("label", { class: "meta" }, abs, " without its sign");
+    unsign.hidden = !signed();
+    const settleSign = (): void => {
+      unsign.hidden = !signed();
+      if (abs.checked && signed()) span.abs = true;
+      else delete span.abs;
+    };
+
+    held.forEach((row, i) => {
+      // Counts are whole numbers DCS-BIOS can send, so a stray decimal or a
+      // number past 65535 is pulled back rather than failing to load.
+      const count = (box: HTMLInputElement): number => Math.min(65535, Math.max(0, Math.round(Number(box.value) || 0)));
+      const rawLo = number(row.raw[0], { min: "0", max: String(max), step: "1" });
+      const rawHi = number(row.raw[1], { min: "0", max: String(max), step: "1" });
+      const lo = number(row.reads[0]);
+      const hi = number(row.reads[1]);
+      const sync = (): void => {
+        row.raw = [count(rawLo), count(rawHi)];
+        row.reads = [Number(lo.value) || 0, Number(hi.value) || 0];
+        store();
+        settleSign();
+        offerRest();
+        edited();
+      };
+      for (const box of [rawLo, rawHi, lo, hi]) box.addEventListener("input", sync);
+      const line = el(
+        "div",
+        { class: "alias-row stretch" },
+        phrase(rawLo, said("to"), rawHi),
+        phrase(said("reads"), lo, said("to"), hi),
+      );
+      // A stretch's colour and size, where the glass has colours and a small
+      // font to draw them with: the last gallons of a tank in red.
+      if (colours.length > 0) {
+        const pick = el("select", { class: "colour" });
+        pick.append(el("option", { value: "" }, "same as the piece"));
+        for (const name of colours) pick.append(el("option", { value: name }, name));
+        pick.value = row.colour;
+        pick.addEventListener("change", () => {
+          row.colour = pick.value;
+          store();
+          edited();
+        });
+        const small = el("input", { type: "checkbox" });
+        small.checked = row.small;
+        small.addEventListener("change", () => {
+          row.small = small.checked;
+          store();
+          edited();
+        });
+        line.append(phrase(said("in"), pick, el("label", { class: "meta" }, small, " small")));
+      }
+      // The last one stays: a conversion with no stretches is as sent, and
+      // the menu above is where that is chosen.
+      if (held.length > 1) {
+        const drop = el("button", { class: "icon danger", title: "Remove this row" }, "\u{1F5D1}");
+        drop.addEventListener("click", () => {
+          held.splice(i, 1);
+          store();
+          rebuild();
+        });
+        line.append(drop);
+      }
+      stretches.append(line);
+    });
+    offerRest();
+
     const dp = number(span.decimals ?? 0, { min: "0", max: "3" });
+    // Empty rather than 0 when there is none, the same as the wrap box.
+    const digits = number(span.digits ? span.digits : "", { min: "0", max: "9", placeholder: "any" });
     // Empty rather than 0 when there is none, so the box reads as "never"
     // and a range starting at 0 is not confused with a wrap of 0.
     const wrap = el("input", {
@@ -287,47 +421,32 @@ function conversionRow(
       el("option", { value: "down" }, "down"),
     );
     round.value = span.round ?? "nearest";
-    // Only offered on a face that runs below zero, because that is the only
-    // face it does anything to and an offer that changes nothing is a question
-    // the user has to answer for no reason. Checked as the ends are typed, so
-    // a face made signed by typing -3 offers it without being drawn again.
-    const signed = (): boolean => (span.reads ?? [0, 0]).some((end) => end < 0);
-    const abs = el("input", { type: "checkbox" });
-    abs.checked = span.abs === true;
-    const unsign = el("label", { class: "meta" }, abs, " without its sign");
-    unsign.hidden = !signed();
     const sync = (): void => {
-      span.reads = [Number(low.value) || 0, Number(high.value) || 0];
       const places = Number(dp.value) || 0;
       if (places > 0) span.decimals = places;
       else delete span.decimals;
+      const whole = Math.round(Number(digits.value) || 0);
+      if (whole > 0) span.digits = whole;
+      else delete span.digits;
       const every = Number(wrap.value);
       if (Number.isFinite(every) && every > 0) span.wrap = every;
       else delete span.wrap;
       if (round.value === "down") span.round = "down";
       else delete span.round;
-      unsign.hidden = !signed();
-      if (abs.checked && signed()) span.abs = true;
-      else delete span.abs;
+      settleSign();
       edited();
     };
-    for (const box of [low, high, dp, wrap]) box.addEventListener("input", sync);
+    for (const box of [dp, digits, wrap]) box.addEventListener("input", sync);
     round.addEventListener("change", sync);
     abs.addEventListener("change", sync);
+    // One line that wraps between phrases, so a wide window takes it all on
+    // one line and a narrow one breaks it where the sentence allows.
+    const sep = (text: string): HTMLElement => el("span", { class: "sep" }, text);
     values.append(
-      low,
-      el("span", { class: "sep" }, "to"),
-      high,
-      el("span", { class: "sep" }, "with"),
-      dp,
-      el("span", { class: "sep" }, "decimals"),
-    );
-    // A line of its own: on the first the labels squeezed and broke.
-    after.append(
-      el("span", { class: "sep" }, "rounded"),
-      round,
-      el("span", { class: "sep" }, "and wrapping at"),
-      wrap,
+      phrase(sep("with"), dp, sep("decimals")),
+      phrase(sep("and"), digits, sep("digits")),
+      phrase(sep("rounded"), round),
+      phrase(sep("and wrapping at"), wrap),
       unsign,
     );
   }
@@ -335,24 +454,67 @@ function conversionRow(
   return el(
     "div",
     {},
-    el("div", { class: "test-row" }, select, values),
-    span.reads ? el("div", { class: "test-row" }, after) : "",
-    valueAliasEditor(span, signal, set, colours, inverse, edited),
     el(
-      "span",
-      { class: "meta block" },
-      span.reads
-        ? `DCS-BIOS sends 0 to ${max}, and this is what the dial is marked ` +
-            "with at each end. It reports a needle as a position, not a value, " +
-            "so this is yours to give. A face that starts below zero or runs " +
-            "backwards is fine. Round down for a drum or a counter, which only " +
-            "shows a digit once it has clicked over. Wrap for anything that " +
-            "starts again from 0: one drum digit is 0 to 10 wrapping at 10, and " +
-            "a compass is 0 to 360 wrapping at 360."
+      "div",
+      { class: "test-row" },
+      select,
+      infoIcon(
+        "About converting the number",
+        converted
+        ? `DCS-BIOS sends the needle's position as 0 to ${max}. Each row says ` +
+            "what the dial reads for part of that range. One row covering all of " +
+            "it suits a dial with evenly spaced marks. If the marks bunch up, " +
+            "like on some fuel gauges, use a row for each section between two " +
+            "marks: lower the first row's end to where the first mark is, and a " +
+            "button offers the rest. Learn shows the number for where the " +
+            "needle is. Digits fills with zeros, so a counter shows 001 rather " +
+            "than 1. Round down for a drum or a counter, which only shows a " +
+            "digit once it has clicked over. Wrap for anything that starts " +
+            "again from 0: one drum digit is 0 to 10 wrapping at 10, and a " +
+            "compass is 0 to 360 wrapping at 360."
         : `The number DCS-BIOS sends, 0 to ${max}, drawn as it is. Right for ` +
             "a count or a selector. A needle wants converting.",
+      ),
     ),
+    converted ? stretches : "",
+    converted ? offer : "",
+    converted ? el("div", { class: "test-row" }, values) : "",
+    valueAliasEditor(span, signal, set, colours, inverse, edited),
   );
+}
+
+/** Whether a piece converts its number, by a range or by stretches. */
+function isConverted(span: Span): boolean {
+  return span.reads !== undefined || (span.conversions?.length ?? 0) > 0;
+}
+
+/** One stretch of a dial while it is being typed in. */
+interface StretchRow {
+  raw: [number, number];
+  reads: [number, number];
+  colour: string;
+  small: boolean;
+}
+
+/**
+ * The counts from 0 to `max` no stretch claims, as closed runs.
+ *
+ * The walk `Span::unconverted` does, kept here so the offer comes and goes as
+ * the counts are typed. The backend's caution still has the last word.
+ */
+function unconverted(rows: { raw: [number, number] }[], max: number): [number, number][] {
+  const runs = rows
+    .map((row) => row.raw)
+    .filter(([a, b]) => b >= a)
+    .sort((x, y) => x[0] - y[0] || x[1] - y[1]);
+  const out: [number, number][] = [];
+  let next = 0;
+  for (const [a, b] of runs) {
+    if (a > next && next <= max) out.push([next, Math.min(a - 1, max)]);
+    next = Math.max(next, b + 1);
+  }
+  if (next <= max) out.push([next, max]);
+  return out;
 }
 
 /**
@@ -441,18 +603,12 @@ function seatChooser(
     else readout.seat = Number(menu.value);
     onChange();
   });
-  return el(
-    "label",
-    { class: "meta" },
-    "shown in ",
-    menu,
-    el(
-      "span",
-      { class: "meta block" },
-      "This aircraft reports which station you are in, and DCS-BIOS exports " +
+  return explained(
+    el("label", { class: "meta" }, "shown in ", menu),
+    "About the seat",
+    "This aircraft reports which station you are in, and DCS-BIOS exports " +
         "both of them at once. Pick one and the field paints only from that " +
         "seat, which is what lets two fields share the same cells.",
-    ),
   );
 }
 
@@ -588,6 +744,17 @@ function cellChooser(
 }
 
 /**
+ * A control with its explanation behind an info icon beside it.
+ *
+ * Beside the label rather than inside it, because a click anywhere in a label
+ * toggles its checkbox, and reading the explanation should not change a
+ * setting.
+ */
+function explained(control: HTMLElement, label: string, ...content: (Node | string)[]): HTMLElement {
+  return el("span", { class: "with-info" }, control, infoIcon(label, ...content));
+}
+
+/**
  * Values the module words differently from the glyph table.
  *
  * The case this exists for is real and was found by flying: DCS-BIOS reports
@@ -656,16 +823,15 @@ function aliasEditor(span: Span, onChange: () => void): HTMLElement {
 
   draw();
   wrap.append(
-    el("label", { class: "meta" }, "substitutions"),
-    rows,
-    add,
-    el(
-      "span",
-      { class: "meta block" },
+    explained(
+      el("label", { class: "meta" }, "substitutions"),
+      "About substitutions",
       "For a value this display cannot draw. DCS-BIOS reports the Hornet " +
         "scratchpad cursor as -- where the cockpit shows _, and -- is not a " +
         "glyph, so without a substitution the cell goes dark.",
     ),
+    rows,
+    add,
   );
   return wrap;
 }
@@ -799,7 +965,14 @@ function valueAliasEditor(
         draw();
         store();
       });
-      const cell = el("div", { class: "alias-row" }, band, el("span", { class: "meta" }, "shows as"), alias);
+      // Phrases, so a narrow window breaks the row between them and never
+      // between "in" and the colour it names.
+      const cell = el(
+        "div",
+        { class: "alias-row band" },
+        el("span", { class: "phrase" }, band, el("span", { class: "meta" }, "shows as"), alias),
+      );
+      const look = el("span", { class: "phrase" });
       // Only where the glass has colours to draw. A band's colour is the point
       // of banding a caution, but on segments there is nothing to pick from.
       if (colours.length > 0) {
@@ -811,7 +984,7 @@ function valueAliasEditor(
           row.colour = pick.value;
           store();
         });
-        cell.append(el("span", { class: "meta" }, "in"), pick);
+        look.append(el("span", { class: "meta" }, "in"), pick);
       }
       // The same box a piece of text gets, and only where the glass draws
       // inverse. On a screen with no colours it is the way a band stands out,
@@ -823,8 +996,9 @@ function valueAliasEditor(
           row.inverse = flip.checked;
           store();
         });
-        cell.append(el("label", { class: "meta" }, flip, " inverse"));
+        look.append(el("label", { class: "meta" }, flip, " inverse"));
       }
+      if (look.childNodes.length > 0) cell.append(look);
       cell.append(drop, trouble);
       check();
       rows.append(cell);
@@ -850,103 +1024,20 @@ function valueAliasEditor(
   });
 
   draw();
-  wrap.append(el("label", { class: "meta" }, "aliases"), rows, add);
-  if (held.length === 0 && Object.keys(named).length > 0) wrap.append(fill);
   wrap.append(
-    el(
-      "span",
-      { class: "meta block" },
+    explained(
+      el("label", { class: "meta" }, "aliases"),
+      "About aliases",
       "What to draw instead of the number. A row claims one reading (3), a " +
         'list of them (0,1,2) or a band ("-1.5..-0.1"), in what the face ' +
         "reads rather than the number DCS-BIOS sends. A reading no row claims " +
         "is drawn as the number, and two rows claiming one reading is refused.",
     ),
+    rows,
+    add,
   );
+  if (held.length === 0 && Object.keys(named).length > 0) wrap.append(fill);
   return wrap;
-}
-
-/**
- * What a divider shows, in place of a signal picker.
- *
- * There is nothing to choose: it reads no signal, so it has no range, no
- * highlighting and no alignment. What it does have is a width, which is what
- * decides where the dashes fall, so the rule is drawn here as the panel will
- * draw it. The backend works it out; one rule written twice is one rule that
- * can drift.
- */
-function dividerCell(opts: RowOptions): { node: HTMLElement; refresh: () => void } {
-  const { readout, display, profile, onChange } = opts;
-  const rule = rulePreview(readout);
-  const refresh = rule.refresh;
-
-  const node = el(
-    "div",
-    { class: "readout-extras" },
-    el("span", { class: "meta" }, "A rule. It reads nothing and never changes."),
-    rule.node,
-    colourChooser(readout, display, () => {
-      refresh();
-      onChange();
-    }),
-    labelEditor(
-      readout,
-      () => cellCount(readout.cells),
-      display,
-      profile,
-      () => {
-        refresh();
-        onChange();
-      },
-    ).node,
-    el(
-      "span",
-      { class: "meta block" },
-      "A blank cell at each end and an unbroken line between them, so it sits " +
-        "clear of whatever is beside it. It is on the glass from the moment " +
-        "the aircraft loads, which is what makes it an edge for a page that " +
-        "does not fill the screen.",
-    ),
-    noteEditor(readout, "field", onChange),
-  );
-  node.append(...resetButtons(opts));
-  return { node, refresh };
-}
-
-/** A rule as the panel will draw it, at its width and with its label. */
-function rulePreview(readout: Readout): { node: HTMLElement; refresh: () => void } {
-  const preview = el("div", { class: "divider-preview" });
-  const paint = (cells: RuleCell[]): void => {
-    preview.textContent = "";
-    for (const cell of cells) {
-      const colour = cell.label ? readout.label_colour ?? readout.colour : readout.colour;
-      // Spaces carry the shape here, so they have to survive being drawn in
-      // HTML, which collapses a run of them to one.
-      const piece = el("span", {}, cell.text.replace(/ /g, "\u00a0"));
-      piece.style.color = SWATCH[colour ?? "white"] ?? "";
-      preview.append(piece);
-    }
-  };
-  // What the last request was for. The user keeps typing while one is in
-  // flight, and a late answer about a shorter label must not be painted over
-  // the rule they are looking at.
-  let asked = "";
-  const refresh = (): void => {
-    const range = parseCells(readout.cells);
-    const width = range ? range[1] - range[0] + 1 : 0;
-    const label = readout.label ?? "";
-    const mine = `${width}\u0000${label}`;
-    asked = mine;
-    void dividerRule(width, label).then(
-      (cells) => {
-        if (asked === mine) paint(cells);
-      },
-      () => {
-        if (asked === mine) preview.textContent = "";
-      },
-    );
-  };
-  refresh();
-  return { node: preview, refresh };
 }
 
 /**
@@ -1056,42 +1147,6 @@ function labelEditor(
   };
 }
 
-/**
- * What colour the glass draws this rule in.
- *
- * Offered on a divider and nowhere else. A field's colour is the aircraft's
- * business, matching what its own CDU draws, and is left as the profile has it;
- * a rule is the user's own addition, so its colour is theirs to pick. The list
- * comes from the backend, so it cannot offer one the panel has no index for.
- */
-function colourChooser(
-  readout: Readout,
-  display: DisplayInfo,
-  onChange: () => void,
-): HTMLElement {
-  const menu = el("select", { class: "colour" });
-  for (const name of display.colours) {
-    menu.append(el("option", { value: name }, name));
-  }
-  menu.value = readout.colour ?? "white";
-  menu.addEventListener("change", () => {
-    readout.colour = menu.value;
-    onChange();
-  });
-  return el(
-    "label",
-    { class: "meta" },
-    "drawn in ",
-    menu,
-    el(
-      "span",
-      { class: "meta block" },
-      "Match the page it is ruling. Black is the screen's own background, so a " +
-        "rule drawn in it is a rule nobody can see.",
-    ),
-  );
-}
-
 interface RowOptions {
   readout: Readout;
   display: DisplayInfo;
@@ -1165,12 +1220,6 @@ function canonical(value: unknown): unknown {
 function fieldShape(r: Readout): string {
   return JSON.stringify(
     canonical({
-      divider: r.divider,
-      // Only a rule keeps a colour of its own. On anything else that key holds
-      // the one part's colour, and `contentOf` has already taken it there.
-      colour: r.divider ? r.colour : undefined,
-      label: r.divider ? r.label : undefined,
-      label_colour: r.divider ? r.label_colour : undefined,
       seat: r.seat,
       align: r.align,
       note: r.note,
@@ -1289,7 +1338,10 @@ function spanWidth(span: Span, signals: SignalView[]): number {
   const max = maxOf(signals, span.source);
   const aliases = span.value_aliases ?? {};
   const longest = Math.max(0, ...Object.values(aliases).map((a) => [...aliasText(a)].length));
-  const [low, high] = span.reads ?? [0, max];
+  // Every end of a straight stretch of the face, which is where the widest
+  // number it draws has to be.
+  const faceEnds = span.conversions?.length ? span.conversions.flatMap((c) => c.reads) : span.reads ?? [0, max];
+  const [low, high] = [Math.min(...faceEnds), Math.max(...faceEnds)];
   const dp = span.decimals ?? 0;
   if (bandsCover(Object.keys(aliases), low, high, dp)) return longest;
   const every = span.wrap && span.wrap > 0 ? span.wrap : 0;
@@ -1299,7 +1351,7 @@ function spanWidth(span: Span, signals: SignalView[]): number {
     const wrapped = every ? ((rounded % every) + every) % every : rounded;
     return wrapped === 0 ? 0 : wrapped;
   };
-  const ends = [settle(low), settle(high)];
+  const ends = faceEnds.map(settle);
   // A reading that starts over between its ends can draw anything up to the
   // last value before it does.
   const [a, b] = [Math.min(low, high), Math.max(low, high)];
@@ -1309,7 +1361,18 @@ function spanWidth(span: Span, signals: SignalView[]): number {
   // The sign goes before the width is taken, or a face running below zero is
   // measured a cell wider than it ever draws.
   const shown = (end: number): number => (span.abs ? Math.abs(end) : end);
-  return Math.max(longest, ...ends.map((end) => shown(end).toFixed(dp).length));
+  return Math.max(longest, ...ends.map((end) => numberText(shown(end), dp, span.digits ?? 0).length));
+}
+
+/**
+ * A settled reading as the daemon writes it: to its decimal places, with the
+ * whole part made up to `digits` with leading zeros after any sign.
+ */
+function numberText(value: number, dp: number, digits: number): string {
+  const magnitude = Math.abs(value).toFixed(dp);
+  const point = magnitude.indexOf(".");
+  const whole = point < 0 ? magnitude.length : point;
+  return (value < 0 ? "-" : "") + "0".repeat(Math.max(0, digits - whole)) + magnitude;
 }
 
 /**
@@ -1993,9 +2056,9 @@ function spanEditor(
     body.append(spanRule(spans, index, opts, edited));
   } else if (span.gap) {
     body.append(
-      el(
-        "span",
-        { class: "meta block" },
+      explained(
+        el("span", { class: "meta" }, "blank space"),
+        "About gaps",
         "Blank, and as wide as whatever the rest of the row leaves. Put one " +
           "between two pieces to push them to opposite ends, or use two to " +
           "space three pieces evenly. It draws nothing itself, so it has " +
@@ -2066,7 +2129,7 @@ function spanEditor(
       // cautions rather than refuses, and quietly dropping it here would undo
       // the user's choice the moment the field was drawn.
       const textual = isText(signals, span.source);
-      if (!textual || span.reads || span.value_aliases) {
+      if (!textual || isConverted(span) || span.value_aliases) {
         // Choosing between as sent, converted and aliases changes which boxes
         // there are, so that rebuilds. Typing in them does not.
         const signal = signals.find((s) => s.id === span.source);
@@ -2122,18 +2185,12 @@ function spanEditor(
       onChange();
     });
     style.append(
-      el(
-        "label",
-        { class: "meta" },
-        small,
-        " small",
-        el(
-          "span",
-          { class: "meta block" },
-          "The grid's small font, which a CDU uses for its labels. It draws " +
+      explained(
+        el("label", { class: "meta" }, small, " small"),
+        "About the small font",
+        "The grid's small font, which a CDU uses for its labels. It draws " +
             "fewer characters than the large one, so a character that was fine " +
             "may stop being drawn.",
-        ),
       ),
     );
   }
@@ -2239,9 +2296,9 @@ function spanRule(
   return el(
     "div",
     { class: "readout-extras" },
-    el(
-      "span",
-      { class: "meta block" },
+    explained(
+      el("span", { class: "meta" }, "a line of dashes"),
+      "About rules",
       "A line of dashes, as wide as whatever the rest of the row leaves. It " +
         "reads nothing, so it is on the glass from the moment the aircraft " +
         "loads. Give it a fixed width below to hold it to a size, which is " +
@@ -2324,16 +2381,15 @@ function boxControls(span: Span, readout: Readout, edited: () => void): HTMLElem
   return el(
     "div",
     { class: "span-box" },
-    el("label", { class: "meta" }, "width ", width),
-    el("label", { class: "meta" }, "aligned ", align),
-    el(
-      "span",
-      { class: "meta block" },
+    explained(
+      el("label", { class: "meta" }, "width ", width),
+      "About the width",
       "Cells this piece takes whatever it draws, so the pieces after it stay " +
         "where they are as it changes width. 0 leaves it as wide as its " +
         "value. Anything too long for the box is cropped from the end the " +
         "alignment anchors away from.",
     ),
+    el("label", { class: "meta" }, "aligned ", align),
     trouble,
   );
 }
@@ -2360,17 +2416,11 @@ function spanFormatChooser(
     else delete span.format;
     onChange();
   });
-  return el(
-    "label",
-    { class: "meta" },
-    box,
-    ` highlighting${twin ? ` from ${twin}` : ""}`,
-    el(
-      "span",
-      { class: "meta block" },
-      "A second signal the module sends beside this one, one character for " +
+  return explained(
+    el("label", { class: "meta" }, box, ` highlighting${twin ? ` from ${twin}` : ""}`),
+    "About highlighting",
+    "A second signal the module sends beside this one, one character for " +
         "one, marking which characters to draw inverse.",
-    ),
   );
 }
 
@@ -2480,19 +2530,13 @@ function chainEditor(opts: RowOptions, refreshPreview: () => void): HTMLElement 
         onChange();
       });
       extras.append(
-        el(
-          "label",
-          { class: "meta" },
-          "aligned ",
-          align,
-          el(
-            "span",
-            { class: "meta block" },
-            "Which end of the run the whole line anchors to. A scratchpad " +
+        explained(
+          el("label", { class: "meta" }, "aligned ", align),
+          "About the alignment",
+          "Which end of the run the whole line anchors to. A scratchpad " +
               "wants right: digits enter at the last cell, and DCS-BIOS can " +
               "send more characters than there are cells. To hold one piece " +
               "in place rather than the line, give that piece a width instead.",
-          ),
         ),
       );
     }
@@ -2536,9 +2580,6 @@ const readsLine = (text: string): HTMLElement =>
 
 /** What a field reads, a line per signal, for a row that is not open. */
 function fieldReads(readout: Readout, signals: SignalView[]): HTMLElement[] {
-  if (readout.divider) {
-    return [readsLine(readout.label ? `A rule labelled ${readout.label}. It reads nothing.` : "A rule. It reads nothing.")];
-  }
   const ids = [
     ...new Set(
       contentOf(readout)
@@ -2571,7 +2612,7 @@ function closedRow(opts: RowOptions): HTMLTableRowElement {
     el("span", { class: "region-name" }, region?.name ?? "Somewhere else"),
     el("div", { class: "meta" }, extent(readout.cells)),
   );
-  const preview = readout.divider ? rulePreview(readout) : glyphPreview(readout, display, profile, signals);
+  const preview = glyphPreview(readout, display, profile, signals);
   preview.refresh();
   const shows = el(
     "td",
@@ -2600,22 +2641,12 @@ function row(opts: RowOptions): HTMLTableRowElement {
   const { readout, display, all, onChange } = opts;
   const tr = el("tr");
 
-  // A divider's preview follows its width, so a change of cells has to reach
-  // it. Everything else in a row reads the cells only when it is drawn.
-  const rule = readout.divider ? dividerCell(opts) : null;
   let rebuild = (): void => {};
   const changed = (): void => {
-    rule?.refresh();
     rebuild();
     onChange();
   };
   tr.append(cellChooser(readout, display, all, changed));
-
-  if (rule) {
-    tr.append(el("td", {}, rule.node));
-    tr.append(el("td", { class: "num" }, rowActions(opts)));
-    return tr;
-  }
 
   const shows = el("td");
   const draw = (): void => {
@@ -2638,9 +2669,6 @@ function row(opts: RowOptions): HTMLTableRowElement {
  */
 function describeField(readout: Readout, display: DisplayInfo): string {
   const where = describe(readout.cells, display);
-  if (readout.divider) {
-    return readout.label ? `The rule on ${where}, labelled ${readout.label}.` : `The rule on ${where}.`;
-  }
   const pieces = contentOf(readout).map((s) => {
     const held = s.width ? ` held to ${s.width} cells` : "";
     if (s.rule) return s.label ? `a rule labelled ${s.label}${held}` : `a rule${held}`;
@@ -2649,8 +2677,12 @@ function describeField(readout: Readout, display: DisplayInfo): string {
       // How it draws the number, so a reset that only changes that says so
       // rather than showing the same line twice.
       const aliases = Object.entries(s.value_aliases ?? {});
-      const converted = s.reads
-        ? ` converted to ${s.reads[0]} to ${s.reads[1]}` +
+      const stretched = s.conversions?.length
+        ? ` converted in ${s.conversions.length} stretch${s.conversions.length === 1 ? "" : "es"}`
+        : "";
+      const converted = isConverted(s)
+        ? (s.reads ? ` converted to ${s.reads[0]} to ${s.reads[1]}` : stretched) +
+          (s.digits ? `, padded to ${s.digits} digits` : "") +
           (s.round === "down" ? ", rounded down" : "") +
           (s.wrap ? `, wrapping at ${s.wrap}` : "") +
           (s.abs ? ", without its sign" : "")
@@ -2678,7 +2710,7 @@ function describeField(readout: Readout, display: DisplayInfo): string {
  */
 function removeButton(opts: RowOptions): HTMLElement {
   const { readout, display } = opts;
-  const what = readout.divider ? "rule" : "field";
+  const what = "field";
   return iconButton("trash", "\u{1F5D1}", `Delete this ${what}`, () => {
     const consequence = opts.shipped
       ? "\n\nThis one shipped with the page, so the area it sits in will offer it back."
@@ -2840,7 +2872,8 @@ export function fieldTable(
         // Every first piece starts a chain, a rule included. A rule made
         // here used to be a whole-field divider, which holds no pieces, so
         // nothing could be added beside it and its kind could not be
-        // changed. A divider already in a profile still loads and edits.
+        // changed. One in an older file arrives as a rule piece, turned
+        // into one by `ruleFromDivider` as the page opens.
         const first = newSpan(kind);
         if (kind === "rule") first.colour = agreedColour(mine());
         setContent(fresh, [first]);

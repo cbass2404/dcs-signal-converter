@@ -445,8 +445,8 @@ fn every_cell_belongs_to_exactly_one_named_region() {
 use std::collections::BTreeMap;
 
 use dsc_config::{
-    divider_rule, divider_text, min_divider_cells, AliasDraw, Align, CellRange, Colour, Reading,
-    Readout, Round, Span, ValueBand,
+    divider_rule, divider_text, min_divider_cells, AliasDraw, Align, CellRange, Colour, Conversion,
+    Reading, Readout, Round, Span, ValueBand,
 };
 
 fn readout(cells: &str, source: &str) -> Readout {
@@ -699,6 +699,147 @@ fn a_drum_between_digits_draws_the_one_it_has_left() {
     // nearest it read 5 while the drum below it still read 9.
     assert_eq!(s.format_number(raw(0.48), 65535), "4");
     assert_eq!(s.format_number(raw(0.99), 65535), "9");
+}
+
+#[test]
+fn a_drum_with_decimals_rounds_to_its_last_place_either_way() {
+    // The Apache's altimeter setting drum, drawn to a tenth. Rounding works
+    // on the last place drawn, not on the whole digit.
+    let mut r = readout("2-4", "PLT_ALT_PRESS_1");
+    let mut s = drum(&mut r);
+    s.decimals = 1;
+    assert_eq!(s.format_number(raw(0.47), 65535), "4.7");
+    assert_eq!(s.format_number(raw(0.476), 65535), "4.7");
+    assert_eq!(s.format_number(raw(0.99), 65535), "9.9");
+    assert_eq!(s.format_number(raw(0.996), 65535), "9.9");
+    s.round = Round::Nearest;
+    assert_eq!(s.format_number(raw(0.47), 65535), "4.7");
+    assert_eq!(s.format_number(raw(0.476), 65535), "4.8");
+    assert_eq!(s.format_number(raw(0.99), 65535), "9.9");
+    // 9.96 rounds to 10.0, which wraps to 0.0.
+    assert_eq!(s.format_number(raw(0.996), 65535), "0.0");
+}
+
+/// The Mosquito's inner tank gauge, 0 to 160 gallons on a dial whose marks
+/// crowd together towards the top. The needle positions are the module's own,
+/// from `FuelGaugeInnerPort` in its `mainpanel_init.lua`, scaled to the counts
+/// DCS-BIOS sends. The last stretch is red and small here to test styling; the
+/// real dial is not marked that way.
+fn tank_gauge(r: &mut Readout) -> Span {
+    span(r).conversions = serde_json::from_str::<Vec<Conversion>>(include_str!(
+        "fixtures/mosquito-inner-tank.json"
+    ))
+    .expect("the tank fixture parses");
+    span(r).clone()
+}
+
+#[test]
+fn a_tank_gauge_reads_its_marks_where_the_dial_puts_them() {
+    let mut r = readout("2-4", "FUEL_INNER_PORT");
+    let s = tank_gauge(&mut r);
+    // Each mark at the needle position the module draws it at.
+    for (position, mark) in [(0.0, "0"), (0.197, "20"), (0.485, "60"), (0.741, "100"), (0.867, "120"), (0.94, "146")] {
+        assert_eq!(s.format_number(raw(position), 65535), mark, "at {position}");
+    }
+    assert_eq!(s.format_number(65535, 65535), "160");
+    // Half way between two marks is half way between their readings.
+    assert_eq!(s.format_number(raw((0.197 + 0.485) / 2.0), 65535), "40");
+
+    // The straight line across the whole face is what this replaces, and it
+    // is 12 gallons out at the 20 mark.
+    let mut linear = readout("2-4", "FUEL_INNER_PORT");
+    span(&mut linear).reads = Some([0.0, 160.0]);
+    assert_eq!(span(&mut linear).format_number(raw(0.197), 65535), "32");
+}
+
+#[test]
+fn a_count_no_stretch_claims_reads_as_the_nearest_end() {
+    let mut r = readout("2-4", "FUEL_INNER_PORT");
+    let mut s = tank_gauge(&mut r);
+    assert!(s.unconverted(65535).is_empty(), "the fixture covers the whole signal");
+
+    // A table that stops at the last mark: the needle past it reads the mark.
+    s.conversions.pop();
+    assert_eq!(s.unconverted(65535), vec![[61604, 65535]]);
+    assert_eq!(s.format_number(65535, 65535), "146");
+
+    // A hole in the middle reads as whichever side is nearer.
+    s.conversions.remove(1);
+    assert_eq!(s.unconverted(65535), vec![[12911, 31785], [61604, 65535]]);
+    assert_eq!(s.format_number(20000, 65535), "20");
+    assert_eq!(s.format_number(30000, 65535), "60");
+}
+
+#[test]
+fn a_stretch_draws_in_its_own_colour_and_size() {
+    let mut r = readout("2-4", "FUEL_INNER_PORT");
+    tank_gauge(&mut r);
+    span(&mut r).colour = Some(Colour::Green);
+    // The characters drawn, without the blanks the field pads its run with.
+    let at = |r: &Readout, value: u16| -> Vec<_> {
+        let glyphs = r.compose(|_| Some(Reading::Number { value, max: 65535 })).unwrap();
+        glyphs.into_iter().filter(|g| g.text != " ").collect()
+    };
+
+    // The last stretch is red and small, over the piece's own green.
+    let top = at(&r, 65535);
+    assert!(top.iter().all(|g| g.colour == Some(Colour::Red) && g.small), "{top:?}");
+    // Every other stretch leaves the piece's own alone.
+    let low = at(&r, raw(0.3));
+    assert!(low.iter().all(|g| g.colour == Some(Colour::Green) && !g.small), "{low:?}");
+
+    // A band names the exact reading, so its colour wins over the stretch's.
+    span(&mut r)
+        .value_aliases
+        .insert(ValueBand::Range { lo: 150.0, hi: 160.0 }, AliasDraw {
+            text: "FULL".into(),
+            colour: Some(Colour::Amber),
+            inverse: false,
+        });
+    let full = at(&r, 65535);
+    assert!(full.iter().all(|g| g.colour == Some(Colour::Amber)), "{full:?}");
+}
+
+#[test]
+fn a_tank_gauge_is_measured_by_the_widest_mark_and_round_trips_flat() {
+    let mut r = readout("2-4", "FUEL_INNER_PORT");
+    tank_gauge(&mut r);
+    assert_eq!(span(&mut r).widest(None, Some(65535)), Some(3));
+
+    let json = serde_json::to_value(&r).unwrap();
+    assert!(json.get("content").is_none(), "one gauge stays in the flat shape");
+    assert!(json.get("reads").is_none());
+    assert_eq!(json["conversions"][5]["colour"], "red");
+    assert!(json["conversions"][0].get("small").is_none(), "an unstyled stretch writes no style");
+    let back: Readout = serde_json::from_value(json).unwrap();
+    assert_eq!(back.content[0].conversions, r.content[0].conversions);
+}
+
+#[test]
+fn a_counter_keeps_its_leading_zeros() {
+    // A 000 to 999 barrel shows every drum, so 1 is 001.
+    let mut r = readout("2-4", "COUNTER");
+    span(&mut r).reads = Some([0.0, 1000.0]);
+    span(&mut r).wrap = Some(1000.0);
+    span(&mut r).round = Round::Down;
+    span(&mut r).digits = 3;
+    let s = span(&mut r).clone();
+    assert_eq!(s.format_number(raw(1.0 / 1000.0), 65535), "001");
+    assert_eq!(s.format_number(raw(0.042), 65535), "042");
+    assert_eq!(s.format_number(0, 65535), "000");
+    assert_eq!(s.format_number(raw(0.999), 65535), "999");
+    assert_eq!(span(&mut r).widest(None, Some(65535)), Some(3));
+
+    // The zeros are the whole number's, so decimals go after them and a sign
+    // goes in front.
+    let mut t = readout("2-6", "TRIM");
+    span(&mut t).reads = Some([-10.0, 10.0]);
+    span(&mut t).decimals = 1;
+    span(&mut t).digits = 2;
+    let s = span(&mut t).clone();
+    assert_eq!(s.format_number(raw(0.55), 65535), "01.0");
+    assert_eq!(s.format_number(raw(0.45), 65535), "-01.0");
+    assert_eq!(span(&mut t).widest(None, Some(65535)), Some(5));
 }
 
 #[test]

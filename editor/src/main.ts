@@ -1517,6 +1517,9 @@ async function showProfile(file: string): Promise<void> {
   let found = await lookForPanels();
 
   clear();
+  // The library may have been scrolled down to reach this profile; the page
+  // opens at its header, not at that depth.
+  window.scrollTo(0, 0);
 
   const save = el("button", { class: "primary" }, "Save");
   const state = el("span", { class: "meta" }, "");

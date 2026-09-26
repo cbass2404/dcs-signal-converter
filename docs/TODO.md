@@ -167,6 +167,9 @@ numbers move and the words do not.
 
 ## Smaller
 
+- [ ] **Keep the rule text preview inside its container.** In the page
+      edit view, the text preview for a rule runs past the edge of its
+      container; every other preview sits inside as expected.
 - [x] ~~**Move the DED glyph generator into `tools/`.**~~ Done 2026-09-25:
       `tools/gen_ded.py` pairs the two fixtures itself, so there is no
       glyph cache, and rewrites only the font and its two notes in

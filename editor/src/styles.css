@@ -1273,6 +1273,11 @@ input.cells.bad {
   gap: 8px;
 }
 
+/* A stretch of a dial is four numbers and its style, wider than a panel. */
+.alias-row.stretch {
+  flex-wrap: wrap;
+}
+
 /* Short, because a substitution is a character or two: "--" for "_". Showing
    the spaces matters, so this is monospaced. */
 input.alias {

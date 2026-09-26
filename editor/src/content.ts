@@ -21,7 +21,9 @@ const FLAT = [
   "source",
   "gap",
   "reads",
+  "conversions",
   "decimals",
+  "digits",
   "round",
   "wrap",
   "abs",
@@ -48,7 +50,9 @@ export function contentOf(readout: Readout): Span[] {
   if (readout.source) one.source = readout.source;
   if (readout.gap) one.gap = readout.gap;
   if (readout.reads) one.reads = readout.reads;
+  if (readout.conversions) one.conversions = readout.conversions;
   if (readout.decimals) one.decimals = readout.decimals;
+  if (readout.digits) one.digits = readout.digits;
   if (readout.round) one.round = readout.round;
   if (readout.wrap) one.wrap = readout.wrap;
   if (readout.abs) one.abs = readout.abs;

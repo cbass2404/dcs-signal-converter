@@ -370,6 +370,81 @@ fn a_band_nothing_can_reach_is_a_caution() {
     );
 }
 
+/// A field on NEEDLE converted by the Mosquito's inner tank table, with the
+/// stretches given, for the conversion checks.
+fn tank(stretches: &str, extra: &str) -> Profile {
+    profile(&format!(
+        r#""readouts": [
+            {{"device": "CarrierAce_UFC", "display": "UFC1", "cells": "30-33", "source": "NEEDLE",
+             "conversions": {stretches}{extra}}}
+        ]"#
+    ))
+}
+
+/// The inner tank table without its styling, which the UFC cannot draw.
+const TANK: &str = r#"[
+    {"raw": [0, 12910], "reads": [0, 20]},
+    {"raw": [12911, 31785], "reads": [20, 60]},
+    {"raw": [31786, 48561], "reads": [60, 100]},
+    {"raw": [48562, 56819], "reads": [100, 120]},
+    {"raw": [56820, 61603], "reads": [120, 146]},
+    {"raw": [61604, 65535], "reads": [146, 160]}
+]"#;
+
+fn cautions(p: &Profile) -> Vec<String> {
+    let devices = DeviceInventory::load(&r("data/devices.json")).expect("devices");
+    let displays = DisplayCatalogue::load_dir(&r("data/displays")).expect("displays");
+    p.field_cautions(&module(), &devices, &displays).into_iter().map(|c| c.1).collect()
+}
+
+#[test]
+fn a_dial_converted_stretch_by_stretch_is_clean() {
+    let p = tank(TANK, "");
+    assert!(found(&p).is_empty(), "{:?}", found(&p));
+    assert!(cautions(&p).is_empty(), "{:?}", cautions(&p));
+}
+
+#[test]
+fn counts_no_stretch_claims_are_a_caution_naming_them() {
+    // How a half finished table looks, and what the editor offers a stretch
+    // for. It still loads: those counts read as the nearest stretch's end.
+    let short = TANK.replace(r#",
+    {"raw": [61604, 65535], "reads": [146, 160]}"#, "");
+    let p = tank(&short, "");
+    assert!(found(&p).is_empty(), "{:?}", found(&p));
+    let said = cautions(&p);
+    assert_eq!(said.len(), 1, "{said:?}");
+    assert!(said[0].contains("counts 61604 to 65535") && said[0].contains("no conversion"), "{said:?}");
+}
+
+#[test]
+fn stretches_claiming_the_same_counts_are_a_caution() {
+    let p = tank(r#"[{"raw": [0, 40000], "reads": [0, 50]}, {"raw": [30000, 65535], "reads": [40, 160]}]"#, "");
+    assert!(found(&p).is_empty(), "{:?}", found(&p));
+    let said = cautions(&p);
+    assert_eq!(said.len(), 1, "{said:?}");
+    assert!(said[0].contains("both claim some of the same counts"), "{said:?}");
+}
+
+#[test]
+fn a_range_beside_conversions_or_a_backwards_stretch_is_refused() {
+    let both = found(&tank(TANK, r#", "reads": [0, 160]"#));
+    assert_eq!(both.len(), 1, "{both:?}");
+    assert!(both[0].contains("converted two ways"), "{both:?}");
+
+    let backwards = found(&tank(r#"[{"raw": [65535, 0], "reads": [0, 160]}]"#, ""));
+    assert_eq!(backwards.len(), 1, "{backwards:?}");
+    assert!(backwards[0].contains("ends before it starts"), "{backwards:?}");
+}
+
+#[test]
+fn a_stretchs_colour_on_glass_that_draws_none_is_refused() {
+    let p = tank(r#"[{"raw": [0, 65535], "reads": [0, 160], "colour": "red"}]"#, "");
+    let found = found(&p);
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert!(found[0].contains("colour or size, which only a text grid draws"), "{found:?}");
+}
+
 #[test]
 fn a_bands_colour_on_glass_that_draws_none_is_refused() {
     // The same answer a piece's own colour gets there. The UFC is segments: it

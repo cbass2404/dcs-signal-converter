@@ -27,6 +27,7 @@ import { aliasColour, aliasInverse, aliasOf, aliasText } from "./types";
 import type {
   AliasDraw,
   CellDraw,
+  Conversion,
   Device,
   DisplayInfo,
   FontChoice,
@@ -225,7 +226,9 @@ function startReading(span: Span, signal: SignalView | undefined): void {
  */
 function clearReading(span: Span): void {
   delete span.reads;
+  delete span.conversions;
   delete span.decimals;
+  delete span.digits;
   delete span.round;
   delete span.wrap;
   delete span.abs;
@@ -254,7 +257,7 @@ function conversionRow(
   for (const kind of Object.keys(READING_LABELS) as ReadingKind[]) {
     select.append(el("option", { value: kind }, READING_LABELS[kind]));
   }
-  select.value = span.reads ? "converted" : "sent";
+  select.value = isConverted(span) ? "converted" : "sent";
   select.addEventListener("change", () => {
     // Converting starts from the signal's own range, which draws exactly what
     // as sent did, so the choice changes nothing until a number is changed.
@@ -264,14 +267,139 @@ function conversionRow(
     rebuild();
   });
 
+  const stretches = el("div", { class: "alias-rows" });
+  const offer = el("button", { class: "add small" });
   const values = el("span", { class: "values-row" });
   const after = el("span", { class: "values-row" });
-  if (span.reads) {
-    const number = (value: number, attrs: Record<string, string> = {}): HTMLInputElement =>
+  const converted = isConverted(span);
+  if (converted) {
+    const number = (value: number | string, attrs: Record<string, string> = {}): HTMLInputElement =>
       el("input", { type: "number", class: "value", value: String(value), ...attrs });
-    const low = number(span.reads[0]);
-    const high = number(span.reads[1]);
+    const said = (text: string): HTMLElement => el("span", { class: "meta" }, text);
+    // Every conversion is a list of stretches here. A list of one across the
+    // whole signal with no styling is written as `reads`, the shape every
+    // profile had before stretches, so opening one and saving it changes
+    // nothing.
+    const held: StretchRow[] = span.conversions?.length
+      ? span.conversions.map((c) => ({
+          raw: [c.raw[0], c.raw[1]],
+          reads: [c.reads[0], c.reads[1]],
+          colour: c.colour ?? "",
+          small: c.small === true,
+        }))
+      : [{ raw: [0, max], reads: span.reads ? [span.reads[0], span.reads[1]] : [0, max], colour: "", small: false }];
+    const plain = (): boolean => {
+      const only = held[0];
+      return held.length === 1 && !!only && only.raw[0] === 0 && only.raw[1] === max && !only.colour && !only.small;
+    };
+    const store = (): void => {
+      const only = held[0];
+      if (plain() && only) {
+        span.reads = [only.reads[0], only.reads[1]];
+        delete span.conversions;
+        return;
+      }
+      delete span.reads;
+      span.conversions = held.map((row) => {
+        const c: Conversion = { raw: [row.raw[0], row.raw[1]], reads: [row.reads[0], row.reads[1]] };
+        if (row.colour) c.colour = row.colour;
+        if (row.small) c.small = true;
+        return c;
+      });
+    };
+    // Offered for the first run of counts nothing converts, so a table can be
+    // built a mark at a time: pull the first stretch's top end down to the
+    // first mark, and the rest of the signal is offered back as the next.
+    const offerRest = (): void => {
+      const rest = unconverted(held, max)[0];
+      offer.hidden = !rest;
+      if (rest) offer.textContent = `Add a row for ${rest[0]} to ${rest[1]}`;
+    };
+    offer.addEventListener("click", () => {
+      const rest = unconverted(held, max)[0];
+      if (!rest) return;
+      // Starting where the stretch below ends, so the dial runs on without a
+      // jump until the user says what the next mark reads.
+      const below = held.filter((r) => r.raw[1] < rest[0]).sort((a, b) => b.raw[1] - a.raw[1])[0];
+      const from = below ? below.reads[1] : 0;
+      held.push({ raw: [rest[0], rest[1]], reads: [from, from], colour: "", small: false });
+      held.sort((a, b) => a.raw[0] - b.raw[0]);
+      store();
+      rebuild();
+    });
+
+    // Only offered on a face that runs below zero, because that is the only
+    // face it does anything to and an offer that changes nothing is a question
+    // the user has to answer for no reason. Checked as the ends are typed, so
+    // a face made signed by typing -3 offers it without being drawn again.
+    const signed = (): boolean => held.some((row) => row.reads.some((end) => end < 0));
+    const abs = el("input", { type: "checkbox" });
+    abs.checked = span.abs === true;
+    const unsign = el("label", { class: "meta" }, abs, " without its sign");
+    unsign.hidden = !signed();
+    const settleSign = (): void => {
+      unsign.hidden = !signed();
+      if (abs.checked && signed()) span.abs = true;
+      else delete span.abs;
+    };
+
+    held.forEach((row, i) => {
+      // Counts are whole numbers DCS-BIOS can send, so a stray decimal or a
+      // number past 65535 is pulled back rather than failing to load.
+      const count = (box: HTMLInputElement): number => Math.min(65535, Math.max(0, Math.round(Number(box.value) || 0)));
+      const rawLo = number(row.raw[0], { min: "0", max: String(max), step: "1" });
+      const rawHi = number(row.raw[1], { min: "0", max: String(max), step: "1" });
+      const lo = number(row.reads[0]);
+      const hi = number(row.reads[1]);
+      const sync = (): void => {
+        row.raw = [count(rawLo), count(rawHi)];
+        row.reads = [Number(lo.value) || 0, Number(hi.value) || 0];
+        store();
+        settleSign();
+        offerRest();
+        edited();
+      };
+      for (const box of [rawLo, rawHi, lo, hi]) box.addEventListener("input", sync);
+      const line = el("div", { class: "alias-row stretch" }, rawLo, said("to"), rawHi, said("reads"), lo, said("to"), hi);
+      // A stretch's colour and size, where the glass has colours and a small
+      // font to draw them with: the last gallons of a tank in red.
+      if (colours.length > 0) {
+        const pick = el("select", { class: "colour" });
+        pick.append(el("option", { value: "" }, "same as the piece"));
+        for (const name of colours) pick.append(el("option", { value: name }, name));
+        pick.value = row.colour;
+        pick.addEventListener("change", () => {
+          row.colour = pick.value;
+          store();
+          edited();
+        });
+        const small = el("input", { type: "checkbox" });
+        small.checked = row.small;
+        small.addEventListener("change", () => {
+          row.small = small.checked;
+          store();
+          edited();
+        });
+        line.append(said("in"), pick, el("label", { class: "meta" }, small, " small"));
+      }
+      // The last one stays: a conversion with no stretches is as sent, and
+      // the menu above is where that is chosen.
+      if (held.length > 1) {
+        const drop = el("button", { class: "icon danger", title: "Remove this row" }, "\u{1F5D1}");
+        drop.addEventListener("click", () => {
+          held.splice(i, 1);
+          store();
+          rebuild();
+        });
+        line.append(drop);
+      }
+      stretches.append(line);
+    });
+    offerRest();
+
     const dp = number(span.decimals ?? 0, { min: "0", max: "3" });
+    // Empty rather than 0 when there is none, the same as the wrap box.
+    const digits = number(span.digits ? span.digits : "", { min: "0", max: "9", placeholder: "any" });
     // Empty rather than 0 when there is none, so the box reads as "never"
     // and a range starting at 0 is not confused with a wrap of 0.
     const wrap = el("input", {
@@ -287,40 +415,30 @@ function conversionRow(
       el("option", { value: "down" }, "down"),
     );
     round.value = span.round ?? "nearest";
-    // Only offered on a face that runs below zero, because that is the only
-    // face it does anything to and an offer that changes nothing is a question
-    // the user has to answer for no reason. Checked as the ends are typed, so
-    // a face made signed by typing -3 offers it without being drawn again.
-    const signed = (): boolean => (span.reads ?? [0, 0]).some((end) => end < 0);
-    const abs = el("input", { type: "checkbox" });
-    abs.checked = span.abs === true;
-    const unsign = el("label", { class: "meta" }, abs, " without its sign");
-    unsign.hidden = !signed();
     const sync = (): void => {
-      span.reads = [Number(low.value) || 0, Number(high.value) || 0];
       const places = Number(dp.value) || 0;
       if (places > 0) span.decimals = places;
       else delete span.decimals;
+      const whole = Math.round(Number(digits.value) || 0);
+      if (whole > 0) span.digits = whole;
+      else delete span.digits;
       const every = Number(wrap.value);
       if (Number.isFinite(every) && every > 0) span.wrap = every;
       else delete span.wrap;
       if (round.value === "down") span.round = "down";
       else delete span.round;
-      unsign.hidden = !signed();
-      if (abs.checked && signed()) span.abs = true;
-      else delete span.abs;
+      settleSign();
       edited();
     };
-    for (const box of [low, high, dp, wrap]) box.addEventListener("input", sync);
+    for (const box of [dp, digits, wrap]) box.addEventListener("input", sync);
     round.addEventListener("change", sync);
     abs.addEventListener("change", sync);
     values.append(
-      low,
-      el("span", { class: "sep" }, "to"),
-      high,
       el("span", { class: "sep" }, "with"),
       dp,
-      el("span", { class: "sep" }, "decimals"),
+      el("span", { class: "sep" }, "decimals and"),
+      digits,
+      el("span", { class: "sep" }, "digits"),
     );
     // A line of its own: on the first the labels squeezed and broke.
     after.append(
@@ -335,24 +453,65 @@ function conversionRow(
   return el(
     "div",
     {},
-    el("div", { class: "test-row" }, select, values),
-    span.reads ? el("div", { class: "test-row" }, after) : "",
+    el("div", { class: "test-row" }, select),
+    converted ? stretches : "",
+    converted ? offer : "",
+    converted ? el("div", { class: "test-row" }, values) : "",
+    converted ? el("div", { class: "test-row" }, after) : "",
     valueAliasEditor(span, signal, set, colours, inverse, edited),
     el(
       "span",
       { class: "meta block" },
-      span.reads
-        ? `DCS-BIOS sends 0 to ${max}, and this is what the dial is marked ` +
-            "with at each end. It reports a needle as a position, not a value, " +
-            "so this is yours to give. A face that starts below zero or runs " +
-            "backwards is fine. Round down for a drum or a counter, which only " +
-            "shows a digit once it has clicked over. Wrap for anything that " +
-            "starts again from 0: one drum digit is 0 to 10 wrapping at 10, and " +
-            "a compass is 0 to 360 wrapping at 360."
+      converted
+        ? `DCS-BIOS sends the needle's position as 0 to ${max}. Each row says ` +
+            "what the dial reads for part of that range. One row covering all of " +
+            "it suits a dial with evenly spaced marks. If the marks bunch up, " +
+            "like on some fuel gauges, use a row for each section between two " +
+            "marks: lower the first row's end to where the first mark is, and a " +
+            "button offers the rest. Learn shows the number for where the " +
+            "needle is. Digits fills with zeros, so a counter shows 001 rather " +
+            "than 1. Round down for a drum or a counter, which only shows a " +
+            "digit once it has clicked over. Wrap for anything that starts " +
+            "again from 0: one drum digit is 0 to 10 wrapping at 10, and a " +
+            "compass is 0 to 360 wrapping at 360."
         : `The number DCS-BIOS sends, 0 to ${max}, drawn as it is. Right for ` +
             "a count or a selector. A needle wants converting.",
     ),
   );
+}
+
+/** Whether a piece converts its number, by a range or by stretches. */
+function isConverted(span: Span): boolean {
+  return span.reads !== undefined || (span.conversions?.length ?? 0) > 0;
+}
+
+/** One stretch of a dial while it is being typed in. */
+interface StretchRow {
+  raw: [number, number];
+  reads: [number, number];
+  colour: string;
+  small: boolean;
+}
+
+/**
+ * The counts from 0 to `max` no stretch claims, as closed runs.
+ *
+ * The walk `Span::unconverted` does, kept here so the offer comes and goes as
+ * the counts are typed. The backend's caution still has the last word.
+ */
+function unconverted(rows: { raw: [number, number] }[], max: number): [number, number][] {
+  const runs = rows
+    .map((row) => row.raw)
+    .filter(([a, b]) => b >= a)
+    .sort((x, y) => x[0] - y[0] || x[1] - y[1]);
+  const out: [number, number][] = [];
+  let next = 0;
+  for (const [a, b] of runs) {
+    if (a > next && next <= max) out.push([next, Math.min(a - 1, max)]);
+    next = Math.max(next, b + 1);
+  }
+  if (next <= max) out.push([next, max]);
+  return out;
 }
 
 /**
@@ -1289,7 +1448,10 @@ function spanWidth(span: Span, signals: SignalView[]): number {
   const max = maxOf(signals, span.source);
   const aliases = span.value_aliases ?? {};
   const longest = Math.max(0, ...Object.values(aliases).map((a) => [...aliasText(a)].length));
-  const [low, high] = span.reads ?? [0, max];
+  // Every end of a straight stretch of the face, which is where the widest
+  // number it draws has to be.
+  const faceEnds = span.conversions?.length ? span.conversions.flatMap((c) => c.reads) : span.reads ?? [0, max];
+  const [low, high] = [Math.min(...faceEnds), Math.max(...faceEnds)];
   const dp = span.decimals ?? 0;
   if (bandsCover(Object.keys(aliases), low, high, dp)) return longest;
   const every = span.wrap && span.wrap > 0 ? span.wrap : 0;
@@ -1299,7 +1461,7 @@ function spanWidth(span: Span, signals: SignalView[]): number {
     const wrapped = every ? ((rounded % every) + every) % every : rounded;
     return wrapped === 0 ? 0 : wrapped;
   };
-  const ends = [settle(low), settle(high)];
+  const ends = faceEnds.map(settle);
   // A reading that starts over between its ends can draw anything up to the
   // last value before it does.
   const [a, b] = [Math.min(low, high), Math.max(low, high)];
@@ -1309,7 +1471,18 @@ function spanWidth(span: Span, signals: SignalView[]): number {
   // The sign goes before the width is taken, or a face running below zero is
   // measured a cell wider than it ever draws.
   const shown = (end: number): number => (span.abs ? Math.abs(end) : end);
-  return Math.max(longest, ...ends.map((end) => shown(end).toFixed(dp).length));
+  return Math.max(longest, ...ends.map((end) => numberText(shown(end), dp, span.digits ?? 0).length));
+}
+
+/**
+ * A settled reading as the daemon writes it: to its decimal places, with the
+ * whole part made up to `digits` with leading zeros after any sign.
+ */
+function numberText(value: number, dp: number, digits: number): string {
+  const magnitude = Math.abs(value).toFixed(dp);
+  const point = magnitude.indexOf(".");
+  const whole = point < 0 ? magnitude.length : point;
+  return (value < 0 ? "-" : "") + "0".repeat(Math.max(0, digits - whole)) + magnitude;
 }
 
 /**
@@ -2066,7 +2239,7 @@ function spanEditor(
       // cautions rather than refuses, and quietly dropping it here would undo
       // the user's choice the moment the field was drawn.
       const textual = isText(signals, span.source);
-      if (!textual || span.reads || span.value_aliases) {
+      if (!textual || isConverted(span) || span.value_aliases) {
         // Choosing between as sent, converted and aliases changes which boxes
         // there are, so that rebuilds. Typing in them does not.
         const signal = signals.find((s) => s.id === span.source);
@@ -2649,8 +2822,12 @@ function describeField(readout: Readout, display: DisplayInfo): string {
       // How it draws the number, so a reset that only changes that says so
       // rather than showing the same line twice.
       const aliases = Object.entries(s.value_aliases ?? {});
-      const converted = s.reads
-        ? ` converted to ${s.reads[0]} to ${s.reads[1]}` +
+      const stretched = s.conversions?.length
+        ? ` converted in ${s.conversions.length} stretch${s.conversions.length === 1 ? "" : "es"}`
+        : "";
+      const converted = isConverted(s)
+        ? (s.reads ? ` converted to ${s.reads[0]} to ${s.reads[1]}` : stretched) +
+          (s.digits ? `, padded to ${s.digits} digits` : "") +
           (s.round === "down" ? ", rounded down" : "") +
           (s.wrap ? `, wrapping at ${s.wrap}` : "") +
           (s.abs ? ", without its sign" : "")

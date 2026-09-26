@@ -49,7 +49,7 @@ pub fn build_label() -> &'static str {
 
 pub use display::{
     divider_rule, divider_text, min_divider_cells, text_cells, AliasDraw, Align, Cell, CellRange,
-    Colour, ColourSource, Display, DisplayCatalogue, Glass, Glyph, Grid, Readout, Reading, Region, Round,
+    Colour, Conversion, ColourSource, Display, DisplayCatalogue, Glass, Glyph, Grid, Readout, Reading, Region, Round,
     RuleCell, Screen, ShapeArt, Span, StrokeArt, TextCell, TextGrid, Transport, ValueBand,
     SEAT_SIGNAL,
 };
@@ -149,6 +149,16 @@ pub enum Error {
     AliasBandsOverlap(String, String, String),
     #[error("alias {0} on {1:?} is outside everything the face reads, {2} to {3}, so nothing would ever draw it")]
     AliasBandUnreachable(String, String, String, String),
+    #[error("{0:?} is converted two ways, by a range and by a list of conversions; it can have one")]
+    ReadsAndConversions(String),
+    #[error("the conversion of counts {1} to {2} on {0:?} ends before it starts")]
+    ConversionBackwards(String, u16, u16),
+    #[error("conversions {1} and {2} on {0:?} both claim some of the same counts")]
+    ConversionsOverlap(String, String, String),
+    #[error("the conversion of counts {1} on {0:?} runs past {2}, the most DCS-BIOS sends, so part of it is never used")]
+    ConversionPastMax(String, String, u16),
+    #[error("counts {1} on {0:?} have no conversion")]
+    Unconverted(String, String),
     #[error("profile disables device {0:?}, which is not a device we know")]
     DisablesUnknownDevice(String),
     #[error("{0:?} is set to follow {1:?}, and {2:?} is not a device we know")]
@@ -249,6 +259,9 @@ impl Error {
                 | Error::FormatNotText(_)
                 | Error::AliasBandUnreachable(..)
                 | Error::AliasBandsOverlap(..)
+                | Error::ConversionsOverlap(..)
+                | Error::ConversionPastMax(..)
+                | Error::Unconverted(..)
                 | Error::RuleLabelMayNotFit(..)
                 | Error::NotInGlyphs(..)
         )
@@ -270,6 +283,9 @@ impl Error {
             // Only the table's own entries are known, and a value can still
             // reach the glass by another spelling, so the user decides.
             Error::NotInGlyphs(..) => "It will load anyway, and may still draw if the glass has it under another spelling.",
+            // The arithmetic settles both of these, so the note says how.
+            Error::ConversionsOverlap(..) => "It will load anyway: the lower conversion converts the counts both claim.",
+            Error::Unconverted(..) => "It will load anyway: those counts read as the end of the nearest conversion.",
             _ => "It will load anyway, in case DCS-BIOS is wrong about it.",
         }
     }
@@ -2220,6 +2236,8 @@ impl Profile {
                 // and it draws exactly what it says it will.
                 if output.r#type == "string" {
                     if span.reads.is_some()
+                        || !span.conversions.is_empty()
+                        || span.digits != 0
                         || span.wrap.is_some()
                         || span.round != Round::Nearest
                         || span.abs
@@ -2230,6 +2248,7 @@ impl Profile {
                         out.push(Error::AliasesOnText(span.source.clone()));
                     }
                 } else {
+                    conversion_problems(span, output.number_max(), out);
                     band_problems(span, output.number_max(), out);
                 }
 
@@ -2316,6 +2335,7 @@ impl Profile {
                     // that asks for one on glass with no colours is a setting
                     // nothing draws.
                     || s.value_aliases.values().any(|a| a.colour.is_some())
+                    || s.conversions.iter().any(|c| c.colour.is_some() || c.small)
             });
             let ruled = r.divider && (r.colour.is_some() || r.label_colour.is_some());
             if styled || ruled {
@@ -2446,6 +2466,53 @@ fn glyph_problems(r: &Readout, display: &Display, out: &mut Vec<Error>) {
     }
 }
 
+/// What a dial's conversions can be wrong about.
+///
+/// Two ways of converting one piece is refused, because neither can be said to
+/// win without a rule nobody would guess. So is a stretch that ends before it
+/// starts: the editor never writes one, so it is a typing slip in a file.
+///
+/// The rest are cautions, for the same reason two bands are: the arithmetic
+/// settles each of them the same way every time, and refusing would take the
+/// whole profile dark over one dial. Counts no stretch claims are the one worth
+/// saying most, because they are how a half finished table looks, and the
+/// editor offers a stretch for them.
+fn conversion_problems(span: &Span, max: u16, out: &mut Vec<Error>) {
+    if span.conversions.is_empty() {
+        return;
+    }
+    let source = &span.source;
+    if span.reads.is_some() {
+        out.push(Error::ReadsAndConversions(source.clone()));
+    }
+    let named = |c: &Conversion| format!("{} to {}", c.raw[0], c.raw[1]);
+    let mut backwards = false;
+    for c in &span.conversions {
+        if c.raw[1] < c.raw[0] {
+            out.push(Error::ConversionBackwards(source.clone(), c.raw[0], c.raw[1]));
+            backwards = true;
+        } else if c.raw[1] > max {
+            out.push(Error::ConversionPastMax(source.clone(), named(c), max));
+        }
+    }
+    // Overlaps and gaps are measured between stretches that make sense.
+    if backwards {
+        return;
+    }
+    for (i, a) in span.conversions.iter().enumerate() {
+        for b in &span.conversions[i + 1..] {
+            if a.raw[0] <= b.raw[1] && b.raw[0] <= a.raw[1] {
+                out.push(Error::ConversionsOverlap(source.clone(), named(a), named(b)));
+            }
+        }
+    }
+    let gaps = span.unconverted(max);
+    if !gaps.is_empty() {
+        let runs: Vec<String> = gaps.iter().map(|[a, b]| format!("{a} to {b}")).collect();
+        out.push(Error::Unconverted(source.clone(), runs.join(", ")));
+    }
+}
+
 /// What a reading's alias bands can be wrong about.
 ///
 /// Overlaps are refused. Two bands claiming one reading would make what gets
@@ -2473,7 +2540,7 @@ fn band_problems(span: &Span, max: u16, out: &mut Vec<Error>) {
             }
         }
     }
-    let [low, high] = span.reads.unwrap_or([0.0, f64::from(max)]);
+    let [low, high] = span.face(max);
     let (lo, hi) = (low.min(high), low.max(high));
     for band in bands {
         if band.highest() < lo - tol || band.lowest() > hi + tol {

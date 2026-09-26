@@ -269,13 +269,15 @@ function conversionRow(
 
   const stretches = el("div", { class: "alias-rows" });
   const offer = el("button", { class: "add small" });
-  const values = el("span", { class: "values-row" });
-  const after = el("span", { class: "values-row" });
+  const values = el("span", { class: "values-row flow" });
   const converted = isConverted(span);
   if (converted) {
     const number = (value: number | string, attrs: Record<string, string> = {}): HTMLInputElement =>
       el("input", { type: "number", class: "value", value: String(value), ...attrs });
     const said = (text: string): HTMLElement => el("span", { class: "meta" }, text);
+    // A phrase that wraps as one piece, so a narrow panel breaks a line
+    // between phrases and never between "in" and the colour it names.
+    const phrase = (...parts: (Node | string)[]): HTMLElement => el("span", { class: "phrase" }, ...parts);
     // Every conversion is a list of stretches here. A list of one across the
     // whole signal with no styling is written as `reads`, the shape every
     // profile had before stretches, so opening one and saving it changes
@@ -360,7 +362,12 @@ function conversionRow(
         edited();
       };
       for (const box of [rawLo, rawHi, lo, hi]) box.addEventListener("input", sync);
-      const line = el("div", { class: "alias-row stretch" }, rawLo, said("to"), rawHi, said("reads"), lo, said("to"), hi);
+      const line = el(
+        "div",
+        { class: "alias-row stretch" },
+        phrase(rawLo, said("to"), rawHi),
+        phrase(said("reads"), lo, said("to"), hi),
+      );
       // A stretch's colour and size, where the glass has colours and a small
       // font to draw them with: the last gallons of a tank in red.
       if (colours.length > 0) {
@@ -380,7 +387,7 @@ function conversionRow(
           store();
           edited();
         });
-        line.append(said("in"), pick, el("label", { class: "meta" }, small, " small"));
+        line.append(phrase(said("in"), pick, el("label", { class: "meta" }, small, " small")));
       }
       // The last one stays: a conversion with no stretches is as sent, and
       // the menu above is where that is chosen.
@@ -433,19 +440,14 @@ function conversionRow(
     for (const box of [dp, digits, wrap]) box.addEventListener("input", sync);
     round.addEventListener("change", sync);
     abs.addEventListener("change", sync);
+    // One line that wraps between phrases, so a wide window takes it all on
+    // one line and a narrow one breaks it where the sentence allows.
+    const sep = (text: string): HTMLElement => el("span", { class: "sep" }, text);
     values.append(
-      el("span", { class: "sep" }, "with"),
-      dp,
-      el("span", { class: "sep" }, "decimals and"),
-      digits,
-      el("span", { class: "sep" }, "digits"),
-    );
-    // A line of its own: on the first the labels squeezed and broke.
-    after.append(
-      el("span", { class: "sep" }, "rounded"),
-      round,
-      el("span", { class: "sep" }, "and wrapping at"),
-      wrap,
+      phrase(sep("with"), dp, sep("decimals")),
+      phrase(sep("and"), digits, sep("digits")),
+      phrase(sep("rounded"), round),
+      phrase(sep("and wrapping at"), wrap),
       unsign,
     );
   }
@@ -457,7 +459,6 @@ function conversionRow(
     converted ? stretches : "",
     converted ? offer : "",
     converted ? el("div", { class: "test-row" }, values) : "",
-    converted ? el("div", { class: "test-row" }, after) : "",
     valueAliasEditor(span, signal, set, colours, inverse, edited),
     el(
       "span",

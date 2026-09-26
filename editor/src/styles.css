@@ -64,8 +64,10 @@ body {
   font: 14px/1.5 "Segoe UI", system-ui, sans-serif;
 }
 
+/* Grows with the window, so a wide one gives the fields room to take their
+   controls on fewer lines. Capped where a line of text gets too long to read. */
 #app {
-  max-width: 1000px;
+  max-width: 1600px;
   margin: 0 auto;
   padding: 8px 16px 48px;
 }
@@ -878,6 +880,22 @@ input.value.wide {
   font-size: 12.5px;
 }
 
+/* A reading's number options: one line where there is room, wrapping between
+   phrases where there is not. */
+.values-row.flow {
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+
+/* A few words and their boxes that wrap as one piece, so "in" never ends one
+   line with the colour it names starting the next. */
+.phrase {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
 /* A condition reads as a sentence until the pencil opens it. */
 .condition-view {
   display: flex;
@@ -1276,6 +1294,7 @@ input.cells.bad {
 /* A stretch of a dial is four numbers and its style, wider than a panel. */
 .alias-row.stretch {
   flex-wrap: wrap;
+  row-gap: 6px;
 }
 
 /* Short, because a substitution is a character or two: "--" for "_". Showing

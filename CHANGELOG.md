@@ -34,3 +34,7 @@ unless this says what moved.
 
 - **A profile opens at the top.** Picking a profile from further down the
   list opened its page scrolled down as far as the list had been.
+- **The editor uses a wide window.** Pages grow with the window instead of
+  stopping at a fixed width, and a converted reading's options take fewer
+  lines when there is room. A row's colour and small setting always stay
+  together.

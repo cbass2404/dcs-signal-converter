@@ -34,6 +34,16 @@ in [CONFIG.md](CONFIG.md) and `docs/language.html`.
 - **`docs/gauges.html`** lists uneven DCS gauges with ready rows, generated
   by `tools/gen_gauges.py` into `docs/gauges.json` from each module's own
   gauge tables. The docs pages share `site-bar.css` and `site-bar.js`.
+  Widened 2026-09-27: it reads gauges written as helper calls
+  (`CreateGaugeLocal(arg, {in}, {out}, ...)`, F-16C, AH-64D, MiG-29) and
+  Saved Games mods (A-4E-C). A 3- or 4-point table is no longer called even
+  because two points were left after dropping a peg; that hid real bends
+  (A-10C oxygen, MiG-15 Mach) and pegged gauges whose DCS-BIOS range includes
+  the peg. The JSON lists installed aircraft it can't read (`not_covered`:
+  Heatblur and other compiled-code modules, UH-60L mod under MH-60R, FC3) and
+  DCS-BIOS modules not installed here (`not_installed`). The CJS Super Hornet
+  mod is the FA-18C's tables under `FA-18C_hornet`, so it shares that entry.
+  An installed folder in no list prints a warning.
 - **Flown on the Mosquito**, the proof, which ships in this release: a new
   profile (`mosquitofbmkvi.json`) and its Flight page (`mosquito.json`), on
   every MCDU and PFP name. One field shows five fuel needles, each at the

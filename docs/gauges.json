@@ -61,6 +61,140 @@
             {"raw": [49152, 57343], "reads": [90, 95]},
             {"raw": [57344, 65535], "reads": [95, 100]}
           ]
+        },
+        {
+          "id": "OXY_PRESS",
+          "description": "Oxygen Pressure Indicator",
+          "unit": "psi",
+          "notes": [],
+          "straight_off_pct": 30,
+          "dcs_gauge": "OxygenPress",
+          "argument": 604,
+          "conversions": [
+            {"raw": [0, 32768], "reads": [0, 100]},
+            {"raw": [32769, 65535], "reads": [100, 500]}
+          ]
+        }
+      ]
+    },
+    {
+      "aircraft": "A-4E-C Skyhawk community mod",
+      "bios_module": "A-4E-C",
+      "gauges": [
+        {
+          "id": "D_FUEL_FLOW",
+          "description": "Fuel Flow",
+          "unit": "lb/h",
+          "notes": [
+            "DCS sends kg/s, converted"
+          ],
+          "straight_off_pct": 42,
+          "dcs_gauge": "Engine_Fuel_Flow",
+          "argument": 560,
+          "conversions": [
+            {"raw": [0, 655], "reads": [0, 300]},
+            {"raw": [656, 9830], "reads": [300, 1000]},
+            {"raw": [9831, 49151], "reads": [1000, 5000]},
+            {"raw": [49152, 65535], "reads": [5000, 15000]}
+          ]
+        },
+        {
+          "id": "D_RADAR_ALT",
+          "description": "Radar Altimeter",
+          "unit": "ft",
+          "notes": [],
+          "straight_off_pct": 48,
+          "dcs_gauge": "RadarAltimeter",
+          "argument": 600,
+          "conversions": [
+            {"raw": [0, 16384], "reads": [0, 100]},
+            {"raw": [16385, 19660], "reads": [100, 150]},
+            {"raw": [19661, 22937], "reads": [150, 200]},
+            {"raw": [22938, 29491], "reads": [200, 400]},
+            {"raw": [29492, 36044], "reads": [400, 600]},
+            {"raw": [36045, 42598], "reads": [600, 1000]},
+            {"raw": [42599, 52428], "reads": [1000, 2000]},
+            {"raw": [52429, 62258], "reads": [2000, 5000]},
+            {"raw": [62259, 65535], "reads": [5000, 6000]}
+          ]
+        },
+        {
+          "id": "D_RADAR_IDX",
+          "description": "Radar ALtimeter Indexer",
+          "unit": "ft",
+          "notes": [],
+          "straight_off_pct": 45,
+          "dcs_gauge": "LAWS_indexer",
+          "argument": 601,
+          "conversions": [
+            {"raw": [0, 16384], "reads": [0, 100]},
+            {"raw": [16385, 19660], "reads": [100, 150]},
+            {"raw": [19661, 22937], "reads": [150, 200]},
+            {"raw": [22938, 29491], "reads": [200, 400]},
+            {"raw": [29492, 36044], "reads": [400, 600]},
+            {"raw": [36045, 42598], "reads": [600, 1000]},
+            {"raw": [42599, 52428], "reads": [1000, 2000]},
+            {"raw": [52429, 65535], "reads": [2000, 5000]}
+          ]
+        },
+        {
+          "id": "VVI",
+          "description": "Variometer",
+          "unit": "ft/min",
+          "notes": [
+            "DCS sends m/s, converted",
+            "DCS-BIOS limits {-1, 1}"
+          ],
+          "straight_off_pct": 13,
+          "dcs_gauge": "VerticalVelocity",
+          "argument": 800,
+          "conversions": [
+            {"raw": [0, 6553], "reads": [-6000, -4000]},
+            {"raw": [6554, 13107], "reads": [-4000, -2000]},
+            {"raw": [13108, 19660], "reads": [-2000, -1000]},
+            {"raw": [19661, 26214], "reads": [-1000, -500]},
+            {"raw": [26215, 32768], "reads": [-500, 0]},
+            {"raw": [32769, 39321], "reads": [0, 500]},
+            {"raw": [39322, 45874], "reads": [500, 1000]},
+            {"raw": [45875, 52428], "reads": [1000, 2000]},
+            {"raw": [52429, 58982], "reads": [2000, 4000]},
+            {"raw": [58983, 65535], "reads": [4000, 6000]}
+          ]
+        }
+      ]
+    },
+    {
+      "aircraft": "AH-64D",
+      "bios_module": "AH-64D",
+      "gauges": [
+        {
+          "id": "PLT_IAS_NEEDLE",
+          "description": "Pilot Standby Airspeed Indicator Needle",
+          "unit": "kt",
+          "notes": [],
+          "straight_off_pct": 7,
+          "dcs_gauge": "ias",
+          "argument": 469,
+          "conversions": [
+            {"raw": [0, 1180], "reads": [0, 20]},
+            {"raw": [1181, 3277], "reads": [20, 30]},
+            {"raw": [3278, 5898], "reads": [30, 40]},
+            {"raw": [5899, 9306], "reads": [40, 50]},
+            {"raw": [9307, 13107], "reads": [50, 60]},
+            {"raw": [13108, 17694], "reads": [60, 70]},
+            {"raw": [17695, 22610], "reads": [70, 80]},
+            {"raw": [22611, 25821], "reads": [80, 90]},
+            {"raw": [25822, 28311], "reads": [90, 100]},
+            {"raw": [28312, 30474], "reads": [100, 110]},
+            {"raw": [30475, 33095], "reads": [110, 120]},
+            {"raw": [33096, 35586], "reads": [120, 130]},
+            {"raw": [35587, 38076], "reads": [130, 140]},
+            {"raw": [38077, 40828], "reads": [140, 150]},
+            {"raw": [40829, 51707], "reads": [150, 200]},
+            {"raw": [51708, 58719], "reads": [200, 230]},
+            {"raw": [58720, 61210], "reads": [230, 240]},
+            {"raw": [61211, 63372], "reads": [240, 250]}
+          ]
         }
       ]
     },
@@ -121,6 +255,38 @@
       "aircraft": "Bf 109 K-4",
       "bios_module": "Bf-109K-4",
       "gauges": [
+        {
+          "id": "COOLANT_TEMPERATURE",
+          "description": "Coolant_Temperature",
+          "unit": "°C",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}",
+            "First row is the needle's rest off the scale"
+          ],
+          "straight_off_pct": 49,
+          "dcs_gauge": "Coolant_Temperature",
+          "argument": 27,
+          "conversions": [
+            {"raw": [0, 32768], "reads": [-1, 0]},
+            {"raw": [32769, 65535], "reads": [0, 130]}
+          ]
+        },
+        {
+          "id": "OIL_TEMPERATURE",
+          "description": "Oil_Temperature",
+          "unit": "°C",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}",
+            "First row is the needle's rest off the scale"
+          ],
+          "straight_off_pct": 49,
+          "dcs_gauge": "Oil_Temperature",
+          "argument": 28,
+          "conversions": [
+            {"raw": [0, 32768], "reads": [-1, 0]},
+            {"raw": [32769, 65535], "reads": [0, 130]}
+          ]
+        },
         {
           "id": "FUEL_TANK_FUSELAGE",
           "description": "Fuel_Tank_Fuselage",
@@ -352,6 +518,212 @@
       ]
     },
     {
+      "aircraft": "F-16C",
+      "bios_module": "F-16C_50",
+      "gauges": [
+        {
+          "id": "AOA_VALUE",
+          "description": "AoA Value",
+          "unit": "DCS units",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}"
+          ],
+          "straight_off_pct": 9,
+          "dcs_gauge": "AOA",
+          "argument": 15,
+          "conversions": [
+            {"raw": [0, 6324], "reads": [-50, -35]},
+            {"raw": [6325, 32768], "reads": [-35, 0]},
+            {"raw": [32769, 65535], "reads": [0, 35]}
+          ]
+        },
+        {
+          "id": "AIRSPEED",
+          "description": "Airspeed Indicator",
+          "unit": "kt",
+          "notes": [],
+          "straight_off_pct": 4,
+          "dcs_gauge": "Airspeed",
+          "argument": 48,
+          "conversions": [
+            {"raw": [0, 2752], "reads": [0, 80]},
+            {"raw": [2753, 6226], "reads": [80, 100]},
+            {"raw": [6227, 9961], "reads": [100, 150]},
+            {"raw": [9962, 11927], "reads": [150, 170]},
+            {"raw": [11928, 13041], "reads": [170, 200]},
+            {"raw": [13042, 16711], "reads": [200, 250]},
+            {"raw": [16712, 19857], "reads": [250, 300]},
+            {"raw": [19858, 23265], "reads": [300, 350]},
+            {"raw": [23266, 26345], "reads": [350, 400]},
+            {"raw": [26346, 29818], "reads": [400, 450]},
+            {"raw": [29819, 42794], "reads": [450, 650]},
+            {"raw": [42795, 45743], "reads": [650, 700]},
+            {"raw": [45744, 49151], "reads": [700, 750]},
+            {"raw": [49152, 52231], "reads": [750, 800]},
+            {"raw": [52232, 55705], "reads": [800, 850]}
+          ]
+        },
+        {
+          "id": "MAX_AIRSPEED",
+          "description": "Max Airspeed",
+          "unit": "kt",
+          "notes": [],
+          "straight_off_pct": 4,
+          "dcs_gauge": "MaxAirspeed",
+          "argument": 47,
+          "conversions": [
+            {"raw": [0, 2949], "reads": [0, 80]},
+            {"raw": [2950, 6554], "reads": [80, 100]},
+            {"raw": [6555, 10027], "reads": [100, 150]},
+            {"raw": [10028, 13107], "reads": [150, 200]},
+            {"raw": [13108, 16777], "reads": [200, 250]},
+            {"raw": [16778, 19792], "reads": [250, 300]},
+            {"raw": [19793, 23265], "reads": [300, 350]},
+            {"raw": [23266, 26345], "reads": [350, 400]},
+            {"raw": [26346, 55836], "reads": [400, 850]}
+          ]
+        },
+        {
+          "id": "MACH_INDICATOR",
+          "description": "Mach Indicator",
+          "unit": "Mach",
+          "notes": [],
+          "straight_off_pct": 27,
+          "dcs_gauge": "MachIndicator",
+          "argument": 49,
+          "conversions": [
+            {"raw": [25362, 27656], "reads": [2.5, 2.4]},
+            {"raw": [27657, 30081], "reads": [2.4, 2.3]},
+            {"raw": [30082, 32309], "reads": [2.3, 2.2]},
+            {"raw": [32310, 34602], "reads": [2.2, 2.1]},
+            {"raw": [34603, 36831], "reads": [2.1, 2]},
+            {"raw": [36832, 39059], "reads": [2, 1.9]},
+            {"raw": [39060, 41418], "reads": [1.9, 1.8]},
+            {"raw": [41419, 43777], "reads": [1.8, 1.7]},
+            {"raw": [43778, 46137], "reads": [1.7, 1.6]},
+            {"raw": [46138, 48561], "reads": [1.6, 1.5]},
+            {"raw": [48562, 50790], "reads": [1.5, 1.4]},
+            {"raw": [50791, 53214], "reads": [1.4, 1.3]},
+            {"raw": [53215, 55574], "reads": [1.3, 1.2]},
+            {"raw": [55575, 57998], "reads": [1.2, 1.1]},
+            {"raw": [57999, 59113], "reads": [1.1, 1.05]},
+            {"raw": [59114, 60358], "reads": [1.05, 1]},
+            {"raw": [60359, 62783], "reads": [1, 0.5]},
+            {"raw": [62784, 65535], "reads": [0.5, 0]}
+          ]
+        },
+        {
+          "id": "VVI",
+          "description": "VVI",
+          "unit": "ft/min",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}"
+          ],
+          "straight_off_pct": 13,
+          "dcs_gauge": "VVI",
+          "argument": 16,
+          "conversions": [
+            {"raw": [0, 7537], "reads": [-10000, -6000]},
+            {"raw": [7538, 32768], "reads": [-6000, 0]},
+            {"raw": [32769, 65535], "reads": [0, 6000]}
+          ]
+        },
+        {
+          "id": "SYSA_PRESSURE",
+          "description": "System A Pressure",
+          "unit": "psi",
+          "notes": [],
+          "straight_off_pct": 6,
+          "dcs_gauge": "SysA_Pressure",
+          "argument": 615,
+          "conversions": [
+            {"raw": [0, 11141], "reads": [0, 500]},
+            {"raw": [11142, 19792], "reads": [500, 1000]},
+            {"raw": [19793, 32505], "reads": [1000, 2000]},
+            {"raw": [32506, 45481], "reads": [2000, 3000]},
+            {"raw": [45482, 54263], "reads": [3000, 3500]},
+            {"raw": [54264, 65535], "reads": [3500, 4000]}
+          ]
+        },
+        {
+          "id": "SYSB_PRESSURE",
+          "description": "System B Pressure",
+          "unit": "psi",
+          "notes": [],
+          "straight_off_pct": 6,
+          "dcs_gauge": "SysB_Pressure",
+          "argument": 616,
+          "conversions": [
+            {"raw": [0, 11141], "reads": [0, 500]},
+            {"raw": [11142, 19792], "reads": [500, 1000]},
+            {"raw": [19793, 32505], "reads": [1000, 2000]},
+            {"raw": [32506, 45481], "reads": [2000, 3000]},
+            {"raw": [45482, 54263], "reads": [3000, 3500]},
+            {"raw": [54264, 65535], "reads": [3500, 4000]}
+          ]
+        },
+        {
+          "id": "ENGINE_TACHOMETER",
+          "description": "Engine Tachometer Indicator",
+          "unit": "%",
+          "notes": [],
+          "straight_off_pct": 21,
+          "dcs_gauge": "EngineTachometer",
+          "argument": 95,
+          "conversions": [
+            {"raw": [0, 7471], "reads": [0, 20]},
+            {"raw": [7472, 15270], "reads": [20, 40]},
+            {"raw": [15271, 22675], "reads": [40, 60]},
+            {"raw": [22676, 24707], "reads": [60, 65]},
+            {"raw": [24708, 28639], "reads": [65, 70]},
+            {"raw": [28640, 37355], "reads": [70, 80]},
+            {"raw": [37356, 46202], "reads": [80, 90]},
+            {"raw": [46203, 56032], "reads": [90, 100]},
+            {"raw": [56033, 65535], "reads": [100, 110]}
+          ]
+        },
+        {
+          "id": "ENGINE_FTIT",
+          "description": "Engine FTIT Indicator",
+          "unit": "°C",
+          "notes": [],
+          "straight_off_pct": 24,
+          "dcs_gauge": "EngineFTIT",
+          "argument": 96,
+          "conversions": [
+            {"raw": [0, 1704], "reads": [0, 200]},
+            {"raw": [1705, 22347], "reads": [200, 700]},
+            {"raw": [22348, 34734], "reads": [700, 800]},
+            {"raw": [34735, 46399], "reads": [800, 900]},
+            {"raw": [46400, 57802], "reads": [900, 1000]},
+            {"raw": [57803, 61603], "reads": [1000, 1100]},
+            {"raw": [61604, 65535], "reads": [1100, 1200]}
+          ]
+        },
+        {
+          "id": "OXYGEN_PRESSURE",
+          "description": "Oxygen Pressure",
+          "unit": "psi",
+          "notes": [],
+          "straight_off_pct": 31,
+          "dcs_gauge": "OxygenPressure",
+          "argument": 729,
+          "conversions": [
+            {"raw": [0, 7012], "reads": [0, 25]},
+            {"raw": [7013, 14221], "reads": [25, 50]},
+            {"raw": [14222, 21364], "reads": [50, 75]},
+            {"raw": [21365, 28508], "reads": [75, 100]},
+            {"raw": [28509, 35651], "reads": [100, 125]},
+            {"raw": [35652, 40042], "reads": [125, 150]},
+            {"raw": [40043, 46989], "reads": [150, 250]},
+            {"raw": [46990, 54329], "reads": [250, 350]},
+            {"raw": [54330, 61603], "reads": [350, 450]},
+            {"raw": [61604, 65535], "reads": [450, 500]}
+          ]
+        }
+      ]
+    },
+    {
       "aircraft": "F-5E",
       "bios_module": "F-5E-3",
       "gauges": [
@@ -463,6 +835,27 @@
           ]
         },
         {
+          "id": "SAI_PITCH",
+          "description": "SAI Pitch",
+          "unit": "°",
+          "notes": [
+            "DCS sends radians, converted",
+            "DCS-BIOS limits {-0.666, 0.736}"
+          ],
+          "straight_off_pct": 13,
+          "dcs_gauge": "SAI_Pitch",
+          "argument": 438,
+          "conversions": [
+            {"raw": [47, 3973], "reads": [-78, -60]},
+            {"raw": [3974, 7759], "reads": [-60, -42]},
+            {"raw": [7760, 31131], "reads": [-42, 0]},
+            {"raw": [31132, 54503], "reads": [0, 42]},
+            {"raw": [54504, 58290], "reads": [42, 60]},
+            {"raw": [58291, 62730], "reads": [60, 80]},
+            {"raw": [62731, 65488], "reads": [80, 92]}
+          ]
+        },
+        {
           "id": "EXHAUST_TEMP_L",
           "description": "Exhaust Gas Temp Left",
           "unit": "°C",
@@ -492,6 +885,19 @@
             {"raw": [6555, 17957], "reads": [200, 500]},
             {"raw": [17958, 51117], "reads": [500, 800]},
             {"raw": [51118, 65535], "reads": [800, 1200]}
+          ]
+        },
+        {
+          "id": "O2FLOWPRESSURE",
+          "description": "O2 FlowPressure",
+          "unit": "psi",
+          "notes": [],
+          "straight_off_pct": 30,
+          "dcs_gauge": "FlowPressure",
+          "argument": 604,
+          "conversions": [
+            {"raw": [0, 32768], "reads": [0, 100]},
+            {"raw": [32769, 65535], "reads": [100, 500]}
           ]
         }
       ]
@@ -564,6 +970,37 @@
             {"raw": [46453, 53411], "reads": [1.2, 1.3]},
             {"raw": [53412, 59652], "reads": [1.3, 1.4]},
             {"raw": [59653, 65535], "reads": [1.4, 1.5]}
+          ]
+        },
+        {
+          "id": "ATTITUDEINDICATORPITCHSHIFT",
+          "description": "AttitudeIndicatorPitchShift",
+          "unit": "DCS units",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}"
+          ],
+          "straight_off_pct": 10,
+          "dcs_gauge": "AttitudeIndicatorPitchShift",
+          "argument": 214,
+          "conversions": [
+            {"raw": [0, 32768], "reads": [-15, 0]},
+            {"raw": [32769, 65535], "reads": [0, 10]}
+          ]
+        },
+        {
+          "id": "ENGINETACHOMETER",
+          "description": "Engine Tachometer",
+          "unit": "%",
+          "notes": [
+            "DCS sends a fraction, converted"
+          ],
+          "straight_off_pct": 4,
+          "dcs_gauge": "Tachometer",
+          "argument": 16,
+          "conversions": [
+            {"raw": [786, 31588], "reads": [0, 50]},
+            {"raw": [31589, 32768], "reads": [50, 50.4]},
+            {"raw": [32769, 65535], "reads": [50.4, 110]}
           ]
         }
       ]
@@ -691,7 +1128,7 @@
       ]
     },
     {
-      "aircraft": "F/A-18C",
+      "aircraft": "F/A-18C / CJS Super Hornet mod",
       "bios_module": "FA-18C_hornet",
       "gauges": [
         {
@@ -1318,6 +1755,19 @@
           ]
         },
         {
+          "id": "FRONT_OIL_PRESS",
+          "description": "Front Oil Pressure",
+          "unit": "kgf/cm²",
+          "notes": [],
+          "straight_off_pct": 7,
+          "dcs_gauge": "Oil_Press",
+          "argument": 82,
+          "conversions": [
+            {"raw": [0, 5046], "reads": [-1, 0]},
+            {"raw": [5047, 65535], "reads": [0, 6]}
+          ]
+        },
+        {
           "id": "FRONT_FUEL_PRESS",
           "description": "Front Fuel Pressure",
           "unit": "DCS units",
@@ -1335,6 +1785,19 @@
             {"raw": [35849, 43188], "reads": [60, 70]},
             {"raw": [43189, 52494], "reads": [70, 80]},
             {"raw": [52495, 65535], "reads": [80, 100]}
+          ]
+        },
+        {
+          "id": "BACK_OIL_PRESS",
+          "description": "Back Oil Pressure",
+          "unit": "kgf/cm²",
+          "notes": [],
+          "straight_off_pct": 6,
+          "dcs_gauge": "Oil_Press_2",
+          "argument": 422,
+          "conversions": [
+            {"raw": [0, 5046], "reads": [0, 0.1]},
+            {"raw": [5047, 65535], "reads": [0.1, 6]}
           ]
         },
         {
@@ -1402,6 +1865,21 @@
             {"raw": [42468, 51347], "reads": [1, 2]},
             {"raw": [51348, 58424], "reads": [2, 3]},
             {"raw": [58425, 65535], "reads": [3, 4]}
+          ]
+        },
+        {
+          "id": "PLT_GMETER_MIN",
+          "description": "PILOT G-Meter Min",
+          "unit": "g",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}"
+          ],
+          "straight_off_pct": 10,
+          "dcs_gauge": "G_Meter_Min",
+          "argument": 16,
+          "conversions": [
+            {"raw": [0, 32768], "reads": [-2, 0]},
+            {"raw": [32769, 42467], "reads": [0, 1]}
           ]
         },
         {
@@ -1492,6 +1970,51 @@
           ]
         },
         {
+          "id": "PLT_OIL_TEMP_INTER",
+          "description": "PILOT Oil Temperature Intermediate reductor",
+          "unit": "°C",
+          "notes": [
+            "DCS-BIOS limits {-0.25, 0.75}"
+          ],
+          "straight_off_pct": 4,
+          "dcs_gauge": "oils_temp_intermediate_reductor",
+          "argument": 179,
+          "conversions": [
+            {"raw": [0, 18743], "reads": [-50, 0]},
+            {"raw": [18744, 65535], "reads": [0, 150]}
+          ]
+        },
+        {
+          "id": "PLT_OIL_TEMP_ENG_L",
+          "description": "PILOT Oil Temperature Left Engine",
+          "unit": "°C",
+          "notes": [
+            "DCS-BIOS limits {-0.25, 0.75}"
+          ],
+          "straight_off_pct": 4,
+          "dcs_gauge": "oils_t_left_engine",
+          "argument": 183,
+          "conversions": [
+            {"raw": [0, 19005], "reads": [-50, 0]},
+            {"raw": [19006, 65535], "reads": [0, 150]}
+          ]
+        },
+        {
+          "id": "PLT_OIL_TEMP_ENG_R",
+          "description": "PILOT Oil Temperature Right Engine",
+          "unit": "°C",
+          "notes": [
+            "DCS-BIOS limits {-0.25, 0.75}"
+          ],
+          "straight_off_pct": 4,
+          "dcs_gauge": "oils_t_right_engine",
+          "argument": 185,
+          "conversions": [
+            {"raw": [0, 19005], "reads": [-50, 0]},
+            {"raw": [19006, 65535], "reads": [0, 150]}
+          ]
+        },
+        {
           "id": "PLT_ELEC_VOLT_AC",
           "description": "PILOT Voltmeter AC",
           "unit": "V",
@@ -1504,6 +2027,34 @@
             {"raw": [10487, 22610], "reads": [100, 150]},
             {"raw": [22611, 39649], "reads": [150, 200]},
             {"raw": [39650, 65535], "reads": [200, 250]}
+          ]
+        },
+        {
+          "id": "OP_SIGHT_ELE",
+          "description": "OPERATOR Sight Elevation",
+          "unit": "DCS units",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}"
+          ],
+          "straight_off_pct": 7,
+          "dcs_gauge": "Sight9K113_Elevation",
+          "argument": 876,
+          "conversions": [
+            {"raw": [8192, 32768], "reads": [-1, 0]},
+            {"raw": [32769, 65535], "reads": [0, 1]}
+          ]
+        },
+        {
+          "id": "PLT_RAM_TEMP",
+          "description": "PILOT RAM Temperature",
+          "unit": "°C",
+          "notes": [],
+          "straight_off_pct": 4,
+          "dcs_gauge": "RAM_Temp",
+          "argument": 980,
+          "conversions": [
+            {"raw": [0, 29884], "reads": [-50, 0]},
+            {"raw": [29885, 65535], "reads": [0, 70]}
           ]
         }
       ]
@@ -1611,6 +2162,51 @@
           ]
         },
         {
+          "id": "OILS_TEMP_INTERMEDIATE_REDUCTOR",
+          "description": "oils_temp_intermediate_reductor",
+          "unit": "°C",
+          "notes": [
+            "DCS-BIOS limits {-0.25, 0.75}"
+          ],
+          "straight_off_pct": 4,
+          "dcs_gauge": "oils_temp_intermediate_reductor",
+          "argument": 112,
+          "conversions": [
+            {"raw": [0, 18743], "reads": [-50, 0]},
+            {"raw": [18744, 65535], "reads": [0, 150]}
+          ]
+        },
+        {
+          "id": "OILS_T_LEFT_ENGINE",
+          "description": "oils_t_left_engine",
+          "unit": "°C",
+          "notes": [
+            "DCS-BIOS limits {-0.25, 0.75}"
+          ],
+          "straight_off_pct": 4,
+          "dcs_gauge": "oils_t_left_engine",
+          "argument": 116,
+          "conversions": [
+            {"raw": [0, 19005], "reads": [-50, 0]},
+            {"raw": [19006, 65535], "reads": [0, 150]}
+          ]
+        },
+        {
+          "id": "OILS_T_RIGHT_ENGINE",
+          "description": "oils_t_right_engine",
+          "unit": "°C",
+          "notes": [
+            "DCS-BIOS limits {-0.25, 0.75}"
+          ],
+          "straight_off_pct": 4,
+          "dcs_gauge": "oils_t_right_engine",
+          "argument": 118,
+          "conversions": [
+            {"raw": [0, 19005], "reads": [-50, 0]},
+            {"raw": [19006, 65535], "reads": [0, 150]}
+          ]
+        },
+        {
           "id": "APU_TEMPERATURE",
           "description": "APU_temperature",
           "unit": "°C",
@@ -1645,6 +2241,36 @@
             {"raw": [42402, 50790], "reads": [1600, 2000]},
             {"raw": [50791, 58982], "reads": [2000, 2400]},
             {"raw": [58983, 63569], "reads": [2400, 2800]}
+          ]
+        },
+        {
+          "id": "RAM_TEMP",
+          "description": "RAM_Temp",
+          "unit": "°C",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}"
+          ],
+          "straight_off_pct": 8,
+          "dcs_gauge": "RAM_Temp",
+          "argument": 904,
+          "conversions": [
+            {"raw": [0, 32768], "reads": [-50, 0]},
+            {"raw": [32769, 65535], "reads": [0, 70]}
+          ]
+        },
+        {
+          "id": "G_METER",
+          "description": "G_Meter",
+          "unit": "g",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}"
+          ],
+          "straight_off_pct": 17,
+          "dcs_gauge": "G_Meter",
+          "argument": 907,
+          "conversions": [
+            {"raw": [0, 44007], "reads": [-1, 1]},
+            {"raw": [44008, 65535], "reads": [1, 3]}
           ]
         },
         {
@@ -1702,6 +2328,67 @@
           ]
         },
         {
+          "id": "ALT_PRESS",
+          "description": "Altimeter Pressure",
+          "unit": "mmHg",
+          "notes": [
+            "DCS-BIOS limits {-0.0535, 1}"
+          ],
+          "straight_off_pct": 3,
+          "dcs_gauge": "Altimeter_Pressure",
+          "argument": 31,
+          "conversions": [
+            {"raw": [0, 3328], "reads": [660, 670]},
+            {"raw": [3329, 65535], "reads": [670, 790]}
+          ]
+        },
+        {
+          "id": "MACH",
+          "description": "Mach",
+          "unit": "Mach",
+          "notes": [
+            "DCS-BIOS limits {0.12, 1}"
+          ],
+          "straight_off_pct": 21,
+          "dcs_gauge": "MACH",
+          "argument": 27,
+          "conversions": [
+            {"raw": [0, 7075], "reads": [0, 0.3]},
+            {"raw": [7076, 65535], "reads": [0.3, 0.95]}
+          ]
+        },
+        {
+          "id": "RPV46_RALT",
+          "description": "PRV-46 Radar Altimeter Gauge",
+          "unit": "m",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}",
+            "First row is the needle's rest off the scale"
+          ],
+          "straight_off_pct": 49,
+          "dcs_gauge": "PRV_46_RAlt",
+          "argument": 35,
+          "conversions": [
+            {"raw": [0, 32768], "reads": [-10, 0]},
+            {"raw": [32769, 65535], "reads": [0, 1200]}
+          ]
+        },
+        {
+          "id": "V_A_METER_G",
+          "description": "Volt Amper Meter Gauge",
+          "unit": "DCS units",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}"
+          ],
+          "straight_off_pct": 25,
+          "dcs_gauge": "VoltAmperMeter",
+          "argument": 83,
+          "conversions": [
+            {"raw": [0, 32768], "reads": [-1, 0]},
+            {"raw": [32769, 65535], "reads": [0, 3]}
+          ]
+        },
+        {
           "id": "FUEL_QUANTITY",
           "description": "Fuel Quantity",
           "unit": "L",
@@ -1720,6 +2407,19 @@
             {"raw": [49480, 56950], "reads": [600, 700]},
             {"raw": [56951, 60358], "reads": [700, 800]},
             {"raw": [60359, 65535], "reads": [800, 1050]}
+          ]
+        },
+        {
+          "id": "PRESS_DIFF",
+          "description": "Pressure Difference",
+          "unit": "kgf/cm²",
+          "notes": [],
+          "straight_off_pct": 18,
+          "dcs_gauge": "PressureDifference",
+          "argument": 40,
+          "conversions": [
+            {"raw": [0, 15925], "reads": [-0.04, 0]},
+            {"raw": [15926, 65535], "reads": [0, 0.6]}
           ]
         },
         {
@@ -1912,6 +2612,56 @@
       ]
     },
     {
+      "aircraft": "MiG-29 Fulcrum",
+      "bios_module": "MiG-29A",
+      "gauges": [
+        {
+          "id": "ITG_1_LEFT_ENGINE_GAS_TEMPERATURE_POINTER",
+          "description": "Left Engine Temperature Pointer",
+          "unit": "°C",
+          "notes": [],
+          "straight_off_pct": 3,
+          "dcs_gauge": "EgtPointerLeft",
+          "argument": 12,
+          "conversions": [
+            {"raw": [0, 60292], "reads": [200, 1000]},
+            {"raw": [60293, 65535], "reads": [1000, 1100]}
+          ]
+        },
+        {
+          "id": "ITG_1_RIGHT_ENGINE_GAS_TEMPERATURE_POINTER",
+          "description": "Right Engine Temperature Pointer",
+          "unit": "°C",
+          "notes": [],
+          "straight_off_pct": 3,
+          "dcs_gauge": "EgtPointerRight",
+          "argument": 14,
+          "conversions": [
+            {"raw": [0, 60292], "reads": [200, 1000]},
+            {"raw": [60293, 65535], "reads": [1000, 1100]}
+          ]
+        },
+        {
+          "id": "AOA_G_METER_AOA_POINTER",
+          "description": "Current AOA Pointer",
+          "unit": "°",
+          "notes": [],
+          "straight_off_pct": 3,
+          "dcs_gauge": "AOApointer",
+          "argument": 7,
+          "conversions": [
+            {"raw": [0, 8651], "reads": [-5, 0]},
+            {"raw": [8652, 17563], "reads": [0, 5]},
+            {"raw": [17564, 26542], "reads": [5, 10]},
+            {"raw": [26543, 35717], "reads": [10, 15]},
+            {"raw": [35718, 45809], "reads": [15, 20]},
+            {"raw": [45810, 55770], "reads": [20, 25]},
+            {"raw": [55771, 65535], "reads": [25, 30]}
+          ]
+        }
+      ]
+    },
+    {
       "aircraft": "Mosquito FB VI",
       "bios_module": "Mosquito",
       "gauges": [
@@ -1957,6 +2707,38 @@
             {"raw": [58131, 60882], "reads": [20, 22]},
             {"raw": [60883, 64224], "reads": [22, 24]},
             {"raw": [64225, 65535], "reads": [24, 25]}
+          ]
+        },
+        {
+          "id": "PORT_OIL_TEMP_G",
+          "description": "Oil Temperature Gauge Port",
+          "unit": "°C",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}",
+            "First row is the needle's rest off the scale"
+          ],
+          "straight_off_pct": 49,
+          "dcs_gauge": "PortOilTempGauge",
+          "argument": 56,
+          "conversions": [
+            {"raw": [0, 32768], "reads": [-1, 0]},
+            {"raw": [32769, 65535], "reads": [0, 120]}
+          ]
+        },
+        {
+          "id": "STBD_OIL_TEMP_G",
+          "description": "Oil Temperature Gauge Starboard",
+          "unit": "°C",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}",
+            "First row is the needle's rest off the scale"
+          ],
+          "straight_off_pct": 49,
+          "dcs_gauge": "StbdOilTempGauge",
+          "argument": 57,
+          "conversions": [
+            {"raw": [0, 32768], "reads": [-1, 0]},
+            {"raw": [32769, 65535], "reads": [0, 120]}
           ]
         },
         {
@@ -2130,6 +2912,22 @@
           ]
         },
         {
+          "id": "AIR_TEMP_G",
+          "description": "Air Temperature Gauge",
+          "unit": "°C",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}",
+            "First row is the needle's rest off the scale"
+          ],
+          "straight_off_pct": 49,
+          "dcs_gauge": "AirTemperatureGauge",
+          "argument": 314,
+          "conversions": [
+            {"raw": [0, 32768], "reads": [-31, -30]},
+            {"raw": [32769, 65535], "reads": [-30, 70]}
+          ]
+        },
+        {
           "id": "T1154_C2_G",
           "description": "T.1154 C2 Gauge",
           "unit": "DCS units",
@@ -2237,6 +3035,38 @@
             {"raw": [25429, 36634], "reads": [0.25, 0.3]},
             {"raw": [36635, 49872], "reads": [0.3, 0.35]},
             {"raw": [49873, 65535], "reads": [0.35, 0.4]}
+          ]
+        },
+        {
+          "id": "R1155_DFLH_G",
+          "description": "R.1155 DFLH Gauge",
+          "unit": "DCS units",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}",
+            "First row is the needle's rest off the scale"
+          ],
+          "straight_off_pct": 49,
+          "dcs_gauge": "R1155DFLHGauge",
+          "argument": 88,
+          "conversions": [
+            {"raw": [0, 32768], "reads": [-1, 0]},
+            {"raw": [32769, 65535], "reads": [0, 100]}
+          ]
+        },
+        {
+          "id": "R1155_DFRH_G",
+          "description": "R.1155 DFRH Gauge",
+          "unit": "DCS units",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}",
+            "First row is the needle's rest off the scale"
+          ],
+          "straight_off_pct": 49,
+          "dcs_gauge": "R1155DFRHGauge",
+          "argument": 89,
+          "conversions": [
+            {"raw": [0, 32768], "reads": [-1, 0]},
+            {"raw": [32769, 65535], "reads": [0, 100]}
           ]
         }
       ]
@@ -2362,6 +3192,22 @@
       "aircraft": "P-47D",
       "bios_module": "P-47D",
       "gauges": [
+        {
+          "id": "3GAUGE_OIL_TEMP",
+          "description": "TriGauge Oil Temperature",
+          "unit": "°C",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}",
+            "First row is the needle's rest off the scale"
+          ],
+          "straight_off_pct": 50,
+          "dcs_gauge": "TriGaugeOilTemperature",
+          "argument": 30,
+          "conversions": [
+            {"raw": [0, 32768], "reads": [-71, -70]},
+            {"raw": [32769, 65535], "reads": [-70, 150]}
+          ]
+        },
         {
           "id": "CARB_TEMP",
           "description": "Carburettor Temperature Gauge",
@@ -2674,6 +3520,25 @@
       ]
     },
     {
+      "aircraft": "Spitfire LF Mk IX",
+      "bios_module": "SpitfireLFMkIX",
+      "gauges": [
+        {
+          "id": "FUELRESERVEGAUGE",
+          "description": "Fuel Reserve Gauge",
+          "unit": "gal",
+          "notes": [],
+          "straight_off_pct": 7,
+          "dcs_gauge": "FuelReserveGauge",
+          "argument": 43,
+          "conversions": [
+            {"raw": [0, 6554], "reads": [-1, 0]},
+            {"raw": [6555, 65535], "reads": [0, 37]}
+          ]
+        }
+      ]
+    },
+    {
       "aircraft": "UH-1H",
       "bios_module": "UH-1H",
       "gauges": [
@@ -2743,6 +3608,32 @@
             {"raw": [8521, 24903], "reads": [-50, 0]},
             {"raw": [24904, 46530], "reads": [0, 100]},
             {"raw": [46531, 65535], "reads": [100, 150]}
+          ]
+        },
+        {
+          "id": "MAIN_GEN_LOAD",
+          "description": "Main Generator Load",
+          "unit": "DCS units",
+          "notes": [],
+          "straight_off_pct": 5,
+          "dcs_gauge": "LoadmeterMainGen",
+          "argument": 436,
+          "conversions": [
+            {"raw": [0, 10223], "reads": [-1.5, 0]},
+            {"raw": [10224, 65535], "reads": [0, 12.5]}
+          ]
+        },
+        {
+          "id": "FUEL_PRESS",
+          "description": "Fuel Pressure",
+          "unit": "psi",
+          "notes": [],
+          "straight_off_pct": 2,
+          "dcs_gauge": "FuelPress",
+          "argument": 126,
+          "conversions": [
+            {"raw": [0, 983], "reads": [-2, 0]},
+            {"raw": [984, 65535], "reads": [0, 50]}
           ]
         },
         {
@@ -2827,6 +3718,70 @@
             {"raw": [57344, 61439], "reads": [100, 150]},
             {"raw": [61440, 65535], "reads": [150, 200]}
           ]
+        },
+        {
+          "id": "FRONT_OIL_PRESS",
+          "description": "Fore Oil Pressure Gauge",
+          "unit": "kgf/cm²",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}",
+            "First row is the needle's rest off the scale"
+          ],
+          "straight_off_pct": 44,
+          "dcs_gauge": "ForeOilPressureGauge",
+          "argument": 169,
+          "conversions": [
+            {"raw": [0, 32768], "reads": [-1, 0]},
+            {"raw": [32769, 65535], "reads": [0, 15]}
+          ]
+        },
+        {
+          "id": "FRONT_OIL_TEMP",
+          "description": "Fore Oil Temperature Gauge",
+          "unit": "°C",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}",
+            "First row is the needle's rest off the scale"
+          ],
+          "straight_off_pct": 49,
+          "dcs_gauge": "ForeOilTemperatureGauge",
+          "argument": 167,
+          "conversions": [
+            {"raw": [0, 32768], "reads": [-1, 0]},
+            {"raw": [32769, 65535], "reads": [0, 150]}
+          ]
+        },
+        {
+          "id": "REAR_OIL_PRESS",
+          "description": "Rear Oil Pressure Gauge",
+          "unit": "kgf/cm²",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}",
+            "First row is the needle's rest off the scale"
+          ],
+          "straight_off_pct": 44,
+          "dcs_gauge": "AftOilPressureGauge",
+          "argument": 172,
+          "conversions": [
+            {"raw": [0, 32768], "reads": [-1, 0]},
+            {"raw": [32769, 65535], "reads": [0, 15]}
+          ]
+        },
+        {
+          "id": "REAR_OIL_TEMP",
+          "description": "Rear Oil Temperature Gauge",
+          "unit": "°C",
+          "notes": [
+            "DCS-BIOS limits {-1, 1}",
+            "First row is the needle's rest off the scale"
+          ],
+          "straight_off_pct": 49,
+          "dcs_gauge": "AftOilTemperatureGauge",
+          "argument": 170,
+          "conversions": [
+            {"raw": [0, 32768], "reads": [-1, 0]},
+            {"raw": [32769, 65535], "reads": [0, 150]}
+          ]
         }
       ]
     }
@@ -2838,9 +3793,24 @@
       "why": "DCS-BIOS sends no gauge for argument 252"
     },
     {
+      "aircraft": "A-4E-C Skyhawk community mod",
+      "dcs_gauge": "CanopyLever",
+      "why": "DCS-BIOS sends no gauge for argument 129"
+    },
+    {
       "aircraft": "Christen Eagle II",
       "dcs_gauge": "VERTICAL_SPEED_needle",
       "why": "DCS-BIOS sends no gauge for argument 303"
+    },
+    {
+      "aircraft": "F-5E",
+      "dcs_gauge": "LeftThrottle",
+      "why": "DCS-BIOS sends no gauge for argument 104"
+    },
+    {
+      "aircraft": "F-5E",
+      "dcs_gauge": "RightThrottle",
+      "why": "DCS-BIOS sends no gauge for argument 105"
     },
     {
       "aircraft": "F-86F Sabre",
@@ -2863,6 +3833,46 @@
       "why": "a second scale on the fuel gauge's needle; the upper scale is listed"
     },
     {
+      "aircraft": "L-39",
+      "dcs_gauge": "FrontSeat",
+      "why": "DCS-BIOS sends no gauge for argument 567"
+    },
+    {
+      "aircraft": "L-39",
+      "dcs_gauge": "BackSeat",
+      "why": "DCS-BIOS sends no gauge for argument 568"
+    },
+    {
+      "aircraft": "L-39",
+      "dcs_gauge": "PilotBody",
+      "why": "DCS-BIOS sends no gauge for argument 600"
+    },
+    {
+      "aircraft": "L-39",
+      "dcs_gauge": "InstructorBody",
+      "why": "DCS-BIOS sends no gauge for argument 610"
+    },
+    {
+      "aircraft": "MB-339",
+      "dcs_gauge": "PilotDraw",
+      "why": "DCS-BIOS sends no gauge for argument 1000"
+    },
+    {
+      "aircraft": "MB-339",
+      "dcs_gauge": "InstructorBody",
+      "why": "DCS-BIOS sends no gauge for argument 1002"
+    },
+    {
+      "aircraft": "MB-339",
+      "dcs_gauge": "FrontSeat",
+      "why": "DCS-BIOS sends no gauge for argument 1001"
+    },
+    {
+      "aircraft": "MB-339",
+      "dcs_gauge": "BackSeat",
+      "why": "DCS-BIOS sends no gauge for argument 1003"
+    },
+    {
       "aircraft": "Mi-24P",
       "dcs_gauge": "TrimHat",
       "why": "a switch's positions, not a gauge; draw them with value_aliases"
@@ -2871,11 +3881,107 @@
       "aircraft": "Mi-8MTV2",
       "dcs_gauge": "FuelScaleLower",
       "why": "a second scale on the fuel gauge's needle; the upper scale is listed"
+    },
+    {
+      "aircraft": "MiG-15bis",
+      "dcs_gauge": "WheelBrakeLever",
+      "why": "DCS-BIOS sends no gauge for argument 199"
+    },
+    {
+      "aircraft": "MiG-29 Fulcrum",
+      "dcs_gauge": "ImperialIASpointer",
+      "why": "DCS-BIOS sends no gauge for argument 821"
+    },
+    {
+      "aircraft": "MiG-29 Fulcrum",
+      "dcs_gauge": "ImperialIASwindow",
+      "why": "DCS-BIOS sends no gauge for argument 820"
+    },
+    {
+      "aircraft": "MiG-29 Fulcrum",
+      "dcs_gauge": "IndicatorVVI",
+      "why": "DCS-BIOS sends no gauge for argument 24"
+    },
+    {
+      "aircraft": "MiG-29 Fulcrum",
+      "dcs_gauge": "ImperialIndicatorVVI",
+      "why": "DCS-BIOS sends no gauge for argument 838"
+    },
+    {
+      "aircraft": "MiG-29 Fulcrum",
+      "dcs_gauge": "ImperialRadarAltimeterAltitude",
+      "why": "DCS-BIOS sends no gauge for argument 849"
+    },
+    {
+      "aircraft": "MiG-29 Fulcrum",
+      "dcs_gauge": "ImperialRadarAltimeterDangerousAlt",
+      "why": "DCS-BIOS sends no gauge for argument 850"
     }
   ],
   "none_found": [
     "C-130J",
-    "MB-339",
-    "Spitfire LF Mk IX"
+    "MB-339"
+  ],
+  "not_covered": [
+    {
+      "aircraft": "C-101",
+      "why": "works its gauges out in compiled code, so no Lua file holds their marks"
+    },
+    {
+      "aircraft": "F-4E Phantom II",
+      "why": "works its gauges out in compiled code, so no Lua file holds their marks"
+    },
+    {
+      "aircraft": "F-14A / F-14B / F-14BU",
+      "why": "works its gauges out in compiled code, so no Lua file holds their marks"
+    },
+    {
+      "aircraft": "I-16",
+      "why": "works its gauges out in compiled code, so no Lua file holds their marks"
+    },
+    {
+      "aircraft": "JF-17",
+      "why": "works its gauges out in compiled code, so no Lua file holds their marks"
+    },
+    {
+      "aircraft": "Mirage F1",
+      "why": "works its gauges out in compiled code, so no Lua file holds their marks"
+    },
+    {
+      "aircraft": "UH-60L community mod",
+      "why": "DCS-BIOS runs it under the MH-60R module, which sends no gauges"
+    },
+    {
+      "aircraft": "F-100D",
+      "why": "DCS-BIOS has no module for it"
+    },
+    {
+      "aircraft": "La-7",
+      "why": "DCS-BIOS has no module for it"
+    },
+    {
+      "aircraft": "F-15C",
+      "why": "DCS-BIOS sends Flaming Cliffs aircraft's readings in real units, so they need no rows"
+    },
+    {
+      "aircraft": "Su-25T",
+      "why": "DCS-BIOS sends Flaming Cliffs aircraft's readings in real units, so they need no rows"
+    },
+    {
+      "aircraft": "Su-33",
+      "why": "DCS-BIOS sends Flaming Cliffs aircraft's readings in real units, so they need no rows"
+    }
+  ],
+  "not_installed": [
+    "A-29B",
+    "AH-6J",
+    "Alphajet",
+    "AV8BNA",
+    "Edge540",
+    "F-15E",
+    "F-22A",
+    "M-2000C",
+    "MiG-19P",
+    "VNAO_T-45"
   ]
 }

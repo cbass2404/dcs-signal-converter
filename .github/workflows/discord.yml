@@ -1,0 +1,41 @@
+# Announces a release in the Discord #releases channel when it is published.
+#
+# The release workflow leaves a draft for a person to publish, and that publish
+# is what fires this, so drafts never reach the channel. The post carries this
+# version's changelog entry; the provenance under its first `---` stays on
+# GitHub. Without the DISCORD_RELEASE_WEBHOOK secret it posts nothing.
+
+name: Discord
+
+on:
+  release:
+    types: [published]
+
+permissions: {}
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post the release to Discord
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+          NAME: ${{ github.event.release.name || github.event.release.tag_name }}
+          URL: ${{ github.event.release.html_url }}
+          BODY: ${{ github.event.release.body }}
+        run: |
+          if [ -z "$WEBHOOK" ]; then
+            echo "::warning::DISCORD_RELEASE_WEBHOOK is not set, nothing posted"
+            exit 0
+          fi
+          printf '%s\n' "$BODY" | tr -d '\r' | awk '$0 == "---" {exit} {print}' > notes.md
+          # An embed description holds 4096 characters; the link always fits.
+          jq -n --rawfile notes notes.md --arg name "$NAME" --arg url "$URL" --arg repo "$GITHUB_REPOSITORY" '
+            ($notes | if length > 3800 then .[0:3800] + "\n\n..." else . end) as $d
+            | {embeds: [{
+                title: $name,
+                url: $url,
+                description: ($d + "\n\n[Download and full notes](" + $url + ")"),
+                color: 5763719,
+                footer: {text: $repo}}]}' > payload.json
+          curl -fsS -H "Content-Type: application/json" -d @payload.json "$WEBHOOK"

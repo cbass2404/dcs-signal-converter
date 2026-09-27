@@ -452,8 +452,7 @@
           <div class="prose">
             <p>
               These gauges are uneven in DCS but have no rows here. Aircraft whose gauges are all evenly spaced
-              need no rows, and modules that keep their gauges outside the files the script reads (the F-16C,
-              AH-64D, F-14 and F-4E among them) are not covered at all.
+              need no rows.
             </p>
           </div>
           <div class="table-scroll">
@@ -463,6 +462,27 @@
             </table>
           </div>
           <p class="note" id="even"></p>
+          <div class="prose">
+            <p>
+              These installed aircraft are not read at all. Where the reason is compiled code, the rows can
+              still be measured in Learn against the dial in the cockpit.
+            </p>
+          </div>
+          <div class="table-scroll">
+            <table class="ref">
+              <thead><tr><th>Aircraft</th><th>Why</th></tr></thead>
+              <tbody id="uncovered"></tbody>
+            </table>
+          </div>
+          <p class="note" id="absent"></p>
+          <div class="prose">
+            <p>
+              The RAZBAM modules (M-2000C, MiG-19P, AV-8B and F-15E) are not included because I don't have
+              them and can no longer get them. If you have one and would like to help fill in its gauges,
+              please reach out on
+              <a href="https://github.com/cbass2404/wctrl-module-signal-converter/issues">GitHub</a>.
+            </p>
+          </div>
         </div>
       </section>
     </main>
@@ -474,7 +494,7 @@
             Built by <code>tools/gen_gauges.py</code> into <code>gauges.json</code>. How
             <code>conversions</code> work is in <a href="language.html#readings">the profile language</a>.
           </span>
-          <span><a href="./">DCS Signal Converter</a> &middot; <a href="https://github.com/cbass2404/wctrl-module-signal-converter">GitHub</a></span>
+          <span><a href="./">DCS Signal Converter</a> &middot; <a href="https://discord.gg/W9tsVe3g3P" target="_blank" rel="noopener noreferrer">Discord</a> &middot; <a href="https://github.com/cbass2404/wctrl-module-signal-converter">GitHub</a></span>
         </div>
       </div>
     </footer>
@@ -583,6 +603,11 @@
           $("left").append(h("tr", {}, h("td", {}, l.aircraft), h("td", {}, h("code", {}, l.dcs_gauge)), h("td", {}, l.why)));
         }
         if (data.none_found.length) $("even").textContent = `Every gauge even, so nothing to list: ${data.none_found.join(", ")}.`;
+        for (const u of data.not_covered || []) {
+          $("uncovered").append(h("tr", {}, h("td", {}, u.aircraft), h("td", {}, u.why)));
+        }
+        if (data.not_installed?.length)
+          $("absent").textContent = `Not installed where this was built, so not read yet (DCS-BIOS module names): ${data.not_installed.join(", ")}.`;
         // A link to one aircraft opens on it; otherwise nothing shows until
         // an aircraft is picked, so the page doesn't open on every table.
         const linked = location.hash.slice(1);

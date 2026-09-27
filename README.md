@@ -20,7 +20,8 @@ you change aircraft.
 
 > **Alpha.** Flown daily on the author's panels, but the USB protocol was
 > reverse-engineered and the installer is new, so treat it as community software
-> rather than a vendor feature. Bug reports welcome.
+> rather than a vendor feature. Bug reports welcome, and questions are answered on
+> the [Discord](https://discord.gg/W9tsVe3g3P).
 
 An independent project. It is not made, endorsed or supported by WinCtrl or
 WinWing; their names appear here only to say which hardware it drives.
@@ -347,6 +348,8 @@ before it is kept as `dcs-signal.log.bak` and the one before that is deleted, so
 if the flight that went wrong was two flights ago it is gone: send it while it
 is still there. What is in it, and how to read it, is in
 [docs/CLI.md](docs/CLI.md#the-session-log).
+
+**Still stuck?** Ask in #help on the [Discord](https://discord.gg/W9tsVe3g3P).
 
 ---
 

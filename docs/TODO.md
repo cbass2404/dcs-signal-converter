@@ -145,10 +145,11 @@ numbers move and the words do not.
 
 ## Release
 
-- [ ] **Say beta, not alpha, in the docs and the site, at ship only.**
-      The next release is 1.0.0-beta.001. The site and README go live on
-      merge while installed copies are still alpha, so hold this until the
-      beta.001 tag is cut, in the commit that gets tagged or straight after.
+- [x] ~~**Say beta, not alpha, in the docs and the site, at ship only.**~~
+      Done 2026-09-27 for 1.0.0-beta.001: the badge and heading in
+      `docs/index.html` and the note in `README.md`. The site and README go
+      live on merge while installed copies are still alpha, so this waited
+      for the commit that gets tagged beta.001.
       Known places: the Alpha badge and "Read this bit: it is an alpha" in
       `docs/index.html`, and the **Alpha.** note in `README.md`. Grep for
       "alpha" first; the ones in `STATUS.md` and this file are history.
@@ -167,9 +168,13 @@ numbers move and the words do not.
 
 ## Smaller
 
-- [ ] **Keep the rule text preview inside its container.** In the page
-      edit view, the text preview for a rule runs past the edge of its
-      container; every other preview sits inside as expected.
+- [ ] **Open a DCS-BIOS PR for the Mosquito `GUN_MASTER`.** Found
+      2026-09-27: it never leaves 1 (ARMED). `Mosquito.lua:120` defines it as
+      `defineTumb(..., 121, 2, { -1, 1 }, ...)`, but the module's
+      `clickabledata.lua` moves argument 121 over `{0, 1}`, so safe (0)
+      rounds `(0 + 1) / 2 = 0.5` up to 1 as well. The fix is
+      `defineToggleSwitch("GUN_MASTER", 5, 3003, 121, "Main Panel", "Gun
+    Firing Master Switch")`. Nothing on our side can work around it.
 - [x] ~~**Move the DED glyph generator into `tools/`.**~~ Done 2026-09-25:
       `tools/gen_ded.py` pairs the two fixtures itself, so there is no
       glyph cache, and rewrites only the font and its two notes in

@@ -3,11 +3,11 @@
   "pages": [
     {
       "id": "hdk5h6",
-      "name": "Flight",
+      "name": "War",
       "display": "MCDU",
       "fields": [
         {
-          "cells": "48-71",
+          "cells": "312-335",
           "content": [
             {
               "source": "PORT_FUEL_IN_G",
@@ -548,7 +548,7 @@
           ]
         },
         {
-          "cells": "24-47",
+          "cells": "288-311",
           "content": [
             {
               "text": "PORT",
@@ -589,7 +589,7 @@
           ]
         },
         {
-          "cells": "0-23",
+          "cells": "264-287",
           "content": [
             {
               "gap": true,
@@ -642,6 +642,1954 @@
             {
               "gap": true,
               "width": 2
+            }
+          ]
+        },
+        {
+          "cells": "240-263",
+          "content": [
+            {
+              "gap": true,
+              "rule": true,
+              "label": "FUEL",
+              "label_colour": "white",
+              "colour": "amber",
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "192-215",
+          "content": [
+            {
+              "gap": true
+            },
+            {
+              "source": "PORT_BOOST_G",
+              "width": 4,
+              "align": "right",
+              "conversions": [
+                {
+                  "raw": [
+                    0,
+                    2294
+                  ],
+                  "reads": [
+                    -7.0,
+                    -6.0
+                  ]
+                },
+                {
+                  "raw": [
+                    2295,
+                    18350
+                  ],
+                  "reads": [
+                    -6.0,
+                    0.0
+                  ]
+                },
+                {
+                  "raw": [
+                    18351,
+                    32964
+                  ],
+                  "reads": [
+                    0.0,
+                    6.0
+                  ],
+                  "colour": "amber"
+                },
+                {
+                  "raw": [
+                    32965,
+                    41222
+                  ],
+                  "reads": [
+                    6.0,
+                    10.0
+                  ],
+                  "colour": "green"
+                },
+                {
+                  "raw": [
+                    41223,
+                    47382
+                  ],
+                  "reads": [
+                    10.0,
+                    14.0
+                  ],
+                  "colour": "amber"
+                },
+                {
+                  "raw": [
+                    47383,
+                    50986
+                  ],
+                  "reads": [
+                    14.0,
+                    16.0
+                  ]
+                },
+                {
+                  "raw": [
+                    50987,
+                    54656
+                  ],
+                  "reads": [
+                    16.0,
+                    18.0
+                  ]
+                },
+                {
+                  "raw": [
+                    54657,
+                    58130
+                  ],
+                  "reads": [
+                    18.0,
+                    20.0
+                  ]
+                },
+                {
+                  "raw": [
+                    58131,
+                    60882
+                  ],
+                  "reads": [
+                    20.0,
+                    22.0
+                  ]
+                },
+                {
+                  "raw": [
+                    60883,
+                    64224
+                  ],
+                  "reads": [
+                    22.0,
+                    24.0
+                  ]
+                },
+                {
+                  "raw": [
+                    64225,
+                    65535
+                  ],
+                  "reads": [
+                    24.0,
+                    25.0
+                  ]
+                }
+              ],
+              "decimals": 1,
+              "round": "down",
+              "colour": "red"
+            },
+            {
+              "text": "BOOST",
+              "width": 7,
+              "align": "centre",
+              "small": true
+            },
+            {
+              "source": "STBD_BOOST_G",
+              "width": 4,
+              "align": "right",
+              "conversions": [
+                {
+                  "raw": [
+                    0,
+                    2294
+                  ],
+                  "reads": [
+                    -7.0,
+                    -6.0
+                  ]
+                },
+                {
+                  "raw": [
+                    2295,
+                    18350
+                  ],
+                  "reads": [
+                    -6.0,
+                    0.0
+                  ]
+                },
+                {
+                  "raw": [
+                    18351,
+                    32964
+                  ],
+                  "reads": [
+                    0.0,
+                    6.0
+                  ],
+                  "colour": "amber"
+                },
+                {
+                  "raw": [
+                    32965,
+                    41222
+                  ],
+                  "reads": [
+                    6.0,
+                    10.0
+                  ],
+                  "colour": "green"
+                },
+                {
+                  "raw": [
+                    41223,
+                    47382
+                  ],
+                  "reads": [
+                    10.0,
+                    14.0
+                  ],
+                  "colour": "amber"
+                },
+                {
+                  "raw": [
+                    47383,
+                    50986
+                  ],
+                  "reads": [
+                    14.0,
+                    16.0
+                  ]
+                },
+                {
+                  "raw": [
+                    50987,
+                    54656
+                  ],
+                  "reads": [
+                    16.0,
+                    18.0
+                  ]
+                },
+                {
+                  "raw": [
+                    54657,
+                    58130
+                  ],
+                  "reads": [
+                    18.0,
+                    20.0
+                  ]
+                },
+                {
+                  "raw": [
+                    58131,
+                    60882
+                  ],
+                  "reads": [
+                    20.0,
+                    22.0
+                  ]
+                },
+                {
+                  "raw": [
+                    60883,
+                    64224
+                  ],
+                  "reads": [
+                    22.0,
+                    24.0
+                  ]
+                },
+                {
+                  "raw": [
+                    64225,
+                    65535
+                  ],
+                  "reads": [
+                    24.0,
+                    25.0
+                  ]
+                }
+              ],
+              "decimals": 1,
+              "colour": "red"
+            },
+            {
+              "gap": true
+            }
+          ]
+        },
+        {
+          "cells": "144-167",
+          "content": [
+            {
+              "gap": true
+            },
+            {
+              "text": "PORT",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 7
+            },
+            {
+              "text": "STBD",
+              "small": true
+            },
+            {
+              "gap": true
+            }
+          ]
+        },
+        {
+          "cells": "168-191",
+          "content": [
+            {
+              "gap": true
+            },
+            {
+              "source": "PORT_TACHO_1000_G",
+              "width": 1,
+              "align": "right",
+              "reads": [
+                0.0,
+                5.0
+              ],
+              "round": "down",
+              "colour": "amber"
+            },
+            {
+              "source": "PORT_TACHO_100_G",
+              "width": 2,
+              "align": "right",
+              "reads": [
+                0.0,
+                100.0
+              ],
+              "digits": 3,
+              "round": "down",
+              "wrap": 100.0,
+              "colour": "amber"
+            },
+            {
+              "text": "0",
+              "colour": "amber"
+            },
+            {
+              "text": "RPM",
+              "width": 7,
+              "align": "centre",
+              "small": true
+            },
+            {
+              "source": "STBD_TACHO_1000_G",
+              "width": 1,
+              "align": "right",
+              "reads": [
+                0.0,
+                5.0
+              ],
+              "round": "down",
+              "colour": "amber"
+            },
+            {
+              "source": "STBD_TACHO_100_G",
+              "width": 2,
+              "align": "right",
+              "reads": [
+                0.0,
+                100.0
+              ],
+              "digits": 3,
+              "round": "down",
+              "wrap": 100.0,
+              "colour": "amber"
+            },
+            {
+              "text": "0",
+              "colour": "amber"
+            },
+            {
+              "gap": true
+            }
+          ]
+        },
+        {
+          "cells": "216-239",
+          "content": [
+            {
+              "gap": true
+            },
+            {
+              "source": "PORT_RAD_FLAP",
+              "width": 6,
+              "align": "right",
+              "value_aliases": {
+                "0": {
+                  "text": "CLOSED",
+                  "colour": "red"
+                },
+                "1": "OPEN"
+              },
+              "colour": "green"
+            },
+            {
+              "text": " FLAP",
+              "width": 7,
+              "small": true
+            },
+            {
+              "source": "STBD_RAD_FLAP",
+              "width": 6,
+              "value_aliases": {
+                "0": {
+                  "text": "CLOSED",
+                  "colour": "red"
+                },
+                "1": "OPEN"
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true
+            }
+          ]
+        },
+        {
+          "cells": "0-23",
+          "content": [
+            {
+              "gap": true,
+              "rule": true,
+              "label": "WAR",
+              "label_colour": "white",
+              "colour": "amber",
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "24-47",
+          "content": [
+            {
+              "gap": true,
+              "width": 8
+            },
+            {
+              "text": "GUNS",
+              "width": 5,
+              "small": true
+            },
+            {
+              "source": "GUN_MASTER",
+              "width": 5,
+              "value_aliases": {
+                "0": {
+                  "text": "SAFE",
+                  "colour": "green"
+                },
+                "1": "ARMED"
+              },
+              "colour": "red"
+            }
+          ]
+        },
+        {
+          "cells": "48-71",
+          "content": [
+            {
+              "gap": true,
+              "width": 5
+            },
+            {
+              "text": "RELEASE",
+              "width": 8,
+              "small": true
+            },
+            {
+              "source": "CINE_CAM",
+              "width": 6,
+              "value_aliases": {
+                "0": {
+                  "text": "CINEMA",
+                  "colour": "green"
+                },
+                "1": "BOMB"
+              },
+              "colour": "red"
+            }
+          ]
+        },
+        {
+          "cells": "72-95",
+          "content": [
+            {
+              "gap": true,
+              "width": 5
+            },
+            {
+              "text": "ROCKETS",
+              "width": 8,
+              "small": true
+            },
+            {
+              "source": "RKT_MASTER_SW",
+              "width": 5,
+              "value_aliases": {
+                "0": {
+                  "text": "SAFE",
+                  "colour": "green"
+                },
+                "1": "ARMED"
+              },
+              "colour": "red"
+            }
+          ]
+        },
+        {
+          "cells": "96-119",
+          "content": [
+            {
+              "gap": true,
+              "width": 7
+            },
+            {
+              "text": "SALVO",
+              "width": 6,
+              "small": true
+            },
+            {
+              "source": "RKT_SALVO_SW",
+              "value_aliases": {
+                "0": "SINGLE",
+                "1": "MULTI"
+              },
+              "colour": "amber"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cdahfs",
+      "name": "Cruise",
+      "display": "MCDU",
+      "fields": [
+        {
+          "cells": "312-335",
+          "content": [
+            {
+              "source": "PORT_FUEL_IN_G",
+              "width": 3,
+              "align": "right",
+              "conversions": [
+                {
+                  "raw": [
+                    0,
+                    32767
+                  ],
+                  "reads": [
+                    -1.0,
+                    -1.0
+                  ],
+                  "colour": "red"
+                },
+                {
+                  "raw": [
+                    32768,
+                    32768
+                  ],
+                  "reads": [
+                    0.0,
+                    0.0
+                  ],
+                  "colour": "red"
+                },
+                {
+                  "raw": [
+                    32769,
+                    39223
+                  ],
+                  "reads": [
+                    0.0,
+                    20.0
+                  ],
+                  "colour": "amber"
+                },
+                {
+                  "raw": [
+                    39224,
+                    48660
+                  ],
+                  "reads": [
+                    20.0,
+                    60.0
+                  ]
+                },
+                {
+                  "raw": [
+                    48661,
+                    57048
+                  ],
+                  "reads": [
+                    60.0,
+                    100.0
+                  ]
+                },
+                {
+                  "raw": [
+                    57049,
+                    61177
+                  ],
+                  "reads": [
+                    100.0,
+                    120.0
+                  ]
+                },
+                {
+                  "raw": [
+                    61178,
+                    63569
+                  ],
+                  "reads": [
+                    120.0,
+                    146.0
+                  ]
+                },
+                {
+                  "raw": [
+                    63570,
+                    65535
+                  ],
+                  "reads": [
+                    146.0,
+                    160.0
+                  ]
+                }
+              ],
+              "round": "down",
+              "value_aliases": {
+                "-1": {
+                  "text": "OFF",
+                  "colour": "red"
+                }
+              },
+              "colour": "green"
+            },
+            {
+              "text": "G",
+              "width": 1,
+              "colour": "white",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "source": "STBD_FUEL_IN_G",
+              "width": 3,
+              "align": "right",
+              "conversions": [
+                {
+                  "raw": [
+                    0,
+                    32767
+                  ],
+                  "reads": [
+                    -1.0,
+                    -1.0
+                  ],
+                  "colour": "red"
+                },
+                {
+                  "raw": [
+                    32768,
+                    32768
+                  ],
+                  "reads": [
+                    0.0,
+                    0.0
+                  ],
+                  "colour": "red"
+                },
+                {
+                  "raw": [
+                    32769,
+                    39223
+                  ],
+                  "reads": [
+                    0.0,
+                    20.0
+                  ],
+                  "colour": "amber"
+                },
+                {
+                  "raw": [
+                    39224,
+                    48660
+                  ],
+                  "reads": [
+                    20.0,
+                    60.0
+                  ]
+                },
+                {
+                  "raw": [
+                    48661,
+                    57048
+                  ],
+                  "reads": [
+                    60.0,
+                    100.0
+                  ]
+                },
+                {
+                  "raw": [
+                    57049,
+                    61177
+                  ],
+                  "reads": [
+                    100.0,
+                    120.0
+                  ]
+                },
+                {
+                  "raw": [
+                    61178,
+                    63569
+                  ],
+                  "reads": [
+                    120.0,
+                    146.0
+                  ]
+                },
+                {
+                  "raw": [
+                    63570,
+                    65535
+                  ],
+                  "reads": [
+                    146.0,
+                    160.0
+                  ]
+                }
+              ],
+              "round": "down",
+              "value_aliases": {
+                "-1": {
+                  "text": "OFF",
+                  "colour": "red"
+                }
+              },
+              "colour": "green"
+            },
+            {
+              "text": "G",
+              "width": 1,
+              "colour": "white",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "source": "CENTR_FUEL_G",
+              "width": 3,
+              "align": "right",
+              "conversions": [
+                {
+                  "raw": [
+                    0,
+                    32767
+                  ],
+                  "reads": [
+                    -1.0,
+                    -1.0
+                  ],
+                  "colour": "red"
+                },
+                {
+                  "raw": [
+                    32768,
+                    32768
+                  ],
+                  "reads": [
+                    0.0,
+                    0.0
+                  ],
+                  "colour": "red"
+                },
+                {
+                  "raw": [
+                    32769,
+                    36798
+                  ],
+                  "reads": [
+                    0.0,
+                    10.0
+                  ],
+                  "colour": "amber"
+                },
+                {
+                  "raw": [
+                    36799,
+                    42794
+                  ],
+                  "reads": [
+                    10.0,
+                    20.0
+                  ]
+                },
+                {
+                  "raw": [
+                    42795,
+                    49315
+                  ],
+                  "reads": [
+                    20.0,
+                    30.0
+                  ]
+                },
+                {
+                  "raw": [
+                    49316,
+                    55246
+                  ],
+                  "reads": [
+                    30.0,
+                    40.0
+                  ]
+                },
+                {
+                  "raw": [
+                    55247,
+                    61832
+                  ],
+                  "reads": [
+                    40.0,
+                    53.0
+                  ]
+                },
+                {
+                  "raw": [
+                    61833,
+                    65535
+                  ],
+                  "reads": [
+                    53.0,
+                    60.0
+                  ]
+                }
+              ],
+              "round": "down",
+              "value_aliases": {
+                "-1": {
+                  "text": "OFF",
+                  "colour": "red"
+                }
+              },
+              "colour": "green"
+            },
+            {
+              "text": "G",
+              "width": 1,
+              "colour": "white",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "source": "PORT_FUEL_OUT_G",
+              "width": 3,
+              "align": "right",
+              "conversions": [
+                {
+                  "raw": [
+                    0,
+                    32767
+                  ],
+                  "reads": [
+                    -1.0,
+                    -1.0
+                  ],
+                  "colour": "red"
+                },
+                {
+                  "raw": [
+                    32768,
+                    32768
+                  ],
+                  "reads": [
+                    0.0,
+                    0.0
+                  ],
+                  "colour": "red"
+                },
+                {
+                  "raw": [
+                    32769,
+                    36995
+                  ],
+                  "reads": [
+                    0.0,
+                    10.0
+                  ],
+                  "colour": "amber"
+                },
+                {
+                  "raw": [
+                    36996,
+                    43548
+                  ],
+                  "reads": [
+                    10.0,
+                    20.0
+                  ]
+                },
+                {
+                  "raw": [
+                    43549,
+                    51052
+                  ],
+                  "reads": [
+                    20.0,
+                    30.0
+                  ]
+                },
+                {
+                  "raw": [
+                    51053,
+                    58130
+                  ],
+                  "reads": [
+                    30.0,
+                    40.0
+                  ]
+                },
+                {
+                  "raw": [
+                    58131,
+                    62848
+                  ],
+                  "reads": [
+                    40.0,
+                    59.0
+                  ]
+                },
+                {
+                  "raw": [
+                    62849,
+                    65535
+                  ],
+                  "reads": [
+                    59.0,
+                    70.0
+                  ]
+                }
+              ],
+              "round": "down",
+              "value_aliases": {
+                "-1": {
+                  "text": "OFF",
+                  "colour": "red"
+                }
+              },
+              "colour": "green"
+            },
+            {
+              "text": "G",
+              "width": 1,
+              "colour": "white",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "source": "STBD_FUEL_OUT_G",
+              "width": 3,
+              "align": "right",
+              "conversions": [
+                {
+                  "raw": [
+                    0,
+                    32767
+                  ],
+                  "reads": [
+                    -1.0,
+                    -1.0
+                  ],
+                  "colour": "red"
+                },
+                {
+                  "raw": [
+                    32768,
+                    32768
+                  ],
+                  "reads": [
+                    0.0,
+                    0.0
+                  ],
+                  "colour": "red"
+                },
+                {
+                  "raw": [
+                    32769,
+                    36995
+                  ],
+                  "reads": [
+                    0.0,
+                    10.0
+                  ],
+                  "colour": "amber"
+                },
+                {
+                  "raw": [
+                    36996,
+                    43548
+                  ],
+                  "reads": [
+                    10.0,
+                    20.0
+                  ]
+                },
+                {
+                  "raw": [
+                    43549,
+                    51052
+                  ],
+                  "reads": [
+                    20.0,
+                    30.0
+                  ]
+                },
+                {
+                  "raw": [
+                    51053,
+                    58130
+                  ],
+                  "reads": [
+                    30.0,
+                    40.0
+                  ]
+                },
+                {
+                  "raw": [
+                    58131,
+                    62848
+                  ],
+                  "reads": [
+                    40.0,
+                    59.0
+                  ]
+                },
+                {
+                  "raw": [
+                    62849,
+                    65535
+                  ],
+                  "reads": [
+                    59.0,
+                    70.0
+                  ]
+                }
+              ],
+              "round": "down",
+              "value_aliases": {
+                "-1": {
+                  "text": "OFF",
+                  "colour": "red"
+                }
+              },
+              "colour": "green"
+            },
+            {
+              "text": "G",
+              "width": 1,
+              "colour": "white",
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "288-311",
+          "content": [
+            {
+              "text": "PORT",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "text": "STBD",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "text": "CNTR",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "text": "PORT",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "text": "STBD",
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "264-287",
+          "content": [
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "text": "INNER",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "PORT_FUEL_COCK",
+              "width": 1,
+              "value_aliases": {
+                "0": "O",
+                "1": {
+                  "text": "-",
+                  "colour": "red"
+                },
+                "2": "I"
+              },
+              "colour": "green"
+            },
+            {
+              "text": "-SRC-",
+              "small": true
+            },
+            {
+              "source": "STBD_FUEL_COCK",
+              "width": 1,
+              "value_aliases": {
+                "0": "O",
+                "1": {
+                  "text": "-",
+                  "colour": "red"
+                },
+                "2": "I"
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "OUTER",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 2
+            }
+          ]
+        },
+        {
+          "cells": "240-263",
+          "content": [
+            {
+              "gap": true,
+              "rule": true,
+              "label": "FUEL",
+              "label_colour": "white",
+              "colour": "amber",
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "144-167",
+          "content": [
+            {
+              "gap": true
+            },
+            {
+              "source": "PORT_BOOST_G",
+              "width": 4,
+              "align": "right",
+              "conversions": [
+                {
+                  "raw": [
+                    0,
+                    2294
+                  ],
+                  "reads": [
+                    -7.0,
+                    -6.0
+                  ]
+                },
+                {
+                  "raw": [
+                    2295,
+                    18350
+                  ],
+                  "reads": [
+                    -6.0,
+                    0.0
+                  ]
+                },
+                {
+                  "raw": [
+                    18351,
+                    32964
+                  ],
+                  "reads": [
+                    0.0,
+                    6.0
+                  ],
+                  "colour": "amber"
+                },
+                {
+                  "raw": [
+                    32965,
+                    41222
+                  ],
+                  "reads": [
+                    6.0,
+                    10.0
+                  ],
+                  "colour": "green"
+                },
+                {
+                  "raw": [
+                    41223,
+                    47382
+                  ],
+                  "reads": [
+                    10.0,
+                    14.0
+                  ],
+                  "colour": "amber"
+                },
+                {
+                  "raw": [
+                    47383,
+                    50986
+                  ],
+                  "reads": [
+                    14.0,
+                    16.0
+                  ]
+                },
+                {
+                  "raw": [
+                    50987,
+                    54656
+                  ],
+                  "reads": [
+                    16.0,
+                    18.0
+                  ]
+                },
+                {
+                  "raw": [
+                    54657,
+                    58130
+                  ],
+                  "reads": [
+                    18.0,
+                    20.0
+                  ]
+                },
+                {
+                  "raw": [
+                    58131,
+                    60882
+                  ],
+                  "reads": [
+                    20.0,
+                    22.0
+                  ]
+                },
+                {
+                  "raw": [
+                    60883,
+                    64224
+                  ],
+                  "reads": [
+                    22.0,
+                    24.0
+                  ]
+                },
+                {
+                  "raw": [
+                    64225,
+                    65535
+                  ],
+                  "reads": [
+                    24.0,
+                    25.0
+                  ]
+                }
+              ],
+              "decimals": 1,
+              "round": "down",
+              "colour": "red"
+            },
+            {
+              "text": "BOOST",
+              "width": 7,
+              "align": "centre",
+              "small": true
+            },
+            {
+              "source": "STBD_BOOST_G",
+              "width": 4,
+              "align": "right",
+              "conversions": [
+                {
+                  "raw": [
+                    0,
+                    2294
+                  ],
+                  "reads": [
+                    -7.0,
+                    -6.0
+                  ]
+                },
+                {
+                  "raw": [
+                    2295,
+                    18350
+                  ],
+                  "reads": [
+                    -6.0,
+                    0.0
+                  ]
+                },
+                {
+                  "raw": [
+                    18351,
+                    32964
+                  ],
+                  "reads": [
+                    0.0,
+                    6.0
+                  ],
+                  "colour": "amber"
+                },
+                {
+                  "raw": [
+                    32965,
+                    41222
+                  ],
+                  "reads": [
+                    6.0,
+                    10.0
+                  ],
+                  "colour": "green"
+                },
+                {
+                  "raw": [
+                    41223,
+                    47382
+                  ],
+                  "reads": [
+                    10.0,
+                    14.0
+                  ],
+                  "colour": "amber"
+                },
+                {
+                  "raw": [
+                    47383,
+                    50986
+                  ],
+                  "reads": [
+                    14.0,
+                    16.0
+                  ]
+                },
+                {
+                  "raw": [
+                    50987,
+                    54656
+                  ],
+                  "reads": [
+                    16.0,
+                    18.0
+                  ]
+                },
+                {
+                  "raw": [
+                    54657,
+                    58130
+                  ],
+                  "reads": [
+                    18.0,
+                    20.0
+                  ]
+                },
+                {
+                  "raw": [
+                    58131,
+                    60882
+                  ],
+                  "reads": [
+                    20.0,
+                    22.0
+                  ]
+                },
+                {
+                  "raw": [
+                    60883,
+                    64224
+                  ],
+                  "reads": [
+                    22.0,
+                    24.0
+                  ]
+                },
+                {
+                  "raw": [
+                    64225,
+                    65535
+                  ],
+                  "reads": [
+                    24.0,
+                    25.0
+                  ]
+                }
+              ],
+              "decimals": 1,
+              "colour": "red"
+            },
+            {
+              "gap": true
+            }
+          ]
+        },
+        {
+          "cells": "96-119",
+          "content": [
+            {
+              "gap": true
+            },
+            {
+              "text": "PORT",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 7
+            },
+            {
+              "text": "STBD",
+              "small": true
+            },
+            {
+              "gap": true
+            }
+          ]
+        },
+        {
+          "cells": "120-143",
+          "content": [
+            {
+              "gap": true
+            },
+            {
+              "source": "PORT_TACHO_1000_G",
+              "width": 1,
+              "align": "right",
+              "reads": [
+                0.0,
+                5.0
+              ],
+              "round": "down",
+              "colour": "amber"
+            },
+            {
+              "source": "PORT_TACHO_100_G",
+              "width": 2,
+              "align": "right",
+              "reads": [
+                0.0,
+                100.0
+              ],
+              "digits": 3,
+              "round": "down",
+              "wrap": 100.0,
+              "colour": "amber"
+            },
+            {
+              "text": "0",
+              "colour": "amber"
+            },
+            {
+              "text": "RPM",
+              "width": 7,
+              "align": "centre",
+              "small": true
+            },
+            {
+              "source": "STBD_TACHO_1000_G",
+              "width": 1,
+              "align": "right",
+              "reads": [
+                0.0,
+                5.0
+              ],
+              "round": "down",
+              "colour": "amber"
+            },
+            {
+              "source": "STBD_TACHO_100_G",
+              "width": 2,
+              "align": "right",
+              "reads": [
+                0.0,
+                100.0
+              ],
+              "digits": 3,
+              "round": "down",
+              "wrap": 100.0,
+              "colour": "amber"
+            },
+            {
+              "text": "0",
+              "colour": "amber"
+            },
+            {
+              "gap": true
+            }
+          ]
+        },
+        {
+          "cells": "168-191",
+          "content": [
+            {
+              "gap": true
+            },
+            {
+              "source": "PORT_OIL_TEMP_G",
+              "width": 3,
+              "align": "right",
+              "conversions": [
+                {
+                  "raw": [
+                    0,
+                    32768
+                  ],
+                  "reads": [
+                    -1.0,
+                    0.0
+                  ]
+                },
+                {
+                  "raw": [
+                    32769,
+                    65535
+                  ],
+                  "reads": [
+                    0.0,
+                    120.0
+                  ]
+                }
+              ]
+            },
+            {
+              "text": "OIL",
+              "width": 7,
+              "align": "centre",
+              "small": true
+            },
+            {
+              "source": "STBD_OIL_TEMP_G",
+              "width": 3,
+              "align": "right",
+              "conversions": [
+                {
+                  "raw": [
+                    0,
+                    32768
+                  ],
+                  "reads": [
+                    -1.0,
+                    0.0
+                  ]
+                },
+                {
+                  "raw": [
+                    32769,
+                    65535
+                  ],
+                  "reads": [
+                    0.0,
+                    120.0
+                  ]
+                }
+              ]
+            },
+            {
+              "gap": true
+            }
+          ]
+        },
+        {
+          "cells": "192-215",
+          "content": [
+            {
+              "gap": true
+            },
+            {
+              "source": "PORT_RAD_TEMP_G",
+              "width": 3,
+              "align": "right",
+              "reads": [
+                0.0,
+                100.0
+              ]
+            },
+            {
+              "text": "RAD",
+              "width": 7,
+              "align": "centre",
+              "small": true
+            },
+            {
+              "source": "STBD_RAD_TEMP_G",
+              "width": 3,
+              "align": "right",
+              "reads": [
+                0.0,
+                100.0
+              ]
+            },
+            {
+              "gap": true
+            }
+          ]
+        },
+        {
+          "cells": "216-239",
+          "content": [
+            {
+              "gap": true
+            },
+            {
+              "source": "PORT_RAD_FLAP",
+              "width": 6,
+              "align": "right",
+              "value_aliases": {
+                "0": {
+                  "text": "CLOSED",
+                  "colour": "red"
+                },
+                "1": "OPEN"
+              },
+              "colour": "green"
+            },
+            {
+              "text": " FLAP",
+              "width": 7,
+              "small": true
+            },
+            {
+              "source": "STBD_RAD_FLAP",
+              "width": 6,
+              "value_aliases": {
+                "0": {
+                  "text": "CLOSED",
+                  "colour": "red"
+                },
+                "1": "OPEN"
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true
+            }
+          ]
+        },
+        {
+          "cells": "0-23",
+          "content": [
+            {
+              "gap": true,
+              "rule": true,
+              "label": "CRUISE",
+              "label_colour": "white",
+              "colour": "amber",
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "48-71",
+          "content": [
+            {
+              "source": "AIRSPEED_G",
+              "width": 3,
+              "reads": [
+                0.0,
+                500.0
+              ],
+              "colour": "amber"
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "source": "VARIOMETER_100_G",
+              "width": 5,
+              "reads": [
+                -4000.0,
+                4000.0
+              ],
+              "colour": "amber"
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "source": "ALT_METER_10000_G",
+              "width": 1,
+              "reads": [
+                0.0,
+                10.0
+              ],
+              "wrap": 10.0,
+              "colour": "amber"
+            },
+            {
+              "source": "ALT_METER_1000_G",
+              "width": 1,
+              "reads": [
+                0.0,
+                10.0
+              ],
+              "wrap": 10.0,
+              "colour": "amber"
+            },
+            {
+              "source": "ALT_METER_100_G",
+              "width": 3,
+              "align": "right",
+              "reads": [
+                0.0,
+                1000.0
+              ],
+              "digits": 3,
+              "wrap": 1000.0,
+              "colour": "amber"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "COMPASS_RING",
+              "width": 3,
+              "align": "right",
+              "reads": [
+                0.0,
+                360.0
+              ],
+              "digits": 3,
+              "wrap": 360.0,
+              "colour": "amber"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "REP_COMP_CRS_G",
+              "width": 3,
+              "reads": [
+                0.0,
+                360.0
+              ],
+              "digits": 3,
+              "wrap": 360.0,
+              "colour": "amber"
+            }
+          ]
+        },
+        {
+          "cells": "24-47",
+          "content": [
+            {
+              "text": "MPH",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "text": "VSI",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "text": "ALT",
+              "width": 5,
+              "align": "centre",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "text": "MAG",
+              "width": 3,
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "text": "CRS",
+              "width": 3,
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "72-95",
+          "content": [
+            {
+              "gap": true
+            },
+            {
+              "source": "ALT_METER_SET_PRESS_G",
+              "width": 4,
+              "align": "right",
+              "reads": [
+                798.0,
+                1052.0
+              ],
+              "colour": "cyan"
+            },
+            {
+              "text": "H",
+              "width": 1,
+              "small": true
+            },
+            {
+              "text": "P",
+              "width": 1
+            },
+            {
+              "text": "A",
+              "width": 1,
+              "small": true
+            },
+            {
+              "gap": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nn7akb",
+      "name": "Sight Settings",
+      "display": "DED",
+      "fields": [
+        {
+          "cells": "24-47",
+          "content": [
+            {
+              "gap": true
+            },
+            {
+              "text": "PWR"
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "RAN"
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "BAS"
+            },
+            {
+              "gap": true
+            }
+          ]
+        },
+        {
+          "cells": "48-71",
+          "content": [
+            {
+              "gap": true
+            },
+            {
+              "source": "REFLECTOR_SIGHT_SW",
+              "value_aliases": {
+                "0": {
+                  "text": "OFF",
+                  "inverse": true
+                },
+                "1": "ON"
+              }
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "GUNSIGHT_RANGE",
+              "reads": [
+                100.0,
+                500.0
+              ]
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "GUNSIGHT_SPAN",
+              "reads": [
+                32.0,
+                100.0
+              ]
+            },
+            {
+              "gap": true
             }
           ]
         }

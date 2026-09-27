@@ -18,7 +18,7 @@ you change aircraft.
 - Runs unelevated. No DCS, DCS-BIOS, SimAppPro or WinWing file is modified.
 - DCS-BIOS is required. It is where every signal comes from.
 
-> **Alpha.** Flown daily on the author's panels, but the USB protocol was
+> **Beta.** Flown daily on the author's panels, but the USB protocol was
 > reverse-engineered and the installer is new, so treat it as community software
 > rather than a vendor feature. Bug reports welcome, and questions are answered on
 > the [Discord](https://discord.gg/W9tsVe3g3P).

@@ -15,7 +15,10 @@ use std::sync::Mutex;
 
 use dsc_config::catalogue_build::catalogue_version;
 use dsc_config::nightly_only::{Change, NightlyOnly};
-use dsc_config::{DeviceInventory, DisplayCatalogue, Error, Flag, Module, Page, PageLibrary, Place, Profile, Unsound};
+use dsc_config::{
+    DeviceInventory, DisplayCatalogue, Error, Flag, Module, Page, PageLibrary, Place, Profile,
+    Unsound,
+};
 
 use dsc_config::paths::Paths;
 
@@ -39,12 +42,20 @@ impl Cache {
     pub fn problems(&self, paths: &Paths, profile: &Profile, pages: &PageLibrary) -> Vec<String> {
         let devices = match DeviceInventory::load(&paths.devices) {
             Ok(d) => d,
-            Err(e) => return vec![format!("cannot check: reading {}: {e}", paths.devices.display())],
+            Err(e) => {
+                return vec![format!(
+                    "cannot check: reading {}: {e}",
+                    paths.devices.display()
+                )]
+            }
         };
         let displays = match DisplayCatalogue::load_dir(&paths.displays) {
             Ok(d) => d,
             Err(e) => {
-                return vec![format!("cannot check: loading {}: {e}", paths.displays.display())]
+                return vec![format!(
+                    "cannot check: loading {}: {e}",
+                    paths.displays.display()
+                )]
             }
         };
 
@@ -62,7 +73,9 @@ impl Cache {
                     // itself is added.
                     let about_page = matches!(
                         e,
-                        Error::PageUnnamed | Error::PageNameTaken(..) | Error::PageOnUnknownDisplay(..)
+                        Error::PageUnnamed
+                            | Error::PageNameTaken(..)
+                            | Error::PageOnUnknownDisplay(..)
                     );
                     if shown.contains(&page.id) && !about_page {
                         continue;
@@ -90,16 +103,34 @@ impl Cache {
         page: &Page,
         device: &str,
     ) -> Vec<String> {
-        let (devices, displays) = match (DeviceInventory::load(&paths.devices), DisplayCatalogue::load_dir(&paths.displays)) {
+        let (devices, displays) = match (
+            DeviceInventory::load(&paths.devices),
+            DisplayCatalogue::load_dir(&paths.displays),
+        ) {
             (Ok(d), Ok(m)) => (d, m),
-            (Err(e), _) => return vec![format!("cannot check: reading {}: {e}", paths.devices.display())],
-            (_, Err(e)) => return vec![format!("cannot check: loading {}: {e}", paths.displays.display())],
+            (Err(e), _) => {
+                return vec![format!(
+                    "cannot check: reading {}: {e}",
+                    paths.devices.display()
+                )]
+            }
+            (_, Err(e)) => {
+                return vec![format!(
+                    "cannot check: loading {}: {e}",
+                    paths.displays.display()
+                )]
+            }
         };
         self.with_module(paths, &profile.module, |m| {
-            let mut out: Vec<String> =
-                lib.page_problems(page, m, &devices, &displays).iter().map(|e| e.to_string()).collect();
+            let mut out: Vec<String> = lib
+                .page_problems(page, m, &devices, &displays)
+                .iter()
+                .map(|e| e.to_string())
+                .collect();
             let mut here = Vec::new();
-            profile.page_view(device, page).page_field_problems(m, &devices, &displays, &mut here);
+            profile
+                .page_view(device, page)
+                .page_field_problems(m, &devices, &displays, &mut here);
             for e in here.into_iter().filter(|e| !e.is_advisory()) {
                 let line = e.to_string();
                 if !out.contains(&line) {
@@ -113,7 +144,12 @@ impl Cache {
 
     /// Run `f` over the named module, loading it only if the last check was
     /// for another one.
-    fn with_module<R>(&self, paths: &Paths, name: &str, f: impl FnOnce(&Module) -> R) -> Result<R, String> {
+    fn with_module<R>(
+        &self,
+        paths: &Paths,
+        name: &str,
+        f: impl FnOnce(&Module) -> R,
+    ) -> Result<R, String> {
         let mut slot = match self.module.lock() {
             Ok(slot) => slot,
             // A poisoned lock means a previous check panicked mid-load. The
@@ -145,13 +181,23 @@ impl Cache {
     /// once DCS-BIOS is updated.
     ///
     /// Empty when the module cannot be read. `problems` already says so.
-    pub fn flags(&self, paths: &Paths, profile: &Profile, pages: &PageLibrary) -> (Vec<FlagView>, Option<String>) {
+    pub fn flags(
+        &self,
+        paths: &Paths,
+        profile: &Profile,
+        pages: &PageLibrary,
+    ) -> (Vec<FlagView>, Option<String>) {
         let devices = DeviceInventory::load(&paths.devices).ok();
         let Ok(flags) = self.with_module(paths, &profile.module, |m| {
-            let mut all: Vec<(Option<String>, Flag)> = profile.flags(m).into_iter().map(|f| (None, f)).collect();
+            let mut all: Vec<(Option<String>, Flag)> =
+                profile.flags(m).into_iter().map(|f| (None, f)).collect();
             if let Some(devices) = &devices {
                 for (page, view) in page_views(profile, pages, devices) {
-                    all.extend(view.flags(m).into_iter().map(|f| (Some(page.id.clone()), f)));
+                    all.extend(
+                        view.flags(m)
+                            .into_iter()
+                            .map(|f| (Some(page.id.clone()), f)),
+                    );
                 }
             }
             all
@@ -162,7 +208,10 @@ impl Cache {
         let nightly = NightlyOnly::load(&paths.nightly_only).unwrap_or_default();
         let views = flags
             .iter()
-            .map(|(page, f)| FlagView { page: page.clone(), ..FlagView::of(f, &profile.module, &nightly) })
+            .map(|(page, f)| FlagView {
+                page: page.clone(),
+                ..FlagView::of(f, &profile.module, &nightly)
+            })
             .collect();
         let flags: Vec<Flag> = flags.into_iter().map(|(_, f)| f).collect();
 
@@ -209,7 +258,12 @@ impl Cache {
     ///
     /// A page's fields are cautioned as they draw in this profile, since the
     /// font is the profile's, and carry the page's id.
-    pub fn field_cautions(&self, paths: &Paths, profile: &Profile, pages: &PageLibrary) -> Vec<FieldCaution> {
+    pub fn field_cautions(
+        &self,
+        paths: &Paths,
+        profile: &Profile,
+        pages: &PageLibrary,
+    ) -> Vec<FieldCaution> {
         let (Ok(devices), Ok(displays)) = (
             DeviceInventory::load(&paths.devices),
             DisplayCatalogue::load_dir(&paths.displays),
@@ -220,14 +274,20 @@ impl Cache {
             let mut out: Vec<FieldCaution> = profile
                 .field_cautions(m, &devices, &displays)
                 .into_iter()
-                .map(|(readout, text)| FieldCaution { page: None, readout, text })
+                .map(|(readout, text)| FieldCaution {
+                    page: None,
+                    readout,
+                    text,
+                })
                 .collect();
             for (page, view) in page_views(profile, pages, &devices) {
-                out.extend(
-                    view.field_cautions(m, &devices, &displays)
-                        .into_iter()
-                        .map(|(readout, text)| FieldCaution { page: Some(page.id.clone()), readout, text }),
-                );
+                out.extend(view.field_cautions(m, &devices, &displays).into_iter().map(
+                    |(readout, text)| FieldCaution {
+                        page: Some(page.id.clone()),
+                        readout,
+                        text,
+                    },
+                ));
             }
             out
         })
@@ -236,18 +296,30 @@ impl Cache {
 
     /// Every caution as one list, for a profile that is not open: an import
     /// has no fields on screen to put them beside, so each says where it is.
-    pub fn all_cautions(&self, paths: &Paths, profile: &Profile, pages: &PageLibrary) -> Vec<String> {
+    pub fn all_cautions(
+        &self,
+        paths: &Paths,
+        profile: &Profile,
+        pages: &PageLibrary,
+    ) -> Vec<String> {
         let mut out = self.cautions(paths, profile);
-        out.extend(self.field_cautions(paths, profile, pages).into_iter().filter_map(|c| {
-            let (r, on) = match &c.page {
-                None => (profile.readouts.get(c.readout)?, String::new()),
-                Some(id) => {
-                    let page = pages.page_on(&profile.module, id)?;
-                    (page.fields.get(c.readout)?, format!("page {:?}, ", page.name.trim()))
-                }
-            };
-            Some(format!("{on}{} cells {}: {}", r.display, r.cells, c.text))
-        }));
+        out.extend(
+            self.field_cautions(paths, profile, pages)
+                .into_iter()
+                .filter_map(|c| {
+                    let (r, on) = match &c.page {
+                        None => (profile.readouts.get(c.readout)?, String::new()),
+                        Some(id) => {
+                            let page = pages.page_on(&profile.module, id)?;
+                            (
+                                page.fields.get(c.readout)?,
+                                format!("page {:?}, ", page.name.trim()),
+                            )
+                        }
+                    };
+                    Some(format!("{on}{} cells {}: {}", r.display, r.cells, c.text))
+                }),
+        );
         out
     }
 }
@@ -259,21 +331,24 @@ fn page_views<'a>(
     pages: &'a PageLibrary,
     devices: &'a DeviceInventory,
 ) -> impl Iterator<Item = (&'a Page, Profile)> + 'a {
-    pages.on_module(&profile.module).iter().filter_map(move |page| {
-        let slotted = profile
-            .screens
-            .iter()
-            .find(|(_, s)| s.pages().any(|(_, id)| id == page.id))
-            .map(|(d, _)| d.clone());
-        let device = slotted.or_else(|| {
-            devices
-                .devices
+    pages
+        .on_module(&profile.module)
+        .iter()
+        .filter_map(move |page| {
+            let slotted = profile
+                .screens
                 .iter()
-                .find(|d| d.part_with_display(&page.display).is_some())
-                .map(|d| d.key.clone())
-        })?;
-        Some((page, profile.page_view(&device, page)))
-    })
+                .find(|(_, s)| s.pages().any(|(_, id)| id == page.id))
+                .map(|(d, _)| d.clone());
+            let device = slotted.or_else(|| {
+                devices
+                    .devices
+                    .iter()
+                    .find(|d| d.part_with_display(&page.display).is_some())
+                    .map(|d| d.key.clone())
+            })?;
+            Some((page, profile.page_view(&device, page)))
+        })
 }
 
 /// One caution about a display field, for the window to show on it.
@@ -306,20 +381,34 @@ impl FlagView {
     fn of(f: &Flag, module: &str, nightly: &NightlyOnly) -> Self {
         let why = match (&f.why, nightly.get(module, &f.source)) {
             (Unsound::Missing, Some(_)) => {
-                format!("Needs the DCS-BIOS nightly; stable {} does not have it. ", nightly.stable)
+                format!(
+                    "Needs the DCS-BIOS nightly; stable {} does not have it. ",
+                    nightly.stable
+                )
             }
             (Unsound::Missing, None) => String::new(),
-            (Unsound::AboveRange { value, max }, Some(Change::Range { nightly: Some(n), .. })) => {
+            (
+                Unsound::AboveRange { value, max },
+                Some(Change::Range {
+                    nightly: Some(n), ..
+                }),
+            ) => {
                 format!("Tests for {value}, above its highest here, {max}. The DCS-BIOS nightly goes to {n}. ")
             }
-            (Unsound::AboveRange { value, max }, _) => format!("Tests for {value}, above its highest, {max}. "),
+            (Unsound::AboveRange { value, max }, _) => {
+                format!("Tests for {value}, above its highest, {max}. ")
+            }
         };
         let cost = match f.place {
             Place::Condition { .. } => "The lamp stays off.",
             Place::Branch { .. } => "This alternative is left out; the others still work.",
             Place::Field { .. } => "The field stays blank.",
         };
-        FlagView { place: f.place, page: None, text: format!("{why}{cost}") }
+        FlagView {
+            place: f.place,
+            page: None,
+            text: format!("{why}{cost}"),
+        }
     }
 }
 
@@ -354,8 +443,18 @@ mod tests {
         // worked, and the check that comes back clean is the one that matters.
         let paths = Paths::resolve();
         let cache = Cache::default();
-        assert_eq!(cache.problems(&paths, &orphan(), &PageLibrary::default()).len(), 1);
-        assert_eq!(cache.problems(&paths, &orphan(), &PageLibrary::default()).len(), 1);
+        assert_eq!(
+            cache
+                .problems(&paths, &orphan(), &PageLibrary::default())
+                .len(),
+            1
+        );
+        assert_eq!(
+            cache
+                .problems(&paths, &orphan(), &PageLibrary::default())
+                .len(),
+            1
+        );
     }
 
     fn nightly() -> NightlyOnly {
@@ -369,21 +468,45 @@ mod tests {
     }
 
     fn flag(place: Place, source: &str, why: Unsound) -> Flag {
-        Flag { device: "D".into(), target: "L".into(), place, source: source.into(), why }
+        Flag {
+            device: "D".into(),
+            target: "L".into(),
+            place,
+            source: source.into(),
+            why,
+        }
     }
 
     #[test]
     fn a_flag_says_what_it_costs_and_names_the_nightly_where_the_list_does() {
-        let lamp = Place::Condition { binding: 0, index: 0 };
+        let lamp = Place::Condition {
+            binding: 0,
+            index: 0,
+        };
         let listed = FlagView::of(&flag(lamp, "NEW", Unsound::Missing), "TEST", &nightly());
-        assert_eq!(listed.text, "Needs the DCS-BIOS nightly; stable 0.11.7 does not have it. The lamp stays off.");
+        assert_eq!(
+            listed.text,
+            "Needs the DCS-BIOS nightly; stable 0.11.7 does not have it. The lamp stays off."
+        );
 
         // Not on the list: the row already says the module lacks it.
-        let typo = FlagView::of(&flag(Place::Field { readout: 2 }, "TYPO", Unsound::Missing), "TEST", &nightly());
+        let typo = FlagView::of(
+            &flag(Place::Field { readout: 2 }, "TYPO", Unsound::Missing),
+            "TEST",
+            &nightly(),
+        );
         assert_eq!(typo.text, "The field stays blank.");
 
-        let branch = Place::Branch { binding: 0, branch: 1, index: 0 };
-        let range = FlagView::of(&flag(branch, "SEL", Unsound::AboveRange { value: 3, max: 2 }), "TEST", &nightly());
+        let branch = Place::Branch {
+            binding: 0,
+            branch: 1,
+            index: 0,
+        };
+        let range = FlagView::of(
+            &flag(branch, "SEL", Unsound::AboveRange { value: 3, max: 2 }),
+            "TEST",
+            &nightly(),
+        );
         assert_eq!(
             range.text,
             "Tests for 3, above its highest here, 2. The DCS-BIOS nightly goes to 3. This alternative is left out; the others still work."
@@ -394,7 +517,15 @@ mod tests {
     fn a_flag_serialises_with_its_place_beside_the_text() {
         // The window finds the row from these fields, so their names matter.
         let view = FlagView::of(
-            &flag(Place::Branch { binding: 4, branch: 1, index: 0 }, "NEW", Unsound::Missing),
+            &flag(
+                Place::Branch {
+                    binding: 4,
+                    branch: 1,
+                    index: 0,
+                },
+                "NEW",
+                Unsound::Missing,
+            ),
             "TEST",
             &nightly(),
         );

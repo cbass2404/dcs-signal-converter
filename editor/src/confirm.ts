@@ -59,7 +59,8 @@ export function confirmAction(message: string, ok: string): Promise<boolean> {
     dialog.addEventListener("click", (e) => {
       if (e.target !== dialog) return;
       const r = dialog.getBoundingClientRect();
-      const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+      const inside =
+        e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
       if (!inside) answer(false);
     });
 

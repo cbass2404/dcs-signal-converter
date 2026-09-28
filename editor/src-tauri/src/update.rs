@@ -60,7 +60,10 @@ fn newest<'a>(current: &str, releases: &'a [Release]) -> Option<&'a Release> {
 
 /// A tag safe to put in a URL: what `tools/release.cmd` makes and no more.
 fn plain_tag(tag: &str) -> bool {
-    tag.len() <= 64 && tag.chars().all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '-')
+    tag.len() <= 64
+        && tag
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '-')
 }
 
 /// The release to point at, or none when the newest one is the one running.
@@ -73,7 +76,10 @@ pub fn check(current: &str, releases: &[Release]) -> Option<Update> {
     Some(Update {
         current: current.to_string(),
         latest: latest.to_string(),
-        url: format!("https://github.com/{REPO}/releases/tag/{}", release.tag_name),
+        url: format!(
+            "https://github.com/{REPO}/releases/tag/{}",
+            release.tag_name
+        ),
     })
 }
 
@@ -83,7 +89,9 @@ async fn fetch() -> reqwest::Result<Vec<Release>> {
         // GitHub refuses API calls without one.
         .user_agent(concat!("dcs-signal-converter/", env!("CARGO_PKG_VERSION")))
         .build()?
-        .get(format!("https://api.github.com/repos/{REPO}/releases?per_page=30"))
+        .get(format!(
+            "https://api.github.com/repos/{REPO}/releases?per_page=30"
+        ))
         .header("Accept", "application/vnd.github+json")
         .send()
         .await?
@@ -136,7 +144,11 @@ mod tests {
 
     #[test]
     fn the_running_release_is_no_update() {
-        let list = [release("v1.0.0-alpha.001", true, Some("2026-09-20T00:00:00Z"))];
+        let list = [release(
+            "v1.0.0-alpha.001",
+            true,
+            Some("2026-09-20T00:00:00Z"),
+        )];
         assert_eq!(check("1.0.0-alpha.001", &list), None);
     }
 
@@ -148,7 +160,10 @@ mod tests {
         ];
         let update = check("1.0.0-alpha.001", &list).expect("an update");
         assert_eq!(update.latest, "1.0.0-alpha.002");
-        assert_eq!(update.url, format!("https://github.com/{REPO}/releases/tag/v1.0.0-alpha.002"));
+        assert_eq!(
+            update.url,
+            format!("https://github.com/{REPO}/releases/tag/v1.0.0-alpha.002")
+        );
     }
 
     #[test]
@@ -158,7 +173,10 @@ mod tests {
             release("v1.0.0-alpha.010", true, Some("2026-09-24T00:00:00Z")),
             release("v1.0.0-beta.001", true, Some("2026-10-01T00:00:00Z")),
         ];
-        assert_eq!(check("1.0.0-alpha.010", &list).unwrap().latest, "1.0.0-beta.001");
+        assert_eq!(
+            check("1.0.0-alpha.010", &list).unwrap().latest,
+            "1.0.0-beta.001"
+        );
         assert_eq!(check("1.0.0-beta.001", &list), None);
     }
 
@@ -167,7 +185,11 @@ mod tests {
         let list = [
             release("v1.0.0-alpha.001", true, Some("2026-09-20T00:00:00Z")),
             release("v1.0.0-alpha.002", true, None),
-            release("dcs-bios-2026.10.01-nightly", true, Some("2026-10-02T00:00:00Z")),
+            release(
+                "dcs-bios-2026.10.01-nightly",
+                true,
+                Some("2026-10-02T00:00:00Z"),
+            ),
         ];
         assert_eq!(check("1.0.0-alpha.001", &list), None);
     }
@@ -179,12 +201,19 @@ mod tests {
             release("v1.1.0-alpha.001", true, Some("2026-12-01T00:00:00Z")),
         ];
         assert_eq!(check("1.0.0", &list), None);
-        assert_eq!(check("1.0.0-alpha.009", &list).unwrap().latest, "1.1.0-alpha.001");
+        assert_eq!(
+            check("1.0.0-alpha.009", &list).unwrap().latest,
+            "1.1.0-alpha.001"
+        );
     }
 
     #[test]
     fn a_tag_that_would_bend_the_url_is_ignored() {
-        let list = [release("v2/../../evil", false, Some("2026-11-01T00:00:00Z"))];
+        let list = [release(
+            "v2/../../evil",
+            false,
+            Some("2026-11-01T00:00:00Z"),
+        )];
         assert_eq!(check("1.0.0", &list), None);
     }
 

@@ -61,7 +61,10 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font: 14px/1.5 "Segoe UI", system-ui, sans-serif;
+  font:
+    14px/1.5 "Segoe UI",
+    system-ui,
+    sans-serif;
 }
 
 /* Grows with the window, so a wide one gives the fields room to take their
@@ -611,7 +614,10 @@ table.lamps tr:last-child td:last-child {
 }
 
 .condition code {
-  font: 12.5px/1.5 "Cascadia Mono", Consolas, monospace;
+  font:
+    12.5px/1.5 "Cascadia Mono",
+    Consolas,
+    monospace;
 }
 
 .condition .test {
@@ -652,7 +658,10 @@ table.lamps tr:last-child td:last-child {
 
 input.signal {
   width: 100%;
-  font: 12.5px/1.5 "Cascadia Mono", Consolas, monospace;
+  font:
+    12.5px/1.5 "Cascadia Mono",
+    Consolas,
+    monospace;
   padding: 4px 7px;
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -735,7 +744,10 @@ button.result .sub {
 
 button.result .id {
   display: block;
-  font: 11.5px/1.5 "Cascadia Mono", Consolas, monospace;
+  font:
+    11.5px/1.5 "Cascadia Mono",
+    Consolas,
+    monospace;
   color: var(--muted);
 }
 
@@ -781,7 +793,10 @@ button.result .id {
 
 /* The identifier inside a hint: a key, not prose. */
 .hint-id {
-  font: 11.5px/1.5 "Cascadia Mono", Consolas, monospace;
+  font:
+    11.5px/1.5 "Cascadia Mono",
+    Consolas,
+    monospace;
   color: var(--muted);
 }
 
@@ -844,7 +859,10 @@ button.result .id {
   margin-top: 5px;
   display: flex;
   flex-direction: column;
-  font: 12px/1.5 "Cascadia Mono", Consolas, monospace;
+  font:
+    12px/1.5 "Cascadia Mono",
+    Consolas,
+    monospace;
 }
 
 .test-row {
@@ -933,7 +951,10 @@ input.value.wide {
 }
 
 .condition-view .sub code {
-  font: 12px/1.5 "Cascadia Mono", Consolas, monospace;
+  font:
+    12px/1.5 "Cascadia Mono",
+    Consolas,
+    monospace;
   color: var(--muted);
 }
 

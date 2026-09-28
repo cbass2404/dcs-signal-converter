@@ -10,7 +10,17 @@
 import { deletePage, newPageId, savePage } from "./api";
 import { confirmAction } from "./confirm";
 import { fieldTable, fontPicker } from "./readout";
-import type { Device, DisplayInfo, Page, PageSlots, PageUse, PagesView, Profile, Readout, SignalView } from "./types";
+import type {
+  Device,
+  DisplayInfo,
+  Page,
+  PageSlots,
+  PageUse,
+  PagesView,
+  Profile,
+  Readout,
+  SignalView,
+} from "./types";
 
 /** How many slots a screen has: one per page key the device lists. */
 export function slotCount(device: Device): number {
@@ -155,11 +165,13 @@ function redrawAll(book: PageBook): void {
   for (const draw of book.sections) draw();
 }
 
-const sameName = (a: string, b: string): boolean => a.trim().toLowerCase() === b.trim().toLowerCase();
+const sameName = (a: string, b: string): boolean =>
+  a.trim().toLowerCase() === b.trim().toLowerCase();
 
 /** A name on the module no saved page but `except` has: `name`, or `name 2`, `name 3` and so on. */
 function freeName(book: PageBook, name: string, except?: string): string {
-  const taken = (n: string): boolean => book.saved.some((p) => p.id !== except && sameName(p.name, n));
+  const taken = (n: string): boolean =>
+    book.saved.some((p) => p.id !== except && sameName(p.name, n));
   const base = name.trim() || "New page";
   if (!taken(base)) return base;
   for (let k = 2; ; k += 1) {
@@ -222,7 +234,11 @@ export function pageSection(device: Device, display: DisplayInfo, ctx: PageConte
     // The head names the screen and, on a text grid where the aircraft has
     // no font of its own, offers the profile's, since every page here is
     // drawn in it.
-    const head = el("div", { class: "display-head" }, el("span", { class: "name" }, `${display.key} pages`));
+    const head = el(
+      "div",
+      { class: "display-head" },
+      el("span", { class: "name" }, `${display.key} pages`),
+    );
     const start = s.start !== undefined ? s.slots[s.start - 1] : null;
     const startName = !start
       ? null
@@ -230,7 +246,13 @@ export function pageSection(device: Device, display: DisplayInfo, ctx: PageConte
         ? "a blank screen"
         : (book.saved.find((p) => p.id === start.page)?.name ?? "a missing page");
     head.append(
-      el("span", { class: "meta" }, startName ? `starts on slot ${s.start}, ${startName}` : "every slot disabled, so the screen is blank"),
+      el(
+        "span",
+        { class: "meta" },
+        startName
+          ? `starts on slot ${s.start}, ${startName}`
+          : "every slot disabled, so the screen is blank",
+      ),
     );
     const picker = fontPicker(display, ctx.profile, () => {
       draw();
@@ -263,7 +285,10 @@ export function pageSection(device: Device, display: DisplayInfo, ctx: PageConte
     for (let i = 0; i < count; i += 1) {
       const slot = s.slots[i] ?? null;
       const choose = el("select", { class: "test" }) as HTMLSelectElement;
-      choose.append(el("option", { value: DISABLED }, "Disabled"), el("option", { value: BLANK }, "Blank"));
+      choose.append(
+        el("option", { value: DISABLED }, "Disabled"),
+        el("option", { value: BLANK }, "Blank"),
+      );
       for (const p of here) choose.append(el("option", { value: p.id }, p.name));
       // A slot already pointing somewhere this screen cannot show is kept on
       // its own line, so the file's mistake is visible rather than hidden.
@@ -274,7 +299,9 @@ export function pageSection(device: Device, display: DisplayInfo, ctx: PageConte
           el(
             "option",
             { value: missing },
-            other ? `${other.name}, a page for the ${other.display}` : `a page not in the library (${missing})`,
+            other
+              ? `${other.name}, a page for the ${other.display}`
+              : `a page not in the library (${missing})`,
           ),
         );
       }
@@ -297,7 +324,10 @@ export function pageSection(device: Device, display: DisplayInfo, ctx: PageConte
       tick.disabled = slot === null;
       tick.title = "Show this slot when a mission starts";
       tick.addEventListener("change", () => {
-        storeSlots(ctx.profile, device.key, { start: i + 1, slots: slotsOf(ctx.profile, device).slots });
+        storeSlots(ctx.profile, device.key, {
+          start: i + 1,
+          slots: slotsOf(ctx.profile, device).slots,
+        });
         ctx.profileChanged();
         redrawAll(book);
       });
@@ -322,7 +352,11 @@ export function pageSection(device: Device, display: DisplayInfo, ctx: PageConte
     const slots = el(
       "table",
       { class: "readouts" },
-      el("thead", {}, el("tr", {}, el("th", {}, "Slot"), el("th", {}, "Page"), el("th", { class: "num" }, ""))),
+      el(
+        "thead",
+        {},
+        el("tr", {}, el("th", {}, "Slot"), el("th", {}, "Page"), el("th", { class: "num" }, "")),
+      ),
       body,
     );
 
@@ -396,7 +430,11 @@ export function pageSection(device: Device, display: DisplayInfo, ctx: PageConte
     const page = e.page;
     const wrap = el("div", { class: "page-edit" });
 
-    const name = el("input", { type: "text", class: "rename", value: page.name }) as HTMLInputElement;
+    const name = el("input", {
+      type: "text",
+      class: "rename",
+      value: page.name,
+    }) as HTMLInputElement;
     const clash = el("span", { class: "bad" });
     const save = el("button", { class: "primary" }, "Save page");
     const saveAs = el("button", {}, "Save as new page");
@@ -405,14 +443,24 @@ export function pageSection(device: Device, display: DisplayInfo, ctx: PageConte
     const state = el("span", { class: "meta" });
     const problems = el("div", { class: "problems", hidden: "" });
 
-    const nameTaken = (n: string): boolean => book.saved.some((p) => p.id !== page.id && sameName(p.name, n));
+    const nameTaken = (n: string): boolean =>
+      book.saved.some((p) => p.id !== page.id && sameName(p.name, n));
     const refresh = (): void => {
       const n = page.name.trim();
-      clash.textContent = n === "" ? "A page needs a name." : nameTaken(n) ? `Another page on ${book.module} is called ${n}.` : "";
+      clash.textContent =
+        n === ""
+          ? "A page needs a name."
+          : nameTaken(n)
+            ? `Another page on ${book.module} is called ${n}.`
+            : "";
       const blocked = clash.textContent !== "" || book.problems.length > 0;
       if (blocked || !pageUnsaved(book)) save.setAttribute("disabled", "");
       else save.removeAttribute("disabled");
-      state.textContent = e.fresh ? "new, not saved yet" : pageUnsaved(book) ? "unsaved changes" : "";
+      state.textContent = e.fresh
+        ? "new, not saved yet"
+        : pageUnsaved(book)
+          ? "unsaved changes"
+          : "";
       problems.replaceChildren();
       problems.hidden = book.problems.length === 0;
       if (book.problems.length > 0) {
@@ -472,7 +520,9 @@ export function pageSection(device: Device, display: DisplayInfo, ctx: PageConte
         const places = shownAt(ctx, page.id);
         const question =
           `Delete the page ${page.name}?` +
-          (places.length > 0 ? `\n\nThese slots show it and will be emptied: ${places.join("; ")}.` : "") +
+          (places.length > 0
+            ? `\n\nThese slots show it and will be emptied: ${places.join("; ")}.`
+            : "") +
           "\n\nThis cannot be undone.";
         if (!(await confirmAction(question, "Delete"))) return;
         try {
@@ -498,7 +548,14 @@ export function pageSection(device: Device, display: DisplayInfo, ctx: PageConte
 
     shut.addEventListener("click", () => {
       void (async () => {
-        if (pageUnsaved(book) && !(await confirmAction(`Close ${page.name} without saving? The changes to it will be lost.`, "Close"))) return;
+        if (
+          pageUnsaved(book) &&
+          !(await confirmAction(
+            `Close ${page.name} without saving? The changes to it will be lost.`,
+            "Close",
+          ))
+        )
+          return;
         close();
       })();
     });
@@ -532,12 +589,7 @@ export function pageSection(device: Device, display: DisplayInfo, ctx: PageConte
     );
 
     wrap.append(
-      el(
-        "div",
-        { class: "display-head" },
-        el("label", { class: "meta" }, "Page ", name),
-        state,
-      ),
+      el("div", { class: "display-head" }, el("label", { class: "meta" }, "Page ", name), state),
       el("div", { class: "meta block" }, reach),
       clash,
       problems,

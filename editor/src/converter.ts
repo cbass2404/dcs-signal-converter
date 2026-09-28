@@ -38,7 +38,8 @@ export function manageConverter(): Promise<string | null> {
 
     const lead = document.createElement("p");
     lead.className = "meta";
-    lead.textContent = "Saving a profile does not need this: a running converter picks up a saved profile within about a second. Restart it when one of these is true.";
+    lead.textContent =
+      "Saving a profile does not need this: a running converter picks up a saved profile within about a second. Restart it when one of these is true.";
     dialog.append(lead);
 
     const why = document.createElement("ul");
@@ -52,7 +53,8 @@ export function manageConverter(): Promise<string | null> {
 
     const danger = document.createElement("p");
     danger.className = "meta";
-    danger.textContent = "Kill ends it without asking, for one that will not answer. It cannot clear the panels: the lamps latch, and a killed process runs none of its shutdown, so whatever is lit stays lit. Start it again and stop it properly to clear them.";
+    danger.textContent =
+      "Kill ends it without asking, for one that will not answer. It cannot clear the panels: the lamps latch, and a killed process runs none of its shutdown, so whatever is lit stays lit. Start it again and stop it properly to clear them.";
     dialog.append(danger);
 
     const cancel = document.createElement("button");
@@ -103,7 +105,8 @@ export function manageConverter(): Promise<string | null> {
         kill.disabled = !s.running;
         restart.disabled = !s.can_start;
         if (!s.can_start) {
-          state.textContent += " No daemon is installed beside the editor, so there is none to start.";
+          state.textContent +=
+            " No daemon is installed beside the editor, so there is none to start.";
         }
       },
       () => {
@@ -127,7 +130,8 @@ export function manageConverter(): Promise<string | null> {
     dialog.addEventListener("click", (e) => {
       if (e.target !== dialog) return;
       const r = dialog.getBoundingClientRect();
-      const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+      const inside =
+        e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
       if (!inside) finish(null);
     });
 

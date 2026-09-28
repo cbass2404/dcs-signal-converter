@@ -27,7 +27,11 @@ export async function loadTheme(): Promise<void> {
 }
 
 /** A labelled dropdown, as the pickers lay one out. */
-function choice<T extends string>(label: string, options: [T, string][], value: T): [HTMLLabelElement, HTMLSelectElement] {
+function choice<T extends string>(
+  label: string,
+  options: [T, string][],
+  value: T,
+): [HTMLLabelElement, HTMLSelectElement] {
   const field = document.createElement("label");
   field.className = "field";
   field.append(label);
@@ -67,7 +71,11 @@ export function showSettings(): Promise<SettingsExit> {
   });
 }
 
-function open(current: Settings, problem: string | null | undefined, resolve: (exit: SettingsExit) => void): void {
+function open(
+  current: Settings,
+  problem: string | null | undefined,
+  resolve: (exit: SettingsExit) => void,
+): void {
   const settings: Settings = { page_modifier: current.page_modifier, theme: current.theme };
   const dialog = document.createElement("dialog");
   dialog.className = "picker confirm settings";
@@ -159,7 +167,8 @@ function open(current: Settings, problem: string | null | undefined, resolve: (e
   dialog.addEventListener("click", (e) => {
     if (e.target !== dialog) return;
     const r = dialog.getBoundingClientRect();
-    const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+    const inside =
+      e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
     if (!inside) finish(null);
   });
 

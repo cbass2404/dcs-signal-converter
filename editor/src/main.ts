@@ -116,14 +116,22 @@ function actionMenu(label: string, items: MenuItem[]): [HTMLButtonElement, HTMLE
       ruled = true;
       if (menu.childElementCount > 0) menu.append(el("hr"));
     }
-    const pick = el("button", { role: "menuitem", ...(item.danger ? { class: "danger" } : {}) }, item.label);
+    const pick = el(
+      "button",
+      { role: "menuitem", ...(item.danger ? { class: "danger" } : {}) },
+      item.label,
+    );
     pick.addEventListener("click", () => {
       menu.hidePopover();
       item.run();
     });
     menu.append(pick);
   }
-  const open = el("button", { class: "more", title: label, "aria-label": label, "aria-haspopup": "menu" }, "⋯");
+  const open = el(
+    "button",
+    { class: "more", title: label, "aria-label": label, "aria-haspopup": "menu" },
+    "⋯",
+  );
   open.style.setProperty("anchor-name", anchor);
   open.popoverTargetElement = menu;
   return [open, menu];
@@ -138,7 +146,10 @@ function actionMenu(label: string, items: MenuItem[]): [HTMLButtonElement, HTMLE
  * are counted rather than cut mid-name, so it is plain that the list goes on.
  * At least one name is always shown, however long.
  */
-function aircraftSummary(names: string[], limit = 50): { text: string; title: Record<string, string> } {
+function aircraftSummary(
+  names: string[],
+  limit = 50,
+): { text: string; title: Record<string, string> } {
   const full = names.join(", ");
   if (full.length <= limit) return { text: full, title: {} };
   const shown: string[] = [];
@@ -234,7 +245,10 @@ function plural(n: number, one: string, many = `${one}s`): string {
  * to start with. Lights go a lamp at a time under a box per panel, slots under
  * a box per screen, and every group has a box over it.
  */
-function mergeChecklist(parts: MergeParts, onChange: () => void): { node: HTMLElement; pick: () => MergePick } {
+function mergeChecklist(
+  parts: MergeParts,
+  onChange: () => void,
+): { node: HTMLElement; pick: () => MergePick } {
   const list = el("div", { class: "checklist" });
   const tick = (): HTMLInputElement => {
     const b = el("input", { type: "checkbox" });
@@ -266,10 +280,15 @@ function mergeChecklist(parts: MergeParts, onChange: () => void): { node: HTMLEl
         ),
       );
       panel.lamps.forEach((lamp, i) => {
-        rows.push(el("label", { class: "sub2" }, boxes[i] as HTMLInputElement, el("span", {}, lamp.label)));
+        rows.push(
+          el("label", { class: "sub2" }, boxes[i] as HTMLInputElement, el("span", {}, lamp.label)),
+        );
       });
     }
-    list.append(el("label", { class: "group" }, parentBox(panelBoxes), el("span", {}, "Lights")), ...rows);
+    list.append(
+      el("label", { class: "group" }, parentBox(panelBoxes), el("span", {}, "Lights")),
+      ...rows,
+    );
   }
 
   // A screen merges a slot at a time: slot n of the source replaces slot n
@@ -287,7 +306,9 @@ function mergeChecklist(parts: MergeParts, onChange: () => void): { node: HTMLEl
       });
       const box = parentBox(boxes);
       screenBoxes.push(box);
-      rows.push(el("label", { class: "sub" }, box, el("span", {}, `${group[0]?.screen ?? ""} pages`)));
+      rows.push(
+        el("label", { class: "sub" }, box, el("span", {}, `${group[0]?.screen ?? ""} pages`)),
+      );
       group.forEach((s, i) => {
         rows.push(
           el(
@@ -300,11 +321,20 @@ function mergeChecklist(parts: MergeParts, onChange: () => void): { node: HTMLEl
         );
       });
     }
-    list.append(el("label", { class: "group" }, parentBox(screenBoxes), el("span", {}, "Page slots")), ...rows);
+    list.append(
+      el("label", { class: "group" }, parentBox(screenBoxes), el("span", {}, "Page slots")),
+      ...rows,
+    );
   }
 
   if (lights.length === 0 && slots.length === 0) {
-    list.append(el("p", { class: "meta" }, "Nothing is set up in it to merge: no lamp assigned and no page in a slot."));
+    list.append(
+      el(
+        "p",
+        { class: "meta" },
+        "Nothing is set up in it to merge: no lamp assigned and no page in a slot.",
+      ),
+    );
   }
 
   const pick = (): MergePick => ({
@@ -317,7 +347,14 @@ function mergeChecklist(parts: MergeParts, onChange: () => void): { node: HTMLEl
 /** One panel's or slot's part of a merge, as a sentence. */
 function describeChange(c: MergeReport["changes"][number]): string {
   if (c.pages) {
-    const what = c.added > 0 ? "gets a page" : c.replaced > 0 ? "shows another page" : c.removed > 0 ? "is emptied" : "already shows that page";
+    const what =
+      c.added > 0
+        ? "gets a page"
+        : c.replaced > 0
+          ? "shows another page"
+          : c.removed > 0
+            ? "is emptied"
+            : "already shows that page";
     return `${c.label} ${what}.`;
   }
   const bits: string[] = [];
@@ -346,7 +383,9 @@ async function runMerge(
   const report = await mergeProfile(from, into.file, pick, false);
   const changing = report.changes.filter((c) => c.added + c.replaced + c.removed > 0);
   if (changing.length === 0) {
-    throw new Error(`Everything ticked is already the same in ${into.name}, so there is nothing to merge.`);
+    throw new Error(
+      `Everything ticked is already the same in ${into.name}, so there is nothing to merge.`,
+    );
   }
   const ok = await confirmAction(
     `Merge into ${into.name}?\n\n` +
@@ -409,7 +448,12 @@ function matchesFilter(row: ProfileSummary, filter: string): boolean {
 function guideButton(): HTMLElement {
   const button = el(
     "button",
-    { class: "icon guide", type: "button", title: "The profile language: every test, reading and page, with examples", "aria-label": "Profile language guide" },
+    {
+      class: "icon guide",
+      type: "button",
+      title: "The profile language: every test, reading and page, with examples",
+      "aria-label": "Profile language guide",
+    },
     "?",
   );
   button.addEventListener("click", () => {
@@ -440,7 +484,17 @@ async function showLibrary(): Promise<void> {
     el("div", { class: "spacer" }),
     el("button", { class: "primary", id: "new" }, "New profile"),
     guideButton(),
-    el("button", { class: "icon gear", id: "settings", type: "button", title: "Settings", "aria-label": "Settings" }, "\u2699"),
+    el(
+      "button",
+      {
+        class: "icon gear",
+        id: "settings",
+        type: "button",
+        title: "Settings",
+        "aria-label": "Settings",
+      },
+      "\u2699",
+    ),
   );
   app.append(header);
 
@@ -501,7 +555,11 @@ async function showLibrary(): Promise<void> {
     const box = el(
       "div",
       { class: "cautions" },
-      el("strong", {}, twice.length === 1 ? "An aircraft has two profiles:" : "Some aircraft have two profiles:"),
+      el(
+        "strong",
+        {},
+        twice.length === 1 ? "An aircraft has two profiles:" : "Some aircraft have two profiles:",
+      ),
     );
     for (const [a, owners] of twice) {
       const names = owners.map((o) => o.name);
@@ -556,7 +614,12 @@ async function showLibrary(): Promise<void> {
     }
     if (more.length > 0) actions.append(...actionMenu(`More for ${row.name}`, more));
 
-    const item = el("li", {}, el("div", { class: "grow" }, el("strong", {}, row.name), el("br"), meta), actions);
+    const item = el(
+      "li",
+      {},
+      el("div", { class: "grow" }, el("strong", {}, row.name), el("br"), meta),
+      actions,
+    );
     // The row itself opens the profile. Clicks in the menu, which sits inside
     // the row, are its own; a profile that will not load has nothing to open.
     if (!row.error) {
@@ -637,7 +700,13 @@ async function exportOne(row: ProfileSummary): Promise<void> {
     box.disabled = p.used;
     if (!p.used) extra.push([box, p.id]);
     list.append(
-      el("label", {}, box, el("span", {}, p.name), el("span", { class: "meta" }, p.used ? "in a slot, so it goes" : "")),
+      el(
+        "label",
+        {},
+        box,
+        el("span", {}, p.name),
+        el("span", { class: "meta" }, p.used ? "in a slot, so it goes" : ""),
+      ),
     );
   }
   const go = el("button", { class: "primary" }, "Export...");
@@ -646,7 +715,11 @@ async function exportOne(row: ProfileSummary): Promise<void> {
     "dialog",
     { class: "picker" },
     el("h2", {}, `Export ${row.name}`),
-    el("p", { class: "meta" }, `Which ${row.module} pages go with it? The ones its slots show always do.`),
+    el(
+      "p",
+      { class: "meta" },
+      `Which ${row.module} pages go with it? The ones its slots show always do.`,
+    ),
     list,
     el("div", { class: "actions" }, cancel, go),
   );
@@ -714,7 +787,13 @@ async function showImport(): Promise<void> {
   const mode = el("select", {});
   mode.append(el("option", { value: "" }, "Whole profile, as a profile of its own"));
   for (const t of targets) {
-    mode.append(el("option", { value: t.file }, `Merged into ${t.name}: only the lights and page slots ticked`));
+    mode.append(
+      el(
+        "option",
+        { value: t.file },
+        `Merged into ${t.name}: only the lights and page slots ticked`,
+      ),
+    );
   }
   const into = (): ProfileSummary | undefined => targets.find((t) => t.file === mode.value);
 
@@ -744,7 +823,9 @@ async function showImport(): Promise<void> {
     called.addEventListener("input", () => sync());
   }
   const pagesTaken = (): PageTake[] =>
-    pageRows.filter((r) => r.box.checked).map((r) => ({ id: r.plan.id, name: r.name.value.trim() || r.plan.name_after }));
+    pageRows
+      .filter((r) => r.box.checked)
+      .map((r) => ({ id: r.plan.id, name: r.name.value.trim() || r.plan.name_after }));
   const failed = el("p", { class: "bad" });
   const make = el("button", { class: "primary" }, "Import");
   const cancel = el("button", {}, "Cancel");
@@ -790,7 +871,11 @@ async function showImport(): Promise<void> {
   );
   if (pageRows.length > 0) {
     whole.append(
-      el("p", { class: "meta" }, "Which pages come with it? A slot showing a page left unticked comes in empty."),
+      el(
+        "p",
+        { class: "meta" },
+        "Which pages come with it? A slot showing a page left unticked comes in empty.",
+      ),
       pageList,
     );
   }
@@ -838,7 +923,15 @@ async function showImport(): Promise<void> {
       const target = into();
       if (target) {
         try {
-          if (!(await runMerge({ kind: "file", path: picked.path }, picked.name, target, merge.pick()))) return;
+          if (
+            !(await runMerge(
+              { kind: "file", path: picked.path },
+              picked.name,
+              target,
+              merge.pick(),
+            ))
+          )
+            return;
           dialog.close();
           showBanner(`Merged ${picked.name} into ${target.name}.`);
           await showProfile(target.file);
@@ -968,7 +1061,8 @@ async function showMergeFrom(row: ProfileSummary, rows: ProfileSummary[]): Promi
     const pick = merge.pick();
     void (async () => {
       try {
-        if (!(await runMerge({ kind: "profile", file: source.file }, source.name, row, pick))) return;
+        if (!(await runMerge({ kind: "profile", file: source.file }, source.name, row, pick)))
+          return;
         dialog.close();
         showBanner(`Merged ${source.name} into ${row.name}.`);
         await showLibrary();
@@ -1005,7 +1099,10 @@ async function resetOne(row: ProfileSummary): Promise<void> {
  * The F-14 and F-14BU share a module and ship apart, and "No aircraft" rides on
  * FC3 without being one, so neither pair can take the other's aircraft.
  */
-function deletePlan(row: ProfileSummary, rows: ProfileSummary[]): { orphans: string[]; homes: ProfileSummary[] } {
+function deletePlan(
+  row: ProfileSummary,
+  rows: ProfileSummary[],
+): { orphans: string[]; homes: ProfileSummary[] } {
   const others = rows.filter((r) => r.file !== row.file && !r.error);
   // An aircraft another profile already claims keeps flying that one.
   const orphans: string[] = [];
@@ -1015,7 +1112,9 @@ function deletePlan(row: ProfileSummary, rows: ProfileSummary[]): { orphans: str
     orphans.push(a);
     needed.add(row.families[i] ?? "");
   });
-  const homes = others.filter((o) => o.module === row.module && [...needed].every((f) => o.families.includes(f)));
+  const homes = others.filter(
+    (o) => o.module === row.module && [...needed].every((f) => o.families.includes(f)),
+  );
   return { orphans, homes };
 }
 
@@ -1268,7 +1367,9 @@ async function showNewProfile(): Promise<void> {
           : claimed === m.aircraft.length
             ? "  ·  every aircraft has a profile"
             : `  ·  ${claimed} of ${m.aircraft.length} aircraft have a profile`;
-      select.append(el("option", { value: m.key, ...summary.title }, `${m.key}  ·  ${names}${note}`));
+      select.append(
+        el("option", { value: m.key, ...summary.title }, `${m.key}  ·  ${names}${note}`),
+      );
     }
     if (chosen) select.value = chosen;
 
@@ -1386,7 +1487,11 @@ async function showNewProfile(): Promise<void> {
 
     dialog.replaceChildren(
       el("h2", {}, `New ${m.key} profile`),
-      el("p", { class: "meta" }, "Which aircraft is it for? These are the names DCS reports for this module."),
+      el(
+        "p",
+        { class: "meta" },
+        "Which aircraft is it for? These are the names DCS reports for this module.",
+      ),
       list,
       el("label", { class: "field" }, "Start from", from),
       el("label", { class: "field" }, "Name", name),
@@ -1453,7 +1558,9 @@ const lampKey = (device: string, led: string): string => `${device}\u0000${led}`
 /** Take the profile as it stands as the saved one: the unsaved marker's baseline, and each lamp's undo. */
 function markSaved(session: Session): void {
   session.baseline = JSON.stringify(session.profile);
-  session.saved = new Map(session.profile.bindings.map((b) => [lampKey(b.device, b.led), structuredClone(b)]));
+  session.saved = new Map(
+    session.profile.bindings.map((b) => [lampKey(b.device, b.led), structuredClone(b)]),
+  );
 }
 
 async function showProfile(file: string): Promise<void> {
@@ -1574,7 +1681,13 @@ async function showProfile(file: string): Promise<void> {
     cautionList.hidden = cautions.length === 0;
     if (cautions.length > 0) {
       cautionList.append(
-        el("strong", {}, cautions.length === 1 ? "This will load, but check it:" : "These will load, but check them:"),
+        el(
+          "strong",
+          {},
+          cautions.length === 1
+            ? "This will load, but check it:"
+            : "These will load, but check them:",
+        ),
       );
       for (const caution of cautions) {
         cautionList.append(el("div", { class: "caution" }, caution));
@@ -1646,7 +1759,9 @@ async function showProfile(file: string): Promise<void> {
           .catch((e: unknown) => {
             // A check that cannot run must not read as a profile with nothing
             // wrong, so the failure takes the same place the problems do.
-            problems = [`The profile could not be checked: ${e instanceof Error ? e.message : String(e)}`];
+            problems = [
+              `The profile could not be checked: ${e instanceof Error ? e.message : String(e)}`,
+            ];
             cautions = [];
             drawProblems();
             showFlags(session.profile, pagesChecked(book), []);
@@ -1665,7 +1780,11 @@ async function showProfile(file: string): Promise<void> {
   const back = el("button", {}, "← Profiles");
   back.addEventListener("click", () => {
     void (async () => {
-      if (unsavedWork() && !(await confirmAction("Leave without saving? Your changes will be lost.", "Leave"))) return;
+      if (
+        unsavedWork() &&
+        !(await confirmAction("Leave without saving? Your changes will be lost.", "Leave"))
+      )
+        return;
       await showLibrary();
     })();
   });
@@ -1695,7 +1814,11 @@ async function showProfile(file: string): Promise<void> {
       "div",
       { class: "grow" },
       profileTitle(session, taken),
-      el("span", { class: "meta block", ...aircraft.title }, `${profile.module} · ${aircraft.text}`),
+      el(
+        "span",
+        { class: "meta block", ...aircraft.title },
+        `${profile.module} · ${aircraft.text}`,
+      ),
     ),
     state,
     toggle,
@@ -1732,24 +1855,42 @@ async function showProfile(file: string): Promise<void> {
   // panel still in the post can be set up, and one left alone can be read to
   // see how the rest were done. Each group keeps the inventory's alphabetical
   // order, since `regroup` appends in that order.
-  const group = (title: string, lead: string): { box: HTMLElement; list: HTMLElement; lead: HTMLElement } => {
+  const group = (
+    title: string,
+    lead: string,
+  ): { box: HTMLElement; list: HTMLElement; lead: HTMLElement } => {
     const leadLine = el("p", { class: "meta" }, lead);
     const list = el("div", {});
-    return { box: el("section", { class: "device-group" }, el("h2", {}, title), leadLine, list), list, lead: leadLine };
+    return {
+      box: el("section", { class: "device-group" }, el("h2", {}, title), leadLine, list),
+      list,
+      lead: leadLine,
+    };
   };
   const active = group("Active Devices", "");
-  const inactive = group("Inactive Devices", "Plugged in, but this profile leaves them alone. Open one to see how it is set up.");
-  const missing = group("Devices not found", "Supported, but not plugged in. They can still be opened and set up.");
+  const inactive = group(
+    "Inactive Devices",
+    "Plugged in, but this profile leaves them alone. Open one to see how it is set up.",
+  );
+  const missing = group(
+    "Devices not found",
+    "Supported, but not plugged in. They can still be opened and set up.",
+  );
   app.append(active.box, inactive.box, missing.box);
 
-  const sections = devices.map((device) => deviceSection(device, devices, byLamp, session, () => regroup()));
+  const sections = devices.map((device) =>
+    deviceSection(device, devices, byLamp, session, () => regroup()),
+  );
   const regroup = (): void => {
     const off = session.profile.disabled_devices ?? [];
     sections.forEach((section, i) => {
       const key = devices[i]?.key ?? "";
-      const into = typeof found !== "string" && !found.has(key)
-        ? missing
-        : off.includes(key) ? inactive : active;
+      const into =
+        typeof found !== "string" && !found.has(key)
+          ? missing
+          : off.includes(key)
+            ? inactive
+            : active;
       // Moved only when it changes group, so a panel being edited is not
       // pulled out from under the cursor by a poll that changed nothing.
       if (section.parentElement !== into.list) into.list.append(section);
@@ -1762,9 +1903,10 @@ async function showProfile(file: string): Promise<void> {
     }
     // Active always shows, so an empty page says why it is empty.
     active.lead.hidden = active.list.children.length > 0 && typeof found !== "string";
-    active.lead.textContent = typeof found === "string"
-      ? `Could not tell which panels are plugged in (${found}), so every panel is listed here.`
-      : "No panel this profile drives is plugged in.";
+    active.lead.textContent =
+      typeof found === "string"
+        ? `Could not tell which panels are plugged in (${found}), so every panel is listed here.`
+        : "No panel this profile drives is plugged in.";
     inactive.box.hidden = inactive.list.children.length === 0;
     missing.box.hidden = missing.list.children.length === 0;
   };
@@ -1782,9 +1924,12 @@ async function showProfile(file: string): Promise<void> {
     void lookForPanels().then((now) => {
       asking = false;
       if (left) return;
-      const same = typeof now === "string"
-        ? typeof found === "string"
-        : typeof found !== "string" && now.size === found.size && [...now].every((k) => found instanceof Set && found.has(k));
+      const same =
+        typeof now === "string"
+          ? typeof found === "string"
+          : typeof found !== "string" &&
+            now.size === found.size &&
+            [...now].every((k) => found instanceof Set && found.has(k));
       if (same) return;
       found = now;
       regroup();
@@ -1875,7 +2020,8 @@ function profileTitle(session: Session, taken: Map<string, string>): HTMLElement
     const done = iconButton("done", "✓", "Keep this name", keep);
     const sync = (): void => {
       const other = clash(input.value);
-      clashing.textContent = other === undefined ? "" : `Another profile is already called ${other}.`;
+      clashing.textContent =
+        other === undefined ? "" : `Another profile is already called ${other}.`;
       if (input.value.trim() === "" || other !== undefined) done.setAttribute("disabled", "");
       else done.removeAttribute("disabled");
     };
@@ -1884,7 +2030,12 @@ function profileTitle(session: Session, taken: Map<string, string>): HTMLElement
       if (e.key === "Enter") keep();
       if (e.key === "Escape") view();
     });
-    title.replaceChildren(input, done, iconButton("cancel", "✕", "Keep the old name", view), clashing);
+    title.replaceChildren(
+      input,
+      done,
+      iconButton("cancel", "✕", "Keep the old name", view),
+      clashing,
+    );
     sync();
     input.select();
   };
@@ -1896,7 +2047,12 @@ function profileTitle(session: Session, taken: Map<string, string>): HTMLElement
  * A lamp missing from the profile gets a row added to it on first use, so a
  * profile written against fewer devices still edits cleanly.
  */
-function bindingFor(device: Device, led: Led, byLamp: Map<string, Binding>, session: Session): Binding {
+function bindingFor(
+  device: Device,
+  led: Led,
+  byLamp: Map<string, Binding>,
+  session: Session,
+): Binding {
   const key = lampKey(device.key, led.name);
   const existing = byLamp.get(key);
   if (existing) return existing;
@@ -1942,7 +2098,8 @@ function deviceSection(
       else unfinished += 1;
     }
     count.textContent =
-      `${assigned} of ${device.leds.length} lamps assigned` + (unfinished ? ` · ${unfinished} unfinished` : "");
+      `${assigned} of ${device.leds.length} lamps assigned` +
+      (unfinished ? ` · ${unfinished} unfinished` : "");
   };
 
   const rows = el("tbody");
@@ -1992,16 +2149,14 @@ function deviceSection(
   // open for a frame. The click is cancelled at the summary, which also covers
   // Enter and Space. The drive label is let through, since it is how the panel
   // is turned back on.
-  const summary = el(
-    "summary",
-    {},
-    el("span", { class: "name" }, device.display_name),
-    count,
-  );
-  if (device.variants.length > 0) summary.append(followChooser(device, session, nameOf, () => {
-    applyDriveState();
-    refreshCount();
-  }));
+  const summary = el("summary", {}, el("span", { class: "name" }, device.display_name), count);
+  if (device.variants.length > 0)
+    summary.append(
+      followChooser(device, session, nameOf, () => {
+        applyDriveState();
+        refreshCount();
+      }),
+    );
   summary.append(el("label", { class: "drive meta" }, drive, " drive this panel"));
   summary.addEventListener("click", (e) => {
     if (shut() && !(e.target as Element).closest("label")) e.preventDefault();
@@ -2158,13 +2313,18 @@ function lampHint(led: Led): HTMLElement {
  */
 /** Names a lamp but drives nothing yet. Mirrors `Binding::is_placeholder`. */
 function isPlaceholder(binding: Binding): boolean {
-  return !binding.conditions.length && !binding.any_of?.length && !binding.always && !binding.same_as;
+  return (
+    !binding.conditions.length && !binding.any_of?.length && !binding.always && !binding.same_as
+  );
 }
 
 /** Assigned, and every condition has its signal, so the profile check accepts it. */
 function isFinished(binding: Binding): boolean {
   if (binding.always || binding.same_as) return true;
-  const conditions = [...binding.conditions, ...(binding.any_of ?? []).flatMap((b) => b.conditions)];
+  const conditions = [
+    ...binding.conditions,
+    ...(binding.any_of ?? []).flatMap((b) => b.conditions),
+  ];
   return conditions.length > 0 && conditions.every((c) => c.source !== "");
 }
 
@@ -2214,7 +2374,11 @@ function lampRow(
       // Either nothing is assigned yet, or every test is a scale. A scale
       // ignores `on` and spreads the source across the lamp's own range, so an
       // input here would be a control that quietly does nothing.
-      return el("span", { class: "meta" }, binding.conditions.length || binding.any_of?.length ? `0..${led.max}` : "");
+      return el(
+        "span",
+        { class: "meta" },
+        binding.conditions.length || binding.any_of?.length ? `0..${led.max}` : "",
+      );
     }
 
     const input = el("input", {
@@ -2310,7 +2474,10 @@ function lampRow(
         // two would point round in a loop. Only while it is not matching yet,
         // so one that arrived that way in the file can still be changed.
         const followed = session.profile.bindings.some(
-          (b) => b !== binding && b.same_as === led.name && (b.same_as_device ?? b.device) === device.key,
+          (b) =>
+            b !== binding &&
+            b.same_as === led.name &&
+            (b.same_as_device ?? b.device) === device.key,
         );
         if (followed && !binding.same_as) return [];
         const panels = [device, ...all.filter((d) => d.key !== device.key)];
@@ -2322,7 +2489,8 @@ function lampRow(
                 (l) =>
                   l.dimmable &&
                   !(d.key === device.key && l.name === led.name) &&
-                  ((d.key === on && l.name === binding.same_as) || !byLamp.get(lampKey(d.key, l.name))?.same_as),
+                  ((d.key === on && l.name === binding.same_as) ||
+                    !byLamp.get(lampKey(d.key, l.name))?.same_as),
               )
               .map((l) => ({ device: d.key, deviceName: d.display_name, led: l })),
           );
@@ -2345,13 +2513,7 @@ function lampRow(
     }),
   );
 
-  return el(
-    "tr",
-    { "data-device": device.key, "data-led": led.name },
-    name,
-    driven,
-    output,
-  );
+  return el("tr", { "data-device": device.key, "data-led": led.name }, name, driven, output);
 }
 
 // ---------------------------------------------------------------------- boot

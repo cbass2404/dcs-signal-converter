@@ -22,7 +22,12 @@ function fill(slot: HTMLElement, text: string | undefined): void {
 }
 
 /** A field by index: one of the profile's own, or one on a page. */
-function fieldAt(profile: Profile, pages: Page[], page: string | undefined, index: number): Readout | undefined {
+function fieldAt(
+  profile: Profile,
+  pages: Page[],
+  page: string | undefined,
+  index: number,
+): Readout | undefined {
   if (page === undefined) return profile.readouts?.[index];
   return pages.find((p) => p.id === page)?.fields[index];
 }

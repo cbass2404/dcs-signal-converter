@@ -8,11 +8,11 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
-use serde::{Deserialize, Serialize};
 use dsc_config::{
     Colour, DeviceSpec, Display, DisplayCatalogue, Families, Glass, Led, Module, Profile, ShapeArt,
     ValueLabel,
 };
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize)]
 pub struct LedView {
@@ -43,7 +43,12 @@ impl LedView {
         LedView {
             name: led.name.clone(),
             label: led.label.clone(),
-            kind: if led.is_dimmable() { "dimmer" } else { "indicator" }.to_string(),
+            kind: if led.is_dimmable() {
+                "dimmer"
+            } else {
+                "indicator"
+            }
+            .to_string(),
             max: led.max_value(),
             on_value: led.on_value(),
             dimmable: led.is_dimmable(),
@@ -264,13 +269,24 @@ impl DeviceView {
             key: spec.key.clone(),
             display_name: spec.display_name.clone(),
             product_name: spec.product_name.clone(),
-            leds: spec.leds().map(|(part, led)| LedView::of(part.part_id, led)).collect(),
+            leds: spec
+                .leds()
+                .map(|(part, led)| LedView::of(part.part_id, led))
+                .collect(),
             displays: Vec::new(),
             variants: Vec::new(),
             page_keys: spec
                 .page_keys
                 .iter()
-                .map(|k| spec.button(k).map_or(k.clone(), |b| if b.label.is_empty() { b.name.clone() } else { b.label.clone() }))
+                .map(|k| {
+                    spec.button(k).map_or(k.clone(), |b| {
+                        if b.label.is_empty() {
+                            b.name.clone()
+                        } else {
+                            b.label.clone()
+                        }
+                    })
+                })
                 .collect(),
         }
     }
@@ -328,7 +344,12 @@ impl DeviceView {
                 native_fonts: d
                     .text
                     .as_ref()
-                    .map(|t| t.native_fonts.iter().map(|(a, f)| (a.clone(), f.clone())).collect())
+                    .map(|t| {
+                        t.native_fonts
+                            .iter()
+                            .map(|(a, f)| (a.clone(), f.clone()))
+                            .collect()
+                    })
                     .unwrap_or_default(),
                 art: d.shape_art(),
                 glass: d.glass.clone(),
@@ -366,7 +387,11 @@ impl ProfileSummary {
             name: p.name.clone(),
             module: p.module.clone(),
             aircraft: p.aircraft.clone(),
-            families: p.aircraft.iter().map(|a| families.of(a, &p.module)).collect(),
+            families: p
+                .aircraft
+                .iter()
+                .map(|a| families.of(a, &p.module))
+                .collect(),
             bound: p.bindings.iter().filter(|b| !b.is_placeholder()).count(),
             total: p.bindings.len(),
             has_default,
@@ -429,8 +454,8 @@ impl ModuleChoice {
             Ok(text) => text,
             Err(_) => return Ok(Vec::new()),
         };
-        let index: Index = serde_json::from_str(&text)
-            .map_err(|e| format!("reading {}: {e}", path.display()))?;
+        let index: Index =
+            serde_json::from_str(&text).map_err(|e| format!("reading {}: {e}", path.display()))?;
         let mut out: Vec<ModuleChoice> = index
             .modules
             .into_iter()
@@ -504,16 +529,22 @@ impl SignalView {
                     text,
                     length: u32::from(out.max_length.unwrap_or(0)),
                     reads: out.description.clone(),
-                    values: if out.discrete { out.values.clone() } else { Vec::new() },
+                    values: if out.discrete {
+                        out.values.clone()
+                    } else {
+                        Vec::new()
+                    },
                 })
             })
             .collect();
         // Lamps first, then everything else alphabetically by what the user
         // reads rather than by identifier.
         out.sort_by(|a, b| {
-            b.lamp
-                .cmp(&a.lamp)
-                .then_with(|| a.description.to_lowercase().cmp(&b.description.to_lowercase()))
+            b.lamp.cmp(&a.lamp).then_with(|| {
+                a.description
+                    .to_lowercase()
+                    .cmp(&b.description.to_lowercase())
+            })
         });
         Ok(out)
     }
@@ -532,7 +563,8 @@ mod tests {
     #[test]
     fn only_glass_that_draws_inverse_says_so() {
         let paths = Paths::resolve();
-        let maps = DisplayCatalogue::load_dir(&paths.displays).expect("the shipped display maps load");
+        let maps =
+            DisplayCatalogue::load_dir(&paths.displays).expect("the shipped display maps load");
         let inv = DeviceInventory::load(&paths.devices).expect("the shipped inventory loads");
         let views: Vec<DisplayView> = inv
             .devices

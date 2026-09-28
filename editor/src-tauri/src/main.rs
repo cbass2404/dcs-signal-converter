@@ -19,8 +19,8 @@ mod update;
 mod view;
 
 use dsc_config::paths::Paths;
-use view::{DeviceView, ModuleChoice, ProfileSummary, SignalView};
 use dsc_config::{divider_rule as rule_for, DeviceInventory, Module, Page, Profile, RuleCell};
+use view::{DeviceView, ModuleChoice, ProfileSummary, SignalView};
 
 /// Commands return a message rather than an error type, because the only useful
 /// thing the window can do with a failure is show it to the user.
@@ -53,9 +53,17 @@ fn devices() -> Reply<Vec<DeviceView>> {
     let mut out: Vec<DeviceView> = inv
         .devices
         .iter()
-        .map(|d| DeviceView::of(d).with_displays(d, &maps).with_variants(d, &inv.devices))
+        .map(|d| {
+            DeviceView::of(d)
+                .with_displays(d, &maps)
+                .with_variants(d, &inv.devices)
+        })
         .collect();
-    out.sort_by(|a, b| a.display_name.to_lowercase().cmp(&b.display_name.to_lowercase()));
+    out.sort_by(|a, b| {
+        a.display_name
+            .to_lowercase()
+            .cmp(&b.display_name.to_lowercase())
+    });
     Ok(out)
 }
 
@@ -73,7 +81,10 @@ fn connected_devices() -> Reply<Vec<String>> {
     let paths = Paths::resolve();
     let inv = inventory(&paths)?;
     let api = hidapi::HidApi::new().map_err(|e| format!("looking for connected panels: {e}"))?;
-    let pids: Vec<u16> = wctrl_hid::enumerate(&api).iter().map(|d| d.product_id).collect();
+    let pids: Vec<u16> = wctrl_hid::enumerate(&api)
+        .iter()
+        .map(|d| d.product_id)
+        .collect();
     Ok(inv
         .devices
         .iter()
@@ -115,7 +126,10 @@ fn profiles() -> Reply<Vec<ProfileSummary>> {
         .merge_new(&inventory(&paths)?, env!("CARGO_PKG_VERSION"))
         .map_err(|e| fail("adding new hardware to the profiles", e))?;
     // The pages the same way, apart from the profiles; see `Pages::merge_new`.
-    paths.pages.seed().map_err(|e| fail("copying in the shipped pages", e))?;
+    paths
+        .pages
+        .seed()
+        .map_err(|e| fail("copying in the shipped pages", e))?;
     paths
         .pages
         .merge_new(env!("CARGO_PKG_VERSION"))
@@ -135,7 +149,11 @@ fn profiles() -> Reply<Vec<ProfileSummary>> {
         if path.extension().and_then(|e| e.to_str()) != Some("json") {
             continue;
         }
-        let file = path.file_name().unwrap_or_default().to_string_lossy().into_owned();
+        let file = path
+            .file_name()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .into_owned();
         let has_default = paths.profiles.has_default(&file);
         // A profile that will not parse is still listed, carrying its error.
         // Hiding it would leave the user looking for a file they can see on disk.
@@ -181,7 +199,9 @@ fn cell_ink(display: String, cells: Vec<view::CellDraw>) -> Reply<Vec<view::Cell
     let paths = Paths::resolve();
     let maps = dsc_config::DisplayCatalogue::load_dir(&paths.displays)
         .map_err(|e| format!("loading {}: {e}", paths.displays.display()))?;
-    let map = maps.get(&display).ok_or_else(|| format!("no display named {display}"))?;
+    let map = maps
+        .get(&display)
+        .ok_or_else(|| format!("no display named {display}"))?;
     Ok(view::CellInk::of(map, &cells))
 }
 
@@ -189,7 +209,9 @@ fn cell_ink(display: String, cells: Vec<view::CellDraw>) -> Reply<Vec<view::Cell
 fn open_profile(file: String) -> Reply<Profile> {
     let paths = Paths::resolve();
     let path = paths.profiles.active.join(&file);
-    Profile::load(&path).and_then(current).map_err(|e| fail(&format!("reading {file}"), e))
+    Profile::load(&path)
+        .and_then(current)
+        .map_err(|e| fail(&format!("reading {file}"), e))
 }
 
 /// A profile of the version this editor writes, or why not.
@@ -263,7 +285,10 @@ fn create_profile(
             // Copied bindings name signals by id, so they only mean something
             // against the catalogue they were written for.
             if p.module != module {
-                return Err(format!("{} reads {}, not {module}, so it cannot be copied here", p.name, p.module));
+                return Err(format!(
+                    "{} reads {}, not {module}, so it cannot be copied here",
+                    p.name, p.module
+                ));
             }
             p
         }
@@ -315,7 +340,8 @@ fn clone_profile(file: String, name: String, aircraft: Vec<String>) -> Reply<Str
 fn learn_start(module: String, learn: tauri::State<learn::State>) -> Reply<()> {
     let paths = Paths::resolve();
     let path = paths.catalogue.join(format!("{module}.json"));
-    let module = Module::load(&path).map_err(|e| fail(&format!("reading {}", path.display()), e))?;
+    let module =
+        Module::load(&path).map_err(|e| fail(&format!("reading {}", path.display()), e))?;
     learn.start(&module);
     Ok(())
 }
@@ -327,7 +353,9 @@ fn learn_start(module: String, learn: tauri::State<learn::State>) -> Reply<()> {
 /// save, and a poll cannot leave the panel stale if a message is missed.
 #[tauri::command]
 fn learn_poll(learn: tauri::State<learn::State>) -> Reply<learn::Report> {
-    Ok(learn.with(|s| s.report()).unwrap_or_else(learn::Report::idle))
+    Ok(learn
+        .with(|s| s.report())
+        .unwrap_or_else(learn::Report::idle))
 }
 
 /// Clear the list and watch again, keeping the map of the cockpit.
@@ -419,7 +447,9 @@ fn save_profile(file: String, profile: Profile, cache: tauri::State<check::Cache
     // The name is only what the list shows, never the file, so renaming
     // changes nothing else. It still has to be something to read.
     if profile.name.trim().is_empty() {
-        return Err(format!("{file} was not written, because a profile needs a name"));
+        return Err(format!(
+            "{file} was not written, because a profile needs a name"
+        ));
     }
     // Renaming is the one way a duplicate name could be made: every path that
     // writes a new file goes through `claims::write_new`, which refuses one.
@@ -433,8 +463,10 @@ fn save_profile(file: String, profile: Profile, cache: tauri::State<check::Cache
         return Err(format!(
             "{file} was not written, because the daemon would refuse it:
 {}",
-            problems.join("
-")
+            problems.join(
+                "
+"
+            )
         ));
     }
     profile
@@ -539,7 +571,9 @@ fn font_glyphs(display: String, font: String) -> Reply<view::FontGlyphs> {
     let paths = Paths::resolve();
     let maps = dsc_config::DisplayCatalogue::load_dir(&paths.displays)
         .map_err(|e| format!("loading {}: {e}", paths.displays.display()))?;
-    let map = maps.get(&display).ok_or_else(|| format!("no display named {display}"))?;
+    let map = maps
+        .get(&display)
+        .ok_or_else(|| format!("no display named {display}"))?;
     let text = map
         .text
         .as_ref()

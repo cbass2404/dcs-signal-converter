@@ -45,6 +45,461 @@
               "small": true
             }
           ]
+        },
+        {
+          "cells": "240-263",
+          "content": [
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "source": "PLT_IAS_NEEDLE",
+              "width": 3,
+              "align": "right",
+              "conversions": [
+                {
+                  "raw": [
+                    0,
+                    1180
+                  ],
+                  "reads": [
+                    0.0,
+                    20.0
+                  ],
+                  "colour": "red"
+                },
+                {
+                  "raw": [
+                    1181,
+                    3277
+                  ],
+                  "reads": [
+                    20.0,
+                    30.0
+                  ],
+                  "colour": "amber"
+                },
+                {
+                  "raw": [
+                    3278,
+                    5898
+                  ],
+                  "reads": [
+                    30.0,
+                    40.0
+                  ]
+                },
+                {
+                  "raw": [
+                    5899,
+                    9306
+                  ],
+                  "reads": [
+                    40.0,
+                    50.0
+                  ]
+                },
+                {
+                  "raw": [
+                    9307,
+                    13107
+                  ],
+                  "reads": [
+                    50.0,
+                    60.0
+                  ]
+                },
+                {
+                  "raw": [
+                    13108,
+                    17694
+                  ],
+                  "reads": [
+                    60.0,
+                    70.0
+                  ]
+                },
+                {
+                  "raw": [
+                    17695,
+                    22610
+                  ],
+                  "reads": [
+                    70.0,
+                    80.0
+                  ]
+                },
+                {
+                  "raw": [
+                    22611,
+                    25821
+                  ],
+                  "reads": [
+                    80.0,
+                    90.0
+                  ]
+                },
+                {
+                  "raw": [
+                    25822,
+                    28311
+                  ],
+                  "reads": [
+                    90.0,
+                    100.0
+                  ]
+                },
+                {
+                  "raw": [
+                    28312,
+                    30474
+                  ],
+                  "reads": [
+                    100.0,
+                    110.0
+                  ]
+                },
+                {
+                  "raw": [
+                    30475,
+                    33095
+                  ],
+                  "reads": [
+                    110.0,
+                    120.0
+                  ]
+                },
+                {
+                  "raw": [
+                    33096,
+                    35586
+                  ],
+                  "reads": [
+                    120.0,
+                    130.0
+                  ],
+                  "colour": "red"
+                },
+                {
+                  "raw": [
+                    35587,
+                    38076
+                  ],
+                  "reads": [
+                    130.0,
+                    140.0
+                  ],
+                  "colour": "red"
+                },
+                {
+                  "raw": [
+                    38077,
+                    40828
+                  ],
+                  "reads": [
+                    140.0,
+                    150.0
+                  ],
+                  "colour": "red"
+                },
+                {
+                  "raw": [
+                    40829,
+                    51707
+                  ],
+                  "reads": [
+                    150.0,
+                    200.0
+                  ],
+                  "colour": "red"
+                },
+                {
+                  "raw": [
+                    51708,
+                    58719
+                  ],
+                  "reads": [
+                    200.0,
+                    230.0
+                  ],
+                  "colour": "red"
+                },
+                {
+                  "raw": [
+                    58720,
+                    61210
+                  ],
+                  "reads": [
+                    230.0,
+                    240.0
+                  ],
+                  "colour": "red"
+                },
+                {
+                  "raw": [
+                    61211,
+                    63372
+                  ],
+                  "reads": [
+                    240.0,
+                    250.0
+                  ],
+                  "colour": "red"
+                },
+                {
+                  "raw": [
+                    63373,
+                    65535
+                  ],
+                  "reads": [
+                    250.0,
+                    250.0
+                  ],
+                  "colour": "red"
+                }
+              ],
+              "colour": "green"
+            },
+            {
+              "text": "KN",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "PLT_ALT_10000",
+              "width": 1,
+              "reads": [
+                0.0,
+                10.0
+              ],
+              "wrap": 10.0
+            },
+            {
+              "source": "PLT_ALT_1000",
+              "width": 1,
+              "reads": [
+                0.0,
+                10.0
+              ],
+              "wrap": 10.0
+            },
+            {
+              "source": "PLT_ALT_NEEDLE",
+              "width": 3,
+              "align": "right",
+              "reads": [
+                0.0,
+                100.0
+              ],
+              "digits": 3,
+              "wrap": 100.0
+            },
+            {
+              "text": "FT",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 2
+            }
+          ]
+        },
+        {
+          "cells": "216-239",
+          "content": [
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "text": "SPEED",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "BARO",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 5
+            }
+          ]
+        },
+        {
+          "cells": "264-287",
+          "content": [
+            {
+              "gap": true
+            },
+            {
+              "source": "PLT_ALT_PRESS_1100",
+              "width": 2,
+              "align": "right",
+              "reads": [
+                26.0,
+                31.0
+              ],
+              "round": "down",
+              "colour": "green"
+            },
+            {
+              "text": ".",
+              "colour": "green"
+            },
+            {
+              "source": "PLT_ALT_PRESS_10",
+              "width": 1,
+              "reads": [
+                0.0,
+                10.0
+              ],
+              "digits": 1,
+              "round": "down",
+              "wrap": 10.0,
+              "colour": "green"
+            },
+            {
+              "source": "PLT_ALT_PRESS_1",
+              "width": 1,
+              "align": "right",
+              "reads": [
+                0.0,
+                10.0
+              ],
+              "digits": 1,
+              "round": "down",
+              "wrap": 10.0,
+              "colour": "green"
+            },
+            {
+              "text": "IN",
+              "width": 2,
+              "small": true
+            },
+            {
+              "text": "H"
+            },
+            {
+              "text": "G",
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "96-119",
+          "content": [
+            {
+              "text": "FM1",
+              "width": 4,
+              "small": true
+            },
+            {
+              "source": "FM1_RADIO",
+              "width": 6,
+              "colour": "green"
+            },
+            {
+              "text": "MH"
+            },
+            {
+              "text": "Z",
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "72-95",
+          "content": [
+            {
+              "text": "UHF ",
+              "small": true
+            },
+            {
+              "source": "UHF_RADIO",
+              "width": 7,
+              "colour": "green"
+            },
+            {
+              "text": "MH"
+            },
+            {
+              "text": "Z",
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "48-71",
+          "content": [
+            {
+              "text": "VHF ",
+              "small": true
+            },
+            {
+              "source": "VHF_AM_RADIO",
+              "width": 7,
+              "colour": "green"
+            },
+            {
+              "text": "MH"
+            },
+            {
+              "text": "Z",
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "120-143",
+          "content": [
+            {
+              "text": "FM2 ",
+              "small": true
+            },
+            {
+              "source": "FM2_RADIO",
+              "width": 6,
+              "colour": "green"
+            },
+            {
+              "text": "MH"
+            },
+            {
+              "text": "Z",
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "144-167",
+          "content": [
+            {
+              "text": "HF  ",
+              "small": true
+            },
+            {
+              "source": "HF_RADIO",
+              "width": 6,
+              "colour": "green"
+            },
+            {
+              "text": "K",
+              "small": true
+            },
+            {
+              "text": "H"
+            },
+            {
+              "text": "Z",
+              "small": true
+            }
+          ]
         }
       ]
     }

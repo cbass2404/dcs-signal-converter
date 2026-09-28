@@ -147,11 +147,7 @@ fn led(index: u8) -> LedId {
 
 fn value_of(batch: &dsc_engine::Batch, index: u8) -> Option<u8> {
     let want = led(index);
-    batch
-        .writes
-        .iter()
-        .find(|w| w.id == want)
-        .map(|w| w.value)
+    batch.writes.iter().find(|w| w.id == want).map(|w| w.value)
 }
 
 #[test]
@@ -176,7 +172,13 @@ fn nothing_is_written_until_the_post_load_flood_settles() {
     assert!(e.ingest(&acft_name("FA-18C_hornet"), t0).is_empty());
     let mid = t0 + Duration::from_millis(50);
     assert!(e
-        .ingest(&[Write { address: CAUTION_ADDR, value: 0x1000 }], mid)
+        .ingest(
+            &[Write {
+                address: CAUTION_ADDR,
+                value: 0x1000
+            }],
+            mid
+        )
         .is_empty());
 
     // Quiet for longer than the settle window, and the sweep lands.
@@ -193,8 +195,14 @@ fn the_sweep_covers_every_led_and_zeroes_the_unbound_ones() {
     e.ingest(&acft_name("FA-18C_hornet"), t0);
     e.ingest(
         &[
-            Write { address: CAUTION_ADDR, value: 0x1000 },
-            Write { address: DIMMER_ADDR, value: u16::MAX },
+            Write {
+                address: CAUTION_ADDR,
+                value: 0x1000,
+            },
+            Write {
+                address: DIMMER_ADDR,
+                value: u16::MAX,
+            },
         ],
         t0,
     );
@@ -209,7 +217,11 @@ fn the_sweep_covers_every_led_and_zeroes_the_unbound_ones() {
     assert_eq!(seen.len(), pto2_led_count());
 
     // Bound LEDs take their resolved values...
-    assert_eq!(value_of(&batch, 4), Some(1), "Master_Caution is an indicator");
+    assert_eq!(
+        value_of(&batch, 4),
+        Some(1),
+        "Master_Caution is an indicator"
+    );
     assert_eq!(value_of(&batch, 0), Some(255), "Backlight scales to full");
 
     // ...and everything the profile does not mention is driven to zero in the
@@ -227,11 +239,21 @@ fn an_unbound_governor_is_swept_to_zero() {
     let mut e = engine_with(vec![profile()]);
     let t0 = Instant::now();
     e.ingest(&acft_name("FA-18C_hornet"), t0);
-    e.ingest(&[Write { address: CAUTION_ADDR, value: 0x1000 }], t0);
+    e.ingest(
+        &[Write {
+            address: CAUTION_ADDR,
+            value: 0x1000,
+        }],
+        t0,
+    );
     let batch = e.tick(t0 + Duration::from_secs(1));
 
     assert_eq!(value_of(&batch, 4), Some(1), "CAUTION is commanded on");
-    assert_eq!(value_of(&batch, 2), Some(0), "but SL, its governor, is not bound");
+    assert_eq!(
+        value_of(&batch, 2),
+        Some(0),
+        "but SL, its governor, is not bound"
+    );
 }
 
 #[test]
@@ -244,7 +266,13 @@ fn after_the_sweep_only_changed_leds_are_written() {
     let t1 = t0 + Duration::from_secs(2);
 
     // Caution comes on: one write, for one LED.
-    let batch = e.ingest(&[Write { address: CAUTION_ADDR, value: 0x1000 }], t1);
+    let batch = e.ingest(
+        &[Write {
+            address: CAUTION_ADDR,
+            value: 0x1000,
+        }],
+        t1,
+    );
     assert_eq!(batch.cause, Cause::SignalChange);
     assert_eq!(batch.writes.len(), 1);
     assert_eq!(value_of(&batch, 4), Some(1));
@@ -252,16 +280,34 @@ fn after_the_sweep_only_changed_leds_are_written() {
     // The same value again writes nothing. The device latches and there is no
     // host watchdog, so a redundant write is pure bus traffic.
     assert!(e
-        .ingest(&[Write { address: CAUTION_ADDR, value: 0x1000 }], t1)
+        .ingest(
+            &[Write {
+                address: CAUTION_ADDR,
+                value: 0x1000
+            }],
+            t1
+        )
         .is_empty());
 
     // An address nothing binds writes nothing.
     assert!(e
-        .ingest(&[Write { address: 999, value: 1 }], t1)
+        .ingest(
+            &[Write {
+                address: 999,
+                value: 1
+            }],
+            t1
+        )
         .is_empty());
 
     // And going off writes once more.
-    let batch = e.ingest(&[Write { address: CAUTION_ADDR, value: 0 }], t1);
+    let batch = e.ingest(
+        &[Write {
+            address: CAUTION_ADDR,
+            value: 0,
+        }],
+        t1,
+    );
     assert_eq!(value_of(&batch, 4), Some(0));
 }
 
@@ -273,10 +319,22 @@ fn a_continuous_source_scales_across_its_range() {
     e.tick(t0 + Duration::from_secs(1));
     let t1 = t0 + Duration::from_secs(2);
 
-    let half = e.ingest(&[Write { address: DIMMER_ADDR, value: 32767 }], t1);
+    let half = e.ingest(
+        &[Write {
+            address: DIMMER_ADDR,
+            value: 32767,
+        }],
+        t1,
+    );
     assert_eq!(value_of(&half, 0), Some(127));
 
-    let full = e.ingest(&[Write { address: DIMMER_ADDR, value: 65535 }], t1);
+    let full = e.ingest(
+        &[Write {
+            address: DIMMER_ADDR,
+            value: 65535,
+        }],
+        t1,
+    );
     assert_eq!(value_of(&full, 0), Some(255));
 }
 
@@ -287,7 +345,13 @@ fn an_aircraft_with_no_profile_still_clears_the_panel() {
 
     // Land in the Hornet and light something.
     e.ingest(&acft_name("FA-18C_hornet"), t0);
-    e.ingest(&[Write { address: CAUTION_ADDR, value: 0x1000 }], t0);
+    e.ingest(
+        &[Write {
+            address: CAUTION_ADDR,
+            value: 0x1000,
+        }],
+        t0,
+    );
     let lit = e.tick(t0 + Duration::from_secs(1));
     assert_eq!(value_of(&lit, 4), Some(1));
 
@@ -312,8 +376,14 @@ fn shutdown_clears_only_what_is_lit() {
     e.ingest(&acft_name("FA-18C_hornet"), t0);
     e.ingest(
         &[
-            Write { address: CAUTION_ADDR, value: 0x1000 },
-            Write { address: DIMMER_ADDR, value: u16::MAX },
+            Write {
+                address: CAUTION_ADDR,
+                value: 0x1000,
+            },
+            Write {
+                address: DIMMER_ADDR,
+                value: u16::MAX,
+            },
         ],
         t0,
     );
@@ -355,7 +425,13 @@ fn the_settle_window_has_an_upper_bound() {
     let mut now = t0;
     for _ in 0..15 {
         now += Duration::from_millis(100);
-        let batch = e.ingest(&[Write { address: DIMMER_ADDR, value: 1 }], now);
+        let batch = e.ingest(
+            &[Write {
+                address: DIMMER_ADDR,
+                value: 1,
+            }],
+            now,
+        );
         if !batch.is_empty() {
             assert_eq!(batch.cause, Cause::ModuleLoad);
             assert_eq!(batch.writes.len(), pto2_led_count());
@@ -389,15 +465,33 @@ fn an_unassigned_lamp_is_swept_off_and_never_driven() {
     let mut e = engine_with(vec![p]);
     let t0 = Instant::now();
     e.ingest(&acft_name("FA-18C_hornet"), t0);
-    e.ingest(&[Write { address: CAUTION_ADDR, value: 0x1000 }], t0);
+    e.ingest(
+        &[Write {
+            address: CAUTION_ADDR,
+            value: 0x1000,
+        }],
+        t0,
+    );
     let batch = e.tick(t0 + Duration::from_secs(1));
 
-    assert_eq!(batch.writes.len(), pto2_led_count(), "the sweep still covers every lamp");
+    assert_eq!(
+        batch.writes.len(),
+        pto2_led_count(),
+        "the sweep still covers every lamp"
+    );
     assert_eq!(value_of(&batch, 17), Some(0), "an unassigned lamp is off");
 
     // Nothing the profile does not actually bind should ever produce a write.
     let t1 = t0 + Duration::from_secs(2);
-    assert!(e.ingest(&[Write { address: 999, value: 1 }], t1).is_empty());
+    assert!(e
+        .ingest(
+            &[Write {
+                address: 999,
+                value: 1
+            }],
+            t1
+        )
+        .is_empty());
 }
 
 #[test]
@@ -406,7 +500,11 @@ fn a_stub_profile_covers_every_lamp_and_binds_none_but_the_gates_and_screens() {
     let stub = Profile::stub("A-10C II", "A-10C_2", "TEST", &devs);
 
     let lamps: usize = devs.devices.iter().flat_map(|d| d.leds()).count();
-    assert_eq!(stub.bindings.len(), lamps, "one row per lamp on the hardware");
+    assert_eq!(
+        stub.bindings.len(),
+        lamps,
+        "one row per lamp on the hardware"
+    );
 
     // A gate left unassigned is swept to 0 and hides every lamp the user binds
     // beneath it, so the gates start held at full with their daylight floor
@@ -418,23 +516,41 @@ fn a_stub_profile_covers_every_lamp_and_binds_none_but_the_gates_and_screens() {
             .expect("stub rows name real lamps");
         if !led.governs.is_empty() {
             assert!(b.always, "{} is a gate and should be held at full", b.led);
-            assert_eq!(b.off, led.max_value(), "{} should carry its daylight floor", b.led);
+            assert_eq!(
+                b.off,
+                led.max_value(),
+                "{} should carry its daylight floor",
+                b.led
+            );
         } else if led.lights_display {
             // At 0 the page on it cannot be read, which is the same trap.
-            assert!(b.always, "{} lights a screen and should be held at full", b.led);
+            assert!(
+                b.always,
+                "{} lights a screen and should be held at full",
+                b.led
+            );
             assert_eq!(b.off, led.max_value(), "{} should start at full", b.led);
         } else {
             assert!(b.is_placeholder(), "{} should be unassigned", b.led);
         }
     }
-    assert!(stub.cautions(&devs).is_empty(), "{:?}", stub.cautions(&devs));
+    assert!(
+        stub.cautions(&devs).is_empty(),
+        "{:?}",
+        stub.cautions(&devs)
+    );
 
     // And it must survive the same validation a hand-written profile gets,
     // or auto-generating one would produce a file the loader then rejects.
     let cat = catalogue();
     let module = cat.module("TEST").expect("fixture module");
-    stub.validate(module, &devs, &DisplayCatalogue::default(), &dsc_config::PageLibrary::default())
-        .expect("a stub must validate");
+    stub.validate(
+        module,
+        &devs,
+        &DisplayCatalogue::default(),
+        &dsc_config::PageLibrary::default(),
+    )
+    .expect("a stub must validate");
 }
 
 const LEVER_ADDR: u16 = 104;
@@ -470,23 +586,45 @@ fn every_condition_must_hold_for_the_lamp_to_light() {
     e.ingest(&acft_name("FA-18C_hornet"), t0);
     e.ingest(
         &[
-            Write { address: LEVER_ADDR, value: 1 },
-            Write { address: GAUGE_ADDR, value: 20000 },
+            Write {
+                address: LEVER_ADDR,
+                value: 1,
+            },
+            Write {
+                address: GAUGE_ADDR,
+                value: 20000,
+            },
         ],
         t0,
     );
     let batch = e.tick(t0 + Duration::from_secs(1));
-    assert_eq!(value_of(&batch, 16), Some(1), "lever at MVR and flaps deployed");
+    assert_eq!(
+        value_of(&batch, 16),
+        Some(1),
+        "lever at MVR and flaps deployed"
+    );
 
     let t1 = t0 + Duration::from_secs(2);
 
     // Lever moves away: the lamp goes out even though the gauge still reads
     // deployed. Either condition failing is enough.
-    let batch = e.ingest(&[Write { address: LEVER_ADDR, value: 0 }], t1);
+    let batch = e.ingest(
+        &[Write {
+            address: LEVER_ADDR,
+            value: 0,
+        }],
+        t1,
+    );
     assert_eq!(value_of(&batch, 16), Some(0));
 
     // Gauge alone cannot bring it back.
-    let batch = e.ingest(&[Write { address: GAUGE_ADDR, value: 65535 }], t1);
+    let batch = e.ingest(
+        &[Write {
+            address: GAUGE_ADDR,
+            value: 65535,
+        }],
+        t1,
+    );
     assert_eq!(value_of(&batch, 16), None, "no write: it is already off");
 }
 
@@ -499,8 +637,14 @@ fn the_lever_condition_stops_half_flashing_during_travel_to_full() {
     e.ingest(&acft_name("FA-18C_hornet"), t0);
     e.ingest(
         &[
-            Write { address: LEVER_ADDR, value: 1 },
-            Write { address: GAUGE_ADDR, value: 20000 },
+            Write {
+                address: LEVER_ADDR,
+                value: 1,
+            },
+            Write {
+                address: GAUGE_ADDR,
+                value: 20000,
+            },
         ],
         t0,
     );
@@ -508,13 +652,29 @@ fn the_lever_condition_stops_half_flashing_during_travel_to_full() {
 
     let t1 = t0 + Duration::from_secs(2);
     // Lever to DN first, exactly as the aircraft reports it.
-    let batch = e.ingest(&[Write { address: LEVER_ADDR, value: 0 }], t1);
-    assert_eq!(value_of(&batch, 16), Some(0), "HALF goes out with the lever");
+    let batch = e.ingest(
+        &[Write {
+            address: LEVER_ADDR,
+            value: 0,
+        }],
+        t1,
+    );
+    assert_eq!(
+        value_of(&batch, 16),
+        Some(0),
+        "HALF goes out with the lever"
+    );
 
     // Now the flaps travel from MVR to DN, passing right through the half
     // range. Not one write, because the lever condition is already false.
     for step in [25000u16, 35000, 45000, 55000, 65535] {
-        let batch = e.ingest(&[Write { address: GAUGE_ADDR, value: step }], t1);
+        let batch = e.ingest(
+            &[Write {
+                address: GAUGE_ADDR,
+                value: step,
+            }],
+            t1,
+        );
         assert!(
             batch.is_empty(),
             "HALF flickered at FLAP_POS={step} during travel to DN"
@@ -550,17 +710,37 @@ fn a_continuous_source_can_be_gated_by_a_switch() {
     e.ingest(&acft_name("FA-18C_hornet"), t0);
     e.ingest(
         &[
-            Write { address: LEVER_ADDR, value: 1 },
-            Write { address: DIMMER_ADDR, value: 32767 },
+            Write {
+                address: LEVER_ADDR,
+                value: 1,
+            },
+            Write {
+                address: DIMMER_ADDR,
+                value: 32767,
+            },
         ],
         t0,
     );
     let batch = e.tick(t0 + Duration::from_secs(1));
-    assert_eq!(value_of(&batch, 0), Some(127), "gate open: the scaled value survives");
+    assert_eq!(
+        value_of(&batch, 0),
+        Some(127),
+        "gate open: the scaled value survives"
+    );
 
     let t1 = t0 + Duration::from_secs(2);
-    let batch = e.ingest(&[Write { address: LEVER_ADDR, value: 2 }], t1);
-    assert_eq!(value_of(&batch, 0), Some(0), "gate shut: dark regardless of the dial");
+    let batch = e.ingest(
+        &[Write {
+            address: LEVER_ADDR,
+            value: 2,
+        }],
+        t1,
+    );
+    assert_eq!(
+        value_of(&batch, 0),
+        Some(0),
+        "gate shut: dark regardless of the dial"
+    );
 }
 
 /// A profile edited while the daemon runs, from the engine's side.
@@ -596,8 +776,14 @@ fn flying() -> Engine {
     e.ingest(
         &[
             // 0x1000 because the fixture masks the caution bit at 4096.
-            Write { address: CAUTION_ADDR, value: 0x1000 },
-            Write { address: DIMMER_ADDR, value: 65535 },
+            Write {
+                address: CAUTION_ADDR,
+                value: 0x1000,
+            },
+            Write {
+                address: DIMMER_ADDR,
+                value: 65535,
+            },
         ],
         now,
     );
@@ -667,7 +853,13 @@ fn a_reload_while_still_settling_defers_to_the_pending_sweep() {
     assert!(batch.writes.is_empty(), "nothing is written while settling");
 
     // The sweep that was already coming uses the profile that just arrived.
-    e.ingest(&[Write { address: DIMMER_ADDR, value: 65535 }], now);
+    e.ingest(
+        &[Write {
+            address: DIMMER_ADDR,
+            value: 65535,
+        }],
+        now,
+    );
     let batch = e.tick(now + Duration::from_secs(1));
     assert_eq!(batch.cause, Cause::ModuleLoad);
     assert_eq!(value_of(&batch, led_index("Master_Caution")), Some(1));
@@ -696,7 +888,10 @@ fn a_mission_ending_forgets_the_cockpit_so_the_next_one_sweeps() {
     let mut now = Instant::now();
     e.ingest(&acft_name("FA-18C_hornet"), now);
     e.ingest(
-        &[Write { address: CAUTION_ADDR, value: 0x1000 }],
+        &[Write {
+            address: CAUTION_ADDR,
+            value: 0x1000,
+        }],
         now,
     );
     now += Duration::from_secs(1);

@@ -32,12 +32,18 @@ pub struct Slot {
 
 impl Slot {
     pub fn new(page: &str) -> Self {
-        Slot { page: Some(page.to_string()), key: None }
+        Slot {
+            page: Some(page.to_string()),
+            key: None,
+        }
     }
 
     /// A slot that shows a blank screen.
     pub fn blank() -> Self {
-        Slot { page: None, key: None }
+        Slot {
+            page: None,
+            key: None,
+        }
     }
 }
 
@@ -59,17 +65,24 @@ pub struct PageSlots {
 impl PageSlots {
     /// `n` slots, none in use.
     pub fn empty(n: usize) -> Self {
-        PageSlots { start: None, slots: vec![None; n] }
+        PageSlots {
+            start: None,
+            slots: vec![None; n],
+        }
     }
 
     /// Every slot in use, blank ones included, counting from 0.
     pub fn filled(&self) -> impl Iterator<Item = (usize, &Slot)> {
-        self.slots.iter().enumerate().filter_map(|(i, s)| s.as_ref().map(|s| (i, s)))
+        self.slots
+            .iter()
+            .enumerate()
+            .filter_map(|(i, s)| s.as_ref().map(|s| (i, s)))
     }
 
     /// Every slot showing a page, with the page's id, counting from 0.
     pub fn pages(&self) -> impl Iterator<Item = (usize, &str)> {
-        self.filled().filter_map(|(i, s)| s.page.as_deref().map(|p| (i, p)))
+        self.filled()
+            .filter_map(|(i, s)| s.page.as_deref().map(|p| (i, p)))
     }
 
     /// The slot to show at mission start, counting from 0, given which slots
@@ -79,7 +92,12 @@ impl PageSlots {
     /// does, so a start page that has gone leaves the screen showing the next
     /// one rather than nothing.
     pub fn start_slot(&self, loads: impl Fn(&Slot) -> bool) -> Option<usize> {
-        let usable = |i: usize| self.slots.get(i).and_then(Option::as_ref).is_some_and(&loads);
+        let usable = |i: usize| {
+            self.slots
+                .get(i)
+                .and_then(Option::as_ref)
+                .is_some_and(&loads)
+        };
         if let Some(start) = self.start {
             if start >= 1 && usable(start - 1) {
                 return Some(start - 1);
@@ -95,7 +113,10 @@ impl PageSlots {
     pub fn clear_page(&mut self, page: &str) -> Vec<usize> {
         let mut cleared = Vec::new();
         for (i, slot) in self.slots.iter_mut().enumerate() {
-            if slot.as_ref().is_some_and(|s| s.page.as_deref() == Some(page)) {
+            if slot
+                .as_ref()
+                .is_some_and(|s| s.page.as_deref() == Some(page))
+            {
                 *slot = None;
                 cleared.push(i + 1);
             }
@@ -244,7 +265,11 @@ impl PageLibrary {
             .collect();
         paths.sort();
         for path in paths {
-            let Some(stem) = path.file_stem().and_then(|s| s.to_str()).map(str::to_string) else {
+            let Some(stem) = path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .map(str::to_string)
+            else {
                 continue;
             };
             match PageFile::load(&path) {
@@ -257,7 +282,11 @@ impl PageLibrary {
                 Ok(file) => {
                     lib.broken.insert(
                         stem.clone(),
-                        format!("{} says it holds pages for {:?}, not {stem:?}", path.display(), file.module),
+                        format!(
+                            "{} says it holds pages for {:?}, not {stem:?}",
+                            path.display(),
+                            file.module
+                        ),
                     );
                 }
                 Err(e) => {
@@ -271,7 +300,13 @@ impl PageLibrary {
     /// A library of one module's pages, for tests and previews.
     pub fn of(module: &str, pages: Vec<Page>) -> Self {
         let mut lib = PageLibrary::default();
-        lib.files.insert(module.to_string(), PageFile { module: module.to_string(), pages });
+        lib.files.insert(
+            module.to_string(),
+            PageFile {
+                module: module.to_string(),
+                pages,
+            },
+        );
         lib
     }
 
@@ -295,7 +330,10 @@ impl PageLibrary {
     /// Why a module's pages did not load, if they did not.
     pub fn broken(&self, module: &str) -> Option<&str> {
         let stem = crate::file_stem(module);
-        self.broken.iter().find(|(f, _)| crate::file_stem(f) == stem).map(|(_, why)| why.as_str())
+        self.broken
+            .iter()
+            .find(|(f, _)| crate::file_stem(f) == stem)
+            .map(|(_, why)| why.as_str())
     }
 
     /// Things wrong with the library as a whole: an id used twice, which would
@@ -314,7 +352,10 @@ impl PageLibrary {
                     ));
                 }
                 if names.iter().any(|n| same_name(n, &p.name)) {
-                    out.push(format!("two pages on {module} are called {:?}", p.name.trim()));
+                    out.push(format!(
+                        "two pages on {module} are called {:?}",
+                        p.name.trim()
+                    ));
                 }
                 names.push(&p.name);
             }
@@ -369,7 +410,10 @@ impl PageLibrary {
         if !taken(base) {
             return base.to_string();
         }
-        (2..).map(|k| format!("{base} {k}")).find(|n| !taken(n)).expect("some number is free")
+        (2..)
+            .map(|k| format!("{base} {k}"))
+            .find(|n| !taken(n))
+            .expect("some number is free")
     }
 
     /// Why a page cannot be saved on `module`, if it cannot.
@@ -394,15 +438,24 @@ impl PageLibrary {
             .iter()
             .any(|p| p.id != page.id && same_name(&p.name, &page.name))
         {
-            out.push(Error::PageNameTaken(page.name.trim().to_string(), module.module.clone()));
+            out.push(Error::PageNameTaken(
+                page.name.trim().to_string(),
+                module.module.clone(),
+            ));
         }
         if !Profile::takes_pages(displays, &page.display) {
-            out.push(Error::PageOnUnknownDisplay(page.name.clone(), page.display.clone()));
+            out.push(Error::PageOnUnknownDisplay(
+                page.name.clone(),
+                page.display.clone(),
+            ));
             return out;
         }
         // Any device carrying the display will do: the checks that remain are
         // about the glass, and a device is only needed to find it.
-        let Some(device) = devices.devices.iter().find(|d| d.part_with_display(&page.display).is_some())
+        let Some(device) = devices
+            .devices
+            .iter()
+            .find(|d| d.part_with_display(&page.display).is_some())
         else {
             return out;
         };
@@ -415,14 +468,15 @@ impl PageLibrary {
 
     /// Write one module's pages to `dir`.
     pub fn save_module(&self, dir: &Path, module: &str) -> Result<()> {
-        if module.is_empty() || Path::new(module).file_name().and_then(|n| n.to_str()) != Some(module) {
+        if module.is_empty()
+            || Path::new(module).file_name().and_then(|n| n.to_str()) != Some(module)
+        {
             return Err(Error::NotAProfileFile(module.to_string()));
         }
-        let file = self
-            .files
-            .get(module)
-            .cloned()
-            .unwrap_or_else(|| PageFile { module: module.to_string(), pages: Vec::new() });
+        let file = self.files.get(module).cloned().unwrap_or_else(|| PageFile {
+            module: module.to_string(),
+            pages: Vec::new(),
+        });
         file.save(&dir.join(page_file_name(module)))
     }
 }
@@ -443,7 +497,11 @@ pub struct Pages {
 impl Pages {
     pub fn new(defaults: impl Into<PathBuf>, active: impl Into<PathBuf>) -> Self {
         let defaults = defaults.into();
-        Pages { previous: crate::snapshot_beside(&defaults), defaults, active: active.into() }
+        Pages {
+            previous: crate::snapshot_beside(&defaults),
+            defaults,
+            active: active.into(),
+        }
     }
 
     /// Point somewhere else for the snapshot. Only tests need this.
@@ -520,7 +578,10 @@ impl Pages {
                 continue;
             }
             if names.contains(&want) {
-                std::fs::rename(self.active.join(&want), self.active.join(format!("{want}.seeded")))?;
+                std::fs::rename(
+                    self.active.join(&want),
+                    self.active.join(format!("{want}.seeded")),
+                )?;
             }
             std::fs::rename(self.active.join(name), self.active.join(&want))?;
             renamed.push(file.module);
@@ -565,7 +626,9 @@ impl Pages {
             return Ok(Vec::new());
         }
         let marker = self.active.join(crate::UPDATED);
-        let last = std::fs::read_to_string(&marker).ok().map(|s| s.trim().to_string());
+        let last = std::fs::read_to_string(&marker)
+            .ok()
+            .map(|s| s.trim().to_string());
         if last.as_deref() == Some(version) {
             return Ok(Vec::new());
         }
@@ -576,7 +639,11 @@ impl Pages {
             PageLibrary::load_dir(&self.previous)
         };
         let renamed = std::fs::read_to_string(self.active.join(RENAMED)).unwrap_or_default();
-        let fresh: BTreeSet<&str> = renamed.lines().map(str::trim).filter(|l| !l.is_empty()).collect();
+        let fresh: BTreeSet<&str> = renamed
+            .lines()
+            .map(str::trim)
+            .filter(|l| !l.is_empty())
+            .collect();
         let mut lib = self.library();
         let mut notes = Vec::new();
 
@@ -586,9 +653,14 @@ impl Pages {
             if lib.broken(module).is_some() || !lib.files.contains_key(module) {
                 continue;
             }
-            let (mut pages, mut added, mut updated, mut removed, mut renamed, mut retired) = (0, 0, 0, 0, 0, 0);
+            let (mut pages, mut added, mut updated, mut removed, mut renamed, mut retired) =
+                (0, 0, 0, 0, 0, 0);
             for s in &file.pages {
-                let w = if fresh.contains(module.as_str()) { None } else { was.page_on(module, &s.id) };
+                let w = if fresh.contains(module.as_str()) {
+                    None
+                } else {
+                    was.page_on(module, &s.id)
+                };
                 let at = lib.on_module(module).iter().position(|p| p.id == s.id);
                 match (at, w) {
                     (None, None) => {
@@ -635,7 +707,8 @@ impl Pages {
                 let untouched = lib.page_on(module, &w.id).is_some_and(|p| {
                     p.name == w.name
                         && p.display == w.display
-                        && serde_json::to_value(&p.fields).ok() == serde_json::to_value(&w.fields).ok()
+                        && serde_json::to_value(&p.fields).ok()
+                            == serde_json::to_value(&w.fields).ok()
                 });
                 if untouched {
                     if let Some(f) = lib.files.get_mut(module) {
@@ -702,7 +775,11 @@ impl Profile {
                 continue;
             }
             // A blank slot always loads: it is the screen dark on purpose.
-            let loads = |s: &Slot| s.page.as_ref().is_none_or(|id| lib.page_on(&self.module, id).is_some());
+            let loads = |s: &Slot| {
+                s.page
+                    .as_ref()
+                    .is_none_or(|id| lib.page_on(&self.module, id).is_some())
+            };
             let Some(i) = slots.start_slot(loads) else {
                 continue;
             };
@@ -713,12 +790,22 @@ impl Profile {
                     None => SlotRun::Off,
                     Some(Slot { page: None, .. }) => SlotRun::Blank,
                     Some(Slot { page: Some(id), .. }) => match lib.page_on(&self.module, id) {
-                        Some(page) => SlotRun::Page { name: page.name.clone(), fields: page_fields(device, page).collect() },
+                        Some(page) => SlotRun::Page {
+                            name: page.name.clone(),
+                            fields: page_fields(device, page).collect(),
+                        },
                         None => SlotRun::Off,
                     },
                 })
                 .collect();
-            p.page_runs.insert(device.clone(), PageRun { start: i, shown: i, slots: runs });
+            p.page_runs.insert(
+                device.clone(),
+                PageRun {
+                    start: i,
+                    shown: i,
+                    slots: runs,
+                },
+            );
             let Some(page) = slots.slots[i]
                 .as_ref()
                 .and_then(|s| s.page.as_deref())
@@ -745,7 +832,8 @@ impl Profile {
             return false;
         }
         run.shown = slot;
-        self.readouts.retain(|r| !(r.device == device && r.page.is_some()));
+        self.readouts
+            .retain(|r| !(r.device == device && r.page.is_some()));
         if let SlotRun::Page { fields, .. } = &run.slots[slot] {
             self.readouts.extend(fields.iter().cloned());
         }
@@ -754,7 +842,11 @@ impl Profile {
 
     /// Every screen back on its start slot, as an aircraft load begins.
     pub fn reset_pages(&mut self) {
-        let starts: Vec<(String, usize)> = self.page_runs.iter().map(|(d, r)| (d.clone(), r.start)).collect();
+        let starts: Vec<(String, usize)> = self
+            .page_runs
+            .iter()
+            .map(|(d, r)| (d.clone(), r.start))
+            .collect();
         for (device, start) in starts {
             self.show_slot(&device, start);
         }
@@ -776,7 +868,14 @@ impl Profile {
     /// A page shown on a device of a profile with no aircraft, so no font:
     /// the checks a page gets before it is shown anywhere.
     fn page_view_on(module: &str, device: &str, page: &Page) -> Profile {
-        let mut p = Profile::stub("", "", module, &DeviceInventory { devices: Vec::new() });
+        let mut p = Profile::stub(
+            "",
+            "",
+            module,
+            &DeviceInventory {
+                devices: Vec::new(),
+            },
+        );
         p.aircraft.clear();
         p.readouts = page_fields(device, page).collect();
         p
@@ -809,12 +908,19 @@ impl Profile {
                 out.push(Error::SlotsOnUnknownDevice(device.clone()));
                 continue;
             };
-            if !spec.displays().any(|(_, d)| Profile::takes_pages(displays, d)) {
+            if !spec
+                .displays()
+                .any(|(_, d)| Profile::takes_pages(displays, d))
+            {
                 out.push(Error::SlotsWithoutScreen(device.clone()));
                 continue;
             }
             if slots.slots.len() != spec.slot_count() {
-                out.push(Error::SlotCount(device.clone(), slots.slots.len(), spec.slot_count()));
+                out.push(Error::SlotCount(
+                    device.clone(),
+                    slots.slots.len(),
+                    spec.slot_count(),
+                ));
             }
             let any = slots.filled().next().is_some();
             match slots.start {
@@ -855,10 +961,13 @@ impl Profile {
                     continue;
                 }
                 let mut found = Vec::new();
-                self.page_view(device, page).page_field_problems(module, devices, displays, &mut found);
-                out.extend(found.into_iter().map(|e| {
-                    Error::OnPage(page.name.clone(), i + 1, device.clone(), Box::new(e))
-                }));
+                self.page_view(device, page)
+                    .page_field_problems(module, devices, displays, &mut found);
+                out.extend(
+                    found.into_iter().map(|e| {
+                        Error::OnPage(page.name.clone(), i + 1, device.clone(), Box::new(e))
+                    }),
+                );
             }
         }
     }
@@ -884,7 +993,11 @@ impl Profile {
                 }
                 continue;
             }
-            let loads = |s: &Slot| s.page.as_ref().is_none_or(|id| lib.page_on(&self.module, id).is_some());
+            let loads = |s: &Slot| {
+                s.page
+                    .as_ref()
+                    .is_none_or(|id| lib.page_on(&self.module, id).is_some())
+            };
             for (i, id) in slots.pages() {
                 if lib.find(id).is_none() {
                     out.push(SlotNote {
@@ -903,7 +1016,9 @@ impl Profile {
                     out.push(SlotNote {
                         device: device.clone(),
                         slot: Some(said),
-                        text: format!("The screen starts on slot {real} instead, since slot {said} is empty."),
+                        text: format!(
+                            "The screen starts on slot {real} instead, since slot {said} is empty."
+                        ),
                     });
                 }
             }
@@ -913,7 +1028,10 @@ impl Profile {
 
     /// Every page id this profile's slots show.
     pub fn pages_used(&self) -> BTreeSet<String> {
-        self.screens.values().flat_map(|s| s.pages().map(|(_, id)| id.to_string())).collect()
+        self.screens
+            .values()
+            .flat_map(|s| s.pages().map(|(_, id)| id.to_string()))
+            .collect()
     }
 }
 

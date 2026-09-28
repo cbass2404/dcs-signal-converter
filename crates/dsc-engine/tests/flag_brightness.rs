@@ -60,7 +60,7 @@ fn catalogue() -> Catalogue {
         }}"#
     );
     Catalogue::from_modules(vec![
-        serde_json::from_str::<Module>(&json).expect("fixture module should parse"),
+        serde_json::from_str::<Module>(&json).expect("fixture module should parse")
     ])
 }
 
@@ -117,7 +117,11 @@ fn a_dark_console_drives_the_flag_lamps_full_bright() {
     // Console off means daylight, not "lamps off". A dim flag lamp in daylight
     // is the failure this whole test file exists for.
     let panel = panel_at(0);
-    assert_eq!(value(&panel, FLAG), 255, "FLAG must be full bright with the console off");
+    assert_eq!(
+        value(&panel, FLAG),
+        255,
+        "FLAG must be full bright with the console off"
+    );
 }
 
 #[test]
@@ -131,6 +135,9 @@ fn the_panel_labels_still_follow_the_console_all_the_way_down() {
     // Backlight is deliberately NOT given the daylight floor: labels unlit in
     // daylight is correct, and it is the one dimmer that governs no lamp.
     let panel = panel_at(0);
-    assert_eq!(value(&panel, BACKLIGHT), 0, "panel labels follow the console down to zero");
+    assert_eq!(
+        value(&panel, BACKLIGHT),
+        0,
+        "panel labels follow the console down to zero"
+    );
 }
-

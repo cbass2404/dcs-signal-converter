@@ -99,7 +99,10 @@ mod tests {
         let inventory = DeviceInventory::load(&path).expect("data/devices.json parses");
         let protocols = all().expect("the protocols start");
         let names: Vec<&str> = protocols.iter().map(|p| p.name()).collect();
-        assert!(!inventory.devices.is_empty(), "an empty inventory proves nothing");
+        assert!(
+            !inventory.devices.is_empty(),
+            "an empty inventory proves nothing"
+        );
         for device in &inventory.devices {
             assert!(
                 names.contains(&device.protocol.as_str()),

@@ -8,8 +8,8 @@
 
 use std::path::Path;
 
-use serde::Deserialize;
 use dsc_config::{DisplayCatalogue, Screen};
+use serde::Deserialize;
 
 #[derive(Deserialize)]
 struct Fixture {
@@ -59,7 +59,12 @@ fn rendering_a_captured_state_reproduces_the_bytes_the_device_was_sent() {
     for state in &fixture.states {
         let want = hex(&state.buffer);
         assert_eq!(want.len(), ufc.buffer_bytes, "{}: buffer size", state.name);
-        assert_eq!(state.cells.len(), ufc.cells.len(), "{}: cell count", state.name);
+        assert_eq!(
+            state.cells.len(),
+            ufc.cells.len(),
+            "{}: cell count",
+            state.name
+        );
 
         let mut screen = Screen::new(ufc);
         for (index, value) in state.cells.iter().enumerate() {
@@ -170,7 +175,9 @@ fn a_two_digit_comm_preset_draws_its_tens_digit() {
     // preset that worked to 9 and then vanished.
     for (sent, spelled) in [("10", "`0"), ("12", "`2"), ("19", "`9"), ("20", "~0")] {
         let mut from_stream = Screen::new(ufc);
-        from_stream.draw(ufc, 34, sent).expect("the stream spelling draws");
+        from_stream
+            .draw(ufc, 34, sent)
+            .expect("the stream spelling draws");
 
         let mut from_table = Screen::new(ufc);
         from_table.draw(ufc, 34, spelled).unwrap();
@@ -209,7 +216,11 @@ fn a_spelling_never_shadows_a_glyph_the_table_already_has() {
 fn a_wide_cell_reads_the_same_channel_however_a_module_pads_it() {
     let (cat, _) = load();
     let ufc = cat.get("UFC1").unwrap();
-    assert_eq!(ufc.cell(34).unwrap().width, 2, "the comm window holds two characters");
+    assert_eq!(
+        ufc.cell(34).unwrap().width,
+        2,
+        "the comm window holds two characters"
+    );
     assert_eq!(ufc.cell(10).unwrap().width, 1, "an option cell holds one");
 
     // The Hornet sends " 1" from an eight character field, the Hind sends "1"
@@ -222,14 +233,18 @@ fn a_wide_cell_reads_the_same_channel_however_a_module_pads_it() {
         let mut got = Screen::new(ufc);
         got.draw(ufc, 34, sent)
             .unwrap_or_else(|e| panic!("{sent:?} should draw: {e}"));
-        assert_eq!(got, want, "{sent:?} is channel 1 like any other spelling of it");
+        assert_eq!(
+            got, want,
+            "{sent:?} is channel 1 like any other spelling of it"
+        );
     }
 
     // Blank, however it is written.
     let blank = Screen::new(ufc);
     for sent in ["", " ", "  "] {
         let mut got = Screen::new(ufc);
-        got.draw(ufc, 34, sent).unwrap_or_else(|e| panic!("{sent:?}: {e}"));
+        got.draw(ufc, 34, sent)
+            .unwrap_or_else(|e| panic!("{sent:?}: {e}"));
         assert_eq!(got, blank, "{sent:?} leaves the window dark");
     }
 }
@@ -288,8 +303,16 @@ fn an_ordinary_cell_prefers_the_spaced_form_of_a_digit() {
     // here too.
     assert_ne!(table.get(" 3"), table.get("3"), "two forms, not one");
     assert_eq!(ufc.glyph(cell, " 3"), table.get(" 3"));
-    assert_eq!(ufc.glyph(cell, "3"), table.get(" 3"), "a bare digit is spaced");
-    assert_eq!(ufc.glyph(cell, "3 "), table.get(" 3"), "whichever side it pads");
+    assert_eq!(
+        ufc.glyph(cell, "3"),
+        table.get(" 3"),
+        "a bare digit is spaced"
+    );
+    assert_eq!(
+        ufc.glyph(cell, "3 "),
+        table.get(" 3"),
+        "whichever side it pads"
+    );
 }
 
 #[test]
@@ -342,9 +365,15 @@ fn a_letter_reaches_the_glass_on_either_kind_of_cell() {
     assert!(table.get(" g").is_none() && table.get(" G").is_none());
     for (cell, sent, want) in [(0usize, " G", "G"), (34, " g", "G"), (10, " G", "G")] {
         let c = ufc.cell(cell).unwrap();
-        assert_eq!(ufc.glyph(c, sent), table.get(want), "cell {cell} sent {sent:?}");
+        assert_eq!(
+            ufc.glyph(c, sent),
+            table.get(want),
+            "cell {cell} sent {sent:?}"
+        );
         let mut drawn = Screen::new(ufc);
-        drawn.draw(ufc, cell, sent).unwrap_or_else(|e| panic!("cell {cell}: {e}"));
+        drawn
+            .draw(ufc, cell, sent)
+            .unwrap_or_else(|e| panic!("cell {cell}: {e}"));
         assert_ne!(drawn, Screen::new(ufc), "cell {cell} must not go dark");
     }
 
@@ -375,7 +404,10 @@ fn a_letter_is_drawn_as_a_capital() {
     // Five letters have no small form at all, so this is the only thing that
     // keeps them off a dark cell either way.
     for c in ["r", "u", "w", "y", "z"] {
-        assert!(table.get(c).is_none(), "{c} has no small form, or this test is stale");
+        assert!(
+            table.get(c).is_none(),
+            "{c} has no small form, or this test is stale"
+        );
         assert_eq!(ufc.glyph(cell, c), table.get(&c.to_uppercase()));
     }
 }
@@ -400,14 +432,16 @@ fn a_glyph_with_no_capital_is_still_reachable() {
 fn every_cell_belongs_to_exactly_one_named_region() {
     let (cat, _) = load();
     let ufc = cat.get("UFC1").unwrap();
-    assert!(!ufc.regions.is_empty(), "the editor has nothing to offer otherwise");
+    assert!(
+        !ufc.regions.is_empty(),
+        "the editor has nothing to offer otherwise"
+    );
 
     let mut owner: Vec<Option<&str>> = vec![None; ufc.cells.len()];
     for region in &ufc.regions {
-        let run: CellRange = region
-            .cells
-            .parse()
-            .unwrap_or_else(|e| panic!("region {:?} has cells {:?}: {e}", region.name, region.cells));
+        let run: CellRange = region.cells.parse().unwrap_or_else(|e| {
+            panic!("region {:?} has cells {:?}: {e}", region.name, region.cells)
+        });
         assert!(
             run.last < ufc.cells.len(),
             "region {:?} runs off the end of the display",
@@ -485,7 +519,10 @@ fn a_cell_run_reads_and_writes_the_way_it_is_written() {
     assert_eq!((run.first, run.last, run.len()), (2, 8, 7));
     assert_eq!(run.to_string(), "2-8");
 
-    assert!("8-2".parse::<CellRange>().is_err(), "a run cannot end before it starts");
+    assert!(
+        "8-2".parse::<CellRange>().is_err(),
+        "a run cannot end before it starts"
+    );
     assert!("two".parse::<CellRange>().is_err());
 }
 
@@ -504,7 +541,10 @@ fn a_divider_rules_every_cell_of_its_run() {
         let rule = divider_rule(width, "");
         assert_eq!(rule.len(), width);
         assert!(rule.iter().all(|c| c.text == "-"), "{width} cells");
-        assert!(rule.iter().all(|c| !c.label), "{width} cells: nothing is a label");
+        assert!(
+            rule.iter().all(|c| !c.label),
+            "{width} cells: nothing is a label"
+        );
     }
 }
 
@@ -512,7 +552,13 @@ fn a_divider_rules_every_cell_of_its_run() {
 fn a_divider_draws_its_own_run_whatever_the_field_says() {
     let mut r = readout("2-10", "IGNORED");
     r.divider = true;
-    assert_eq!(r.divider_cells().into_iter().map(|c| c.text).collect::<String>(), "---------");
+    assert_eq!(
+        r.divider_cells()
+            .into_iter()
+            .map(|c| c.text)
+            .collect::<String>(),
+        "---------"
+    );
 }
 
 // --------------------------------------------------------------- rule labels
@@ -536,18 +582,49 @@ fn a_labelled_rule_is_still_exactly_as_wide_as_its_run() {
         for width in min_divider_cells(label)..48 {
             let rule = divider_rule(width, label);
             assert_eq!(rule.len(), width, "{label} in {width} cells");
-            assert_eq!(rule[0].text, "-", "{label} in {width}: the line starts at the edge");
-            assert_eq!(rule[width - 1].text, "-", "{label} in {width}: and ends at it");
-            let drawn: String = rule.iter().filter(|c| c.label).map(|c| c.text.as_str()).collect();
+            assert_eq!(
+                rule[0].text, "-",
+                "{label} in {width}: the line starts at the edge"
+            );
+            assert_eq!(
+                rule[width - 1].text,
+                "-",
+                "{label} in {width}: and ends at it"
+            );
+            let drawn: String = rule
+                .iter()
+                .filter(|c| c.label)
+                .map(|c| c.text.as_str())
+                .collect();
             assert_eq!(drawn, label, "{label} in {width} cells is drawn whole");
             // The label is one run, not scattered, and has a blank each side.
-            let at = rule.iter().position(|c| c.label).expect("the label is drawn");
-            assert_eq!(rule[at - 1].text, " ", "{label} in {width}: a blank before it");
-            assert_eq!(rule[at + label.chars().count()].text, " ", "{label} in {width}: a blank after it");
-            assert!(rule[..at - 1].iter().all(|c| c.text == "-"), "{label} in {width}");
+            let at = rule
+                .iter()
+                .position(|c| c.label)
+                .expect("the label is drawn");
+            assert_eq!(
+                rule[at - 1].text,
+                " ",
+                "{label} in {width}: a blank before it"
+            );
+            assert_eq!(
+                rule[at + label.chars().count()].text,
+                " ",
+                "{label} in {width}: a blank after it"
+            );
+            assert!(
+                rule[..at - 1].iter().all(|c| c.text == "-"),
+                "{label} in {width}"
+            );
             let after = at + label.chars().count() + 1;
-            assert!(rule[after..].iter().all(|c| c.text == "-"), "{label} in {width}");
-            assert!(after < width, "{label} in {width}: a dash is left on the right");
+            assert!(
+                rule[after..].iter().all(|c| c.text == "-"),
+                "{label} in {width}"
+            );
+            assert!(
+                after < width,
+                "{label} in {width}: a dash is left on the right"
+            );
         }
     }
 }
@@ -560,7 +637,10 @@ fn a_label_with_no_room_leaves_a_plain_rule() {
     for width in 0..min_divider_cells("FUEL") {
         let rule = divider_rule(width, "FUEL");
         assert_eq!(rule.len(), width, "{width} cells");
-        assert!(rule.iter().all(|c| !c.label), "{width} cells: no label is drawn");
+        assert!(
+            rule.iter().all(|c| !c.label),
+            "{width} cells: no label is drawn"
+        );
     }
 }
 
@@ -573,16 +653,26 @@ fn a_label_takes_its_own_colour_and_leaves_the_rule_its_own() {
     r.colour = Some(Colour::Green);
     r.label = "FUEL".to_string();
     r.label_colour = Some(Colour::Amber);
-    let drawn = r.compose(|_| None).expect("a rule reads nothing and always draws");
+    let drawn = r
+        .compose(|_| None)
+        .expect("a rule reads nothing and always draws");
     let colours: Vec<Option<Colour>> = drawn.iter().map(|g| g.colour).collect();
     let label: Vec<Option<Colour>> = drawn
         .iter()
         .filter(|g| g.text.chars().all(|c| c.is_ascii_alphabetic()) && !g.text.is_empty())
         .map(|g| g.colour)
         .collect();
-    assert_eq!(label, vec![Some(Colour::Amber); 4], "the label is drawn in its own colour");
+    assert_eq!(
+        label,
+        vec![Some(Colour::Amber); 4],
+        "the label is drawn in its own colour"
+    );
     assert!(
-        colours.iter().filter(|c| **c == Some(Colour::Green)).count() > 4,
+        colours
+            .iter()
+            .filter(|c| **c == Some(Colour::Green))
+            .count()
+            > 4,
         "the rest of the rule keeps the rule's colour"
     );
 }
@@ -726,10 +816,9 @@ fn a_drum_with_decimals_rounds_to_its_last_place_either_way() {
 /// DCS-BIOS sends. The last stretch is red and small here to test styling; the
 /// real dial is not marked that way.
 fn tank_gauge(r: &mut Readout) -> Span {
-    span(r).conversions = serde_json::from_str::<Vec<Conversion>>(include_str!(
-        "fixtures/mosquito-inner-tank.json"
-    ))
-    .expect("the tank fixture parses");
+    span(r).conversions =
+        serde_json::from_str::<Vec<Conversion>>(include_str!("fixtures/mosquito-inner-tank.json"))
+            .expect("the tank fixture parses");
     span(r).clone()
 }
 
@@ -738,7 +827,14 @@ fn a_tank_gauge_reads_its_marks_where_the_dial_puts_them() {
     let mut r = readout("2-4", "FUEL_INNER_PORT");
     let s = tank_gauge(&mut r);
     // Each mark at the needle position the module draws it at.
-    for (position, mark) in [(0.0, "0"), (0.197, "20"), (0.485, "60"), (0.741, "100"), (0.867, "120"), (0.94, "146")] {
+    for (position, mark) in [
+        (0.0, "0"),
+        (0.197, "20"),
+        (0.485, "60"),
+        (0.741, "100"),
+        (0.867, "120"),
+        (0.94, "146"),
+    ] {
         assert_eq!(s.format_number(raw(position), 65535), mark, "at {position}");
     }
     assert_eq!(s.format_number(65535, 65535), "160");
@@ -756,7 +852,10 @@ fn a_tank_gauge_reads_its_marks_where_the_dial_puts_them() {
 fn a_count_no_stretch_claims_reads_as_the_nearest_end() {
     let mut r = readout("2-4", "FUEL_INNER_PORT");
     let mut s = tank_gauge(&mut r);
-    assert!(s.unconverted(65535).is_empty(), "the fixture covers the whole signal");
+    assert!(
+        s.unconverted(65535).is_empty(),
+        "the fixture covers the whole signal"
+    );
 
     // A table that stops at the last mark: the needle past it reads the mark.
     s.conversions.pop();
@@ -777,27 +876,43 @@ fn a_stretch_draws_in_its_own_colour_and_size() {
     span(&mut r).colour = Some(Colour::Green);
     // The characters drawn, without the blanks the field pads its run with.
     let at = |r: &Readout, value: u16| -> Vec<_> {
-        let glyphs = r.compose(|_| Some(Reading::Number { value, max: 65535 })).unwrap();
+        let glyphs = r
+            .compose(|_| Some(Reading::Number { value, max: 65535 }))
+            .unwrap();
         glyphs.into_iter().filter(|g| g.text != " ").collect()
     };
 
     // The last stretch is red and small, over the piece's own green.
     let top = at(&r, 65535);
-    assert!(top.iter().all(|g| g.colour == Some(Colour::Red) && g.small), "{top:?}");
+    assert!(
+        top.iter().all(|g| g.colour == Some(Colour::Red) && g.small),
+        "{top:?}"
+    );
     // Every other stretch leaves the piece's own alone.
     let low = at(&r, raw(0.3));
-    assert!(low.iter().all(|g| g.colour == Some(Colour::Green) && !g.small), "{low:?}");
+    assert!(
+        low.iter()
+            .all(|g| g.colour == Some(Colour::Green) && !g.small),
+        "{low:?}"
+    );
 
     // A band names the exact reading, so its colour wins over the stretch's.
-    span(&mut r)
-        .value_aliases
-        .insert(ValueBand::Range { lo: 150.0, hi: 160.0 }, AliasDraw {
+    span(&mut r).value_aliases.insert(
+        ValueBand::Range {
+            lo: 150.0,
+            hi: 160.0,
+        },
+        AliasDraw {
             text: "FULL".into(),
             colour: Some(Colour::Amber),
             inverse: false,
-        });
+        },
+    );
     let full = at(&r, 65535);
-    assert!(full.iter().all(|g| g.colour == Some(Colour::Amber)), "{full:?}");
+    assert!(
+        full.iter().all(|g| g.colour == Some(Colour::Amber)),
+        "{full:?}"
+    );
 }
 
 #[test]
@@ -807,10 +922,16 @@ fn a_tank_gauge_is_measured_by_the_widest_mark_and_round_trips_flat() {
     assert_eq!(span(&mut r).widest(None, Some(65535)), Some(3));
 
     let json = serde_json::to_value(&r).unwrap();
-    assert!(json.get("content").is_none(), "one gauge stays in the flat shape");
+    assert!(
+        json.get("content").is_none(),
+        "one gauge stays in the flat shape"
+    );
     assert!(json.get("reads").is_none());
     assert_eq!(json["conversions"][5]["colour"], "red");
-    assert!(json["conversions"][0].get("small").is_none(), "an unstyled stretch writes no style");
+    assert!(
+        json["conversions"][0].get("small").is_none(),
+        "an unstyled stretch writes no style"
+    );
     let back: Readout = serde_json::from_value(json).unwrap();
     assert_eq!(back.content[0].conversions, r.content[0].conversions);
 }
@@ -851,7 +972,11 @@ fn a_reading_that_goes_round_more_than_once_draws_where_it_is_in_the_turn() {
     span(&mut r).wrap = Some(1000.0);
     let s = span(&mut r).clone();
     assert_eq!(s.format_number(0, 65535), "0");
-    assert_eq!(s.format_number(raw(0.5), 65535), "0", "6000 is a whole turn");
+    assert_eq!(
+        s.format_number(raw(0.5), 65535),
+        "0",
+        "6000 is a whole turn"
+    );
     assert_eq!(s.format_number(raw(7250.0 / 12000.0), 65535), "250");
     assert_eq!(span(&mut r).widest(None, Some(65535)), Some(3));
 }
@@ -887,7 +1012,10 @@ fn a_drum_round_trips_flat_and_a_plain_reading_gains_no_keys() {
     let json = serde_json::to_value(&r).unwrap();
     assert_eq!(json["wrap"], 10.0);
     assert_eq!(json["round"], "down");
-    assert!(json.get("content").is_none(), "one drum stays in the flat shape");
+    assert!(
+        json.get("content").is_none(),
+        "one drum stays in the flat shape"
+    );
     let back: Readout = serde_json::from_value(json).unwrap();
     assert_eq!(back.content[0].wrap, Some(10.0));
     assert_eq!(back.content[0].round, Round::Down);
@@ -918,7 +1046,11 @@ fn a_left_aligned_field_pads_on_the_right() {
 fn a_shrinking_field_blanks_the_cells_it_gives_up() {
     let r = readout("10-13", "UFC_OPTION_DISPLAY_1");
     let now = drawn(&r, "AM");
-    assert_eq!(now.len(), 4, "every cell is written, not just the used ones");
+    assert_eq!(
+        now.len(),
+        4,
+        "every cell is written, not just the used ones"
+    );
     assert_eq!(now[2], " ");
     assert_eq!(now[3], " ");
 }
@@ -951,9 +1083,18 @@ fn a_chain_draws_its_pieces_end_to_end() {
     // beside it, and a unit after it, all on one run of cells.
     let mut r = readout("10-13", "RALT");
     r.content = vec![
-        Span { text: "R".into(), ..Span::default() },
-        Span { source: "RALT".into(), ..Span::default() },
-        Span { text: "M".into(), ..Span::default() },
+        Span {
+            text: "R".into(),
+            ..Span::default()
+        },
+        Span {
+            source: "RALT".into(),
+            ..Span::default()
+        },
+        Span {
+            text: "M".into(),
+            ..Span::default()
+        },
     ];
     assert_eq!(drawn(&r, "25").concat(), "R25M");
 }
@@ -964,8 +1105,14 @@ fn a_chain_longer_than_its_run_loses_the_end_and_says_nothing() {
     // is why the editor works the width out ahead of time.
     let mut r = readout("10-13", "RALT");
     r.content = vec![
-        Span { text: "RALT".into(), ..Span::default() },
-        Span { source: "RALT".into(), ..Span::default() },
+        Span {
+            text: "RALT".into(),
+            ..Span::default()
+        },
+        Span {
+            source: "RALT".into(),
+            ..Span::default()
+        },
     ];
     assert_eq!(drawn(&r, "250").concat(), "RALT");
 }
@@ -976,8 +1123,14 @@ fn a_chain_draws_what_has_arrived_while_the_rest_is_still_coming() {
     // still waiting does not hold back the ones that are ready.
     let mut r = readout("10-13", "RALT");
     r.content = vec![
-        Span { text: "R".into(), ..Span::default() },
-        Span { source: "RALT".into(), ..Span::default() },
+        Span {
+            text: "R".into(),
+            ..Span::default()
+        },
+        Span {
+            source: "RALT".into(),
+            ..Span::default()
+        },
     ];
     let glyphs = r.compose(|_| None).expect("the literal piece is ready");
     let text: String = glyphs.iter().map(|g| g.text.as_str()).collect();
@@ -1056,9 +1209,20 @@ fn a_box_keeps_what_follows_it_from_moving() {
     // the reading lost a character.
     let mut r = readout("10-19", "RALT");
     r.content = vec![
-        Span { text: "R".into(), ..Span::default() },
-        Span { source: "RALT".into(), width: 8, align: Align::Centre, ..Span::default() },
-        Span { text: "M".into(), ..Span::default() },
+        Span {
+            text: "R".into(),
+            ..Span::default()
+        },
+        Span {
+            source: "RALT".into(),
+            width: 8,
+            align: Align::Centre,
+            ..Span::default()
+        },
+        Span {
+            text: "M".into(),
+            ..Span::default()
+        },
     ];
     for value in ["1000", "900", "90", "9"] {
         let cells = drawn(&r, value);
@@ -1087,11 +1251,23 @@ fn a_box_holds_its_cells_before_the_reading_has_arrived() {
     // the first frame and does not jump when the signal turns up.
     let mut r = readout("10-19", "RALT");
     r.content = vec![
-        Span { source: "RALT".into(), width: 8, align: Align::Right, ..Span::default() },
-        Span { text: "M".into(), ..Span::default() },
+        Span {
+            source: "RALT".into(),
+            width: 8,
+            align: Align::Right,
+            ..Span::default()
+        },
+        Span {
+            text: "M".into(),
+            ..Span::default()
+        },
     ];
     let glyphs = r.compose(|s| (s != "RALT").then(|| Reading::Text(String::new())));
-    let text: String = glyphs.expect("the unit is ready").iter().map(|g| g.text.as_str()).collect();
+    let text: String = glyphs
+        .expect("the unit is ready")
+        .iter()
+        .map(|g| g.text.as_str())
+        .collect();
     assert_eq!(text, "        M ");
 }
 
@@ -1121,9 +1297,19 @@ fn a_rule_fills_the_room_between_two_pieces() {
     // so it is measured last and takes whatever the two ends leave.
     let mut r = readout("10-19", "RALT");
     r.content = vec![
-        Span { text: "NAV".into(), ..Span::default() },
-        Span { gap: true, rule: true, ..Span::default() },
-        Span { source: "RALT".into(), ..Span::default() },
+        Span {
+            text: "NAV".into(),
+            ..Span::default()
+        },
+        Span {
+            gap: true,
+            rule: true,
+            ..Span::default()
+        },
+        Span {
+            source: "RALT".into(),
+            ..Span::default()
+        },
     ];
     assert_eq!(drawn(&r, "250").concat(), "NAV----250");
     // And the rule is what gives way when the reading grows, rather than the
@@ -1137,8 +1323,17 @@ fn a_boxed_rule_carries_a_label_the_way_a_divider_does() {
     // one a whole field draws.
     let mut r = readout("10-18", "RALT");
     r.content = vec![
-        Span { text: "A".into(), ..Span::default() },
-        Span { gap: true, rule: true, width: 8, label: "FUEL".into(), ..Span::default() },
+        Span {
+            text: "A".into(),
+            ..Span::default()
+        },
+        Span {
+            gap: true,
+            rule: true,
+            width: 8,
+            label: "FUEL".into(),
+            ..Span::default()
+        },
     ];
     assert_eq!(drawn(&r, "").concat(), "A- FUEL -");
     assert_eq!(divider_text(8, "FUEL"), "- FUEL -");
@@ -1150,8 +1345,16 @@ fn a_rule_in_a_chain_is_drawn_before_anything_has_been_read() {
     // aircraft loads, exactly like the divider it is a piece of.
     let mut r = readout("10-19", "RALT");
     r.content = vec![
-        Span { gap: true, rule: true, width: 4, ..Span::default() },
-        Span { source: "RALT".into(), ..Span::default() },
+        Span {
+            gap: true,
+            rule: true,
+            width: 4,
+            ..Span::default()
+        },
+        Span {
+            source: "RALT".into(),
+            ..Span::default()
+        },
     ];
     let glyphs = r.compose(|_| None).expect("the rule is ready");
     let text: String = glyphs.iter().map(|g| g.text.as_str()).collect();
@@ -1222,13 +1425,8 @@ fn a_knob_is_as_wide_as_its_longest_alias() {
         .collect();
     assert_eq!(span(&mut r).widest(None, Some(5)), Some(4));
     // With one position left as a number, that number still counts.
-    span(&mut r).value_aliases = naming([
-        (0.0, "O"),
-        (1.0, "S"),
-        (2.0, "M"),
-        (3.0, "S"),
-        (4.0, "A"),
-    ]);
+    span(&mut r).value_aliases =
+        naming([(0.0, "O"), (1.0, "S"), (2.0, "M"), (3.0, "S"), (4.0, "A")]);
     assert_eq!(span(&mut r).widest(None, Some(500)), Some(3));
 }
 
@@ -1258,7 +1456,11 @@ fn a_band_is_matched_against_what_the_face_reads() {
     let s = trim_face(&mut r);
     assert_eq!(s.format_number(0, 65535), "ND", "hard nose down");
     assert_eq!(s.format_number(65535, 65535), "NU", "hard nose up");
-    assert_eq!(s.format_number(32768, 65535), " ", "dead centre draws blank");
+    assert_eq!(
+        s.format_number(32768, 65535),
+        " ",
+        "dead centre draws blank"
+    );
 }
 
 #[test]
@@ -1289,7 +1491,11 @@ fn abs_draws_the_magnitude_and_still_lets_a_band_see_the_sign() {
     span(&mut r).value_aliases = banded([("-1.5..-0.1", "ND")]);
     let s = span(&mut r).clone();
     assert_eq!(s.format_number(0, 65535), "ND", "the band saw a negative");
-    assert_eq!(s.format_number(65535, 65535), "1.5", "and nose up is a number");
+    assert_eq!(
+        s.format_number(65535, 65535),
+        "1.5",
+        "and nose up is a number"
+    );
 }
 
 #[test]
@@ -1339,7 +1545,10 @@ fn a_band_can_draw_inverse() {
     let glyphs = r.compose(number(1)).unwrap();
     assert!(glyphs[0].inverse, "the band claimed it");
     let glyphs = r.compose(number(0)).unwrap();
-    assert!(glyphs.iter().all(|g| !g.inverse), "a reading no band claims draws plainly");
+    assert!(
+        glyphs.iter().all(|g| !g.inverse),
+        "a reading no band claims draws plainly"
+    );
 }
 
 #[test]

@@ -9,8 +9,7 @@ use std::time::{Duration, Instant};
 
 use dsc_bios::Write as BiosWrite;
 use dsc_config::{
-    text_cells, Catalogue, Colour, DeviceInventory, DisplayCatalogue, Profile, Span,
-    Transport,
+    text_cells, Catalogue, Colour, DeviceInventory, DisplayCatalogue, Profile, Span, Transport,
 };
 use dsc_engine::{Batch, Engine, LcdWrite};
 
@@ -55,7 +54,9 @@ fn profile() -> Profile {
 }
 
 fn fixture(name: &str) -> std::path::PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures").join(name)
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures")
+        .join(name)
 }
 
 fn engine(p: Profile) -> Engine {
@@ -100,7 +101,13 @@ fn refusals(p: &Profile) -> Vec<String> {
     let devices = DeviceInventory::load(&r("data/devices.json")).unwrap();
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).unwrap();
     let module = e.catalogue().module(&p.module).expect("the module");
-    resolved(p).problems(module, &devices, &displays, &dsc_config::PageLibrary::default())
+    resolved(p)
+        .problems(
+            module,
+            &devices,
+            &displays,
+            &dsc_config::PageLibrary::default(),
+        )
         .iter()
         .map(|e| e.to_string())
         .collect()
@@ -146,7 +153,11 @@ fn the_cdu_lines_land_on_rows_5_to_14_with_their_symbols() {
     // will differ per module, so pinning one here would turn an ordinary edit
     // to a default into a failing build.
     let ruled = row(w, 4);
-    assert_eq!(ruled.chars().count(), 24, "the rule fills the row: {ruled:?}");
+    assert_eq!(
+        ruled.chars().count(),
+        24,
+        "the rule fills the row: {ruled:?}"
+    );
     assert!(
         ruled.starts_with('-') && ruled.ends_with('-'),
         "a rule across row 4, corner to corner: {ruled:?}"
@@ -208,7 +219,11 @@ fn mission_end_blanks_the_screen_without_a_font() {
 
 #[test]
 fn the_shipped_a10c_default_passes_its_checks() {
-    assert!(refusals(&profile()).is_empty(), "{:?}", refusals(&profile()));
+    assert!(
+        refusals(&profile()).is_empty(),
+        "{:?}",
+        refusals(&profile())
+    );
 }
 
 #[test]
@@ -245,7 +260,11 @@ fn a_divider_that_also_names_a_signal_is_refused() {
     // A rule never changes, so a source on one is a field someone meant to
     // finish. Drawing the rule over it would quietly throw the signal away.
     let mut p = profile();
-    let d = p.readouts.iter().position(|r| r.divider).expect("the shipped rule");
+    let d = p
+        .readouts
+        .iter()
+        .position(|r| r.divider)
+        .expect("the shipped rule");
     p.readouts[d].content = vec![Span {
         source: "CDU_LINE0".into(),
         ..Span::default()
@@ -262,7 +281,11 @@ fn a_rule_of_one_cell_is_a_dash_and_is_fine() {
     // There is no run too narrow for a rule. It fills its cells corner to
     // corner, so one cell is one dash, and a run is never shorter than that.
     let mut p = profile();
-    let d = p.readouts.iter().position(|r| r.divider).expect("the shipped rule");
+    let d = p
+        .readouts
+        .iter()
+        .position(|r| r.divider)
+        .expect("the shipped rule");
     p.readouts[d].cells = "72".parse().unwrap();
     // Whatever the default happens to be labelled is beside the point here,
     // and a label would need room this run does not have.
@@ -275,7 +298,11 @@ fn a_rule_draws_its_label_in_the_middle_in_its_own_colour() {
     // The whole point of a label is that it is not the line, so the two
     // colours reaching the panel separately is the thing worth flying.
     let mut p = profile();
-    let d = p.readouts.iter().position(|r| r.divider).expect("the shipped rule");
+    let d = p
+        .readouts
+        .iter()
+        .position(|r| r.divider)
+        .expect("the shipped rule");
     let run = p.readouts[d].cells;
     p.readouts[d].colour = Some(Colour::Green);
     p.readouts[d].label = "FUEL".into();
@@ -286,9 +313,19 @@ fn a_rule_draws_its_label_in_the_middle_in_its_own_colour() {
 
     let cells = text_cells(&w.bytes);
     let drawn: String = cells[run.first..=run.last].iter().map(|c| c.ch).collect();
-    assert_eq!(drawn.chars().count(), run.len(), "the rule fills its run exactly");
-    assert!(drawn.contains(" FUEL "), "a blank each side of the label: {drawn:?}");
-    assert!(drawn.starts_with("--"), "the line starts at the edge: {drawn:?}");
+    assert_eq!(
+        drawn.chars().count(),
+        run.len(),
+        "the rule fills its run exactly"
+    );
+    assert!(
+        drawn.contains(" FUEL "),
+        "a blank each side of the label: {drawn:?}"
+    );
+    assert!(
+        drawn.starts_with("--"),
+        "the line starts at the edge: {drawn:?}"
+    );
     assert!(drawn.ends_with("--"), "and ends at it: {drawn:?}");
 
     // Every cell of the label amber, every cell of the line green, and the
@@ -298,7 +335,12 @@ fn a_rule_draws_its_label_in_the_middle_in_its_own_colour() {
             'F' | 'U' | 'E' | 'L' => Colour::Amber,
             _ => Colour::Green,
         };
-        assert_eq!(cell.fg, want.ordinal(), "cell {i} of the rule, drawn {:?}", cell.ch);
+        assert_eq!(
+            cell.fg,
+            want.ordinal(),
+            "cell {i} of the rule, drawn {:?}",
+            cell.ch
+        );
     }
 }
 
@@ -308,7 +350,11 @@ fn a_label_with_no_room_on_the_rule_is_refused() {
     // crowding the margins, so without a refusal the rule would quietly draw
     // plain and nothing would say where the label went.
     let mut p = profile();
-    let d = p.readouts.iter().position(|r| r.divider).expect("the shipped rule");
+    let d = p
+        .readouts
+        .iter()
+        .position(|r| r.divider)
+        .expect("the shipped rule");
     p.readouts[d].cells = "72-79".parse().unwrap();
     p.readouts[d].label = "WAYPOINT".into();
     p.readouts[d].label_colour = None;
@@ -325,7 +371,11 @@ fn a_label_the_font_cannot_draw_is_refused() {
     // A-10C's has no lowercase, so this would be four blank cells in the
     // middle of the line with nothing to say why.
     let mut p = profile();
-    let d = p.readouts.iter().position(|r| r.divider).expect("the shipped rule");
+    let d = p
+        .readouts
+        .iter()
+        .position(|r| r.divider)
+        .expect("the shipped rule");
     p.readouts[d].label = "fuel".into();
     assert!(
         refusals(&p).iter().any(|e| e.contains("font")),
@@ -369,8 +419,17 @@ fn chinook() -> Profile {
 }
 
 fn chinook_writes(e: &Engine, seat: u16) -> Vec<BiosWrite> {
-    let module = e.catalogue().module("CH-47F").expect("CH-47F in the catalogue");
-    let at = |id: &str| module.signal(id).and_then(|s| s.primary()).expect(id).clone();
+    let module = e
+        .catalogue()
+        .module("CH-47F")
+        .expect("CH-47F in the catalogue");
+    let at = |id: &str| {
+        module
+            .signal(id)
+            .and_then(|s| s.primary())
+            .expect(id)
+            .clone()
+    };
     let mut name = b"CH-47Fbl1".to_vec();
     name.resize(24, 0);
     let mut w = bytes_at(0, &name);
@@ -386,7 +445,10 @@ fn chinook_writes(e: &Engine, seat: u16) -> Vec<BiosWrite> {
     }
     let s = at("SEAT_POSITION");
     let mask = s.mask.unwrap_or(u16::MAX);
-    w.push(BiosWrite { address: s.address, value: (seat << s.shift) & mask });
+    w.push(BiosWrite {
+        address: s.address,
+        value: (seat << s.shift) & mask,
+    });
     w
 }
 
@@ -398,12 +460,22 @@ fn each_character_takes_the_colour_its_twin_line_names() {
     let batch = e.tick(t0 + Duration::from_secs(5));
     let w = screen(&batch);
     assert_eq!(w.font.as_deref(), Some("../mcdu/ch47f-font-21x31.json"));
-    assert_eq!(row(w, 1).trim_end(), "PILOT", "the pilot's CDU, from the pilot seat");
+    assert_eq!(
+        row(w, 1).trim_end(),
+        "PILOT",
+        "the pilot's CDU, from the pilot seat"
+    );
     let fg: Vec<u8> = text_cells(&w.bytes)[..5].iter().map(|c| c.fg).collect();
     assert_eq!(
         fg,
-        [Colour::Green, Colour::Magenta, Colour::White, Colour::White, Colour::White]
-            .map(|c| c.ordinal()),
+        [
+            Colour::Green,
+            Colour::Magenta,
+            Colour::White,
+            Colour::White,
+            Colour::White
+        ]
+        .map(|c| c.ordinal()),
         "g and p as coded; a space, and a letter with no code, keep the field's white"
     );
 }
@@ -432,21 +504,43 @@ fn a_colour_line_is_checked_like_any_other_signal() {
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).unwrap();
     let module = e.catalogue().module(&p.module).unwrap();
     let problems: Vec<String> = resolved(&p)
-        .problems(module, &devices, &displays, &dsc_config::PageLibrary::default())
+        .problems(
+            module,
+            &devices,
+            &displays,
+            &dsc_config::PageLibrary::default(),
+        )
         .iter()
         .map(|e| e.to_string())
         .collect();
     // A colour line this DCS-BIOS lacks is flagged, and the field left blank,
     // rather than refusing the profile; a malformed code is still a problem.
     let flags = p.flags(module);
-    assert!(flags.iter().any(|f| f.source == "PLT_CDU_LINE1_COLOUR"), "{flags:?}");
-    assert!(problems.iter().any(|e| e.contains("\"gr\"")), "{problems:?}");
-    assert_eq!(resolved(&chinook()).problems(module, &devices, &displays, &dsc_config::PageLibrary::default()).len(), 0);
+    assert!(
+        flags.iter().any(|f| f.source == "PLT_CDU_LINE1_COLOUR"),
+        "{flags:?}"
+    );
+    assert!(
+        problems.iter().any(|e| e.contains("\"gr\"")),
+        "{problems:?}"
+    );
+    assert_eq!(
+        resolved(&chinook())
+            .problems(
+                module,
+                &devices,
+                &displays,
+                &dsc_config::PageLibrary::default()
+            )
+            .len(),
+        0
+    );
 }
 
 /// The F-14BU fixture with the Captain's screen bound to the CDNU's own knob.
 fn tomcat_on_its_knob() -> Profile {
-    let mut p = Profile::load(&r("crates/dsc-engine/tests/fixtures/f-14bu.json")).expect("F-14BU fixture");
+    let mut p =
+        Profile::load(&r("crates/dsc-engine/tests/fixtures/f-14bu.json")).expect("F-14BU fixture");
     let b = p
         .bindings
         .iter_mut()
@@ -464,15 +558,26 @@ fn tomcat_on_its_knob() -> Profile {
 /// lamp was last set to, if it was written.
 fn screen_lamp_at(e: &mut Engine, knob: u16) -> Option<u8> {
     let module = e.catalogue().module("F-14").expect("F-14 in the catalogue");
-    let s = module.signal("RIO_CDNU_BRIGHTNESS").and_then(|s| s.primary()).expect("knob").clone();
+    let s = module
+        .signal("RIO_CDNU_BRIGHTNESS")
+        .and_then(|s| s.primary())
+        .expect("knob")
+        .clone();
     let mut name = b"F-14BU".to_vec();
     name.resize(24, 0);
     let mut w = bytes_at(0, &name);
     let mask = s.mask.unwrap_or(u16::MAX);
-    w.push(BiosWrite { address: s.address, value: (knob << s.shift) & mask });
+    w.push(BiosWrite {
+        address: s.address,
+        value: (knob << s.shift) & mask,
+    });
     let t0 = Instant::now();
     let first = e.ingest(&w, t0);
-    let batch = if first.writes.is_empty() { e.tick(t0 + Duration::from_secs(5)) } else { first };
+    let batch = if first.writes.is_empty() {
+        e.tick(t0 + Duration::from_secs(5))
+    } else {
+        first
+    };
     batch
         .writes
         .iter()
@@ -485,11 +590,24 @@ fn screen_lamp_at(e: &mut Engine, knob: u16) -> Option<u8> {
 fn a_bound_screen_follows_its_knob_while_it_has_a_page() {
     let mut e = engine(tomcat_on_its_knob());
     let half = screen_lamp_at(&mut e, 32768).expect("the screen's lamp is set with the page");
-    assert!((126..=129).contains(&half), "half the knob is half the screen: {half}");
+    assert!(
+        (126..=129).contains(&half),
+        "half the knob is half the screen: {half}"
+    );
 
     let module = e.catalogue().module("F-14").unwrap();
-    let s = module.signal("RIO_CDNU_BRIGHTNESS").and_then(|s| s.primary()).unwrap().clone();
-    let turned = e.ingest(&[BiosWrite { address: s.address, value: u16::MAX }], Instant::now());
+    let s = module
+        .signal("RIO_CDNU_BRIGHTNESS")
+        .and_then(|s| s.primary())
+        .unwrap()
+        .clone();
+    let turned = e.ingest(
+        &[BiosWrite {
+            address: s.address,
+            value: u16::MAX,
+        }],
+        Instant::now(),
+    );
     let full = turned
         .writes
         .iter()
@@ -503,6 +621,9 @@ fn a_bound_screen_with_nothing_on_it_stays_black() {
     let mut p = tomcat_on_its_knob();
     p.readouts.clear();
     let mut e = engine(p);
-    assert_eq!(screen_lamp_at(&mut e, u16::MAX).unwrap_or(0), 0, "no page, no light");
+    assert_eq!(
+        screen_lamp_at(&mut e, u16::MAX).unwrap_or(0),
+        0,
+        "no page, no light"
+    );
 }
-

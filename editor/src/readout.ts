@@ -276,7 +276,8 @@ function conversionRow(
     const said = (text: string): HTMLElement => el("span", { class: "meta" }, text);
     // A phrase that wraps as one piece, so a narrow panel breaks a line
     // between phrases and never between "in" and the colour it names.
-    const phrase = (...parts: (Node | string)[]): HTMLElement => el("span", { class: "phrase" }, ...parts);
+    const phrase = (...parts: (Node | string)[]): HTMLElement =>
+      el("span", { class: "phrase" }, ...parts);
     // Every conversion is a list of stretches here. A list of one across the
     // whole signal with no styling is written as `reads`, the shape every
     // profile had before stretches, so opening one and saving it changes
@@ -288,10 +289,24 @@ function conversionRow(
           colour: c.colour ?? "",
           small: c.small === true,
         }))
-      : [{ raw: [0, max], reads: span.reads ? [span.reads[0], span.reads[1]] : [0, max], colour: "", small: false }];
+      : [
+          {
+            raw: [0, max],
+            reads: span.reads ? [span.reads[0], span.reads[1]] : [0, max],
+            colour: "",
+            small: false,
+          },
+        ];
     const plain = (): boolean => {
       const only = held[0];
-      return held.length === 1 && !!only && only.raw[0] === 0 && only.raw[1] === max && !only.colour && !only.small;
+      return (
+        held.length === 1 &&
+        !!only &&
+        only.raw[0] === 0 &&
+        only.raw[1] === max &&
+        !only.colour &&
+        !only.small
+      );
     };
     const store = (): void => {
       const only = held[0];
@@ -302,7 +317,10 @@ function conversionRow(
       }
       delete span.reads;
       span.conversions = held.map((row) => {
-        const c: Conversion = { raw: [row.raw[0], row.raw[1]], reads: [row.reads[0], row.reads[1]] };
+        const c: Conversion = {
+          raw: [row.raw[0], row.raw[1]],
+          reads: [row.reads[0], row.reads[1]],
+        };
         if (row.colour) c.colour = row.colour;
         if (row.small) c.small = true;
         return c;
@@ -347,7 +365,8 @@ function conversionRow(
     held.forEach((row, i) => {
       // Counts are whole numbers DCS-BIOS can send, so a stray decimal or a
       // number past 65535 is pulled back rather than failing to load.
-      const count = (box: HTMLInputElement): number => Math.min(65535, Math.max(0, Math.round(Number(box.value) || 0)));
+      const count = (box: HTMLInputElement): number =>
+        Math.min(65535, Math.max(0, Math.round(Number(box.value) || 0)));
       const rawLo = number(row.raw[0], { min: "0", max: String(max), step: "1" });
       const rawHi = number(row.raw[1], { min: "0", max: String(max), step: "1" });
       const lo = number(row.reads[0]);
@@ -405,7 +424,11 @@ function conversionRow(
 
     const dp = number(span.decimals ?? 0, { min: "0", max: "3" });
     // Empty rather than 0 when there is none, the same as the wrap box.
-    const digits = number(span.digits ? span.digits : "", { min: "0", max: "9", placeholder: "any" });
+    const digits = number(span.digits ? span.digits : "", {
+      min: "0",
+      max: "9",
+      placeholder: "any",
+    });
     // Empty rather than 0 when there is none, so the box reads as "never"
     // and a range starting at 0 is not confused with a wrap of 0.
     const wrap = el("input", {
@@ -461,19 +484,19 @@ function conversionRow(
       infoIcon(
         "About converting the number",
         converted
-        ? `DCS-BIOS sends the needle's position as 0 to ${max}. Each row says ` +
-            "what the dial reads for part of that range. One row covering all of " +
-            "it suits a dial with evenly spaced marks. If the marks bunch up, " +
-            "like on some fuel gauges, use a row for each section between two " +
-            "marks: lower the first row's end to where the first mark is, and a " +
-            "button offers the rest. Learn shows the number for where the " +
-            "needle is. Digits fills with zeros, so a counter shows 001 rather " +
-            "than 1. Round down for a drum or a counter, which only shows a " +
-            "digit once it has clicked over. Wrap for anything that starts " +
-            "again from 0: one drum digit is 0 to 10 wrapping at 10, and a " +
-            "compass is 0 to 360 wrapping at 360."
-        : `The number DCS-BIOS sends, 0 to ${max}, drawn as it is. Right for ` +
-            "a count or a selector. A needle wants converting.",
+          ? `DCS-BIOS sends the needle's position as 0 to ${max}. Each row says ` +
+              "what the dial reads for part of that range. One row covering all of " +
+              "it suits a dial with evenly spaced marks. If the marks bunch up, " +
+              "like on some fuel gauges, use a row for each section between two " +
+              "marks: lower the first row's end to where the first mark is, and a " +
+              "button offers the rest. Learn shows the number for where the " +
+              "needle is. Digits fills with zeros, so a counter shows 001 rather " +
+              "than 1. Round down for a drum or a counter, which only shows a " +
+              "digit once it has clicked over. Wrap for anything that starts " +
+              "again from 0: one drum digit is 0 to 10 wrapping at 10, and a " +
+              "compass is 0 to 360 wrapping at 360."
+          : `The number DCS-BIOS sends, 0 to ${max}, drawn as it is. Right for ` +
+              "a count or a selector. A needle wants converting.",
       ),
     ),
     converted ? stretches : "",
@@ -607,8 +630,8 @@ function seatChooser(
     el("label", { class: "meta" }, "shown in ", menu),
     "About the seat",
     "This aircraft reports which station you are in, and DCS-BIOS exports " +
-        "both of them at once. Pick one and the field paints only from that " +
-        "seat, which is what lets two fields share the same cells.",
+      "both of them at once. Pick one and the field paints only from that " +
+      "seat, which is what lets two fields share the same cells.",
   );
 }
 
@@ -620,26 +643,25 @@ function seatChooser(
  * starts as this field does, since the other seat usually wants the same
  * layout read from its own signals.
  */
-function seatCopies(
-  opts: RowOptions,
-  options: { value: number; label: string }[],
-): HTMLElement[] {
+function seatCopies(opts: RowOptions, options: { value: number; label: string }[]): HTMLElement[] {
   const { readout, all, onAdd } = opts;
   if (readout.seat === undefined || !onAdd) return [];
   const taken = new Set(
     all
       .filter(
         (r) =>
-          r.device === readout.device &&
-          r.display === readout.display &&
-          r.cells === readout.cells,
+          r.device === readout.device && r.display === readout.display && r.cells === readout.cells,
       )
       .map((r) => r.seat),
   );
   return options
     .filter((seat) => !taken.has(seat.value))
     .map((seat) => {
-      const button = el("button", { class: "add small", type: "button" }, `+ a version for ${seat.label}`);
+      const button = el(
+        "button",
+        { class: "add small", type: "button" },
+        `+ a version for ${seat.label}`,
+      );
       button.title = `Copy this field for ${seat.label}, on the same cells, to edit on its own.`;
       button.addEventListener("click", () => {
         const copy = structuredClone(readout);
@@ -671,9 +693,7 @@ function cellChooser(
 ): HTMLElement {
   const menu = el("select", { class: "cells" });
   for (const region of display.regions) {
-    menu.append(
-      el("option", { value: region.cells }, `${region.name}  (${extent(region.cells)})`),
-    );
+    menu.append(el("option", { value: region.cells }, `${region.name}  (${extent(region.cells)})`));
   }
   menu.append(el("option", { value: CUSTOM }, "Somewhere else..."));
 
@@ -750,7 +770,11 @@ function cellChooser(
  * toggles its checkbox, and reading the explanation should not change a
  * setting.
  */
-function explained(control: HTMLElement, label: string, ...content: (Node | string)[]): HTMLElement {
+function explained(
+  control: HTMLElement,
+  label: string,
+  ...content: (Node | string)[]
+): HTMLElement {
   return el("span", { class: "with-info" }, control, infoIcon(label, ...content));
 }
 
@@ -809,7 +833,16 @@ function aliasEditor(span: Span, onChange: () => void): HTMLElement {
         draw();
         store();
       });
-      rows.append(el("div", { class: "alias-row" }, from, el("span", { class: "meta" }, "shows as"), to, drop));
+      rows.append(
+        el(
+          "div",
+          { class: "alias-row" },
+          from,
+          el("span", { class: "meta" }, "shows as"),
+          to,
+          drop,
+        ),
+      );
     });
   };
 
@@ -871,7 +904,9 @@ function bandTrouble(band: string): string {
     return "";
   }
   if (s.includes(",")) {
-    return s.split(",").every(number) ? "" : 'A list is readings separated by commas, as in "0,1,2".';
+    return s.split(",").every(number)
+      ? ""
+      : 'A list is readings separated by commas, as in "0,1,2".';
   }
   return number(s) ? "" : 'A reading, a list like "0,1,2" or a band like "-1.5..-0.1".';
 }
@@ -1340,14 +1375,17 @@ function spanWidth(span: Span, signals: SignalView[]): number {
   const longest = Math.max(0, ...Object.values(aliases).map((a) => [...aliasText(a)].length));
   // Every end of a straight stretch of the face, which is where the widest
   // number it draws has to be.
-  const faceEnds = span.conversions?.length ? span.conversions.flatMap((c) => c.reads) : span.reads ?? [0, max];
+  const faceEnds = span.conversions?.length
+    ? span.conversions.flatMap((c) => c.reads)
+    : (span.reads ?? [0, max]);
   const [low, high] = [Math.min(...faceEnds), Math.max(...faceEnds)];
   const dp = span.decimals ?? 0;
   if (bandsCover(Object.keys(aliases), low, high, dp)) return longest;
   const every = span.wrap && span.wrap > 0 ? span.wrap : 0;
   // Settled the way the daemon settles them: rounded, wrapped, and never -0.
   const settle = (end: number): number => {
-    const rounded = span.round === "down" ? Math.floor(end * 10 ** dp) / 10 ** dp : Number(end.toFixed(dp));
+    const rounded =
+      span.round === "down" ? Math.floor(end * 10 ** dp) / 10 ** dp : Number(end.toFixed(dp));
     const wrapped = every ? ((rounded % every) + every) % every : rounded;
     return wrapped === 0 ? 0 : wrapped;
   };
@@ -1361,7 +1399,10 @@ function spanWidth(span: Span, signals: SignalView[]): number {
   // The sign goes before the width is taken, or a face running below zero is
   // measured a cell wider than it ever draws.
   const shown = (end: number): number => (span.abs ? Math.abs(end) : end);
-  return Math.max(longest, ...ends.map((end) => numberText(shown(end), dp, span.digits ?? 0).length));
+  return Math.max(
+    longest,
+    ...ends.map((end) => numberText(shown(end), dp, span.digits ?? 0).length),
+  );
 }
 
 /**
@@ -1686,7 +1727,7 @@ async function layoutCells(
       groups[at] = cells.map((cell) => ({
         span,
         ch: cell.text,
-        colour: cell.label ? span.label_colour ?? span.colour : span.colour,
+        colour: cell.label ? (span.label_colour ?? span.colour) : span.colour,
       }));
     }),
   );
@@ -2110,7 +2151,10 @@ function spanEditor(
         // swapping the signal under a tuned range does not discard it, the
         // same bargain a lamp's test makes.
         if (!was || isText(signals, was)) {
-          startReading(span, signals.find((s) => s.id === id));
+          startReading(
+            span,
+            signals.find((s) => s.id === id),
+          );
         }
         // A different signal brings a different set of controls with it: a
         // range where the old one was a number, none where it reports
@@ -2189,8 +2233,8 @@ function spanEditor(
         el("label", { class: "meta" }, small, " small"),
         "About the small font",
         "The grid's small font, which a CDU uses for its labels. It draws " +
-            "fewer characters than the large one, so a character that was fine " +
-            "may stop being drawn.",
+          "fewer characters than the large one, so a character that was fine " +
+          "may stop being drawn.",
       ),
     );
   }
@@ -2214,9 +2258,7 @@ function spanEditor(
     span.source &&
     (isText(signals, span.source) || span.format !== undefined)
   ) {
-    style.append(
-      spanFormatChooser(span, signals, edited),
-    );
+    style.append(spanFormatChooser(span, signals, edited));
   }
 
   // Last in the style row, because it is about where the piece sits rather
@@ -2275,12 +2317,7 @@ function spanEditor(
  * Its own colour comes from the style row, the same chooser every piece has.
  * The label's is here, beside the label, because it is the label's.
  */
-function spanRule(
-  spans: Span[],
-  index: number,
-  opts: RowOptions,
-  edited: () => void,
-): HTMLElement {
+function spanRule(spans: Span[], index: number, opts: RowOptions, edited: () => void): HTMLElement {
   const { readout, display, profile } = opts;
   const span = spans[index] as Span;
   const label = labelEditor(
@@ -2402,11 +2439,7 @@ function boxControls(span: Span, readout: Readout, edited: () => void): HTMLElem
  * profile written before chains still uses and the two say different things
  * about what they cover.
  */
-function spanFormatChooser(
-  span: Span,
-  signals: SignalView[],
-  onChange: () => void,
-): HTMLElement {
+function spanFormatChooser(span: Span, signals: SignalView[], onChange: () => void): HTMLElement {
   const twin = span.source ? twinOf(signals, span.source) : undefined;
   const box = el("input", { type: "checkbox" });
   box.checked = span.format !== undefined;
@@ -2420,7 +2453,7 @@ function spanFormatChooser(
     el("label", { class: "meta" }, box, ` highlighting${twin ? ` from ${twin}` : ""}`),
     "About highlighting",
     "A second signal the module sends beside this one, one character for " +
-        "one, marking which characters to draw inverse.",
+      "one, marking which characters to draw inverse.",
   );
 }
 
@@ -2439,9 +2472,7 @@ function chainEditor(opts: RowOptions, refreshPreview: () => void): HTMLElement 
   const redraw = (): void => {
     wrap.textContent = "";
     const spans = contentOf(readout);
-    spans.forEach((_, i) =>
-      wrap.append(spanEditor(spans, i, opts, redraw, () => refresh())),
-    );
+    spans.forEach((_, i) => wrap.append(spanEditor(spans, i, opts, redraw, () => refresh())));
 
     // --- adding ------------------------------------------------------------
     const add = el("div", { class: "chain-add" });
@@ -2456,11 +2487,7 @@ function chainEditor(opts: RowOptions, refreshPreview: () => void): HTMLElement 
       });
       return button;
     };
-    add.append(
-      addOne("signal", "+ a reading"),
-      addOne("text", "+ text"),
-      addOne("gap", "+ a gap"),
-    );
+    add.append(addOne("signal", "+ a reading"), addOne("text", "+ text"), addOne("gap", "+ a gap"));
     // Only a text grid draws a rule, the same as a whole field's divider.
     if (display.text_grid) add.append(addOne("rule", "+ a rule"));
     wrap.append(add);
@@ -2488,19 +2515,14 @@ function chainEditor(opts: RowOptions, refreshPreview: () => void): HTMLElement 
       } else if (widest > cells) {
         const lost = widest - cells;
         const end =
-          readout.align === "right"
-            ? "first"
-            : readout.align === "centre"
-              ? "outermost"
-              : "last";
+          readout.align === "right" ? "first" : readout.align === "centre" ? "outermost" : "last";
         fit.classList.add("bad");
         fit.textContent =
           `This needs up to ${widest} cells and has ${cells}. The ${end} ` +
           `${lost} character${lost === 1 ? "" : "s"} would be dropped, and ` +
           "nothing on the panel would say so.";
       } else if (loose) {
-        fit.textContent =
-          `Text DCS-BIOS gives no length for has no known width, so this may run past its ${cells} cells.`;
+        fit.textContent = `Text DCS-BIOS gives no length for has no known width, so this may run past its ${cells} cells.`;
       } else if (elastic > 0) {
         const spare = cells - widest;
         const rules = spans.filter((s) => s.gap && s.rule && !s.width).length;
@@ -2534,9 +2556,9 @@ function chainEditor(opts: RowOptions, refreshPreview: () => void): HTMLElement 
           el("label", { class: "meta" }, "aligned ", align),
           "About the alignment",
           "Which end of the run the whole line anchors to. A scratchpad " +
-              "wants right: digits enter at the last cell, and DCS-BIOS can " +
-              "send more characters than there are cells. To hold one piece " +
-              "in place rather than the line, give that piece a width instead.",
+            "wants right: digits enter at the last cell, and DCS-BIOS can " +
+            "send more characters than there are cells. To hold one piece " +
+            "in place rather than the line, give that piece a width instead.",
         ),
       );
     }
@@ -2592,7 +2614,12 @@ function fieldReads(readout: Readout, signals: SignalView[]): HTMLElement[] {
     if (id === "") return el("span", { class: "bad" }, "A reading with no signal chosen yet");
     const signal = signals.find((s) => s.id === id);
     if (!signal) return el("span", { class: "bad" }, `${id} is not a signal in this module`);
-    return el("span", { class: "sub" }, el("code", {}, id), el("span", { class: "test" }, signal.description));
+    return el(
+      "span",
+      { class: "sub" },
+      el("code", {}, id),
+      el("span", { class: "test" }, signal.description),
+    );
   });
 }
 
@@ -2619,7 +2646,11 @@ function closedRow(opts: RowOptions): HTMLTableRowElement {
     {},
     flagSlot(readout),
     cautionSlot(readout),
-    el("div", { class: "condition-view" }, el("div", { class: "grow" }, ...fieldReads(readout, signals), preview.node)),
+    el(
+      "div",
+      { class: "condition-view" },
+      el("div", { class: "grow" }, ...fieldReads(readout, signals), preview.node),
+    ),
   );
   const edit = iconButton("pencil", "\u270E", "Edit this field", opts.onOpen);
   return el("tr", { class: "field-closed" }, where, shows, el("td", { class: "num" }, edit));
@@ -2651,7 +2682,11 @@ function row(opts: RowOptions): HTMLTableRowElement {
   const shows = el("td");
   const draw = (): void => {
     shows.textContent = "";
-    shows.append(flagSlot(readout), cautionSlot(readout), chainEditor(opts, () => {}));
+    shows.append(
+      flagSlot(readout),
+      cautionSlot(readout),
+      chainEditor(opts, () => {}),
+    );
   };
   rebuild = draw;
   draw();
@@ -2921,7 +2956,8 @@ export function fieldTable(
       if (offered.some((o) => sameField(o, was))) continue;
       offered.push(was);
       const back = el("button", { class: "add revert" }, "+ the field saved here");
-      back.title = "Put back the field deleted from this area since the page was last saved. Nothing else is touched.";
+      back.title =
+        "Put back the field deleted from this area since the page was last saved. Nothing else is touched.";
       back.addEventListener("click", () => {
         const copy = structuredClone(was);
         readouts.push(copy);
@@ -2931,7 +2967,9 @@ export function fieldTable(
       });
       buttons.append(back);
     }
-    tr.append(el("td", {}, el("span", { class: "meta" }, region.note || "Nothing here yet."), buttons));
+    tr.append(
+      el("td", {}, el("span", { class: "meta" }, region.note || "Nothing here yet."), buttons),
+    );
     tr.append(el("td", { class: "num" }));
     return tr;
   };

@@ -61,7 +61,9 @@ fn profile(readouts: &str) -> Profile {
 }
 
 fn field(source: &str, cells: &str, seat: Option<u32>) -> String {
-    let seat = seat.map(|s| format!(r#", "seat": {s}"#)).unwrap_or_default();
+    let seat = seat
+        .map(|s| format!(r#", "seat": {s}"#))
+        .unwrap_or_default();
     format!(
         r#"{{"device": "CarrierAce_UFC", "display": "UFC1", "cells": "{cells}", "source": "{source}"{seat}}}"#
     )
@@ -118,7 +120,10 @@ fn a_seat_is_refused_where_the_module_does_not_report_one() {
     let p = profile(&field("PLT_CHAN", "34", Some(0)));
     let err = check(&m, &p).expect_err("a seat that can never resolve is an error");
     let text = format!("{err}");
-    assert!(text.contains(SEAT_SIGNAL), "the message names the signal: {text}");
+    assert!(
+        text.contains(SEAT_SIGNAL),
+        "the message names the signal: {text}"
+    );
 
     // And the same profile is fine once the seat is dropped.
     check(&m, &profile(&field("PLT_CHAN", "34", None))).expect("no seat, no problem");

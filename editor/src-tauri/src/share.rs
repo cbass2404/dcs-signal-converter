@@ -80,7 +80,8 @@ pub struct MergeReport {
 }
 
 pub fn inventory(paths: &Paths) -> Result<DeviceInventory, String> {
-    DeviceInventory::load(&paths.devices).map_err(|e| format!("reading {}: {e}", paths.devices.display()))
+    DeviceInventory::load(&paths.devices)
+        .map_err(|e| format!("reading {}: {e}", paths.devices.display()))
 }
 
 impl Source {
@@ -91,9 +92,13 @@ impl Source {
         match self {
             Source::File { path } => read(paths, cache, Path::new(path)),
             Source::Profile { file } => {
-                let profile =
-                    Profile::load(&paths.profiles.active.join(file)).map_err(|e| format!("reading {file}: {e}"))?;
-                Ok(Bundle { schema_version: profile.schema_version, profile, pages: Vec::new() })
+                let profile = Profile::load(&paths.profiles.active.join(file))
+                    .map_err(|e| format!("reading {file}: {e}"))?;
+                Ok(Bundle {
+                    schema_version: profile.schema_version,
+                    profile,
+                    pages: Vec::new(),
+                })
             }
         }
     }
@@ -103,7 +108,10 @@ impl Source {
 fn take_all(lib: &PageLibrary, bundle: &Bundle) -> Vec<PageTake> {
     bundle::plan(lib, &bundle.profile, &bundle.pages)
         .into_iter()
-        .map(|p| PageTake { id: p.id, name: p.name_after })
+        .map(|p| PageTake {
+            id: p.id,
+            name: p.name_after,
+        })
         .collect()
 }
 
@@ -128,7 +136,9 @@ fn write_pages(paths: &Paths, module: &str, added: &[Page]) -> Result<(), String
     }
     let lib = paths.pages.library();
     if let Some(why) = lib.broken(module) {
-        return Err(format!("the page file for {module} would not load, so no page could be added to it: {why}"));
+        return Err(format!(
+            "the page file for {module} would not load, so no page could be added to it: {why}"
+        ));
     }
     bundle::with_added(&lib, module, added)
         .save_module(&paths.pages.active, module)
@@ -136,8 +146,14 @@ fn write_pages(paths: &Paths, module: &str, added: &[Page]) -> Result<(), String
 }
 
 /// The page slots `profile` has, named from `lib`.
-fn slot_parts(profile: &Profile, devices: &DeviceInventory, lib: &PageLibrary) -> Vec<merge::SlotPart> {
-    merge::slot_parts(profile, devices, |id| lib.page_on(&profile.module, id).map(|p| p.name.clone()))
+fn slot_parts(
+    profile: &Profile,
+    devices: &DeviceInventory,
+    lib: &PageLibrary,
+) -> Vec<merge::SlotPart> {
+    merge::slot_parts(profile, devices, |id| {
+        lib.page_on(&profile.module, id).map(|p| p.name.clone())
+    })
 }
 
 /// The profile at `path`, with the pages it brings, if it is one this
@@ -149,7 +165,8 @@ fn slot_parts(profile: &Profile, devices: &DeviceInventory, lib: &PageLibrary) -
 /// to the check, whose answer would be every signal in the file, one by one.
 fn read(paths: &Paths, cache: &Cache, path: &Path) -> Result<Bundle, String> {
     let shown = path.file_name().unwrap_or_default().to_string_lossy();
-    let bundle = Bundle::load(path).map_err(|e| format!("{shown} is not a profile this editor can read: {e}"))?;
+    let bundle = Bundle::load(path)
+        .map_err(|e| format!("{shown} is not a profile this editor can read: {e}"))?;
     let profile = &bundle.profile;
     let modules = ModuleChoice::read_index(&paths.catalogue.join("index.json"))?;
     if !modules.iter().any(|m| m.key == profile.module) {
@@ -159,7 +176,10 @@ fn read(paths: &Paths, cache: &Cache, path: &Path) -> Result<Bundle, String> {
         ));
     }
     if profile.aircraft.is_empty() {
-        return Err(format!("{} names no aircraft, so DCS would never fly it.", profile.name));
+        return Err(format!(
+            "{} names no aircraft, so DCS would never fly it.",
+            profile.name
+        ));
     }
     let lib = paths.pages.library();
     let (arrived, _, lib) = arriving(&lib, profile, &bundle.pages, &take_all(&lib, &bundle))?;
@@ -179,7 +199,10 @@ fn read(paths: &Paths, cache: &Cache, path: &Path) -> Result<Bundle, String> {
 /// dialog showed.
 fn settle(mut profile: Profile, name: String, aircraft: Vec<String>) -> Result<Profile, String> {
     if let Some(stray) = aircraft.iter().find(|a| !profile.aircraft.contains(a)) {
-        return Err(format!("{stray} is not one of the aircraft {} was made for", profile.name));
+        return Err(format!(
+            "{stray} is not one of the aircraft {} was made for",
+            profile.name
+        ));
     }
     profile.name = name;
     profile.aircraft = aircraft;
@@ -187,8 +210,11 @@ fn settle(mut profile: Profile, name: String, aircraft: Vec<String>) -> Result<P
 }
 
 fn chosen(path: Option<tauri_plugin_dialog::FilePath>) -> Result<Option<PathBuf>, String> {
-    path.map(|p| p.into_path().map_err(|e| format!("reading the chosen path: {e}")))
-        .transpose()
+    path.map(|p| {
+        p.into_path()
+            .map_err(|e| format!("reading the chosen path: {e}"))
+    })
+    .transpose()
 }
 
 /// Every page on a profile's module, for the export dialog: the ones its
@@ -196,14 +222,19 @@ fn chosen(path: Option<tauri_plugin_dialog::FilePath>) -> Result<Option<PathBuf>
 #[tauri::command]
 pub fn export_pages(file: String) -> Result<Vec<ExportPage>, String> {
     let paths = Paths::resolve();
-    let profile = Profile::load(&paths.profiles.active.join(&file)).map_err(|e| format!("reading {file}: {e}"))?;
+    let profile = Profile::load(&paths.profiles.active.join(&file))
+        .map_err(|e| format!("reading {file}: {e}"))?;
     let used = profile.pages_used();
     Ok(paths
         .pages
         .library()
         .on_module(&profile.module)
         .iter()
-        .map(|p| ExportPage { id: p.id.clone(), name: p.name.clone(), used: used.contains(&p.id) })
+        .map(|p| ExportPage {
+            id: p.id.clone(),
+            name: p.name.clone(),
+            used: used.contains(&p.id),
+        })
         .collect())
 }
 
@@ -215,7 +246,11 @@ pub fn export_pages(file: String) -> Result<Vec<ExportPage>, String> {
 /// flies here. Async because the dialog blocks, and a blocking dialog on the
 /// main thread would hang the window it belongs to.
 #[tauri::command]
-pub async fn export_profile(app: tauri::AppHandle, file: String, also: Vec<String>) -> Result<Option<String>, String> {
+pub async fn export_profile(
+    app: tauri::AppHandle,
+    file: String,
+    also: Vec<String>,
+) -> Result<Option<String>, String> {
     let paths = Paths::resolve();
     let from = paths.profiles.active.join(&file);
     let profile = Profile::load(&from).map_err(|e| format!("reading {file}: {e}"))?;
@@ -226,7 +261,9 @@ pub async fn export_profile(app: tauri::AppHandle, file: String, also: Vec<Strin
         .set_file_name(&file)
         .add_filter("Profile", &["json"])
         .blocking_save_file();
-    let Some(to) = chosen(picked)? else { return Ok(None) };
+    let Some(to) = chosen(picked)? else {
+        return Ok(None);
+    };
     // An export is a bundle, not a profile, so writing one over the profile
     // it came from would leave the active folder holding a file it cannot fly.
     let same = matches!(
@@ -234,7 +271,10 @@ pub async fn export_profile(app: tauri::AppHandle, file: String, also: Vec<Strin
         (Ok(a), Ok(b)) if a == b
     );
     if same {
-        return Err(format!("{} cannot be exported over itself; choose another place", profile.name));
+        return Err(format!(
+            "{} cannot be exported over itself; choose another place",
+            profile.name
+        ));
     }
     Bundle::of(&profile, &paths.pages.library(), &also)
         .save(&to)
@@ -245,19 +285,29 @@ pub async fn export_profile(app: tauri::AppHandle, file: String, also: Vec<Strin
 /// Ask for a profile to import and say what it holds. Nothing is written yet;
 /// the window shows this and `import_profile` does the work.
 #[tauri::command]
-pub async fn import_pick(app: tauri::AppHandle, cache: tauri::State<'_, Cache>) -> Result<Option<Preview>, String> {
+pub async fn import_pick(
+    app: tauri::AppHandle,
+    cache: tauri::State<'_, Cache>,
+) -> Result<Option<Preview>, String> {
     let picked = app
         .dialog()
         .file()
         .set_title("Import a profile")
         .add_filter("Profile", &["json"])
         .blocking_pick_file();
-    let Some(path) = chosen(picked)? else { return Ok(None) };
+    let Some(path) = chosen(picked)? else {
+        return Ok(None);
+    };
     let paths = Paths::resolve();
     let bundle = read(&paths, &cache, &path)?;
     let saved = paths.pages.library();
     let pages = bundle::plan(&saved, &bundle.profile, &bundle.pages);
-    let (profile, _, lib) = arriving(&saved, &bundle.profile, &bundle.pages, &take_all(&saved, &bundle))?;
+    let (profile, _, lib) = arriving(
+        &saved,
+        &bundle.profile,
+        &bundle.pages,
+        &take_all(&saved, &bundle),
+    )?;
     let (flags, _) = cache.flags(&paths, &profile, &lib);
     let devices = inventory(&paths)?;
     let mut parts = merge::parts(&profile, &devices);
@@ -270,7 +320,11 @@ pub async fn import_pick(app: tauri::AppHandle, cache: tauri::State<'_, Cache>) 
         author: profile.author.clone(),
         module: profile.module.clone(),
         aircraft: profile.aircraft.clone(),
-        bound: profile.bindings.iter().filter(|b| !b.is_placeholder()).count(),
+        bound: profile
+            .bindings
+            .iter()
+            .filter(|b| !b.is_placeholder())
+            .count(),
         total: profile.bindings.len(),
         flagged: flags.len(),
         cautions: cache.all_cautions(&paths, &profile, &lib),
@@ -299,7 +353,12 @@ pub fn import_profile(
 ) -> Result<String, String> {
     let paths = Paths::resolve();
     let bundle = read(&paths, &cache, Path::new(&path))?;
-    let (profile, added, lib) = arriving(&paths.pages.library(), &bundle.profile, &bundle.pages, &pages)?;
+    let (profile, added, lib) = arriving(
+        &paths.pages.library(),
+        &bundle.profile,
+        &bundle.pages,
+        &pages,
+    )?;
     let problems = cache.problems(&paths, &profile, &lib);
     if !problems.is_empty() {
         return Err(format!(
@@ -309,7 +368,11 @@ pub fn import_profile(
         ));
     }
     let module = profile.module.clone();
-    let file = claims::write_new_deleting(&paths.profiles.active, settle(profile, name, aircraft)?, &delete)?;
+    let file = claims::write_new_deleting(
+        &paths.profiles.active,
+        settle(profile, name, aircraft)?,
+        &delete,
+    )?;
     write_pages(&paths, &module, &added)?;
     Ok(file)
 }
@@ -318,7 +381,8 @@ pub fn import_profile(
 #[tauri::command]
 pub fn merge_parts(file: String) -> Result<Parts, String> {
     let paths = Paths::resolve();
-    let profile = Profile::load(&paths.profiles.active.join(&file)).map_err(|e| format!("reading {file}: {e}"))?;
+    let profile = Profile::load(&paths.profiles.active.join(&file))
+        .map_err(|e| format!("reading {file}: {e}"))?;
     let devices = inventory(&paths)?;
     let mut parts = merge::parts(&profile, &devices);
     parts.slots = slot_parts(&profile, &devices, &paths.pages.library());
@@ -354,10 +418,21 @@ pub fn merge_profile(
     let wanted: std::collections::BTreeSet<String> = pick
         .slots
         .iter()
-        .filter_map(|s| source.profile.screens.get(&s.device)?.slots.get(s.slot.checked_sub(1)?)?.as_ref())
+        .filter_map(|s| {
+            source
+                .profile
+                .screens
+                .get(&s.device)?
+                .slots
+                .get(s.slot.checked_sub(1)?)?
+                .as_ref()
+        })
         .filter_map(|slot| slot.page.clone())
         .collect();
-    let take: Vec<PageTake> = take_all(&saved, &source).into_iter().filter(|t| wanted.contains(&t.id)).collect();
+    let take: Vec<PageTake> = take_all(&saved, &source)
+        .into_iter()
+        .filter(|t| wanted.contains(&t.id))
+        .collect();
     let (source, added, lib) = arriving(&saved, &source.profile, &source.pages, &take)?;
     let merged = merge::merge(&target, &source, &pick, &devices)?;
     let problems = cache.problems(&paths, &merged.profile, &lib);
@@ -366,15 +441,23 @@ pub fn merge_profile(
             "{} would not load with this merged in, so nothing was changed:
 {}",
             target.name,
-            problems.join("
-")
+            problems.join(
+                "
+"
+            )
         ));
     }
     if write && merged.changes.iter().any(Change::changes_anything) {
         write_pages(&paths, &target.module, &added)?;
-        merged.profile.save(&path).map_err(|e| format!("writing {into}: {e}"))?;
+        merged
+            .profile
+            .save(&path)
+            .map_err(|e| format!("writing {into}: {e}"))?;
     }
-    Ok(MergeReport { changes: merged.changes, notes: merged.notes })
+    Ok(MergeReport {
+        changes: merged.changes,
+        notes: merged.notes,
+    })
 }
 
 #[cfg(test)]

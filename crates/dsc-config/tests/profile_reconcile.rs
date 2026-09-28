@@ -75,7 +75,11 @@ const NEW: &str = r#"{ "device": "MCDU_Captain", "display": "MCDU", "cells": "72
 /// Write all three files. `previous` may be None to leave no snapshot at all.
 fn lay(dir: &Path, previous: Option<&str>, shipped: &str, mine: &str) {
     if let Some(previous) = previous {
-        std::fs::write(dir.join("defaults-previous/a-10c.json"), profile_with(previous)).unwrap();
+        std::fs::write(
+            dir.join("defaults-previous/a-10c.json"),
+            profile_with(previous),
+        )
+        .unwrap();
     }
     std::fs::write(dir.join("defaults/a-10c.json"), profile_with(shipped)).unwrap();
     std::fs::write(dir.join("active/a-10c.json"), profile_with(mine)).unwrap();
@@ -144,7 +148,9 @@ fn a_field_spelled_differently_still_counts_as_untouched() {
 
     let after = mine(&dir);
     assert_eq!(
-        after.readouts[0].content[0].colour.map(|c| format!("{c:?}")),
+        after.readouts[0].content[0]
+            .colour
+            .map(|c| format!("{c:?}")),
         Some("Amber".to_string()),
         "the chain of one was recognised as the flat field we shipped"
     );
@@ -169,7 +175,10 @@ fn a_field_the_user_changed_is_left_alone() {
         Some("White".to_string()),
         "their colour survived an update that changed ours"
     );
-    assert!(!touched_a_field(&notes), "and nothing was claimed: {notes:?}");
+    assert!(
+        !touched_a_field(&notes),
+        "and nothing was claimed: {notes:?}"
+    );
 }
 
 #[test]
@@ -197,8 +206,15 @@ fn a_row_the_user_owns_takes_the_sensible_default_for_a_setting_added_later() {
 
     let after = mine(&dir);
     let span = &after.readouts[0].content[0];
-    assert_eq!(span.colour.map(|c| format!("{c:?}")), Some("Green".into()), "theirs");
-    assert!(!span.abs, "the setting is off, which is what their row meant");
+    assert_eq!(
+        span.colour.map(|c| format!("{c:?}")),
+        Some("Green".into()),
+        "theirs"
+    );
+    assert!(
+        !span.abs,
+        "the setting is off, which is what their row meant"
+    );
     assert!(span.value_aliases.is_empty(), "and no bands arrived");
     assert_eq!(span.reads, None);
     assert!(!touched_a_field(&notes), "nothing was claimed: {notes:?}");
@@ -259,8 +275,14 @@ fn a_field_the_user_gave_aliases_is_left_alone() {
     };
     assert_eq!(drawn(0.0), Some("OFF"));
     assert_eq!(drawn(1.0), Some("ON"));
-    assert_eq!(span.colour, None, "the shipped change did not land on their field");
-    assert!(!touched_a_field(&notes), "and nothing was claimed: {notes:?}");
+    assert_eq!(
+        span.colour, None,
+        "the shipped change did not land on their field"
+    );
+    assert!(
+        !touched_a_field(&notes),
+        "and nothing was claimed: {notes:?}"
+    );
 }
 
 /// A drum digit as it shipped before `wrap` and `round` existed.
@@ -299,8 +321,15 @@ fn a_wrap_the_user_set_is_left_alone() {
 
     let span = &mine(&dir).readouts[0].content[0];
     assert_eq!(span.wrap, Some(5.0), "their wrap survived");
-    assert_eq!(span.round, dsc_config::Round::Nearest, "and ours did not land beside it");
-    assert!(!touched_a_field(&notes), "and nothing was claimed: {notes:?}");
+    assert_eq!(
+        span.round,
+        dsc_config::Round::Nearest,
+        "and ours did not land beside it"
+    );
+    assert!(
+        !touched_a_field(&notes),
+        "and nothing was claimed: {notes:?}"
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -368,7 +397,11 @@ fn a_field_that_moved_is_not_drawn_twice() {
 
     let after = mine(&dir);
     assert_eq!(after.readouts.len(), 1, "one divider, not two");
-    assert_eq!(after.readouts[0].cells.to_string(), "96-119", "at the new row");
+    assert_eq!(
+        after.readouts[0].cells.to_string(),
+        "96-119",
+        "at the new row"
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -386,7 +419,10 @@ fn a_field_the_user_deleted_does_not_come_back() {
     let notes = merge(&dir, "alpha.004");
 
     assert!(mine(&dir).readouts.is_empty(), "it stayed deleted");
-    assert!(!touched_a_field(&notes), "and nothing was claimed: {notes:?}");
+    assert!(
+        !touched_a_field(&notes),
+        "and nothing was claimed: {notes:?}"
+    );
 }
 
 #[test]

@@ -40,7 +40,13 @@ fn profile(body: &str) -> Profile {
 fn loads(p: &Profile) {
     let devices = DeviceInventory::load(&r("data/devices.json")).expect("devices");
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).expect("displays");
-    p.validate(&module(), &devices, &displays, &dsc_config::PageLibrary::default()).expect("the profile loads");
+    p.validate(
+        &module(),
+        &devices,
+        &displays,
+        &dsc_config::PageLibrary::default(),
+    )
+    .expect("the profile loads");
 }
 
 #[test]
@@ -73,7 +79,13 @@ fn a_missing_signal_turns_off_the_whole_chain() {
     assert_eq!(flags.len(), 1);
     assert_eq!(flags[0].source, "GONE");
     assert_eq!(flags[0].why, Unsound::Missing);
-    assert_eq!(flags[0].place, Place::Condition { binding: 0, index: 1 });
+    assert_eq!(
+        flags[0].place,
+        Place::Condition {
+            binding: 0,
+            index: 1
+        }
+    );
 
     loads(&p);
     let run = p.runnable(&module());
@@ -98,7 +110,13 @@ fn a_value_above_the_signals_range_is_flagged_the_same_way() {
     let flags = p.flags(&module());
     assert_eq!(flags.len(), 2, "{flags:?}");
     assert_eq!(flags[0].why, Unsound::AboveRange { value: 3, max: 2 });
-    assert_eq!(flags[1].why, Unsound::AboveRange { value: 65535, max: 1 });
+    assert_eq!(
+        flags[1].why,
+        Unsound::AboveRange {
+            value: 65535,
+            max: 1
+        }
+    );
     let run = p.runnable(&module());
     assert!(run.bindings.iter().all(|b| b.is_placeholder()));
 }
@@ -116,7 +134,14 @@ fn a_bad_alternative_is_dropped_and_the_others_still_work() {
     );
     let flags = p.flags(&module());
     assert_eq!(flags.len(), 1);
-    assert_eq!(flags[0].place, Place::Branch { binding: 0, branch: 0, index: 0 });
+    assert_eq!(
+        flags[0].place,
+        Place::Branch {
+            binding: 0,
+            branch: 0,
+            index: 0
+        }
+    );
 
     let run = p.runnable(&module());
     loads(&run);

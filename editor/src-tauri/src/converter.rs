@@ -31,7 +31,10 @@ pub struct ConverterState {
 /// installed editor manages the installed daemon, and a development one manages
 /// the development build.
 fn install_dir() -> Option<PathBuf> {
-    std::env::current_exe().ok()?.parent().map(Path::to_path_buf)
+    std::env::current_exe()
+        .ok()?
+        .parent()
+        .map(Path::to_path_buf)
 }
 
 fn daemon_exe() -> Option<PathBuf> {
@@ -116,9 +119,11 @@ pub fn converter_restart() -> Reply<String> {
 #[tauri::command]
 pub fn converter_kill() -> Reply<String> {
     match daemon::kill() {
-        Ok(true) => Ok("Ended the converter. The panels keep whatever was last sent to them; \
+        Ok(true) => Ok(
+            "Ended the converter. The panels keep whatever was last sent to them; \
                         start it again and stop it properly to clear them."
-            .into()),
+                .into(),
+        ),
         Ok(false) => Ok("No converter is running.".into()),
         Err(e) => Err(format!("Could not end the converter: {e}")),
     }

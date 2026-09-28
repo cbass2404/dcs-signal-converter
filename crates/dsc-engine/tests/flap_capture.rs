@@ -181,11 +181,17 @@ impl Panel {
     }
 
     fn lever(&mut self, value: u16) {
-        self.feed(&[Write { address: LEVER, value }]);
+        self.feed(&[Write {
+            address: LEVER,
+            value,
+        }]);
     }
 
     fn gauge(&mut self, value: u16) {
-        self.feed(&[Write { address: GAUGE, value }]);
+        self.feed(&[Write {
+            address: GAUGE,
+            value,
+        }]);
     }
 
     fn lit(&self, index: u8) -> bool {
@@ -216,14 +222,20 @@ fn the_captured_flap_cycle_drives_the_lamps_correctly() {
     // MVR to DN. The flaps pass straight through the half window on the way, so
     // this is the travel the lever condition exists for.
     p.lever(DN);
-    assert!(!p.lit(HALF), "HALF goes out with the lever, before any travel");
+    assert!(
+        !p.lit(HALF),
+        "HALF goes out with the lever, before any travel"
+    );
     let mut crossed_window = false;
     for &v in TO_DN {
         p.gauge(v);
         if (21000..=25000).contains(&v) {
             crossed_window = true;
         }
-        assert!(!p.lit(HALF), "HALF flashed at FLAP_POS={v} on the way to DN");
+        assert!(
+            !p.lit(HALF),
+            "HALF flashed at FLAP_POS={v} on the way to DN"
+        );
     }
     assert!(
         crossed_window,
@@ -282,7 +294,10 @@ fn both_measured_mvr_plateaus_fall_inside_the_half_window() {
         let mut p = Panel::new();
         p.lever(MVR);
         p.gauge(value);
-        assert!(p.lit(HALF), "HALF should be lit at a measured MVR value {value}");
+        assert!(
+            p.lit(HALF),
+            "HALF should be lit at a measured MVR value {value}"
+        );
     }
 }
 
@@ -294,7 +309,10 @@ fn the_full_threshold_clears_the_ringing_at_dn() {
         let mut p = Panel::new();
         p.lever(DN);
         p.gauge(value);
-        assert!(p.lit(FULL), "FULL should stay lit at a measured DN value {value}");
+        assert!(
+            p.lit(FULL),
+            "FULL should stay lit at a measured DN value {value}"
+        );
     }
 }
 

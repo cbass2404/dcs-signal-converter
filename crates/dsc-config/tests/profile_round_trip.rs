@@ -127,7 +127,11 @@ fn a_rule_keeps_its_label_and_the_label_its_own_colour() {
 
     let written = serde_json::to_string_pretty(&profile).expect("it serializes");
     let back: Profile = serde_json::from_str(&written).expect("it reads back");
-    let rule = back.readouts.iter().find(|r| r.divider).expect("the rule came back");
+    let rule = back
+        .readouts
+        .iter()
+        .find(|r| r.divider)
+        .expect("the rule came back");
     assert_eq!(rule.label, "FUEL");
     assert_eq!(rule.label_colour, Some(Colour::Amber));
     assert_eq!(rule.colour, Some(Colour::Green), "the rule keeps its own");
@@ -150,9 +154,16 @@ fn a_colour_for_a_label_that_is_not_there_is_dropped() {
     rule.label_colour = Some(Colour::Green);
 
     let written = serde_json::to_string_pretty(&profile).expect("it serializes");
-    assert!(!written.contains("label_colour"), "no label, no colour for one");
+    assert!(
+        !written.contains("label_colour"),
+        "no label, no colour for one"
+    );
     let back: Profile = serde_json::from_str(&written).expect("it reads back");
-    let rule = back.readouts.iter().find(|r| r.divider).expect("the rule came back");
+    let rule = back
+        .readouts
+        .iter()
+        .find(|r| r.divider)
+        .expect("the rule came back");
     assert_eq!(rule.label_colour, None);
 }
 
@@ -174,7 +185,9 @@ fn a_label_written_on_anything_but_a_rule_is_dropped() {
     let written = serde_json::to_string_pretty(&profile).expect("it serializes");
     let back: Profile = serde_json::from_str(&written).expect("it reads back");
     assert!(
-        back.readouts.iter().all(|r| r.divider || r.label.is_empty()),
+        back.readouts
+            .iter()
+            .all(|r| r.divider || r.label.is_empty()),
         "no field but a rule carries a label"
     );
 }
@@ -278,9 +291,21 @@ fn a_piece_with_a_box_is_written_as_a_chain_even_on_its_own() {
     // field aligned left would come back as both aligned right. A chain of one
     // is the honest shape for it.
     for shaped in [
-        Span { source: "CDU_LINE0".into(), width: 8, ..Span::default() },
-        Span { source: "CDU_LINE0".into(), align: Align::Centre, ..Span::default() },
-        Span { gap: true, rule: true, ..Span::default() },
+        Span {
+            source: "CDU_LINE0".into(),
+            width: 8,
+            ..Span::default()
+        },
+        Span {
+            source: "CDU_LINE0".into(),
+            align: Align::Centre,
+            ..Span::default()
+        },
+        Span {
+            gap: true,
+            rule: true,
+            ..Span::default()
+        },
     ] {
         let path = flat_fields();
         let mut profile = Profile::load(&path).expect("the A-10C default loads");
@@ -345,7 +370,10 @@ fn a_saved_profile_is_written_with_windows_line_endings() {
         .filter(|(i, &c)| c == b'\n' && *i > 0 && bytes[i - 1] != b'\r')
         .count();
     assert_eq!(lone, 0, "every line ends with the pair");
-    assert!(bytes.windows(2).any(|w| w == b"\r\n"), "and there are lines");
+    assert!(
+        bytes.windows(2).any(|w| w == b"\r\n"),
+        "and there are lines"
+    );
     // No trailing newline, the way the shipped defaults are written, so the
     // last row of a file is not a change every time it is saved.
     assert_ne!(bytes.last(), Some(&b'\n'));
@@ -369,7 +397,10 @@ fn a_piece_with_aliases_is_still_written_flat() {
         .collect();
     let written = serde_json::to_string_pretty(&profile).expect("it serializes");
     assert!(!written.contains("\"content\""), "one piece stays flat");
-    assert!(written.contains("\"value_aliases\""), "and carries its aliases");
+    assert!(
+        written.contains("\"value_aliases\""),
+        "and carries its aliases"
+    );
     let back: Profile = serde_json::from_str(&written).expect("it reads back");
     let field = back
         .readouts

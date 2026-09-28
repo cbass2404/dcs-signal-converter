@@ -65,10 +65,15 @@ fn profile(body: &str) -> Profile {
 fn found(p: &Profile) -> Vec<String> {
     let devices = DeviceInventory::load(&r("data/devices.json")).expect("devices");
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).expect("displays");
-    p.problems(&module(), &devices, &displays, &dsc_config::PageLibrary::default())
-        .iter()
-        .map(|e| e.to_string())
-        .collect()
+    p.problems(
+        &module(),
+        &devices,
+        &displays,
+        &dsc_config::PageLibrary::default(),
+    )
+    .iter()
+    .map(|e| e.to_string())
+    .collect()
 }
 
 #[test]
@@ -98,7 +103,10 @@ fn every_fault_is_reported_not_just_the_first() {
     );
     let problems = found(&p);
     assert_eq!(problems.len(), 3, "{problems:?}");
-    assert!(problems.iter().any(|m| m.contains("NOT_A_LAMP")), "{problems:?}");
+    assert!(
+        problems.iter().any(|m| m.contains("NOT_A_LAMP")),
+        "{problems:?}"
+    );
     assert!(problems.iter().any(|m| m.contains("SL")), "{problems:?}");
     assert!(problems.iter().any(|m| m.contains("200")), "{problems:?}");
 }
@@ -114,8 +122,13 @@ fn validate_still_stops_at_the_first_one() {
              "conditions": [{"source": "GEAR", "on_when": {"equals": 1}}]}
         ]"#,
     );
-    p.validate(&module(), &devices, &displays, &dsc_config::PageLibrary::default())
-        .expect_err("a bad profile is still an error");
+    p.validate(
+        &module(),
+        &devices,
+        &displays,
+        &dsc_config::PageLibrary::default(),
+    )
+    .expect_err("a bad profile is still an error");
 
     // A signal this DCS-BIOS lacks is not one: the profile loads, flagged.
     let other_release = profile(
@@ -125,7 +138,12 @@ fn validate_still_stops_at_the_first_one() {
         ]"#,
     );
     other_release
-        .validate(&module(), &devices, &displays, &dsc_config::PageLibrary::default())
+        .validate(
+            &module(),
+            &devices,
+            &displays,
+            &dsc_config::PageLibrary::default(),
+        )
         .expect("a missing signal flags the row rather than refusing the profile");
 
     let clean = profile(
@@ -135,7 +153,12 @@ fn validate_still_stops_at_the_first_one() {
         ]"#,
     );
     clean
-        .validate(&module(), &devices, &displays, &dsc_config::PageLibrary::default())
+        .validate(
+            &module(),
+            &devices,
+            &displays,
+            &dsc_config::PageLibrary::default(),
+        )
         .expect("a clean profile still loads");
 }
 
@@ -157,7 +180,11 @@ fn a_condition_with_no_signal_chosen_is_said_in_those_terms() {
     // Twice unfinished is still one lamp to go and finish.
     assert_eq!(problems.len(), 1, "{problems:?}");
     assert!(problems[0].contains("Backlight"), "{:?}", problems[0]);
-    assert!(problems[0].contains("no signal chosen"), "{:?}", problems[0]);
+    assert!(
+        problems[0].contains("no signal chosen"),
+        "{:?}",
+        problems[0]
+    );
 }
 
 #[test]
@@ -202,7 +229,10 @@ fn a_mirror_chain_is_found_without_the_target_hiding_it() {
     );
     let problems = found(&p);
     assert_eq!(problems.len(), 2, "both ends are a chain: {problems:?}");
-    assert!(problems.iter().all(|m| m.contains("mirrors")), "{problems:?}");
+    assert!(
+        problems.iter().all(|m| m.contains("mirrors")),
+        "{problems:?}"
+    );
 }
 
 #[test]
@@ -232,7 +262,11 @@ fn a_mirror_on_another_device_is_checked_there() {
     );
     let problems = found(&missing);
     assert_eq!(problems.len(), 1, "{problems:?}");
-    assert!(problems[0].contains("CarrierAce_MFD_L"), "{:?}", problems[0]);
+    assert!(
+        problems[0].contains("CarrierAce_MFD_L"),
+        "{:?}",
+        problems[0]
+    );
 
     let indicator = profile(
         r#""bindings": [
@@ -244,7 +278,11 @@ fn a_mirror_on_another_device_is_checked_there() {
     );
     let problems = found(&indicator);
     assert_eq!(problems.len(), 1, "{problems:?}");
-    assert!(problems[0].contains("only lamps that dim"), "{:?}", problems[0]);
+    assert!(
+        problems[0].contains("only lamps that dim"),
+        "{:?}",
+        problems[0]
+    );
 }
 
 #[test]
@@ -261,7 +299,12 @@ fn a_loop_across_two_panels_is_still_a_chain() {
     );
     let problems = found(&p);
     assert_eq!(problems.len(), 2, "both ends are a chain: {problems:?}");
-    assert!(problems.iter().all(|m| m.contains("mirrors something itself")), "{problems:?}");
+    assert!(
+        problems
+            .iter()
+            .all(|m| m.contains("mirrors something itself")),
+        "{problems:?}"
+    );
 }
 
 #[test]
@@ -277,7 +320,11 @@ fn a_lamp_cannot_reach_itself_through_a_panel_that_follows() {
     );
     let problems = found(&p);
     assert_eq!(problems.len(), 1, "{problems:?}");
-    assert!(problems[0].contains("mirrors something itself"), "{:?}", problems[0]);
+    assert!(
+        problems[0].contains("mirrors something itself"),
+        "{:?}",
+        problems[0]
+    );
 }
 
 #[test]
@@ -394,7 +441,10 @@ const TANK: &str = r#"[
 fn cautions(p: &Profile) -> Vec<String> {
     let devices = DeviceInventory::load(&r("data/devices.json")).expect("devices");
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).expect("displays");
-    p.field_cautions(&module(), &devices, &displays).into_iter().map(|c| c.1).collect()
+    p.field_cautions(&module(), &devices, &displays)
+        .into_iter()
+        .map(|c| c.1)
+        .collect()
 }
 
 #[test]
@@ -408,22 +458,34 @@ fn a_dial_converted_stretch_by_stretch_is_clean() {
 fn counts_no_stretch_claims_are_a_caution_naming_them() {
     // How a half finished table looks, and what the editor offers a stretch
     // for. It still loads: those counts read as the nearest stretch's end.
-    let short = TANK.replace(r#",
-    {"raw": [61604, 65535], "reads": [146, 160]}"#, "");
+    let short = TANK.replace(
+        r#",
+    {"raw": [61604, 65535], "reads": [146, 160]}"#,
+        "",
+    );
     let p = tank(&short, "");
     assert!(found(&p).is_empty(), "{:?}", found(&p));
     let said = cautions(&p);
     assert_eq!(said.len(), 1, "{said:?}");
-    assert!(said[0].contains("counts 61604 to 65535") && said[0].contains("no conversion"), "{said:?}");
+    assert!(
+        said[0].contains("counts 61604 to 65535") && said[0].contains("no conversion"),
+        "{said:?}"
+    );
 }
 
 #[test]
 fn stretches_claiming_the_same_counts_are_a_caution() {
-    let p = tank(r#"[{"raw": [0, 40000], "reads": [0, 50]}, {"raw": [30000, 65535], "reads": [40, 160]}]"#, "");
+    let p = tank(
+        r#"[{"raw": [0, 40000], "reads": [0, 50]}, {"raw": [30000, 65535], "reads": [40, 160]}]"#,
+        "",
+    );
     assert!(found(&p).is_empty(), "{:?}", found(&p));
     let said = cautions(&p);
     assert_eq!(said.len(), 1, "{said:?}");
-    assert!(said[0].contains("both claim some of the same counts"), "{said:?}");
+    assert!(
+        said[0].contains("both claim some of the same counts"),
+        "{said:?}"
+    );
 }
 
 #[test]
@@ -434,15 +496,24 @@ fn a_range_beside_conversions_or_a_backwards_stretch_is_refused() {
 
     let backwards = found(&tank(r#"[{"raw": [65535, 0], "reads": [0, 160]}]"#, ""));
     assert_eq!(backwards.len(), 1, "{backwards:?}");
-    assert!(backwards[0].contains("ends before it starts"), "{backwards:?}");
+    assert!(
+        backwards[0].contains("ends before it starts"),
+        "{backwards:?}"
+    );
 }
 
 #[test]
 fn a_stretchs_colour_on_glass_that_draws_none_is_refused() {
-    let p = tank(r#"[{"raw": [0, 65535], "reads": [0, 160], "colour": "red"}]"#, "");
+    let p = tank(
+        r#"[{"raw": [0, 65535], "reads": [0, 160], "colour": "red"}]"#,
+        "",
+    );
     let found = found(&p);
     assert_eq!(found.len(), 1, "{found:?}");
-    assert!(found[0].contains("colour or size, which only a text grid draws"), "{found:?}");
+    assert!(
+        found[0].contains("colour or size, which only a text grid draws"),
+        "{found:?}"
+    );
 }
 
 #[test]
@@ -485,7 +556,11 @@ fn what_dcs_bios_says_a_signal_is_cautions_rather_than_refuses() {
     let cautions = p.field_cautions(&module(), &devices, &displays);
     assert_eq!(cautions.len(), 1, "{cautions:?}");
     assert_eq!(cautions[0].0, 1, "on the field it is about");
-    assert!(cautions[0].1.contains("aliases for its values"), "{:?}", cautions[0]);
+    assert!(
+        cautions[0].1.contains("aliases for its values"),
+        "{:?}",
+        cautions[0]
+    );
 }
 
 #[test]
@@ -501,7 +576,11 @@ fn a_field_too_narrow_for_its_text_is_cautioned_on_that_field() {
     let cautions = p.field_cautions(&module(), &devices, &displays);
     assert_eq!(cautions.len(), 1, "{cautions:?}");
     assert_eq!(cautions[0].0, 1, "on the field it is about");
-    assert!(cautions[0].1.starts_with("This field needs up to 5 cells"), "{:?}", cautions[0]);
+    assert!(
+        cautions[0].1.starts_with("This field needs up to 5 cells"),
+        "{:?}",
+        cautions[0]
+    );
     // And not in the profile's own list, which is for the profile as a whole.
     assert!(p.cautions(&devices).is_empty());
 }

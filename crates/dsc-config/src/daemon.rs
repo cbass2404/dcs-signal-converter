@@ -228,4 +228,3 @@ mod tests {
         assert_eq!(pid_holding(tcp, INSTANCE_LOCK), None);
     }
 }
-

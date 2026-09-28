@@ -172,10 +172,16 @@ fn open_fresh(dir: &Path) -> std::io::Result<File> {
 
 impl Sink {
     fn line(&mut self, level: Level, text: &str) {
-        let Some(file) = self.file.as_mut() else { return };
+        let Some(file) = self.file.as_mut() else {
+            return;
+        };
         // CRLF, and embedded newlines too: a screen's contents are logged as
         // the rows a person would read, and Windows tools expect both endings.
-        let text = if text.contains('\n') { text.replace('\n', "\r\n") } else { text.to_string() };
+        let text = if text.contains('\n') {
+            text.replace('\n', "\r\n")
+        } else {
+            text.to_string()
+        };
         let record = format!("{}  {}  {text}\r\n", stamp(), level.tag());
         if file.write_all(record.as_bytes()).is_err() {
             return;
@@ -202,7 +208,10 @@ impl Sink {
         }
         self.line(
             Level::Info,
-            &format!("log     rolled over at {} bytes; what came before is in {BACKUP}", self.cap),
+            &format!(
+                "log     rolled over at {} bytes; what came before is in {BACKUP}",
+                self.cap
+            ),
         );
         // Taken out and put back so the header can be written through `line`,
         // which needs the whole sink.
@@ -256,19 +265,29 @@ impl Default for Throttle {
 
 impl Throttle {
     pub fn new(window: Duration) -> Self {
-        Throttle { window, last: HashMap::new(), held: HashMap::new() }
+        Throttle {
+            window,
+            last: HashMap::new(),
+            held: HashMap::new(),
+        }
     }
 
     /// Offer a change. `Some` is the line to write now; `None` means it was
     /// folded into a later one.
     pub fn offer(&mut self, key: &str, now: Instant, text: String) -> Option<String> {
-        let due = self.last.get(key).map_or(true, |t| now.duration_since(*t) >= self.window);
+        let due = self
+            .last
+            .get(key)
+            .map_or(true, |t| now.duration_since(*t) >= self.window);
         if due {
             self.last.insert(key.to_string(), now);
             self.held.remove(key);
             return Some(text);
         }
-        let held = self.held.entry(key.to_string()).or_insert(Held { text: String::new(), changes: 0 });
+        let held = self.held.entry(key.to_string()).or_insert(Held {
+            text: String::new(),
+            changes: 0,
+        });
         held.text = text;
         held.changes += 1;
         None
@@ -283,12 +302,18 @@ impl Throttle {
         let ready: Vec<String> = self
             .held
             .keys()
-            .filter(|k| self.last.get(*k).map_or(true, |t| now.duration_since(*t) >= self.window))
+            .filter(|k| {
+                self.last
+                    .get(*k)
+                    .map_or(true, |t| now.duration_since(*t) >= self.window)
+            })
             .cloned()
             .collect();
         let mut out = Vec::new();
         for key in ready {
-            let Some(held) = self.held.remove(&key) else { continue };
+            let Some(held) = self.held.remove(&key) else {
+                continue;
+            };
             self.last.insert(key, now);
             out.push(format!("{}  (x{})", held.text, held.changes));
         }
@@ -364,13 +389,33 @@ mod tests {
 
         // The first change of anything is written as it happens: a switch
         // thrown once must not wait a second to appear.
-        assert_eq!(t.offer("sig:GEAR", start, "GEAR = 1".into()), Some("GEAR = 1".into()));
+        assert_eq!(
+            t.offer("sig:GEAR", start, "GEAR = 1".into()),
+            Some("GEAR = 1".into())
+        );
         // Everything inside the window is held, and the latest value wins.
-        assert_eq!(t.offer("sig:GEAR", start + Duration::from_millis(10), "GEAR = 2".into()), None);
-        assert_eq!(t.offer("sig:GEAR", start + Duration::from_millis(20), "GEAR = 3".into()), None);
+        assert_eq!(
+            t.offer(
+                "sig:GEAR",
+                start + Duration::from_millis(10),
+                "GEAR = 2".into()
+            ),
+            None
+        );
+        assert_eq!(
+            t.offer(
+                "sig:GEAR",
+                start + Duration::from_millis(20),
+                "GEAR = 3".into()
+            ),
+            None
+        );
         // Nothing is due until the window has passed.
         assert!(t.due(start + Duration::from_millis(50)).is_empty());
-        assert_eq!(t.due(start + Duration::from_millis(120)), vec!["GEAR = 3  (x2)".to_string()]);
+        assert_eq!(
+            t.due(start + Duration::from_millis(120)),
+            vec!["GEAR = 3  (x2)".to_string()]
+        );
         // Written once, not again.
         assert!(t.due(start + Duration::from_millis(400)).is_empty());
     }
@@ -399,7 +444,9 @@ mod tests {
         header("run     first session");
         record(Level::Info, "hello");
         stop();
-        assert!(std::fs::read_to_string(&path).expect("the log").contains("hello"));
+        assert!(std::fs::read_to_string(&path)
+            .expect("the log")
+            .contains("hello"));
 
         // A second session keeps the first as the backup.
         start_capped(&dir, 4096).expect("opening a log");
@@ -407,14 +454,20 @@ mod tests {
         context("aircraft F-16C_50  ->  profile F-16C");
         record(Level::Error, "something went wrong");
         let backup = std::fs::read_to_string(dir.join(BACKUP)).expect("the backup");
-        assert!(backup.contains("first session"), "the previous session is kept");
+        assert!(
+            backup.contains("first session"),
+            "the previous session is kept"
+        );
 
         // Fill it, and stop at the roll: the file shrinking back to its
         // header is what a roll looks like from outside.
         let mut rolled = false;
         let mut was = std::fs::metadata(&path).expect("the log").len();
         for n in 0..1000 {
-            record(Level::Trace, &format!("{n:>8} ms  write  a lamp that keeps moving = {n}"));
+            record(
+                Level::Trace,
+                &format!("{n:>8} ms  write  a lamp that keeps moving = {n}"),
+            );
             let now = std::fs::metadata(&path).expect("the log").len();
             if now < was {
                 rolled = true;
@@ -425,11 +478,16 @@ mod tests {
         assert!(rolled, "the cap was never reached");
         stop();
         let rolled = std::fs::read_to_string(&path).expect("the rolled log");
-        assert!(rolled.contains("rolled over"), "it says why it is short: {rolled}");
+        assert!(
+            rolled.contains("rolled over"),
+            "it says why it is short: {rolled}"
+        );
         assert!(rolled.contains("second session"), "the header is repeated");
         assert!(rolled.contains("profile F-16C"), "and what it was flying");
         assert!(
-            std::fs::read_to_string(dir.join(BACKUP)).expect("the backup").contains("something went wrong"),
+            std::fs::read_to_string(dir.join(BACKUP))
+                .expect("the backup")
+                .contains("something went wrong"),
             "the roll keeps what came before as the backup"
         );
 

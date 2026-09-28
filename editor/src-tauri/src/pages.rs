@@ -64,7 +64,10 @@ pub fn library_with(paths: &Paths, module: &str, working: &Page) -> PageLibrary 
     let file = lib
         .files
         .entry(module.to_string())
-        .or_insert_with(|| PageFile { module: module.to_string(), pages: Vec::new() });
+        .or_insert_with(|| PageFile {
+            module: module.to_string(),
+            pages: Vec::new(),
+        });
     match file.pages.iter_mut().find(|p| p.id == working.id) {
         Some(there) => *there = working,
         None => file.pages.push(working),
@@ -123,7 +126,9 @@ pub fn open_pages(module: String) -> Reply<PagesView> {
         pages: lib.on_module(&module).to_vec(),
         broken: lib.broken(&module).map(str::to_string),
         used: usage(&paths, &module),
-        shipped: PageLibrary::load_dir(&paths.pages.defaults).on_module(&module).to_vec(),
+        shipped: PageLibrary::load_dir(&paths.pages.defaults)
+            .on_module(&module)
+            .to_vec(),
     })
 }
 
@@ -165,18 +170,23 @@ pub fn save_page(
     page.name = page.name.trim().to_string();
     let problems = cache.page_problems(&paths, &lib, &profile, &page, &device);
     if !problems.is_empty() {
-        return Err(format!("{} was not saved:\n{}", page.name, problems.join("\n")));
+        return Err(format!(
+            "{} was not saved:\n{}",
+            page.name,
+            problems.join("\n")
+        ));
     }
 
-    let file = lib
-        .files
-        .entry(module.clone())
-        .or_insert_with(|| PageFile { module: module.clone(), pages: Vec::new() });
+    let file = lib.files.entry(module.clone()).or_insert_with(|| PageFile {
+        module: module.clone(),
+        pages: Vec::new(),
+    });
     match file.pages.iter_mut().find(|p| p.id == page.id) {
         Some(there) => *there = page,
         None => file.pages.push(page),
     }
-    lib.save_module(&paths.pages.active, &module).map_err(|e| fail(&format!("writing the pages for {module}"), e))?;
+    lib.save_module(&paths.pages.active, &module)
+        .map_err(|e| fail(&format!("writing the pages for {module}"), e))?;
     open_pages(module)
 }
 
@@ -190,21 +200,28 @@ pub fn delete_page(module: String, id: String, current: String) -> Reply<(PagesV
     let paths = Paths::resolve();
     let mut lib = paths.pages.library();
     if let Some(why) = lib.broken(&module) {
-        return Err(format!("the page file for {module} would not load, so nothing was deleted: {why}"));
+        return Err(format!(
+            "the page file for {module} would not load, so nothing was deleted: {why}"
+        ));
     }
     if let Some(file) = lib.files.get_mut(&module) {
         file.pages.retain(|p| p.id != id);
     }
-    lib.save_module(&paths.pages.active, &module).map_err(|e| fail(&format!("writing the pages for {module}"), e))?;
+    lib.save_module(&paths.pages.active, &module)
+        .map_err(|e| fail(&format!("writing the pages for {module}"), e))?;
 
     let mut touched = Vec::new();
     for (name, mut p) in profiles_on(&paths, &module) {
         if name == current {
             continue;
         }
-        let changed = p.screens.values_mut().fold(false, |any, s| !s.clear_page(&id).is_empty() || any);
+        let changed = p
+            .screens
+            .values_mut()
+            .fold(false, |any, s| !s.clear_page(&id).is_empty() || any);
         if changed {
-            p.save(&paths.profiles.active.join(&name)).map_err(|e| fail(&format!("writing {name}"), e))?;
+            p.save(&paths.profiles.active.join(&name))
+                .map_err(|e| fail(&format!("writing {name}"), e))?;
             touched.push(p.name);
         }
     }

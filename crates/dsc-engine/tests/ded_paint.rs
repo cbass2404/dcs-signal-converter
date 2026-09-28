@@ -42,7 +42,13 @@ fn engine() -> (Engine, DisplayCatalogue) {
 /// DCS-BIOS writes for one DED line and its format.
 fn line(cat: &Catalogue, n: usize, text: &str, format: &str) -> Vec<BiosWrite> {
     let module = cat.module("F-16C_50").expect("F-16 module");
-    let at = |id: &str| module.signal(id).and_then(|s| s.primary()).expect(id).address;
+    let at = |id: &str| {
+        module
+            .signal(id)
+            .and_then(|s| s.primary())
+            .expect(id)
+            .address
+    };
     let mut out = text_at(at(&format!("DED_L{n}")), text);
     out.extend(text_at(at(&format!("DED_L{n}_FORMAT")), format));
     out
@@ -55,7 +61,12 @@ fn uhf_page(cat: &Catalogue) -> Vec<BiosWrite> {
     let mut w = text_at(0, "F-16C_50\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0");
     w.extend(line(cat, 1, "     UHF     BOTH       ", BLANK));
     w.extend(line(cat, 2, "  305.00                ", BLANK));
-    w.extend(line(cat, 3, "             *305.00*   ", "             i      i   "));
+    w.extend(line(
+        cat,
+        3,
+        "             *305.00*   ",
+        "             i      i   ",
+    ));
     w.extend(line(cat, 4, "  PRE   1 a      TOD    ", BLANK));
     w.extend(line(cat, 5, "     305.00       NB    ", BLANK));
     w
@@ -102,18 +113,26 @@ fn loading_the_f16_paints_the_whole_ded_in_one_write() {
 
     // A screen we have not driven is painted whole, because whatever
     // SimAppPro left on it latched. Every row is consecutive, so it is one run.
-    assert_eq!(batch.lcd.len(), 1, "{:?}", batch.lcd.iter().map(|w| w.group).collect::<Vec<_>>());
+    assert_eq!(
+        batch.lcd.len(),
+        1,
+        "{:?}",
+        batch.lcd.iter().map(|w| w.group).collect::<Vec<_>>()
+    );
     assert_eq!(batch.lcd[0].bytes.len(), SCREEN_BYTES);
 
     let mut fb = vec![0u8; SCREEN_BYTES];
     replay(&mut fb, &batch.lcd);
-    let want = expected(&displays, [
-        ("     UHF     BOTH       ", BLANK),
-        ("  305.00                ", BLANK),
-        ("             *305.00*   ", "             i      i   "),
-        ("  PRE   1 a      TOD    ", BLANK),
-        ("     305.00       NB    ", BLANK),
-    ]);
+    let want = expected(
+        &displays,
+        [
+            ("     UHF     BOTH       ", BLANK),
+            ("  305.00                ", BLANK),
+            ("             *305.00*   ", "             i      i   "),
+            ("  PRE   1 a      TOD    ", BLANK),
+            ("     305.00       NB    ", BLANK),
+        ],
+    );
     assert_eq!(fb, want);
 
     // The two stars are inverse boxes: row 1 of line 3 is solid over them.
@@ -139,8 +158,16 @@ fn the_ded_backlight_is_a_lamp_a_profile_can_bind() {
     let devices = DeviceInventory::load(&r("data/devices.json")).unwrap();
     let icp = devices.device("ViperAce_ICP").unwrap();
     assert!(icp.led("Screen_Backlight").is_some(), "offered to profiles");
-    assert!(icp.leds().any(|(_, l)| l.name == "Screen_Backlight"), "and to the editor");
-    assert_eq!(icp.display_lamps().map(|(_, l)| l.index).collect::<Vec<_>>(), [1]);
+    assert!(
+        icp.leds().any(|(_, l)| l.name == "Screen_Backlight"),
+        "and to the editor"
+    );
+    assert_eq!(
+        icp.display_lamps()
+            .map(|(_, l)| l.index)
+            .collect::<Vec<_>>(),
+        [1]
+    );
 }
 
 #[test]
@@ -165,13 +192,16 @@ fn a_change_rewrites_only_the_rows_it_touched() {
     replay(&mut fb, &batch.lcd);
     assert_eq!(
         fb,
-        expected(&displays, [
-            ("     UHF     BOTH       ", BLANK),
-            ("  305.10                ", BLANK),
-            ("             *305.00*   ", "             i      i   "),
-            ("  PRE   1 a      TOD    ", BLANK),
-            ("     305.00       NB    ", BLANK),
-        ])
+        expected(
+            &displays,
+            [
+                ("     UHF     BOTH       ", BLANK),
+                ("  305.10                ", BLANK),
+                ("             *305.00*   ", "             i      i   "),
+                ("  PRE   1 a      TOD    ", BLANK),
+                ("     305.00       NB    ", BLANK),
+            ]
+        )
     );
 
     // The backlight was set with the first paint and is not written again.

@@ -63,7 +63,7 @@ in [CONFIG.md](CONFIG.md) and `docs/language.html`.
   `crates/dsc-engine/tests/glyph_cautions.rs`. No shipped profile or page
   trips it.
 - **Past CNI and TCN, SimAppPro lays the DED out its own way**, so its frames
-  are evidence for glyphs, not for a page's layout. In PROTOCOL.md.
+  are evidence for glyphs, not for a page's layout. In PROTOCOL-WINCTRL.md.
 
 **Built 2026-09-25: page fields open one at a time, and two ways back.**
 Built and type-checked, not yet clicked through. What users see is in
@@ -157,7 +157,7 @@ library's, taken from Cory's checkout at `C:\Users\coryb\Dev\WwDevicesDotnet`
 rule, 2026-09-24: **only pages are shared** between the MCDU and the PFPs,
 because the screens are identical; lamps and keys belong to each model; the
 three names of one model follow each other as the MCDU's do. See the PFP
-section in [PROTOCOL.md](PROTOCOL.md).
+section in [PROTOCOL-WINCTRL.md](PROTOCOL-WINCTRL.md).
 
 - **A display map no longer carries a part id.** `devices.json` already says
   which part carries each screen (`display` on the part), and live writes
@@ -325,7 +325,7 @@ What the drawing needed, and what it costs:
   UFC's are segments, so `art` in `data/displays/ufc1.json` gives each slot a
   stroke. Which slot is which segment was read out of the glyph table itself
   rather than captured, and the derivation is written down in both the file
-  and "Where each segment sits" in [PROTOCOL.md](PROTOCOL.md). Checked against
+  and "Where each segment sits" in [PROTOCOL-WINCTRL.md](PROTOCOL-WINCTRL.md). Checked against
   the glass 2026-09-25: every segment sits where the preview draws it.
 - **One layout, two painters.** The measuring the daemon does was already
   copied in the window for the MCDU; it is now `layoutCells`, and the font and
@@ -1031,7 +1031,7 @@ Still to do: the release-notes list of changed default rows.
 
 4. **The ViperAce ICP (`0xbf06`).** Its DED screen protocol is decoded and
    confirmed on hardware 2026-09-18, see "Driving a pixel display" in
-   `PROTOCOL.md`: report `0xf0`, a 200x64 1-bit framebuffer, write then commit.
+   `PROTOCOL-WINCTRL.md`: report `0xf0`, a 200x64 1-bit framebuffer, write then commit.
    **Built and flown 2026-09-18.** Every page drew correctly, inverse fields
    included, and a disabled UFC was confirmed left alone in the jet.
 
@@ -1085,7 +1085,7 @@ Still to do: the release-notes list of changed default rows.
    `devices.json` carries three entries that differ only in PID and name, and
    every shipped profile binds all three. "1 Split 3" mode keeps the PID but
    enumerates three collections with only the first writable, which is why
-   `Device::open` now chooses by report descriptor. Details in `PROTOCOL.md`.
+   `Device::open` now chooses by report descriptor. Details in `PROTOCOL-WINCTRL.md`.
    **Verified on hardware 2026-09-18** in the hardest case, split mode under
    the L name: `dcs-signal led` wrote 0, 255, 20 and 137 through `col01`, each
    acked, and the backlight went dark, full and dim as sent. Flown from a
@@ -1097,7 +1097,7 @@ Still to do: the release-notes list of changed default rows.
    documents, turned out to write both pedal lights at once, last write wins.
    It is left out of the inventory so nothing ever writes it. Every default
    binds `Backlight_L` to the throttle's knob with the other two `same_as` it.
-   Details in `PROTOCOL.md`.
+   Details in `PROTOCOL-WINCTRL.md`.
 
    The **MCDU** (part `0xbb32`) went in the same evening, lamps from
    SimAppPro captures. Like the MFD it has three names, each its own PID:
@@ -1115,7 +1115,7 @@ Still to do: the release-notes list of changed default rows.
    too. SimAppPro never drives it from DCS, so the protocol is ported from
    WwDevicesDotnet (BSD-3) with its font upload, and the A-10C font comes from
    WCtrlDcsBiosBridge (MIT); notices in `THIRD_PARTY_NOTICES.md`, details in
-   `PROTOCOL.md` under "Driving a text grid". **Drawn on our panel** with
+   `PROTOCOL-WINCTRL.md` under "Driving a text grid". **Drawn on our panel** with
    `dcs-signal mcdu-test`. In the engine a text grid is 336 cells of character,
    colour and size (`data/displays/mcdu.json`), sent whole on any change, and
    a readout takes `colour`, `small` and `replace` (one-for-one character
@@ -1538,7 +1538,7 @@ on the wire. `data/displays/ufc1.json` holds the cell and glyph map, transcribed
 from SimAppPro's tables and then **confirmed against hardware**: replaying a
 captured mission through it rendered the Hornet A/P page (`ATTH HSEL BALT RALT
 CPL`) and COMM page (`GRCV SQCH CPHR AM MENU`) with 0 of 36 cells unmatched.
-`docs/PROTOCOL.md` has the frame layout and the four behaviours that are not
+`docs/PROTOCOL-WINCTRL.md` has the frame layout and the four behaviours that are not
 obvious.
 
 **Built and wired, 2026-09-17.** Signal to glass works end to end and is
@@ -1860,7 +1860,7 @@ Gear expected around January 2027; see the blocked item in
    field is forward compatible with it either way.
 
 3. **Capture is harder than it was here.** SimAppPro wrote `WWTHID.log` and
-   handed us the frames, which is what `docs/PROTOCOL.md` is built on. VPC
+   handed us the frames, which is what `docs/PROTOCOL-WINCTRL.md` is built on. VPC
    almost certainly does not, so this means USBPcap and Wireshark: raw URBs,
    with no vendor pretty-printing and no help separating a command channel from
    routine HID polling. Two things already here transfer: `declares_output` in
@@ -1875,7 +1875,7 @@ WwDevicesDotnet port is attributed.
 
 ## Verified facts
 
-Protocol and hardware detail is in `PROTOCOL.md`; the config model is in
+Protocol and hardware detail is in `PROTOCOL-WINCTRL.md`; the config model is in
 `CONFIG.md`. The headlines:
 
 - 14-byte HID vendor frame, part-addressed, every command acked.
@@ -1990,7 +1990,7 @@ Tauri renders through WebView2, which ships with Windows.
    bottom. Deferred.
 7. ~~**The MCDU Captain** (`0xbb36`) screen is unmapped.~~ Resolved
    2026-09-18: it is a text grid over report `0xf2`, ported from
-   WwDevicesDotnet. See "Driving a text grid" in `PROTOCOL.md`.
+   WwDevicesDotnet. See "Driving a text grid" in `PROTOCOL-WINCTRL.md`.
 
 ## Next steps
 
@@ -2020,6 +2020,6 @@ was asserting inference as fact and then reading failures as confirmation.
 
 Capture beats inference on this hardware, and SimAppPro will tell us exactly what
 it sends set `"HIDLog": true` in `%APPDATA%\SimAppPro\config.json`, restart it,
-and read `%APPDATA%\WWTHID\SimAppPro\WWTHID.log` (see `PROTOCOL.md`). Fields that
+and read `%APPDATA%\WWTHID\SimAppPro\WWTHID.log` (see `PROTOCOL-WINCTRL.md`). Fields that
 have not been measured are left absent rather than given a plausible default, and
 `verified: true` marks the ones that have.

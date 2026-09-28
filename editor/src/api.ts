@@ -90,8 +90,12 @@ export const defaultProfile = (file: string) => invoke<Profile | null>("default_
  * A new profile for some of a module's aircraft, blank or copied from `from`.
  * Chosen aircraft another profile claims move to the new one.
  */
-export const createProfile = (module: string, name: string, aircraft: string[], from: string | null) =>
-  invoke<string>("create_profile", { module, name, aircraft, from });
+export const createProfile = (
+  module: string,
+  name: string,
+  aircraft: string[],
+  from: string | null,
+) => invoke<string>("create_profile", { module, name, aircraft, from });
 /** Write the profile. Its pages are saved on their own, by `savePage`. */
 export const saveProfile = (file: string, profile: Profile) =>
   invoke<void>("save_profile", { file, profile });
@@ -160,8 +164,13 @@ export const importPick = () => invoke<ImportPreview | null>("import_pick");
  * those it came with. Aircraft other profiles fly move to it. A profile left
  * with none is deleted only if `remove` names it, which the user confirms first.
  */
-export const importProfile = (path: string, name: string, aircraft: string[], remove: string[], pages: PageTake[]) =>
-  invoke<string>("import_profile", { path, name, aircraft, delete: remove, pages });
+export const importProfile = (
+  path: string,
+  name: string,
+  aircraft: string[],
+  remove: string[],
+  pages: PageTake[],
+) => invoke<string>("import_profile", { path, name, aircraft, delete: remove, pages });
 
 /** What the profile in `file` could give another on its module. */
 export const mergeParts = (file: string) => invoke<MergeParts>("merge_parts", { file });

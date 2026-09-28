@@ -32,7 +32,7 @@ import urllib.request
 import zipfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-REPO = "cbass2404/wctrl-module-signal-converter"
+REPO = "cbass2404/dcs-signal-converter"
 OUT = os.path.join(ROOT, "target", "dcs-bios-pin")
 
 

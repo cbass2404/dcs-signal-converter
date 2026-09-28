@@ -5,7 +5,7 @@
 //! the whole module-load sequence be tested without hardware or DCS.
 //!
 //! Two behaviours here are driven by measured hardware facts rather than
-//! preference, and both are documented in `docs/PROTOCOL.md`:
+//! preference, and both are documented in `docs/PROTOCOL-WINCTRL.md`:
 //!
 //! * **LED state latches in the device.** There is no host watchdog, so the
 //!   engine writes only on change and must clear LEDs on the way out.
@@ -251,7 +251,13 @@ impl Engine {
         // where the slot is still in use, so saving does not throw the pilot
         // back to the start page. A new aircraft starts on `start` regardless.
         let shown: Option<(String, Vec<(String, usize)>)> = self.active_profile().map(|p| {
-            (p.name.clone(), p.page_runs.iter().map(|(d, r)| (d.clone(), r.shown)).collect())
+            (
+                p.name.clone(),
+                p.page_runs
+                    .iter()
+                    .map(|(d, r)| (d.clone(), r.shown))
+                    .collect(),
+            )
         });
         self.profiles = running(profiles);
 
@@ -307,7 +313,11 @@ impl Engine {
             return Some(Batch::empty(Cause::PageSwap));
         }
         let (writes, lcd) = self.paint();
-        Some(Batch { cause: Cause::PageSwap, writes, lcd })
+        Some(Batch {
+            cause: Cause::PageSwap,
+            writes,
+            lcd,
+        })
     }
 
     /// Swap in a rebuilt catalogue, with the profiles checked against it.
@@ -462,9 +472,7 @@ impl Engine {
             .map(|(id, _)| id.clone())
             .collect();
         // HashMap order is not stable; callers and tests want a fixed sequence.
-        ids.sort_by(|a, b| {
-            (&a.device, a.part_id, a.index).cmp(&(&b.device, b.part_id, b.index))
-        });
+        ids.sort_by(|a, b| (&a.device, a.part_id, a.index).cmp(&(&b.device, b.part_id, b.index)));
 
         let mut writes = Vec::with_capacity(ids.len());
         for id in ids {
@@ -576,13 +584,21 @@ impl Engine {
                             |source| {
                                 let output = module.signal(source)?.primary()?;
                                 self.state
-                                    .value(output.address, output.mask.unwrap_or(u16::MAX), output.shift)
+                                    .value(
+                                        output.address,
+                                        output.mask.unwrap_or(u16::MAX),
+                                        output.shift,
+                                    )
                                     .map(u32::from)
                             },
                             |source| self.moves.get(source)?.at,
                         )
                     };
-                    let value = if used { bound().unwrap_or(led.max_value()) } else { 0 };
+                    let value = if used {
+                        bound().unwrap_or(led.max_value())
+                    } else {
+                        0
+                    };
                     if self.shadow.get(&id) != Some(&value) {
                         self.shadow.insert(id.clone(), value);
                         lamps.push(LedWrite { id, value });
@@ -632,7 +648,9 @@ impl Engine {
                         continue;
                     };
                     for (offset, cell) in r.cells.cells().enumerate() {
-                        let Some(glyph) = glyphs.get(offset) else { continue };
+                        let Some(glyph) = glyphs.get(offset) else {
+                            continue;
+                        };
                         if map.transport == Transport::Text {
                             let ch = glyph.text.chars().next().unwrap_or(' ');
                             let colour = glyph.colour.unwrap_or_default();
@@ -697,9 +715,7 @@ impl Engine {
             .filter(|(id, v)| **v != 0 && undriven.contains(&id.device))
             .map(|(id, _)| id.clone())
             .collect();
-        ids.sort_by(|a, b| {
-            (&a.device, a.part_id, a.index).cmp(&(&b.device, b.part_id, b.index))
-        });
+        ids.sort_by(|a, b| (&a.device, a.part_id, a.index).cmp(&(&b.device, b.part_id, b.index)));
         let mut writes = Vec::with_capacity(ids.len());
         for id in ids {
             self.shadow.insert(id.clone(), 0);
@@ -713,8 +729,12 @@ impl Engine {
     /// forget them, so driving one again paints it in full.
     fn blank_screens(&mut self, which: impl Fn(&str) -> bool) -> Vec<LcdWrite> {
         let mut out = Vec::new();
-        let mut ids: Vec<(String, String)> =
-            self.screens.keys().filter(|(d, _)| which(d)).cloned().collect();
+        let mut ids: Vec<(String, String)> = self
+            .screens
+            .keys()
+            .filter(|(d, _)| which(d))
+            .cloned()
+            .collect();
         ids.sort();
         for id in ids {
             let Some(map) = self.displays.get(&id.1) else {
@@ -955,7 +975,9 @@ impl Engine {
             return out;
         };
         for b in &profile.bindings {
-            if let Some((id, v)) = resolve(&self.devices, module, &self.state, &self.moves, profile, b) {
+            if let Some((id, v)) =
+                resolve(&self.devices, module, &self.state, &self.moves, profile, b)
+            {
                 out.insert(id, v);
             }
         }
@@ -993,7 +1015,11 @@ fn resolve(
         |source| {
             let output = module.signal(source)?.primary()?;
             state
-                .value(output.address, output.mask.unwrap_or(u16::MAX), output.shift)
+                .value(
+                    output.address,
+                    output.mask.unwrap_or(u16::MAX),
+                    output.shift,
+                )
                 .map(u32::from)
         },
         |source| moves.get(source)?.at,

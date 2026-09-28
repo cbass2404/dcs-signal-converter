@@ -83,7 +83,10 @@ fn a_follower_is_sent_what_it_follows() {
     p.follows.insert(COPILOT.into(), CAPTAIN.into());
     let batches = fly(p);
     let captain = sent(&batches, CAPTAIN);
-    assert!(!captain.1.is_empty(), "the Hornet puts fields on the Captain's screen");
+    assert!(
+        !captain.1.is_empty(),
+        "the Hornet puts fields on the Captain's screen"
+    );
     assert_eq!(captain, sent(&batches, COPILOT));
 }
 
@@ -103,7 +106,12 @@ fn problems(p: &Profile) -> Vec<Error> {
     let cat = Catalogue::load_dir(&r("data/catalogue")).expect("catalogue");
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).expect("displays");
     let module = cat.module(&p.module).expect("the module");
-    resolved(p).problems(module, &devices, &displays, &dsc_config::PageLibrary::default())
+    resolved(p).problems(
+        module,
+        &devices,
+        &displays,
+        &dsc_config::PageLibrary::default(),
+    )
 }
 
 #[test]
@@ -111,7 +119,9 @@ fn only_the_same_hardware_can_be_followed() {
     let mut p = hornet();
     p.follows.insert(COPILOT.into(), "TAKEOFF_PLANEL_2".into());
     assert!(
-        problems(&p).iter().any(|e| matches!(e, Error::FollowsDifferentHardware(..))),
+        problems(&p)
+            .iter()
+            .any(|e| matches!(e, Error::FollowsDifferentHardware(..))),
         "an MCDU cannot take a PTO2's lamps"
     );
 }
@@ -121,7 +131,9 @@ fn a_follower_cannot_be_followed() {
     let mut p = hornet();
     p.follows.insert(COPILOT.into(), CAPTAIN.into());
     p.follows.insert("MCDU_Observer".into(), COPILOT.into());
-    assert!(problems(&p).iter().any(|e| matches!(e, Error::FollowChain(..))));
+    assert!(problems(&p)
+        .iter()
+        .any(|e| matches!(e, Error::FollowChain(..))));
 }
 
 #[test]

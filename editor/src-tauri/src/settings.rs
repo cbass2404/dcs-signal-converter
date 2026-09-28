@@ -22,13 +22,21 @@ pub struct SettingsView {
 pub fn settings_read() -> Reply<SettingsView> {
     let paths = Paths::resolve();
     Ok(match Settings::load(&paths.settings) {
-        Ok(settings) => SettingsView { settings, problem: None },
-        Err(e) => SettingsView { settings: Settings::default(), problem: Some(e.to_string()) },
+        Ok(settings) => SettingsView {
+            settings,
+            problem: None,
+        },
+        Err(e) => SettingsView {
+            settings: Settings::default(),
+            problem: Some(e.to_string()),
+        },
     })
 }
 
 #[tauri::command]
 pub fn settings_save(settings: Settings) -> Reply<()> {
     let paths = Paths::resolve();
-    settings.save(&paths.settings).map_err(|e| fail("saving the settings", e))
+    settings
+        .save(&paths.settings)
+        .map_err(|e| fail("saving the settings", e))
 }

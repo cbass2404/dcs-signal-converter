@@ -37,7 +37,9 @@ fn catalogue() -> Catalogue {
             ]
         }}"#
     );
-    Catalogue::from_modules(vec![serde_json::from_str::<Module>(&json).expect("fixture parses")])
+    Catalogue::from_modules(vec![
+        serde_json::from_str::<Module>(&json).expect("fixture parses")
+    ])
 }
 
 fn profile() -> Profile {

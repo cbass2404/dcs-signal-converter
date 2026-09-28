@@ -5,33 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Your WinWing panels, lit by the DCS cockpit you are actually sitting in. Lamps, backlights and screens follow the aircraft. Free and open source."
+      content="Your sim cockpit panels, lit by the DCS cockpit you are actually sitting in. Lamps, backlights and screens follow the aircraft. Free and open source."
     />
     <meta name="color-scheme" content="light dark" />
-    <meta
-      name="theme-color"
-      content="#ECEEF1"
-      media="(prefers-color-scheme: light)"
-    />
-    <meta
-      name="theme-color"
-      content="#101418"
-      media="(prefers-color-scheme: dark)"
-    />
+    <meta name="theme-color" content="#ECEEF1" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#101418" media="(prefers-color-scheme: dark)" />
 
     <meta property="og:type" content="website" />
     <meta property="og:title" content="DCS Signal Converter" />
     <meta
       property="og:description"
-      content="Your WinWing panels, lit by the DCS cockpit you are actually sitting in. Lamps, backlights and screens follow the aircraft. Free and open source."
+      content="Your sim cockpit panels, lit by the DCS cockpit you are actually sitting in. Lamps, backlights and screens follow the aircraft. Free and open source."
     />
-    <meta
-      property="og:url"
-      content="https://cbass2404.github.io/wctrl-module-signal-converter/"
-    />
+    <meta property="og:url" content="https://cbass2404.github.io/dcs-signal-converter/" />
     <meta
       property="og:image"
-      content="https://cbass2404.github.io/wctrl-module-signal-converter/img/profile-editor-device-expanded.png"
+      content="https://cbass2404.github.io/dcs-signal-converter/img/profile-editor-device-expanded.png"
     />
     <meta name="twitter:card" content="summary_large_image" />
 
@@ -88,8 +77,7 @@
         --btn-ink: #ffffff;
         --live: #1f7a3d;
         --live-wash: #c6efce;
-        --shadow:
-          0 1px 2px rgba(20, 26, 32, 0.08), 0 8px 24px rgba(20, 26, 32, 0.06);
+        --shadow: 0 1px 2px rgba(20, 26, 32, 0.08), 0 8px 24px rgba(20, 26, 32, 0.06);
       }
       @media (prefers-color-scheme: dark) {
         :root:not([data-theme="light"]) {
@@ -108,8 +96,7 @@
           --btn-ink: #12161a;
           --live: #6fcf8e;
           --live-wash: #1e3a26;
-          --shadow:
-            0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 28px rgba(0, 0, 0, 0.34);
+          --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 28px rgba(0, 0, 0, 0.34);
         }
       }
       :root[data-theme="dark"] {
@@ -160,8 +147,7 @@
       h1,
       h2,
       h3 {
-        font-family:
-          "Barlow Condensed", "Barlow Semi Condensed", system-ui, sans-serif;
+        font-family: "Barlow Condensed", "Barlow Semi Condensed", system-ui, sans-serif;
         text-wrap: balance;
         margin: 0;
       }
@@ -208,11 +194,7 @@
         height: 9px;
         margin: 0;
         border: 0;
-        background: repeating-linear-gradient(
-          to right,
-          var(--rule-2) 0 1px,
-          transparent 1px 10px
-        );
+        background: repeating-linear-gradient(to right, var(--rule-2) 0 1px, transparent 1px 10px);
         border-bottom: 1px solid var(--rule);
       }
 
@@ -639,8 +621,7 @@
         font-size: 0.88em;
         line-height: 1;
         flex: none;
-        font-family:
-          "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+        font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
       }
       .support-txt p {
         font-size: 0.97rem;
@@ -698,36 +679,28 @@
       <div class="wrap">
         <div class="rise">
           <div class="brand">
-            <img
-              class="mark"
-              src="img/icon.svg"
-              alt=""
-              width="64"
-              height="64"
-            />
+            <img class="mark" src="img/icon.svg" alt="" width="64" height="64" />
             <h1>DCS Signal Converter</h1>
           </div>
           <div class="badges">
             <span class="badge hot">Beta</span>
-            <span class="badge">WinWing panels</span>
+            <span class="badge">Sim cockpit panels</span>
             <span class="badge">DCS-BIOS</span>
             <span class="badge">Free &amp; open source</span>
           </div>
           <h1>
-            Your WinWing panels, lit by
+            Your panels, lit by
             <span class="em">the cockpit you are actually sitting in</span>.
           </h1>
           <p class="lede">
-            Gear lamps that follow the gear. A Master Caution that comes on when
-            the jet's does. Backlights that can dim with the console knob. Jump
-            into a Hornet and the panels follow the Hornet; switch to an Apache
-            and they follow the Apache. Quit DCS and they go dark.
+            Gear lamps that follow the gear. A Master Caution that comes on when the jet's does.
+            Backlights that can dim with the console knob. Jump into a Hornet and the panels follow
+            the Hornet; switch to an Apache and they follow the Apache. Quit DCS and they go dark.
           </p>
           <div class="cta-row">
             <span class="btn-note"
-              >Download the latest release from the top of the page and run
-              the <span class="mono">setup.exe</span>. No admin prompt, no
-              SimAppPro.</span
+              >Download the latest release from the top of the page and run the
+              <span class="mono">setup.exe</span>. No admin prompt, no vendor app needed.</span
             >
           </div>
         </div>
@@ -746,36 +719,33 @@
         </div>
         <div class="prose" style="margin-bottom: 26px">
           <p>
-            DCS Signal Converter reads the cockpit through DCS-BIOS and drives
-            the lamps, backlights and screens on your WinWing panels to match.
-            It starts with DCS on its own, so there is nothing to remember
-            before a flight and no alt-tabbing when you change aircraft.
+            DCS Signal Converter reads the cockpit through DCS-BIOS and drives the lamps, backlights
+            and screens on your panels to match. It starts with DCS on its own, so there is nothing
+            to remember before a flight and no alt-tabbing when you change aircraft.
           </p>
         </div>
         <div class="feats">
           <div class="feat">
             <h3>Lamps</h3>
             <p>
-              Gear, Master Caution, APU fire, jettison and the rest light when
-              the cockpit's do, from either seat in a two-seater.
+              Gear, Master Caution, APU fire, jettison and the rest light when the cockpit's do,
+              from either seat in a two-seater.
             </p>
           </div>
           <div class="feat">
             <h3>Backlights</h3>
             <p>
-              Every panel backlight shares one setting, held steady so the pit
-              stays readable. Point it at a cockpit knob and they all dim
-              together.
+              Every panel backlight shares one setting, held steady so the pit stays readable. Point
+              it at a cockpit knob and they all dim together.
             </p>
           </div>
           <div class="feat">
             <h3>Screens</h3>
             <p>
-              The Hornet UFC on the UFC, the Viper's DED on the ICP, and on your
-              MCDU or PFP the A-10C, CH-47F and F-14B (Upgrade) CDU, the AH-64D
-              KU, the Hornet's IFEI or a Viper flight page. Every screen takes
-              pages you build yourself: write a label, put a reading beside it,
-              and pick the colour and size of each.
+              The Hornet UFC on the UFC, the Viper's DED on the ICP, and on your MCDU or PFP the
+              A-10C, CH-47F and F-14B (Upgrade) CDU, the AH-64D KU, the Hornet's IFEI or a Viper
+              flight page. Every screen takes pages you build yourself: write a label, put a reading
+              beside it, and pick the colour and size of each.
             </p>
           </div>
         </div>
@@ -791,28 +761,22 @@
         <div class="groups">
           <div class="group">
             <div class="group-head">
-              <span class="group-title">Panels</span>
+              <span class="group-title">WinWing panels</span>
               <span class="group-count">8</span>
             </div>
             <p class="group-why">
-              Any that are plugged in. The rest are skipped, so a profile can
-              bind a panel you do not own without harm. The PFPs are not yet
-              tried on a real panel here.
+              Any that are plugged in. The rest are skipped, so a profile can bind a panel you do
+              not own without harm. The PFPs are not yet tried on a real panel here. The same
+              hardware sold as WinCtrl is the same device and works the same.
             </p>
             <ul class="group-list">
               <li><span class="gi-name">PTO2</span></li>
               <li><span class="gi-name">Orion Throttle Base II</span></li>
               <li><span class="gi-name">CarrierAce UFC + HUD</span></li>
               <li><span class="gi-name">ViperAce ICP</span></li>
-              <li>
-                <span class="gi-name">CarrierAce MFD</span
-                ><span class="gi-pct">L C R</span>
-              </li>
+              <li><span class="gi-name">CarrierAce MFD</span><span class="gi-pct">L C R</span></li>
               <li><span class="gi-name">Orion Combat Rudder Pedals</span></li>
-              <li>
-                <span class="gi-name">MCDU</span
-                ><span class="gi-pct">CPT FO OBS</span>
-              </li>
+              <li><span class="gi-name">MCDU</span><span class="gi-pct">CPT FO OBS</span></li>
               <li>
                 <span class="gi-name">PFP-3N, PFP-7, PFP-4</span
                 ><span class="gi-pct">CPT FO OBS</span>
@@ -825,49 +789,31 @@
               <span class="group-count">10</span>
             </div>
             <p class="group-why">
-              Anything else gets a blank starter profile the first time you fly
-              it, ready to fill in.
+              Anything else gets a blank starter profile the first time you fly it, ready to fill
+              in.
             </p>
             <ul class="group-list">
-              <li>
-                <span class="gi-name">A-10C</span
-                ><span class="gi-pct">CDU · CMSC</span>
-              </li>
-              <li>
-                <span class="gi-name">AH-64D</span
-                ><span class="gi-pct">KU</span>
-              </li>
-              <li>
-                <span class="gi-name">CH-47F</span
-                ><span class="gi-pct">CDU</span>
-              </li>
+              <li><span class="gi-name">A-10C</span><span class="gi-pct">CDU · CMSC</span></li>
+              <li><span class="gi-name">AH-64D</span><span class="gi-pct">KU</span></li>
+              <li><span class="gi-name">CH-47F</span><span class="gi-pct">CDU</span></li>
               <li><span class="gi-name">F-14A / F-14B</span></li>
+              <li><span class="gi-name">F-14B (Upgrade)</span><span class="gi-pct">CDNU</span></li>
               <li>
-                <span class="gi-name">F-14B (Upgrade)</span
-                ><span class="gi-pct">CDNU</span>
+                <span class="gi-name">F-16C / D / I</span><span class="gi-pct">Flight · DED</span>
               </li>
               <li>
-                <span class="gi-name">F-16C / D / I</span
-                ><span class="gi-pct">Flight · DED</span>
+                <span class="gi-name">F/A-18C + mods</span><span class="gi-pct">IFEI · UFC</span>
               </li>
-              <li>
-                <span class="gi-name">F/A-18C + mods</span
-                ><span class="gi-pct">IFEI · UFC</span>
-              </li>
-              <li>
-                <span class="gi-name">Mi-24P</span
-                ><span class="gi-pct">Radios</span>
-              </li>
+              <li><span class="gi-name">Mi-24P</span><span class="gi-pct">Radios</span></li>
               <li><span class="gi-name">Flaming Cliffs</span></li>
               <li><span class="gi-name">Spectator</span></li>
             </ul>
           </div>
         </div>
         <p class="foot-note">
-          The tags name the pages each aircraft ships. On the MCDU, its own CDU,
-          CDNU or KU where it has one, and a page built from its readings where
-          it does not; then its UFC or DED page, such as the A-10C's
-          countermeasures on the DED. Open a profile in the editor to see
+          The tags name the pages each aircraft ships. On the MCDU, its own CDU, CDNU or KU where it
+          has one, and a page built from its readings where it does not; then its UFC or DED page,
+          such as the A-10C's countermeasures on the DED. Open a profile in the editor to see
           exactly what it drives.
         </p>
       </div>
@@ -886,50 +832,39 @@
               >Install
               <a href="https://github.com/DCS-Skunkworks/dcs-bios">DCS-BIOS</a>
               into
-              <span class="mono"
-                >&quot;Saved Games\<wbr />DCS\<wbr />Scripts&quot;</span
-              ></span
+              <span class="mono">&quot;Saved Games\<wbr />DCS\<wbr />Scripts&quot;</span></span
             >
           </div>
           <div class="step">
             <span class="n">02</span
             ><span class="t"
               >Copy the line that ships with DCS-BIOS into
-              <span class="mono"
-                >&quot;Scripts\<wbr />Export.lua&quot;</span
-              ></span
+              <span class="mono">&quot;Scripts\<wbr />Export.lua&quot;</span></span
             >
           </div>
-          <div class="step">
-            <span class="n">03</span><span class="t">Close DCS</span>
-          </div>
+          <div class="step"><span class="n">03</span><span class="t">Close DCS</span></div>
           <div class="step">
             <span class="n">04</span
             ><span class="t">Run the installer from the latest release</span>
           </div>
-          <div class="step">
-            <span class="n">05</span><span class="t">Start DCS and fly</span>
-          </div>
+          <div class="step"><span class="n">05</span><span class="t">Start DCS and fly</span></div>
         </div>
         <div class="after">
           <span class="t">Then it just runs</span>
           <p>
-            A small hook starts the converter with each mission. Within a second
-            or two of the cockpit loading it picks your aircraft's profile and
-            sets every lamp to match. Leave the mission and the panels go dark;
-            quit DCS and it quits too.
+            A small hook starts the converter with each mission. Within a second or two of the
+            cockpit loading it picks your aircraft's profile and sets every lamp to match. Leave the
+            mission and the panels go dark; quit DCS and it quits too.
           </p>
         </div>
         <div class="after caution">
-          <span class="t">Running SimAppPro alongside</span>
+          <span class="t">Running WinWing's SimAppPro alongside</span>
           <p>
-            The converter can run with SimAppPro open, but SimAppPro must stop
-            driving the same panels. Set the lights on each device in SimAppPro
-            not to sync with DCS. For the F-16, set every ICP page selection to
-            disabled; for the F/A-18, set every UFC page selection to disabled.
-            Leaving them on will not harm your devices, but the two apps will
-            fight over the panels, causing extra writes and potentially strange
-            visuals.
+            The converter can run with SimAppPro open, but SimAppPro must stop driving the same
+            panels. Set the lights on each device in SimAppPro not to sync with DCS. For the F-16,
+            set every ICP page selection to disabled; for the F/A-18, set every UFC page selection
+            to disabled. Leaving them on will not harm your devices, but the two apps will fight
+            over the panels, causing extra writes and potentially strange visuals.
           </p>
         </div>
       </div>
@@ -941,11 +876,21 @@
           <span class="eyebrow">The editor</span>
           <h2>Every lamp is yours to reassign, per aircraft</h2>
         </div>
-        <div class="showcase" role="region" aria-roledescription="carousel" aria-label="Editor screenshots" tabindex="0">
+        <div
+          class="showcase"
+          role="region"
+          aria-roledescription="carousel"
+          aria-label="Editor screenshots"
+          tabindex="0"
+        >
           <div class="show-bar">
-            <button type="button" class="show-prev" aria-label="Previous screenshot">&larr; prev</button>
+            <button type="button" class="show-prev" aria-label="Previous screenshot">
+              &larr; prev
+            </button>
             <div class="show-dots"></div>
-            <button type="button" class="show-next" aria-label="Next screenshot">next &rarr;</button>
+            <button type="button" class="show-next" aria-label="Next screenshot">
+              next &rarr;
+            </button>
             <span class="show-count" aria-live="polite"></span>
           </div>
           <div class="shots">
@@ -960,9 +905,8 @@
                 />
               </div>
               <figcaption>
-                <b>One profile per aircraft, picked for you.</b> Jump into a
-                jet and the converter loads its profile. Click a row when you
-                want to change what it does.
+                <b>One profile per aircraft, picked for you.</b> Jump into a jet and the converter
+                loads its profile. Click a row when you want to change what it does.
               </figcaption>
             </figure>
             <figure>
@@ -976,9 +920,8 @@
                 />
               </div>
               <figcaption>
-                <b>Find one in a keystroke.</b> Filter by name, module or
-                aircraft, so the list stays easy to use however many aircraft
-                you fly.
+                <b>Find one in a keystroke.</b> Filter by name, module or aircraft, so the list
+                stays easy to use however many aircraft you fly.
               </figcaption>
             </figure>
             <figure>
@@ -992,9 +935,8 @@
                 />
               </div>
               <figcaption>
-                <b>Set up once, reuse it.</b> Copy a profile to related
-                aircraft, export it to share, merge from a sibling, or put it
-                back the way it shipped.
+                <b>Set up once, reuse it.</b> Copy a profile to related aircraft, export it to
+                share, merge from a sibling, or put it back the way it shipped.
               </figcaption>
             </figure>
             <figure>
@@ -1008,9 +950,8 @@
                 />
               </div>
               <figcaption>
-                <b>Start from someone else's setup.</b> Import a shared profile
-                as one of your own, or merge it into yours. It is checked
-                first, and refused if it would not load.
+                <b>Start from someone else's setup.</b> Import a shared profile as one of your own,
+                or merge it into yours. It is checked first, and refused if it would not load.
               </figcaption>
             </figure>
             <figure>
@@ -1024,9 +965,8 @@
                 />
               </div>
               <figcaption>
-                <b>Take only the parts you want.</b> Tick the panels, lamps and
-                page slots to bring in. The rest of your profile stays exactly
-                as it was.
+                <b>Take only the parts you want.</b> Tick the panels, lamps and page slots to bring
+                in. The rest of your profile stays exactly as it was.
               </figcaption>
             </figure>
             <figure>
@@ -1040,10 +980,9 @@
                 />
               </div>
               <figcaption>
-                <b>See why every lamp does what it does.</b> Each lamp sits
-                beside the cockpit signal that drives it, with a note on the
-                reasoning. Untick <b>drive this panel</b> to leave a panel to
-                another program.
+                <b>See why every lamp does what it does.</b> Each lamp sits beside the cockpit
+                signal that drives it, with a note on the reasoning. Untick
+                <b>drive this panel</b> to leave a panel to another program.
               </figcaption>
             </figure>
             <figure>
@@ -1057,8 +996,8 @@
                 />
               </div>
               <figcaption>
-                <b>Type three letters and pick.</b> The test fills itself in to
-                suit the signal and the lamp, so most lamps take one step.
+                <b>Type three letters and pick.</b> The test fills itself in to suit the signal and
+                the lamp, so most lamps take one step.
               </figcaption>
             </figure>
             <figure>
@@ -1072,10 +1011,9 @@
                 />
               </div>
               <figcaption>
-                <b>Do not know what a switch is called?</b> Press
-                <b>Learn</b>, flip it in the cockpit, and what you just moved is
-                at the top of the list. It only listens, and never sends
-                anything to DCS or the panels, so it is safe mid-mission.
+                <b>Do not know what a switch is called?</b> Press <b>Learn</b>, flip it in the
+                cockpit, and what you just moved is at the top of the list. It only listens, and
+                never sends anything to DCS or the panels, so it is safe mid-mission.
               </figcaption>
             </figure>
             <figure>
@@ -1089,9 +1027,8 @@
                 />
               </div>
               <figcaption>
-                <b>Right for whichever seat you are in.</b> Conditions and
-                alternatives let one lamp follow the pilot's knob or the
-                gunner's, depending on where you sit.
+                <b>Right for whichever seat you are in.</b> Conditions and alternatives let one lamp
+                follow the pilot's knob or the gunner's, depending on where you sit.
               </figcaption>
             </figure>
             <figure>
@@ -1105,10 +1042,9 @@
                 />
               </div>
               <figcaption>
-                <b>Six pages per screen, a key press apart.</b> Each slot is
-                one of the panel's keys: the MCDU's line select keys, the UFC's
-                A/P to BCN, the ICP's COM 1 to A-G. Hold Ctrl and press the key
-                in flight to swap.
+                <b>Six pages per screen, a key press apart.</b> Each slot is one of the panel's
+                keys: the MCDU's line select keys, the UFC's A/P to BCN, the ICP's COM 1 to A-G.
+                Hold Ctrl and press the key in flight to swap.
               </figcaption>
             </figure>
             <figure>
@@ -1122,9 +1058,9 @@
                 />
               </div>
               <figcaption>
-                <b>A page reads like the screen it draws.</b> Each row names
-                its signals and previews what it will show. One page can sit on
-                several screens, and saving it updates every one.
+                <b>A page reads like the screen it draws.</b> Each row names its signals and
+                previews what it will show. One page can sit on several screens, and saving it
+                updates every one.
               </figcaption>
             </figure>
             <figure>
@@ -1138,10 +1074,9 @@
                 />
               </div>
               <figcaption>
-                <b>Every piece of a row is yours to set.</b> Convert a reading
-                to what the dial is marked in, give numbers words, swap
-                characters the glass cannot draw, and pick the colour, size and
-                width. The preview is drawn in the panel's own font.
+                <b>Every piece of a row is yours to set.</b> Convert a reading to what the dial is
+                marked in, give numbers words, swap characters the glass cannot draw, and pick the
+                colour, size and width. The preview is drawn in the panel's own font.
               </figcaption>
             </figure>
             <figure>
@@ -1157,9 +1092,8 @@
                 </div>
               </div>
               <figcaption>
-                <b>Know what will not work before you fly.</b> Signals your
-                DCS-BIOS does not have yet are named, and everything else still
-                runs.
+                <b>Know what will not work before you fly.</b> Signals your DCS-BIOS does not have
+                yet are named, and everything else still runs.
               </figcaption>
             </figure>
             <figure>
@@ -1173,9 +1107,8 @@
                 />
               </div>
               <figcaption>
-                <b>Light or dark, and your choice of key.</b> Follow Windows or
-                pick a theme, and choose whether Ctrl, Shift or Alt swaps
-                pages, to suit how DCS is bound on your PC.
+                <b>Light or dark, and your choice of key.</b> Follow Windows or pick a theme, and
+                choose whether Ctrl, Shift or Alt swaps pages, to suit how DCS is bound on your PC.
               </figcaption>
             </figure>
             <figure>
@@ -1189,17 +1122,16 @@
                 />
               </div>
               <figcaption>
-                <b>Recover without restarting DCS.</b> Restart the converter
-                after plugging in a panel or updating DCS-BIOS. Saving a
-                profile never needs it: a running converter picks it up within
-                about a second.
+                <b>Recover without restarting DCS.</b> Restart the converter after plugging in a
+                panel or updating DCS-BIOS. Saving a profile never needs it: a running converter
+                picks it up within about a second.
               </figcaption>
             </figure>
           </div>
         </div>
         <p class="foot-note" style="font-size: 1rem">
-          Every test, reading and page the editor offers is explained, with
-          examples to try, in <a href="language.html">the profile language</a>.
+          Every test, reading and page the editor offers is explained, with examples to try, in
+          <a href="language.html">the profile language</a>.
         </p>
       </div>
     </section>
@@ -1212,9 +1144,9 @@
         </div>
         <div class="prose" style="margin-bottom: 26px">
           <p>
-            An aircraft with no CDU of its own leaves the MCDU free. Pick the
-            readings, type the labels, set each one's colour, size and width,
-            and it draws live from DCS. No code, no files to edit by hand.
+            An aircraft with no CDU of its own leaves the MCDU free. Pick the readings, type the
+            labels, set each one's colour, size and width, and it draws live from DCS. No code, no
+            files to edit by hand.
           </p>
         </div>
         <div class="shots">
@@ -1231,11 +1163,10 @@
               ></iframe>
             </div>
             <figcaption>
-              <b>The Hornet's IFEI, rebuilt on an MCDU in the editor.</b> Each
-              engine's RPM, temperature, fuel flow, nozzle and oil either side
-              of the labels, with fuel, bingo and the clock beside them. The
-              nozzle needles are converted to 0 to 100, the way the real gauges
-              are marked. It now ships as the Hornet's MCDU page.
+              <b>The Hornet's IFEI, rebuilt on an MCDU in the editor.</b> Each engine's RPM,
+              temperature, fuel flow, nozzle and oil either side of the labels, with fuel, bingo and
+              the clock beside them. The nozzle needles are converted to 0 to 100, the way the real
+              gauges are marked. It now ships as the Hornet's MCDU page.
             </figcaption>
           </figure>
           <figure>
@@ -1249,9 +1180,8 @@
               />
             </div>
             <figcaption>
-              <b>The same page on the glass</b>, photographed mid-flight: amber
-              readings, white labels and green keys, each in the colour its
-              piece was given.
+              <b>The same page on the glass</b>, photographed mid-flight: amber readings, white
+              labels and green keys, each in the colour its piece was given.
             </figcaption>
           </figure>
         </div>
@@ -1264,62 +1194,56 @@
           <div class="feat">
             <h3>Starts with DCS</h3>
             <p>
-              A hook launches it with each mission. Nothing to start by hand,
-              and SimAppPro can stay closed.
+              A hook launches it with each mission. Nothing to start by hand, and SimAppPro can stay
+              closed.
             </p>
           </div>
           <div class="feat">
             <h3>Follows you mid-session</h3>
             <p>
-              Join mid-mission or switch slots and the panels catch up within a
-              couple of seconds. Nothing to restart.
+              Join mid-mission or switch slots and the panels catch up within a couple of seconds.
+              Nothing to restart.
             </p>
           </div>
           <div class="feat">
             <h3>Swap pages</h3>
             <p>
-              Give the MCDU, the UFC and the ICP's DED up to six pages each.
-              Hold Ctrl and press one of the panel's page keys to put that page
-              on the screen, mid-flight.
+              Give the MCDU, the UFC and the ICP's DED up to six pages each. Hold Ctrl and press one
+              of the panel's page keys to put that page on the screen, mid-flight.
             </p>
           </div>
           <div class="feat">
             <h3>Edit in flight</h3>
             <p>
-              Save in the editor and the running converter picks it up within
-              about a second. Watch the lamp change without leaving the cockpit.
+              Save in the editor and the running converter picks it up within about a second. Watch
+              the lamp change without leaving the cockpit.
             </p>
           </div>
           <div class="feat">
             <h3>Share it with a friend</h3>
             <p>
-              <b>Export</b> a profile to a file, send it over, and they
-              <b>import</b> it, its pages with it. It is checked before it
-              lands, and refused if it would not load on their machine. Or merge
-              in only the lamps, page slots and pages you want.
+              <b>Export</b> a profile to a file, send it over, and they <b>import</b> it, its pages
+              with it. It is checked before it lands, and refused if it would not load on their
+              machine. Or merge in only the lamps, page slots and pages you want.
             </p>
           </div>
           <div class="feat">
             <h3>Clean exit</h3>
             <p>
-              Quit DCS and the panels go dark. If DCS crashes, the converter
-              notices the silence, clears the panels and exits on its own.
+              Quit DCS and the panels go dark. If DCS crashes, the converter notices the silence,
+              clears the panels and exits on its own.
             </p>
           </div>
           <div class="feat">
             <h3>Touches nothing else</h3>
-            <p>
-              Runs unelevated. No DCS, DCS-BIOS, SimAppPro or WinWing file is
-              modified.
-            </p>
+            <p>Runs unelevated. No DCS, DCS-BIOS or vendor software file is modified.</p>
           </div>
           <div class="feat">
             <h3>Your changes are kept</h3>
             <p>
-              Updates add new profiles, panels and pages but never rewrite a
-              lamp you have changed. A page or slot still exactly as it shipped
-              is corrected for you; one you have touched is yours and is left
-              alone. Release notes say which shipped rows moved.
+              Updates add new profiles, panels and pages but never rewrite a lamp you have changed.
+              A page or slot still exactly as it shipped is corrected for you; one you have touched
+              is yours and is left alone. Release notes say which shipped rows moved.
             </p>
           </div>
         </div>
@@ -1336,28 +1260,23 @@
           <div class="req">
             <div class="lbl">DCS-BIOS</div>
             <div class="txt">
-              <strong>Required.</strong> It is where every signal comes from.
-              Stable or nightly both work; the few lamps and fields that need a
-              newer DCS-BIOS are named in the editor, and come back on their own
-              when you update it.
+              <strong>Required.</strong> It is where every signal comes from. Stable or nightly both
+              work; the few lamps and fields that need a newer DCS-BIOS are named in the editor, and
+              come back on their own when you update it.
             </div>
           </div>
           <div class="req">
-            <div class="lbl">WinWing panels</div>
-            <div class="txt">
-              Any of the panels above. The same hardware sold as WinCtrl is the
-              same device and works the same.
-            </div>
+            <div class="lbl">Supported panels</div>
+            <div class="txt">Any of the panels above.</div>
           </div>
           <div class="req">
             <div class="lbl">Not SimAppPro</div>
             <div class="txt">
-              It does not need to be running, and can stay closed. If you do run
-              it, turn off <strong>Sync with DCS</strong> for each panel so the
-              two do not fight over the backlights. In the Hornet and the Viper
-              it also draws the UFC and the DED itself; to leave those to
-              SimAppPro, untick <strong>drive this panel</strong> for that panel
-              in the profile, or set its page slots to Disabled.
+              WinWing's SimAppPro does not need to be running, and can stay closed. If you do run
+              it, turn off <strong>Sync with DCS</strong> for each panel so the two do not fight
+              over the backlights. In the Hornet and the Viper it also draws the UFC and the DED
+              itself; to leave those to SimAppPro, untick <strong>drive this panel</strong> for that
+              panel in the profile, or set its page slots to Disabled.
             </div>
           </div>
         </div>
@@ -1369,24 +1288,20 @@
         <div class="beta">
           <span class="h">Read this bit: it is a beta</span>
           <p>
-            It is flown daily on the author's panels, but WinWing do not publish
-            how their panels talk to the PC, so the USB protocol was
-            reverse-engineered, and the installer is new. Treat it as community
-            software rather than a vendor feature.
+            It is flown daily on the author's panels, but panel makers do not publish their USB
+            protocols, so each one here was reverse-engineered, and the installer is new. Treat it
+            as community software rather than a vendor feature.
           </p>
           <p>
-            An independent project. It is not made, endorsed or supported by
-            WinCtrl or WinWing; their names appear here only to say which
-            hardware it drives. Bug reports very welcome.
+            An independent project. It is not made, endorsed or supported by WinWing or any other
+            panel maker; their names appear here only to say which hardware it drives. Bug reports
+            very welcome.
           </p>
         </div>
         <div class="cta-row" style="margin-top: 30px">
           <span class="btn-note"
             >Full setup and troubleshooting are in the
-            <a
-              href="https://github.com/cbass2404/wctrl-module-signal-converter#readme"
-              >README</a
-            >.</span
+            <a href="https://github.com/cbass2404/dcs-signal-converter#readme">README</a>.</span
           >
         </div>
       </div>
@@ -1397,12 +1312,10 @@
         <div class="support">
           <div class="support-txt">
             <span class="eyebrow">Free &amp; open source</span>
-            <h3>
-              <span class="hrt" aria-hidden="true">❤️</span>Support the project
-            </h3>
+            <h3><span class="hrt" aria-hidden="true">❤️</span>Support the project</h3>
             <p>
-              No ads, no trackers, no paid tier. If it got your panels following
-              the cockpit and you back to flying, you can put something in the
+              No ads, no trackers, no paid tier. If it got your panels following the cockpit and you
+              back to flying, you can put something in the
               <a
                 href="https://www.buymeacoffee.com/cbass2404"
                 target="_blank"
@@ -1429,10 +1342,12 @@
             <span style="color: var(--ink-3)">&nbsp;&middot;&nbsp;</span>
             <a href="language.html">profile language</a>
             <span style="color: var(--ink-3)">&nbsp;&middot;&nbsp;</span>
-            <a href="https://discord.gg/W9tsVe3g3P" target="_blank" rel="noopener noreferrer">discord</a>
+            <a href="https://discord.gg/W9tsVe3g3P" target="_blank" rel="noopener noreferrer"
+              >discord</a
+            >
             <span style="color: var(--ink-3)">&nbsp;&middot;&nbsp;</span>
-            <a href="https://github.com/cbass2404/wctrl-module-signal-converter"
-              >github.com/cbass2404/wctrl-module-signal-converter</a
+            <a href="https://github.com/cbass2404/dcs-signal-converter"
+              >github.com/cbass2404/dcs-signal-converter</a
             >
           </span>
         </div>
@@ -1461,7 +1376,10 @@
         const marks = figs.map((f, i) => {
           const m = document.createElement("button");
           m.type = "button";
-          m.setAttribute("aria-label", f.querySelector("figcaption b")?.textContent ?? `Screenshot ${i + 1}`);
+          m.setAttribute(
+            "aria-label",
+            f.querySelector("figcaption b")?.textContent ?? `Screenshot ${i + 1}`,
+          );
           m.addEventListener("click", () => show(i));
           dots.append(m);
           return m;

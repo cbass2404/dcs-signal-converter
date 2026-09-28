@@ -43,7 +43,9 @@ fn r(p: &str) -> std::path::PathBuf {
 }
 
 fn fixture(name: &str) -> std::path::PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures").join(name)
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures")
+        .join(name)
 }
 
 fn profile() -> Profile {
@@ -138,7 +140,12 @@ fn the_band_fixture_is_valid() {
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).unwrap();
     let module = e.catalogue().module(&p.module).expect("the module");
     let refusals: Vec<String> = resolved(&p)
-        .problems(module, &devices, &displays, &dsc_config::PageLibrary::default())
+        .problems(
+            module,
+            &devices,
+            &displays,
+            &dsc_config::PageLibrary::default(),
+        )
         .iter()
         .map(|e| e.to_string())
         .collect();
@@ -172,7 +179,11 @@ fn a_band_naming_one_reading_can_draw_nothing() {
     let batch = trim(&mut e, 0.0, 0.0, 0.0);
     let w = screen(&batch);
     let drawn = row(w, 2);
-    assert_eq!(&drawn[4..7], "   ", "the pitch direction is blank: {drawn:?}");
+    assert_eq!(
+        &drawn[4..7],
+        "   ",
+        "the pitch direction is blank: {drawn:?}"
+    );
     assert_eq!(&drawn[12..16], "    ", "and so is the roll: {drawn:?}");
     // The magnitude beside it is still a number, and still unsigned.
     assert_eq!(&drawn[0..4], " 0.0", "{drawn:?}");
@@ -213,5 +224,9 @@ fn a_bands_colour_is_its_own_and_beats_the_pieces() {
     let batch = trim(&mut e, -1.5, -3.0, -1.5);
     let w = screen(&batch);
     let down = cells(w, 2);
-    assert_ne!(down[4].fg, Colour::Green.ordinal(), "ND is not the NU colour");
+    assert_ne!(
+        down[4].fg,
+        Colour::Green.ordinal(),
+        "ND is not the NU colour"
+    );
 }

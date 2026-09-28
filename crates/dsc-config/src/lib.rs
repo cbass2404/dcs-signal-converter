@@ -49,9 +49,9 @@ pub fn build_label() -> &'static str {
 
 pub use display::{
     divider_rule, divider_text, min_divider_cells, text_cells, AliasDraw, Align, Cell, CellRange,
-    Colour, Conversion, ColourSource, Display, DisplayCatalogue, Glass, Glyph, Grid, Readout, Reading, Region, Round,
-    RuleCell, Screen, ShapeArt, Span, StrokeArt, TextCell, TextGrid, Transport, ValueBand,
-    SEAT_SIGNAL,
+    Colour, ColourSource, Conversion, Display, DisplayCatalogue, Glass, Glyph, Grid, Reading,
+    Readout, Region, Round, RuleCell, Screen, ShapeArt, Span, StrokeArt, TextCell, TextGrid,
+    Transport, ValueBand, SEAT_SIGNAL,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -62,7 +62,9 @@ pub enum Error {
     Json(serde_json::Error, String),
     #[error("no catalogue entry for aircraft {0:?}")]
     UnknownAircraft(String),
-    #[error("LED {0:?} has a condition with no signal chosen yet; pick one or delete the condition")]
+    #[error(
+        "LED {0:?} has a condition with no signal chosen yet; pick one or delete the condition"
+    )]
     UnfinishedCondition(String),
     #[error("the field on {1} of display {0:?} has a piece with nothing in it; give it characters or a signal, or take the piece out")]
     UnfinishedField(String, String),
@@ -74,7 +76,9 @@ pub enum Error {
     NoDefault(String),
     #[error("{0:?} is not a profile file name")]
     NotAProfileFile(String),
-    #[error("LED {0:?} is set to always on but also carries conditions; it can have one or the other")]
+    #[error(
+        "LED {0:?} is set to always on but also carries conditions; it can have one or the other"
+    )]
     AlwaysWithConditions(String),
     #[error("LED {0:?} carries both conditions and any_of; put every alternative in any_of")]
     ConditionsWithAnyOf(String),
@@ -98,7 +102,9 @@ pub enum Error {
     NoNativeFont(String, String),
     #[error("{0:?} is not a character the font {1} draws, but cells {2} are told to put it there")]
     NotInFont(char, String, String),
-    #[error("{0:?} is not something {1:?} can draw on cells {2}, so they would stay dark where it goes")]
+    #[error(
+        "{0:?} is not something {1:?} can draw on cells {2}, so they would stay dark where it goes"
+    )]
     NotInGlyphs(String, String, String),
     #[error("a replacement swaps one character for one character; {0:?} to {1:?} is not that")]
     ReplaceNotOneChar(String, String),
@@ -126,7 +132,9 @@ pub enum Error {
     RuleLabelTooWide(String, String, usize, usize, String),
     #[error("a label {2:?} on {1} of display {0:?} is written on a piece that is not a rule; only a rule sets a label into itself")]
     LabelNotOnRule(String, String, String),
-    #[error("a fixed width of {2} on {1} of display {0:?} is wider than the {3} cells the field has")]
+    #[error(
+        "a fixed width of {2} on {1} of display {0:?} is wider than the {3} cells the field has"
+    )]
     SpanWiderThanField(String, String, usize, usize),
 
     #[error("display {0:?} has no cell {1}")]
@@ -149,7 +157,9 @@ pub enum Error {
     AliasBandsOverlap(String, String, String),
     #[error("alias {0} on {1:?} is outside everything the face reads, {2} to {3}, so nothing would ever draw it")]
     AliasBandUnreachable(String, String, String, String),
-    #[error("{0:?} is converted two ways, by a range and by a list of conversions; it can have one")]
+    #[error(
+        "{0:?} is converted two ways, by a range and by a list of conversions; it can have one"
+    )]
     ReadsAndConversions(String),
     #[error("the conversion of counts {1} to {2} on {0:?} ends before it starts")]
     ConversionBackwards(String, u16, u16),
@@ -165,7 +175,9 @@ pub enum Error {
     FollowsUnknownDevice(String, String, String),
     #[error("{0:?} is set to follow itself")]
     FollowsItself(String),
-    #[error("{0:?} follows {1:?}, which follows another device in turn; point it at that one instead")]
+    #[error(
+        "{0:?} follows {1:?}, which follows another device in turn; point it at that one instead"
+    )]
     FollowChain(String, String),
     #[error("{0:?} cannot follow {1:?}: they are different hardware, so the lamps and screens would not line up")]
     FollowsDifferentHardware(String, String),
@@ -183,7 +195,9 @@ pub enum Error {
     CatalogueBusy(PathBuf),
     #[error("this profile was made before MCDU pages (schema version {0}) and this version reads only version 2; reset your app data, or make the profile again")]
     MadeBeforePages(u32),
-    #[error("this profile is schema version {0}, made by a newer DCS Signal Converter than this one")]
+    #[error(
+        "this profile is schema version {0}, made by a newer DCS Signal Converter than this one"
+    )]
     NewerSchema(u32),
     #[error("cells {1} of display {0:?} are a field of the profile's own, but a screen takes every field from a page; put it on a page instead")]
     LooseScreenField(String, String),
@@ -201,7 +215,9 @@ pub enum Error {
     StartNotFilled(String, usize),
     #[error("{0:?} has pages in its slots but does not say which one to start on")]
     NoStartSlot(String),
-    #[error("slot {1} of {0:?} sets a key, which is kept for swapping pages and must be null for now")]
+    #[error(
+        "slot {1} of {0:?} sets a key, which is kept for swapping pages and must be null for now"
+    )]
     SlotKeySet(String, usize),
     #[error("slot {1} of {0:?} shows the page {2:?}, which is for {3}; a page reads signals by id, so it works only on its own module")]
     PageOnOtherModule(String, usize, String, String),
@@ -632,14 +648,19 @@ impl DeviceSpec {
     /// Every LED a profile can bind, with its owning part, including the lamps
     /// that light a display.
     pub fn leds(&self) -> impl Iterator<Item = (&Part, &Led)> {
-        self.parts.iter().flat_map(|p| p.leds.iter().map(move |l| (p, l)))
+        self.parts
+            .iter()
+            .flat_map(|p| p.leds.iter().map(move |l| (p, l)))
     }
 
     /// The lamps that light a display, with their owning part.
     pub fn display_lamps(&self) -> impl Iterator<Item = (&Part, &Led)> {
-        self.parts
-            .iter()
-            .flat_map(|p| p.leds.iter().filter(|l| l.lights_display).map(move |l| (p, l)))
+        self.parts.iter().flat_map(|p| {
+            p.leds
+                .iter()
+                .filter(|l| l.lights_display)
+                .map(move |l| (p, l))
+        })
     }
 
     /// A button by name.
@@ -692,11 +713,19 @@ impl DeviceSpec {
                 .parts
                 .iter()
                 .map(|p| {
-                    let leds: Vec<_> = p.leds.iter().map(|l| (l.index, l.name.clone(), l.max)).collect();
+                    let leds: Vec<_> = p
+                        .leds
+                        .iter()
+                        .map(|l| (l.index, l.name.clone(), l.max))
+                        .collect();
                     (p.display.clone(), leds)
                 })
                 .collect::<Vec<_>>();
-            let keys: Vec<_> = d.buttons.iter().map(|b| (b.number, b.name.clone())).collect();
+            let keys: Vec<_> = d
+                .buttons
+                .iter()
+                .map(|b| (b.number, b.name.clone()))
+                .collect();
             (parts, keys)
         };
         shape(self) == shape(other)
@@ -727,7 +756,10 @@ impl DeviceInventory {
                     return Err(Error::ButtonTwice(d.key.clone(), b.name.clone()));
                 }
                 if !numbers.insert(b.number) {
-                    return Err(Error::ButtonTwice(d.key.clone(), format!("number {}", b.number)));
+                    return Err(Error::ButtonTwice(
+                        d.key.clone(),
+                        format!("number {}", b.number),
+                    ));
                 }
             }
             let mut keys = BTreeSet::new();
@@ -960,7 +992,11 @@ pub enum Place {
     Condition { binding: usize, index: usize },
     /// `bindings[binding].any_of[branch].conditions[index]`: that alternative
     /// is dropped, and the others still work.
-    Branch { binding: usize, branch: usize, index: usize },
+    Branch {
+        binding: usize,
+        branch: usize,
+        index: usize,
+    },
     /// `readouts[readout]`, through its text, format or colours: the field is
     /// left blank.
     Field { readout: usize },
@@ -1045,7 +1081,11 @@ impl Readout {
     pub fn width(&self, module: &Module) -> Width {
         let cells = self.cells.len();
         if self.divider {
-            return Width { widest: cells, cells, unbounded: false };
+            return Width {
+                widest: cells,
+                cells,
+                unbounded: false,
+            };
         }
         // A run of one cell takes its whole value as a single glyph, however
         // many characters that is. That is not a shortcut: a two character
@@ -1056,7 +1096,11 @@ impl Readout {
         // nothing here to measure. Counted by character instead, every one of
         // these read as a field about to lose its last character.
         if cells == 1 {
-            return Width { widest: 1, cells, unbounded: false };
+            return Width {
+                widest: 1,
+                cells,
+                unbounded: false,
+            };
         }
         let mut widest = 0;
         let mut unbounded = false;
@@ -1077,7 +1121,11 @@ impl Readout {
                 None => unbounded = true,
             }
         }
-        Width { widest, cells, unbounded }
+        Width {
+            widest,
+            cells,
+            unbounded,
+        }
     }
 }
 
@@ -1246,7 +1294,11 @@ impl Binding {
                 let value = all_of(&branch.conditions, on, led_max, &mut read)?;
                 best = best.max(value);
                 if self.pick == Pick::Latest {
-                    let at = branch.conditions.iter().filter_map(|c| moved(&c.source)).max();
+                    let at = branch
+                        .conditions
+                        .iter()
+                        .filter_map(|c| moved(&c.source))
+                        .max();
                     if let Some(at) = at {
                         if latest.is_none_or(|(t, _)| at > t) {
                             latest = Some((at, value));
@@ -1387,16 +1439,26 @@ impl Profile {
             if self.follows.contains_key(source) {
                 continue;
             }
-            p.bindings.extend(self.bindings.iter().filter(|b| &b.device == source).map(|b| {
-                let mut b = b.clone();
-                b.device = follower.clone();
-                b
-            }));
-            p.readouts.extend(self.readouts.iter().filter(|r| &r.device == source).map(|r| {
-                let mut r = r.clone();
-                r.device = follower.clone();
-                r
-            }));
+            p.bindings.extend(
+                self.bindings
+                    .iter()
+                    .filter(|b| &b.device == source)
+                    .map(|b| {
+                        let mut b = b.clone();
+                        b.device = follower.clone();
+                        b
+                    }),
+            );
+            p.readouts.extend(
+                self.readouts
+                    .iter()
+                    .filter(|r| &r.device == source)
+                    .map(|r| {
+                        let mut r = r.clone();
+                        r.device = follower.clone();
+                        r
+                    }),
+            );
             // The leader's slots, under the follower's name. Which one shows
             // is the follower's own from here: its keys swap only its screen.
             if let Some(run) = self.page_runs.get(source) {
@@ -1499,7 +1561,9 @@ impl Profile {
     /// The binding a mirroring lamp points at, if any.
     fn mirrored<'a>(&'a self, b: &'a Binding) -> Option<&'a Binding> {
         let (device, led) = self.mirror_target(b)?;
-        self.bindings.iter().find(|o| o.device == device && o.led == led)
+        self.bindings
+            .iter()
+            .find(|o| o.device == device && o.led == led)
     }
 
     /// Every signal a binding depends on, following a mirror to its target.
@@ -1581,7 +1645,11 @@ impl Profile {
         displays: &DisplayCatalogue,
         pages: &PageLibrary,
     ) -> Result<()> {
-        match self.problems(module, devices, displays, pages).into_iter().next() {
+        match self
+            .problems(module, devices, displays, pages)
+            .into_iter()
+            .next()
+        {
             Some(e) => Err(e),
             None => Ok(()),
         }
@@ -1621,12 +1689,14 @@ impl Profile {
         // `with_pages` is not refused for its own start page.
         for r in &self.readouts {
             if r.page.is_none() && Profile::takes_pages(displays, &r.display) {
-                out.push(Error::LooseScreenField(r.display.clone(), r.cells.to_string()));
+                out.push(Error::LooseScreenField(
+                    r.display.clone(),
+                    r.cells.to_string(),
+                ));
             }
         }
         for b in &self.bindings {
-            if b.same_as.is_some()
-                && !(b.conditions.is_empty() && b.any_of.is_empty() && !b.always)
+            if b.same_as.is_some() && !(b.conditions.is_empty() && b.any_of.is_empty() && !b.always)
             {
                 out.push(Error::MirrorWithConditions(b.led.clone()));
             }
@@ -1730,14 +1800,16 @@ impl Profile {
         let mut starts = Vec::new();
         self.readout_problems(module, devices, displays, &mut all, &mut starts);
         let owner = |at: usize| -> Option<usize> {
-            starts.iter().rev().find(|(_, from)| *from <= at).map(|(i, _)| *i)
+            starts
+                .iter()
+                .rev()
+                .find(|(_, from)| *from <= at)
+                .map(|(i, _)| *i)
         };
         all.into_iter()
             .enumerate()
             .filter(|(_, e)| e.is_advisory())
-            .filter_map(|(at, e)| {
-                owner(at).map(|i| (i, format!("{e}. {}", e.advisory_note())))
-            })
+            .filter_map(|(at, e)| owner(at).map(|i| (i, format!("{e}. {}", e.advisory_note()))))
             .collect()
     }
 
@@ -1761,13 +1833,24 @@ impl Profile {
             };
             for (ci, c) in b.conditions.iter().enumerate() {
                 if let Some(why) = unsound(module, c) {
-                    out.push(flag(Place::Condition { binding: bi, index: ci }, c, why));
+                    out.push(flag(
+                        Place::Condition {
+                            binding: bi,
+                            index: ci,
+                        },
+                        c,
+                        why,
+                    ));
                 }
             }
             for (ri, branch) in b.any_of.iter().enumerate() {
                 for (ci, c) in branch.conditions.iter().enumerate() {
                     if let Some(why) = unsound(module, c) {
-                        let place = Place::Branch { binding: bi, branch: ri, index: ci };
+                        let place = Place::Branch {
+                            binding: bi,
+                            branch: ri,
+                            index: ci,
+                        };
                         out.push(flag(place, c, why));
                     }
                 }
@@ -1800,7 +1883,8 @@ impl Profile {
     /// Only this copy changes. The file keeps every row, so they work again
     /// once the source is fixed, the same rule the merge follows.
     pub fn runnable(&self, module: &Module) -> Profile {
-        let bad = |conditions: &[Condition]| conditions.iter().any(|c| unsound(module, c).is_some());
+        let bad =
+            |conditions: &[Condition]| conditions.iter().any(|c| unsound(module, c).is_some());
         let mut p = self.clone();
         for b in &mut p.bindings {
             if bad(&b.conditions) {
@@ -1814,7 +1898,8 @@ impl Profile {
                 }
             }
         }
-        p.readouts.retain(|r| missing_in_field(module, r).is_empty());
+        p.readouts
+            .retain(|r| missing_in_field(module, r).is_empty());
         for run in p.page_runs.values_mut() {
             for slot in &mut run.slots {
                 if let SlotRun::Page { fields, .. } = slot {
@@ -1841,7 +1926,11 @@ impl Profile {
             }
         }
         for (device, source) in &self.follows {
-            let lamps = self.bindings.iter().filter(|b| &b.device == device && !b.is_placeholder()).count();
+            let lamps = self
+                .bindings
+                .iter()
+                .filter(|b| &b.device == device && !b.is_placeholder())
+                .count();
             let fields = self.readouts.iter().filter(|r| &r.device == device).count();
             if lamps + fields > 0 {
                 out.push(format!(
@@ -1872,7 +1961,11 @@ impl Profile {
                 continue;
             }
             if self.resolve_binding(b, led, |_| Some(0)) == Some(0) {
-                let name = if led.label.is_empty() { &led.name } else { &led.label };
+                let name = if led.label.is_empty() {
+                    &led.name
+                } else {
+                    &led.label
+                };
                 out.push(format!(
                     "{name} goes to 0 with the cockpit lighting off, which in daylight hides the {} lamps it governs. Set its value at zero, usually {}, to keep them readable.",
                     led.governs.len(),
@@ -1988,7 +2081,11 @@ impl Profile {
                 continue;
             }
             let (Some(a), Some(b)) = (devices.device(follower), devices.device(source)) else {
-                let unknown = if devices.device(follower).is_none() { follower } else { source };
+                let unknown = if devices.device(follower).is_none() {
+                    follower
+                } else {
+                    source
+                };
                 out.push(Error::FollowsUnknownDevice(
                     follower.clone(),
                     source.clone(),
@@ -2000,17 +2097,26 @@ impl Profile {
                 out.push(Error::FollowChain(follower.clone(), source.clone()));
             }
             if !a.same_hardware(b) {
-                out.push(Error::FollowsDifferentHardware(follower.clone(), source.clone()));
+                out.push(Error::FollowsDifferentHardware(
+                    follower.clone(),
+                    source.clone(),
+                ));
             }
         }
         for (i, r) in self.readouts.iter().enumerate() {
             starts.push((i, out.len()));
             let Some(device) = devices.device(&r.device) else {
-                out.push(Error::NoDisplayOnDevice(r.device.clone(), r.display.clone()));
+                out.push(Error::NoDisplayOnDevice(
+                    r.device.clone(),
+                    r.display.clone(),
+                ));
                 continue;
             };
             if device.part_with_display(&r.display).is_none() {
-                out.push(Error::NoDisplayOnDevice(r.device.clone(), r.display.clone()));
+                out.push(Error::NoDisplayOnDevice(
+                    r.device.clone(),
+                    r.display.clone(),
+                ));
                 continue;
             }
             let Some(display) = displays.get(&r.display) else {
@@ -2114,7 +2220,10 @@ impl Profile {
             // plainly and in those terms. A chain with an empty span in the
             // middle is the same thing: a piece somebody started and left.
             if r.content.is_empty() || r.content.iter().any(Span::is_empty) {
-                out.push(Error::UnfinishedField(r.display.clone(), r.cells.to_string()));
+                out.push(Error::UnfinishedField(
+                    r.display.clone(),
+                    r.cells.to_string(),
+                ));
                 continue;
             }
 
@@ -2137,10 +2246,7 @@ impl Profile {
                 // own content there is nowhere to put it.
                 if span.rule {
                     if !span.gap {
-                        out.push(Error::RuleNotOnGap(
-                            r.display.clone(),
-                            r.cells.to_string(),
-                        ));
+                        out.push(Error::RuleNotOnGap(r.display.clone(), r.cells.to_string()));
                     }
                     if !display.is_text_grid() {
                         out.push(Error::DividerNotDrawn(
@@ -2195,10 +2301,7 @@ impl Profile {
                 // signal on a divider is.
                 if span.gap {
                     if !span.text.is_empty() || span.is_signal() {
-                        out.push(Error::GapHasContent(
-                            r.display.clone(),
-                            r.cells.to_string(),
-                        ));
+                        out.push(Error::GapHasContent(r.display.clone(), r.cells.to_string()));
                     }
                     continue;
                 }
@@ -2254,7 +2357,10 @@ impl Profile {
 
                 if let Some(format) = &span.format {
                     if !display.draws_inverse() {
-                        out.push(Error::FormatNotDrawn(r.display.clone(), r.cells.to_string()));
+                        out.push(Error::FormatNotDrawn(
+                            r.display.clone(),
+                            r.cells.to_string(),
+                        ));
                     }
                     if let Some(o) = module.signal(format).and_then(|s| s.primary()) {
                         if o.r#type != "string" {
@@ -2304,7 +2410,10 @@ impl Profile {
                 .iter()
                 .any(|s| s.inverse || s.value_aliases.values().any(|a| a.inverse));
             if !display.draws_inverse() && asks_inverse {
-                out.push(Error::FormatNotDrawn(r.display.clone(), r.cells.to_string()));
+                out.push(Error::FormatNotDrawn(
+                    r.display.clone(),
+                    r.cells.to_string(),
+                ));
             }
 
             self.text_problems(r, display, out);
@@ -2376,14 +2485,25 @@ impl Profile {
                 // Each size has its own alphabet, and small is the smaller one
                 // in every font here, so a span marked small can lose a
                 // character that was fine at full size.
-                let set = if span.small { &chars.small } else { &chars.large };
+                let set = if span.small {
+                    &chars.small
+                } else {
+                    &chars.large
+                };
                 // A gap is drawn as blank cells like any other character, so a
                 // font without a space would leave a hole rather than a gap. A
                 // rule draws dashes instead, and its label is drawn from the
                 // same alphabet as the rule, with a blank each side of it.
                 if span.gap {
                     let (fill, spaced) = if span.rule {
-                        ('-', if span.label.is_empty() { None } else { Some(' ') })
+                        (
+                            '-',
+                            if span.label.is_empty() {
+                                None
+                            } else {
+                                Some(' ')
+                            },
+                        )
                     } else {
                         (' ', None)
                     };
@@ -2489,7 +2609,11 @@ fn conversion_problems(span: &Span, max: u16, out: &mut Vec<Error>) {
     let mut backwards = false;
     for c in &span.conversions {
         if c.raw[1] < c.raw[0] {
-            out.push(Error::ConversionBackwards(source.clone(), c.raw[0], c.raw[1]));
+            out.push(Error::ConversionBackwards(
+                source.clone(),
+                c.raw[0],
+                c.raw[1],
+            ));
             backwards = true;
         } else if c.raw[1] > max {
             out.push(Error::ConversionPastMax(source.clone(), named(c), max));
@@ -2502,7 +2626,11 @@ fn conversion_problems(span: &Span, max: u16, out: &mut Vec<Error>) {
     for (i, a) in span.conversions.iter().enumerate() {
         for b in &span.conversions[i + 1..] {
             if a.raw[0] <= b.raw[1] && b.raw[0] <= a.raw[1] {
-                out.push(Error::ConversionsOverlap(source.clone(), named(a), named(b)));
+                out.push(Error::ConversionsOverlap(
+                    source.clone(),
+                    named(a),
+                    named(b),
+                ));
             }
         }
     }
@@ -2576,7 +2704,10 @@ fn sort_bindings(bindings: &mut [Binding], devices: &DeviceInventory) -> bool {
         let (part, index) = device
             .and_then(|d| {
                 d.parts.iter().enumerate().find_map(|(n, p)| {
-                    p.leds.iter().find(|l| l.name == b.led).map(|l| (n, l.index))
+                    p.leds
+                        .iter()
+                        .find(|l| l.name == b.led)
+                        .map(|l| (n, l.index))
                 })
             })
             .unwrap_or((usize::MAX, u8::MAX));
@@ -2703,7 +2834,11 @@ fn reconcile_fields(profile: &mut Profile, shipped: &[Readout], was: &[Readout])
 }
 
 /// [`reconcile_fields`] on any list of fields: a profile's own, or a page's.
-pub(crate) fn reconcile_field_list(fields: &mut Vec<Readout>, shipped: &[Readout], was: &[Readout]) -> FieldWork {
+pub(crate) fn reconcile_field_list(
+    fields: &mut Vec<Readout>,
+    shipped: &[Readout],
+    was: &[Readout],
+) -> FieldWork {
     let mut work = FieldWork::default();
 
     let mut kept: Vec<Readout> = Vec::with_capacity(fields.len());
@@ -2750,9 +2885,9 @@ pub(crate) fn reconcile_field_list(fields: &mut Vec<Readout>, shipped: &[Readout
         // Otherwise it is new, and lands only where it cannot collide: the
         // user may have claimed those cells, and a suggestion does not
         // outrank that.
-        let clash = fields.iter().any(|o| {
-            o.device == r.device && o.display == r.display && o.cells.overlaps(&r.cells)
-        });
+        let clash = fields
+            .iter()
+            .any(|o| o.device == r.device && o.display == r.display && o.cells.overlaps(&r.cells));
         if clash {
             continue;
         }
@@ -2837,7 +2972,10 @@ fn reconcile_settings(profile: &mut Profile, shipped: &Profile, was: &Profile) -
         }
     }
     for device in devices {
-        let (before, after) = (has(&was.disabled_devices, device), has(&shipped.disabled_devices, device));
+        let (before, after) = (
+            has(&was.disabled_devices, device),
+            has(&shipped.disabled_devices, device),
+        );
         if has(&profile.disabled_devices, device) != before || after == before {
             continue;
         }
@@ -2865,7 +3003,12 @@ fn reconcile_settings(profile: &mut Profile, shipped: &Profile, was: &Profile) -
 /// the device's page keys, so the device map is not needed here.
 fn reconcile_slots(profile: &mut Profile, shipped: &Profile, was: &Profile) -> usize {
     let mut changed = 0;
-    let devices: BTreeSet<String> = was.screens.keys().chain(shipped.screens.keys()).cloned().collect();
+    let devices: BTreeSet<String> = was
+        .screens
+        .keys()
+        .chain(shipped.screens.keys())
+        .cloned()
+        .collect();
     for device in devices {
         let empty = PageSlots::default();
         let before = was.screens.get(&device).unwrap_or(&empty);
@@ -2881,7 +3024,10 @@ fn reconcile_slots(profile: &mut Profile, shipped: &Profile, was: &Profile) -> u
         let n = before.slots.len().max(after.slots.len());
         mine.slots.resize(n.max(mine.slots.len()), None);
         for i in 0..n {
-            let (b, a) = (before.slots.get(i).cloned().flatten(), after.slots.get(i).cloned().flatten());
+            let (b, a) = (
+                before.slots.get(i).cloned().flatten(),
+                after.slots.get(i).cloned().flatten(),
+            );
             if mine.slots[i] == b && a != b {
                 mine.slots[i] = a;
                 changed += 1;
@@ -2969,7 +3115,11 @@ impl Families {
     /// already flies an aircraft of the same family.
     pub fn fits(&self, aircraft: &str, module: &str, target: &Profile) -> bool {
         let family = self.of(aircraft, module);
-        target.module == module && target.aircraft.iter().any(|a| self.of(a, &target.module) == family)
+        target.module == module
+            && target
+                .aircraft
+                .iter()
+                .any(|a| self.of(a, &target.module) == family)
     }
 }
 
@@ -3028,19 +3178,39 @@ impl Profiles {
     ///
     /// A list the user changed is left as it is, and the notes say what the
     /// release would have moved, so they know a reset would bring the split.
-    fn reconcile_aircraft(&self, name: &str, profile: &mut Profile, shipped: &Profile, was: &Profile) -> (Vec<String>, bool) {
+    fn reconcile_aircraft(
+        &self,
+        name: &str,
+        profile: &mut Profile,
+        shipped: &Profile,
+        was: &Profile,
+    ) -> (Vec<String>, bool) {
         let set = |a: &[String]| a.iter().cloned().collect::<BTreeSet<String>>();
-        let (mine, before, after) = (set(&profile.aircraft), set(&was.aircraft), set(&shipped.aircraft));
+        let (mine, before, after) = (
+            set(&profile.aircraft),
+            set(&was.aircraft),
+            set(&shipped.aircraft),
+        );
         if before == after {
             return (Vec::new(), false);
         }
         let families = self.families();
         let moved: Vec<(String, String)> = before
             .difference(&after)
-            .filter_map(|a| families.0.get(a).filter(|f| f.as_str() != name).map(|f| (a.clone(), f.clone())))
+            .filter_map(|a| {
+                families
+                    .0
+                    .get(a)
+                    .filter(|f| f.as_str() != name)
+                    .map(|f| (a.clone(), f.clone()))
+            })
             .collect();
         let listed = |pairs: &[(String, String)]| {
-            pairs.iter().map(|(a, f)| format!("{a} to {f}")).collect::<Vec<_>>().join(", ")
+            pairs
+                .iter()
+                .map(|(a, f)| format!("{a} to {f}"))
+                .collect::<Vec<_>>()
+                .join(", ")
         };
         if mine != before {
             if moved.is_empty() {
@@ -3055,8 +3225,11 @@ impl Profiles {
             );
         }
         let claimed = self.claimed_except(Some(name));
-        let joined: Vec<String> =
-            after.difference(&before).filter(|a| !claimed.contains_key(*a)).cloned().collect();
+        let joined: Vec<String> = after
+            .difference(&before)
+            .filter(|a| !claimed.contains_key(*a))
+            .cloned()
+            .collect();
         let mut kept = profile.aircraft.clone();
         kept.retain(|a| !moved.iter().any(|(m, _)| m == a));
         kept.extend(joined.iter().cloned());
@@ -3105,7 +3278,11 @@ impl Profiles {
             .flatten()
             .map(|e| e.path())
             .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("json"))
-            .filter(|p| p.file_name().and_then(|n| n.to_str()).is_none_or(|n| !skip.contains(&n)))
+            .filter(|p| {
+                p.file_name()
+                    .and_then(|n| n.to_str())
+                    .is_none_or(|n| !skip.contains(&n))
+            })
             .collect();
         paths.sort();
         paths.into_iter().find_map(|path| {
@@ -3180,8 +3357,11 @@ impl Profiles {
                 copied.push(name);
                 continue;
             };
-            let (free, taken): (Vec<String>, Vec<String>) =
-                profile.aircraft.iter().cloned().partition(|a| !claimed.contains_key(a));
+            let (free, taken): (Vec<String>, Vec<String>) = profile
+                .aircraft
+                .iter()
+                .cloned()
+                .partition(|a| !claimed.contains_key(a));
             if free.is_empty() {
                 continue;
             }
@@ -3191,7 +3371,10 @@ impl Profiles {
             } else {
                 profile.aircraft = free;
                 profile.save(&to)?;
-                copied.push(format!("{name} without {}, which another profile has", taken.join(", ")));
+                copied.push(format!(
+                    "{name} without {}, which another profile has",
+                    taken.join(", ")
+                ));
             }
             for a in &profile.aircraft {
                 claimed.insert(a.clone(), profile.name.clone());
@@ -3216,8 +3399,14 @@ impl Profiles {
                 .collect();
             paths.sort();
             for path in paths {
-                let Ok(p) = Profile::load(&path) else { continue };
-                let file = path.file_name().unwrap_or_default().to_string_lossy().into_owned();
+                let Ok(p) = Profile::load(&path) else {
+                    continue;
+                };
+                let file = path
+                    .file_name()
+                    .unwrap_or_default()
+                    .to_string_lossy()
+                    .into_owned();
                 for a in p.aircraft {
                     out.entry(a).or_insert_with(|| file.clone());
                 }
@@ -3329,10 +3518,12 @@ impl Profiles {
                     let fields = was.as_ref().map_or(&[][..], |w| &w.readouts[..]);
                     work = reconcile_fields(&mut profile, &shipped.readouts, fields);
                     if let Some(was) = &was {
-                        work.lamps = reconcile_lamps(&mut profile, &shipped.bindings, &was.bindings);
+                        work.lamps =
+                            reconcile_lamps(&mut profile, &shipped.bindings, &was.bindings);
                         work.settings = reconcile_settings(&mut profile, &shipped, was);
                         work.slots = reconcile_slots(&mut profile, &shipped, was);
-                        let (what, gave_up) = self.reconcile_aircraft(&name, &mut profile, &shipped, was);
+                        let (what, gave_up) =
+                            self.reconcile_aircraft(&name, &mut profile, &shipped, was);
                         aircraft = what;
                         released |= gave_up;
                     }
@@ -3455,8 +3646,12 @@ impl Profiles {
             return Ok(());
         };
         let others = self.claimed_except(Some(file));
-        let free: Vec<String> =
-            shipped.aircraft.iter().filter(|a| !others.contains_key(*a)).cloned().collect();
+        let free: Vec<String> = shipped
+            .aircraft
+            .iter()
+            .filter(|a| !others.contains_key(*a))
+            .cloned()
+            .collect();
         if free.len() == shipped.aircraft.len() {
             std::fs::copy(&from, &to)?;
             return Ok(());
@@ -3732,7 +3927,11 @@ mod tests {
         let value = two_knobs(Pick::Latest).resolve_with_moves(&led, knobs, moved);
         assert_eq!(value, Some(63));
         let value = two_knobs(Pick::Brightest).resolve_with_moves(&led, knobs, moved);
-        assert_eq!(value, Some(255), "brightest does not ask when anything moved");
+        assert_eq!(
+            value,
+            Some(255),
+            "brightest does not ask when anything moved"
+        );
     }
 
     #[test]
@@ -3762,7 +3961,10 @@ mod tests {
     #[test]
     fn pick_is_left_out_of_the_file_unless_it_is_latest() {
         let plain = serde_json::to_value(two_knobs(Pick::Brightest)).unwrap();
-        assert!(plain.get("pick").is_none(), "every existing profile stays byte for byte");
+        assert!(
+            plain.get("pick").is_none(),
+            "every existing profile stays byte for byte"
+        );
         let latest = serde_json::to_value(two_knobs(Pick::Latest)).unwrap();
         assert_eq!(latest["pick"], "latest");
         let back: Binding = serde_json::from_value(latest).unwrap();
@@ -3847,7 +4049,11 @@ mod tests {
         let led = lamp(LedKind::Dimmer, 255);
         let profile = mirror_profile(Some("Backlight"));
         let value = profile.resolve_binding(&profile.bindings[1], &led, |_| Some(0));
-        assert_eq!(value, Some(255), "console off means daylight, so the flags stay readable");
+        assert_eq!(
+            value,
+            Some(255),
+            "console off means daylight, so the flags stay readable"
+        );
     }
 
     /// A mirror reads no signal of its own, so the engine has to index it under
@@ -3870,7 +4076,10 @@ mod tests {
         profile.bindings[1].same_as_device = Some("D".into());
         let flag = &profile.bindings[1];
 
-        assert_eq!(profile.resolve_binding(flag, &led, |_| Some(32768)), Some(127));
+        assert_eq!(
+            profile.resolve_binding(flag, &led, |_| Some(32768)),
+            Some(127)
+        );
         assert_eq!(profile.sources_of(flag), vec!["DIM"]);
         // Without the device it looks on its own, which holds no `Backlight`.
         let mut local = profile.clone();
@@ -3888,7 +4097,10 @@ mod tests {
         profile.bindings[1].same_as_device = Some("F".into());
         profile.follows.insert("F".into(), "D".into());
         let flag = &profile.bindings[1];
-        assert_eq!(profile.resolve_binding(flag, &led, |_| Some(65535)), Some(255));
+        assert_eq!(
+            profile.resolve_binding(flag, &led, |_| Some(65535)),
+            Some(255)
+        );
         let running = profile.with_followers();
         let flag = running.bindings.iter().find(|b| b.device == "E").unwrap();
         assert_eq!(running.sources_of(flag), vec!["DIM"]);
@@ -3987,7 +4199,10 @@ mod tests {
         assert!(orion.parts.len() > 1, "base plus handles");
 
         let (part, aa) = orion.led("A/A").expect("A/A present");
-        assert_eq!(part.part_id, 0xbe60, "A/A belongs to the base, not the USB pid");
+        assert_eq!(
+            part.part_id, 0xbe60,
+            "A/A belongs to the base, not the USB pid"
+        );
         assert_eq!(aa.kind, LedKind::Indicator);
     }
 }

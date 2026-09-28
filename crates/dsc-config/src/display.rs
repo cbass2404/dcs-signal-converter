@@ -4,7 +4,7 @@
 //! segments, written a few bytes at a time, and a character position is a set
 //! of bit indices scattered through that bitmap. `data/displays/*.json` holds
 //! the map, transcribed from SimAppPro's tables and confirmed against captured
-//! hardware traffic. See `docs/PROTOCOL.md`.
+//! hardware traffic. See `docs/PROTOCOL-WINCTRL.md`.
 //!
 //! A pixel screen is the same model with a regular layout. Its bit index is a
 //! pixel, `y * width + x`, so a character cell is the pixels of its box and a
@@ -545,10 +545,16 @@ impl Display {
         };
         let slots = g.cell_width * g.cell_height;
         if slots > 256 {
-            return Err(bad(format!("a {}x{} cell has more pixels than a glyph can name", g.cell_width, g.cell_height)));
+            return Err(bad(format!(
+                "a {}x{} cell has more pixels than a glyph can name",
+                g.cell_width, g.cell_height
+            )));
         }
         if g.columns * g.cell_width > g.width {
-            return Err(bad(format!("{} columns of {} pixels do not fit in {}", g.columns, g.cell_width, g.width)));
+            return Err(bad(format!(
+                "{} columns of {} pixels do not fit in {}",
+                g.columns, g.cell_width, g.width
+            )));
         }
         // The last line may hang off the bottom of the buffer. The DED does:
         // five 13 row lines on a 64 row screen, so line 5 has no bottom row.
@@ -557,7 +563,9 @@ impl Display {
         let bits = (self.buffer_bytes * 8).min(usize::from(u16::MAX) + 1);
         let lowest = (g.rows - 1) * g.cell_height + g.inverse_rows[1].max(g.ink_top);
         if (lowest + 1) * g.width > bits {
-            return Err(bad(format!("row {lowest} of the grid is past the end of a {bits} bit buffer")));
+            return Err(bad(format!(
+                "row {lowest} of the grid is past the end of a {bits} bit buffer"
+            )));
         }
         if self.cells.is_empty() {
             for row in 0..g.rows {
@@ -567,7 +575,8 @@ impl Display {
                     let mut segments = Vec::with_capacity(slots);
                     'rows: for y in 0..g.cell_height {
                         for x in 0..g.cell_width {
-                            let pixel = (row * g.cell_height + y) * g.width + col * g.cell_width + x;
+                            let pixel =
+                                (row * g.cell_height + y) * g.width + col * g.cell_width + x;
                             if pixel >= bits {
                                 break 'rows;
                             }
@@ -587,19 +596,28 @@ impl Display {
             let table = self.glyphs.entry(shape.clone()).or_default();
             for (value, rows) in font {
                 if g.ink_top + rows.len() > g.cell_height {
-                    return Err(bad(format!("glyph {value:?} is {} rows and the cell has room for {}", rows.len(), g.cell_height - g.ink_top)));
+                    return Err(bad(format!(
+                        "glyph {value:?} is {} rows and the cell has room for {}",
+                        rows.len(),
+                        g.cell_height - g.ink_top
+                    )));
                 }
                 let mut lit = Vec::new();
                 for (y, row) in rows.iter().enumerate() {
                     if row.chars().count() > g.cell_width {
-                        return Err(bad(format!("glyph {value:?} has a row wider than {} pixels", g.cell_width)));
+                        return Err(bad(format!(
+                            "glyph {value:?} has a row wider than {} pixels",
+                            g.cell_width
+                        )));
                     }
                     for (x, c) in row.chars().enumerate() {
                         match c {
                             '#' => lit.push(((g.ink_top + y) * g.cell_width + x) as u8),
                             '.' => {}
                             other => {
-                                return Err(bad(format!("glyph {value:?} has {other:?} in it; a row is # and . only")))
+                                return Err(bad(format!(
+                                    "glyph {value:?} has {other:?} in it; a row is # and . only"
+                                )))
                             }
                         }
                     }
@@ -609,11 +627,16 @@ impl Display {
         }
         let [top, bottom] = g.inverse_rows;
         if top > bottom || bottom >= g.cell_height {
-            return Err(bad(format!("inverse rows {top} to {bottom} are not inside a {} row cell", g.cell_height)));
+            return Err(bad(format!(
+                "inverse rows {top} to {bottom} are not inside a {} row cell",
+                g.cell_height
+            )));
         }
-        self.inverse
-            .entry(g.shape.clone())
-            .or_insert_with(|| (top * g.cell_width..(bottom + 1) * g.cell_width).map(|s| s as u8).collect());
+        self.inverse.entry(g.shape.clone()).or_insert_with(|| {
+            (top * g.cell_width..(bottom + 1) * g.cell_width)
+                .map(|s| s as u8)
+                .collect()
+        });
         self.check_art()
     }
 
@@ -1108,9 +1131,10 @@ impl ValueBand {
             (ValueBand::Range { .. }, ValueBand::Range { .. }) => {
                 self.lowest() <= other.highest() + tol && other.lowest() <= self.highest() + tol
             }
-            (ValueBand::Range { .. }, one) | (one, ValueBand::Range { .. }) => {
-                one.values().iter().any(|v| self.matches(*v, tol) && other.matches(*v, tol))
-            }
+            (ValueBand::Range { .. }, one) | (one, ValueBand::Range { .. }) => one
+                .values()
+                .iter()
+                .any(|v| self.matches(*v, tol) && other.matches(*v, tol)),
             (a, b) => a.values().iter().any(|v| b.matches(*v, tol)),
         }
     }
@@ -1218,7 +1242,10 @@ impl std::str::FromStr for ValueBand {
             return Ok(ValueBand::Range { lo, hi });
         }
         if s.contains(',') {
-            let values = s.split(',').map(one).collect::<std::result::Result<Vec<_>, _>>()?;
+            let values = s
+                .split(',')
+                .map(one)
+                .collect::<std::result::Result<Vec<_>, _>>()?;
             return Ok(ValueBand::List(values));
         }
         Ok(ValueBand::One(one(s)?))
@@ -1484,7 +1511,10 @@ pub fn min_divider_cells(label: &str) -> usize {
 /// is a function of the width and the label alone so the editor can show the
 /// same rule it will draw, by asking rather than working it out again.
 pub fn divider_rule(width: usize, label: &str) -> Vec<RuleCell> {
-    let plain = |text: &str| RuleCell { text: text.to_string(), label: false };
+    let plain = |text: &str| RuleCell {
+        text: text.to_string(),
+        label: false,
+    };
     let mut out: Vec<RuleCell> = std::iter::repeat_with(|| plain("-")).take(width).collect();
     let chars: Vec<char> = label.chars().collect();
     if chars.is_empty() || width < min_divider_cells(label) {
@@ -1496,14 +1526,20 @@ pub fn divider_rule(width: usize, label: &str) -> Vec<RuleCell> {
     out[at - 1] = plain(" ");
     out[at + chars.len()] = plain(" ");
     for (i, c) in chars.iter().enumerate() {
-        out[at + i] = RuleCell { text: c.to_string(), label: true };
+        out[at + i] = RuleCell {
+            text: c.to_string(),
+            label: true,
+        };
     }
     out
 }
 
 /// The whole rule as one string, for a caller that only wants to read it.
 pub fn divider_text(width: usize, label: &str) -> String {
-    divider_rule(width, label).into_iter().map(|c| c.text).collect()
+    divider_rule(width, label)
+        .into_iter()
+        .map(|c| c.text)
+        .collect()
 }
 
 /// One piece of a field's content: characters the user typed, or a signal.
@@ -1826,7 +1862,10 @@ impl Span {
             return (low, 0.0);
         }
         let travel = f64::from(value) / f64::from(max);
-        (low + travel * (high - low), (high - low).abs() / f64::from(max) / 2.0)
+        (
+            low + travel * (high - low),
+            (high - low).abs() / f64::from(max) / 2.0,
+        )
     }
 
     /// The stretch that converts a raw count, where this dial has stretches.
@@ -1839,7 +1878,11 @@ impl Span {
             .iter()
             .filter(|c| c.claims(value))
             .min_by_key(|c| c.raw[0])
-            .or_else(|| self.conversions.iter().min_by_key(|c| (c.distance(value), c.raw[0])))
+            .or_else(|| {
+                self.conversions
+                    .iter()
+                    .min_by_key(|c| (c.distance(value), c.raw[0]))
+            })
     }
 
     /// What the dial is marked with at each end of its travel: `reads` as it
@@ -2035,7 +2078,11 @@ impl Span {
         if self.bands_cover(low, high) {
             return Some(longest_alias);
         }
-        let mut ends: Vec<f64> = self.face_ends(max).into_iter().map(|end| self.settle(end, 0.0)).collect();
+        let mut ends: Vec<f64> = self
+            .face_ends(max)
+            .into_iter()
+            .map(|end| self.settle(end, 0.0))
+            .collect();
         // A reading that starts over somewhere between its ends can draw
         // anything up to the last value before it does, whatever the ends
         // themselves come to.
@@ -2418,7 +2465,11 @@ impl From<Readout> for ReadoutRepr {
             // A colour for a label that is not there is a setting nothing
             // draws. The window holds on to it while the text is being edited,
             // so clearing it to retype costs nothing, but it stops there.
-            label_colour: if r.label.is_empty() { None } else { r.label_colour },
+            label_colour: if r.label.is_empty() {
+                None
+            } else {
+                r.label_colour
+            },
             label: r.label,
             small: span.small,
             inverse: span.inverse,
@@ -2697,7 +2748,13 @@ impl Readout {
             if width == 1 {
                 glyphs.push(Glyph {
                     text: span.alias(&value).to_string(),
-                    colour: colours.first().copied().flatten().or(banded).or(stretched).or(span.colour),
+                    colour: colours
+                        .first()
+                        .copied()
+                        .flatten()
+                        .or(banded)
+                        .or(stretched)
+                        .or(span.colour),
                     small,
                     inverse: span.inverse
                         || band_inverse
@@ -2711,7 +2768,13 @@ impl Readout {
                 let one = ch.to_string();
                 glyphs.push(Glyph {
                     text: span.alias(&one).to_string(),
-                    colour: colours.get(i).copied().flatten().or(banded).or(stretched).or(span.colour),
+                    colour: colours
+                        .get(i)
+                        .copied()
+                        .flatten()
+                        .or(banded)
+                        .or(stretched)
+                        .or(span.colour),
                     small,
                     inverse: span.inverse
                         || band_inverse

@@ -1,6 +1,6 @@
 # DCS Signal Converter
 
-**Your WinWing panels, lit by the cockpit you are actually sitting in.**
+**Your sim cockpit panels, lit by the cockpit you are actually sitting in.**
 
 Gear lamps that follow the gear. A Master Caution that comes on when the jet's
 does. Panel backlights that can dim with the cockpit's console knob. The Hornet UFC
@@ -10,12 +10,12 @@ MCDU screen, and more.
 Jump into a Hornet and the panels follow the Hornet. Switch to an Apache and they
 follow the Apache. Quit DCS and they go dark, so nothing is left lit.
 
-SimAppPro does not need to be running, and there is no alt-tabbing to it when
+No vendor app needs to be running, and there is no alt-tabbing to one when
 you change aircraft.
 
 - Starts with DCS on its own. Nothing to remember before a flight.
 - Every lamp is yours to reassign in a point-and-click editor, per aircraft.
-- Runs unelevated. No DCS, DCS-BIOS, SimAppPro or WinWing file is modified.
+- Runs unelevated. No DCS, DCS-BIOS or vendor software file is modified.
 - DCS-BIOS is required. It is where every signal comes from.
 
 > **Beta.** Flown daily on the author's panels, but the USB protocol was
@@ -23,8 +23,9 @@ you change aircraft.
 > rather than a vendor feature. Bug reports welcome, and questions are answered on
 > the [Discord](https://discord.gg/W9tsVe3g3P).
 
-An independent project. It is not made, endorsed or supported by WinCtrl or
-WinWing; their names appear here only to say which hardware it drives.
+An independent project. It is not made, endorsed or supported by WinWing or
+any other panel maker; their names appear here only to say which hardware it
+drives.
 
 ---
 
@@ -57,7 +58,8 @@ WinWing; their names appear here only to say which hardware it drives.
 
 ## What it drives
 
-**Panels.** Any of these that are plugged in. Panels that are not are skipped, and
+**WinWing panels.** Any of these that are plugged in, including the same
+hardware sold as WinCtrl. Panels that are not are skipped, and
 a profile can bind one you do not own without harm.
 
 - PTO2 (take-off panel 2)
@@ -70,7 +72,7 @@ a profile can bind one you do not own without harm.
 - PFP-3N, PFP-7 and PFP-4 (Captain, Co-Pilot and Observer), not yet tried on
   a real panel here
 
-Which lamps each one has is in [docs/PROTOCOL.md](docs/PROTOCOL.md).
+Which lamps each one has is in [docs/PROTOCOL-WINCTRL.md](docs/PROTOCOL-WINCTRL.md).
 
 **Aircraft.** A profile ships for each of these. Any other aircraft gets a blank
 starter profile the first time you fly it, ready to fill in with the
@@ -113,10 +115,10 @@ follow; set its backlights to Always on if you want them lit.
 - [ ] [Start DCS and fly](#3-fly)
 - [ ] **Optional** [Open the editor](#4-make-it-yours) to change what a lamp does
 
-Five steps, about five minutes. **SimAppPro is not needed for any of them**, and
+Five steps, about five minutes. **WinWing's SimAppPro is not needed for any of them**, and
 can stay closed.
 
-> **Running SimAppPro alongside.** The converter can run with SimAppPro open, but
+> **Running WinWing's SimAppPro alongside.** The converter can run with SimAppPro open, but
 > SimAppPro must stop driving the same panels. Set the lights on each device in
 > SimAppPro not to sync with DCS. For the F-16, set every ICP page selection to
 > disabled; for the F/A-18, set every UFC page selection to disabled. Leaving them
@@ -257,7 +259,7 @@ A few more things the editor does:
   about a profile that works but probably not as meant, and never stop a save.
 
 **What every setting means**, with examples you can try in the browser, is in
-[the profile language guide](https://cbass2404.github.io/wctrl-module-signal-converter/language.html),
+[the profile language guide](https://cbass2404.github.io/dcs-signal-converter/language.html),
 also opened by the **?** in the editor's header. The full profile model and the
 reasons behind each rule are in [docs/CONFIG.md](docs/CONFIG.md).
 
@@ -328,7 +330,7 @@ Your DCS-BIOS is older than the one those lamps were written for. They stay off,
 everything else works, and they come back when you update DCS-BIOS. See
 [Install DCS-BIOS](#1-install-dcs-bios).
 
-**Something in SimAppPro fights it.**
+**Something in WinWing's SimAppPro fights it.**
 If SimAppPro is running with "Sync with DCS" on, it can drive the same backlights.
 Turn that off for each panel, or close SimAppPro. In the Hornet and the Viper
 both programs also draw the UFC and the DED; to leave those to SimAppPro, untick
@@ -358,7 +360,8 @@ is still there. What is in it, and how to read it, is in
 Everything below is background. You do not need any of it to use the tool.
 
 The panels are ordinary USB HID devices, and HID needs no administrator rights,
-so the converter talks to them directly with the same messages SimAppPro sends.
+so the converter talks to them directly with the same messages their maker's
+own software sends.
 The cockpit side comes from DCS-BIOS, which is already broadcasting on your
 machine, so nothing in DCS is patched.
 
@@ -400,10 +403,10 @@ ships, and nothing you do while developing reaches the profiles you fly.
 
 | Document                                                                                    | What is in it                                                        |
 | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| [Profile language](https://cbass2404.github.io/wctrl-module-signal-converter/language.html) | Every test, reading and page setting, with examples and a dictionary |
+| [Profile language](https://cbass2404.github.io/dcs-signal-converter/language.html) | Every test, reading and page setting, with examples and a dictionary |
 | [docs/CLI.md](docs/CLI.md)                                                                  | Running the converter by hand, its flags, and reading its output     |
 | [docs/CONFIG.md](docs/CONFIG.md)                                                            | The profile format, every binding form, and how the editor checks it |
-| [docs/PROTOCOL.md](docs/PROTOCOL.md)                                                        | The reverse-engineered HID protocol and every panel's lamp map       |
+| [docs/PROTOCOL-WINCTRL.md](docs/PROTOCOL-WINCTRL.md)                                                        | WinWing's reverse-engineered HID protocol and every panel's lamp map |
 | [docs/PERFORMANCE.md](docs/PERFORMANCE.md)                                                  | Memory, CPU and install size, and how they were measured             |
 | [CHANGELOG.md](CHANGELOG.md)                                                                | What changed in each release, and which shipped profiles moved       |
 | [docs/STATUS.md](docs/STATUS.md)                                                            | Development status, verified hardware facts, and what is next        |

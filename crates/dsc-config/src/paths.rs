@@ -94,11 +94,20 @@ impl Paths {
         if let Some(dir) = std::env::var_os("DSC_DATA") {
             return Self::in_one(Layout::Env, PathBuf::from(dir));
         }
-        let exe_dir = std::env::current_exe().ok().and_then(|e| e.parent().map(Path::to_path_buf));
+        let exe_dir = std::env::current_exe()
+            .ok()
+            .and_then(|e| e.parent().map(Path::to_path_buf));
         let cwd = std::env::current_dir().ok();
-        let checkout = cwd.iter().chain(exe_dir.iter()).find_map(|start| climb(start));
+        let checkout = cwd
+            .iter()
+            .chain(exe_dir.iter())
+            .find_map(|start| climb(start));
 
-        if let Some(root) = cwd.iter().chain(exe_dir.iter()).find_map(|start| climb_dev(start)) {
+        if let Some(root) = cwd
+            .iter()
+            .chain(exe_dir.iter())
+            .find_map(|start| climb_dev(start))
+        {
             return Self::dev(root);
         }
         if let Some(dir) = &exe_dir {
@@ -246,10 +255,12 @@ mod dev_env_tests {
         assert!(env_is_dev("env=dev"));
         assert!(env_is_dev("  ENV = Dev  "));
         assert!(env_is_dev("env=\"dev\""));
-        assert!(env_is_dev("# a comment
+        assert!(env_is_dev(
+            "# a comment
 DSC_OTHER=1
 env=dev
-"));
+"
+        ));
     }
 
     #[test]
@@ -266,12 +277,16 @@ env=dev
     #[test]
     fn the_last_setting_wins() {
         // How a file gets flipped back and forth while working.
-        assert!(!env_is_dev("env=dev
+        assert!(!env_is_dev(
+            "env=dev
 env=prod
-"));
-        assert!(env_is_dev("env=prod
+"
+        ));
+        assert!(env_is_dev(
+            "env=prod
 env=dev
-"));
+"
+        ));
     }
 }
 
@@ -291,27 +306,40 @@ pub fn dcs_saved_games() -> PathBuf {
 /// the profile, because users move it, to another drive most often.
 pub fn saved_games() -> PathBuf {
     known_saved_games().unwrap_or_else(|| {
-        let home = std::env::var_os("USERPROFILE").map(PathBuf::from).unwrap_or_default();
+        let home = std::env::var_os("USERPROFILE")
+            .map(PathBuf::from)
+            .unwrap_or_default();
         home.join("Saved Games")
     })
 }
 
 /// A folder the installer recorded, if it is set and not empty.
 fn registry_path(value: &str) -> Option<PathBuf> {
-    read_registry(REGISTRY_KEY, value).filter(|s| !s.trim().is_empty()).map(PathBuf::from)
+    read_registry(REGISTRY_KEY, value)
+        .filter(|s| !s.trim().is_empty())
+        .map(PathBuf::from)
 }
 
 #[cfg(windows)]
 fn known_saved_games() -> Option<PathBuf> {
     use std::os::windows::ffi::OsStringExt;
     use windows_sys::Win32::System::Com::CoTaskMemFree;
-    use windows_sys::Win32::UI::Shell::{FOLDERID_SavedGames, SHGetKnownFolderPath, KF_FLAG_DEFAULT};
+    use windows_sys::Win32::UI::Shell::{
+        FOLDERID_SavedGames, SHGetKnownFolderPath, KF_FLAG_DEFAULT,
+    };
 
     let mut raw: *mut u16 = std::ptr::null_mut();
     // SAFETY: the out pointer is valid; on return it is either null or a
     // null-terminated string the shell allocated, which must be freed with
     // CoTaskMemFree whatever the result.
-    let hr = unsafe { SHGetKnownFolderPath(&FOLDERID_SavedGames, KF_FLAG_DEFAULT as _, std::ptr::null_mut(), &mut raw) };
+    let hr = unsafe {
+        SHGetKnownFolderPath(
+            &FOLDERID_SavedGames,
+            KF_FLAG_DEFAULT as _,
+            std::ptr::null_mut(),
+            &mut raw,
+        )
+    };
     let path = if hr >= 0 && !raw.is_null() {
         let len = (0..).take_while(|&i| unsafe { *raw.add(i) } != 0).count();
         let wide = unsafe { std::slice::from_raw_parts(raw, len) };
@@ -337,7 +365,15 @@ fn read_registry(key: &str, value: &str) -> Option<String> {
     let mut bytes: u32 = 0;
     // SAFETY: first call with no buffer asks only for the size in bytes.
     let rc = unsafe {
-        RegGetValueW(HKEY_CURRENT_USER, key.as_ptr(), value.as_ptr(), RRF_RT_REG_SZ, std::ptr::null_mut(), std::ptr::null_mut(), &mut bytes)
+        RegGetValueW(
+            HKEY_CURRENT_USER,
+            key.as_ptr(),
+            value.as_ptr(),
+            RRF_RT_REG_SZ,
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
+            &mut bytes,
+        )
     };
     if rc != 0 || bytes == 0 {
         return None;
@@ -345,7 +381,15 @@ fn read_registry(key: &str, value: &str) -> Option<String> {
     let mut buf = vec![0u16; (bytes as usize).div_ceil(2)];
     // SAFETY: buf holds `bytes` bytes, as the size says.
     let rc = unsafe {
-        RegGetValueW(HKEY_CURRENT_USER, key.as_ptr(), value.as_ptr(), RRF_RT_REG_SZ, std::ptr::null_mut(), buf.as_mut_ptr() as _, &mut bytes)
+        RegGetValueW(
+            HKEY_CURRENT_USER,
+            key.as_ptr(),
+            value.as_ptr(),
+            RRF_RT_REG_SZ,
+            std::ptr::null_mut(),
+            buf.as_mut_ptr() as _,
+            &mut bytes,
+        )
     };
     if rc != 0 {
         return None;
@@ -365,14 +409,29 @@ mod tests {
 
     #[test]
     fn installed_splits_shipped_from_written() {
-        let p = Paths::installed(PathBuf::from("C:/app/data"), PathBuf::from("D:/sg/DCS Signal Converter"));
+        let p = Paths::installed(
+            PathBuf::from("C:/app/data"),
+            PathBuf::from("D:/sg/DCS Signal Converter"),
+        );
         assert_eq!(p.devices, Path::new("C:/app/data/devices.json"));
         assert_eq!(p.profiles.defaults, Path::new("C:/app/data/defaults"));
-        assert_eq!(p.profiles.active, Path::new("D:/sg/DCS Signal Converter/profiles"));
-        assert_eq!(p.catalogue, Path::new("D:/sg/DCS Signal Converter/catalogue"));
+        assert_eq!(
+            p.profiles.active,
+            Path::new("D:/sg/DCS Signal Converter/profiles")
+        );
+        assert_eq!(
+            p.catalogue,
+            Path::new("D:/sg/DCS Signal Converter/catalogue")
+        );
         assert_eq!(p.pages.defaults, Path::new("C:/app/data/default-pages"));
-        assert_eq!(p.pages.previous, Path::new("C:/app/data/default-pages-previous"));
-        assert_eq!(p.pages.active, Path::new("D:/sg/DCS Signal Converter/pages"));
+        assert_eq!(
+            p.pages.previous,
+            Path::new("C:/app/data/default-pages-previous")
+        );
+        assert_eq!(
+            p.pages.active,
+            Path::new("D:/sg/DCS Signal Converter/pages")
+        );
     }
 
     #[test]
@@ -395,8 +454,12 @@ mod tests {
         std::fs::create_dir_all(beside.join("data")).expect("the copy beside the exe");
         std::fs::write(root.join("data").join("devices.json"), "{}").expect("devices");
         std::fs::write(beside.join("data").join("devices.json"), "{}").expect("the copy");
-        std::fs::write(root.join(DEV_FILE), "env=dev
-").expect("the .env");
+        std::fs::write(
+            root.join(DEV_FILE),
+            "env=dev
+",
+        )
+        .expect("the .env");
 
         assert_eq!(
             climb(&beside).as_deref(),

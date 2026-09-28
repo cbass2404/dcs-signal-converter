@@ -166,9 +166,9 @@ and the two line up against each other by their timestamps.
 
 Started by the DCS hook, the daemon has no console, so this is the only account
 of a flight there is. It holds everything `--verbose` puts on the console, and
-more besides: where every file was read from, every WinCtrl device plugged in
-whether this build knows it or not, which profiles loaded and which were thrown
-out, and the error behind an exit.
+more besides: where every file was read from, every panel from a supported
+maker plugged in whether this build knows it or not, which profiles loaded and
+which were thrown out, and the error behind an exit.
 
 **Two sessions are kept.** Each start makes the last log `dcs-signal.log.bak`
 and deletes the one before that. Notice something wrong, land, and read it,

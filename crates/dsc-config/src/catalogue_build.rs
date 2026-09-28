@@ -32,7 +32,13 @@ use crate::{Error, Result};
 
 /// Files in `doc/json` that are not aircraft: they describe the stream itself
 /// or are fragments shared between modules.
-const NON_MODULE: [&str; 5] = ["AircraftAliases", "MetadataStart", "MetadataEnd", "CommonData", "NS430"];
+const NON_MODULE: [&str; 5] = [
+    "AircraftAliases",
+    "MetadataStart",
+    "MetadataEnd",
+    "CommonData",
+    "NS430",
+];
 
 /// The shared fragment that carries DCS-BIOS's own version, and the signal in
 /// it. Recorded in the index so the daemon can ask the running DCS-BIOS which
@@ -94,8 +100,12 @@ pub fn installed_version(bios_json: &Path) -> Option<String> {
 fn parse_version(text: &str) -> Option<String> {
     for (at, _) in text.match_indices("version") {
         let rest = text[at + "version".len()..].trim_start();
-        let Some(rest) = rest.strip_prefix('=') else { continue };
-        let Some(rest) = rest.trim_start().strip_prefix('"') else { continue };
+        let Some(rest) = rest.strip_prefix('=') else {
+            continue;
+        };
+        let Some(rest) = rest.trim_start().strip_prefix('"') else {
+            continue;
+        };
         let Some(end) = rest.find('"') else { continue };
         if end > 0 {
             return Some(rest[..end].to_string());
@@ -155,7 +165,11 @@ pub fn stamp(bios_json: &Path) -> Option<String> {
                 return None;
             }
             let meta = e.metadata().ok()?;
-            let at = meta.modified().ok()?.duration_since(SystemTime::UNIX_EPOCH).ok()?;
+            let at = meta
+                .modified()
+                .ok()?
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .ok()?;
             Some((name, meta.len(), at.as_nanos()))
         })
         .collect();
@@ -164,7 +178,11 @@ pub fn stamp(bios_json: &Path) -> Option<String> {
     // releases, and a new compiler should not mean a rebuild.
     let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
     for (name, len, at) in &files {
-        let bytes = name.bytes().chain([0]).chain(len.to_le_bytes()).chain(at.to_le_bytes());
+        let bytes = name
+            .bytes()
+            .chain([0])
+            .chain(len.to_le_bytes())
+            .chain(at.to_le_bytes());
         for b in bytes {
             hash ^= u64::from(b);
             hash = hash.wrapping_mul(0x0100_0000_01b3);
@@ -182,10 +200,17 @@ pub enum Freshness {
     /// files that have changed since, and has been rebuilt. `was` is `None`
     /// when there was no catalogue, and equal to `now` when only the files
     /// changed.
-    Built { was: Option<String>, now: String, modules: usize },
+    Built {
+        was: Option<String>,
+        now: String,
+        modules: usize,
+    },
     /// No DCS-BIOS at `bios_json`. `have_catalogue` says whether an old one is
     /// still there to fall back on.
-    NoBios { bios_json: PathBuf, have_catalogue: bool },
+    NoBios {
+        bios_json: PathBuf,
+        have_catalogue: bool,
+    },
 }
 
 impl std::fmt::Display for Freshness {
@@ -240,7 +265,11 @@ pub fn ensure(bios_json: &Path, out: &Path) -> Result<Freshness> {
     }
     let was = catalogue_version(out);
     let modules = build_and_swap(bios_json, out, &installed)?;
-    Ok(Freshness::Built { was, now: installed, modules })
+    Ok(Freshness::Built {
+        was,
+        now: installed,
+        modules,
+    })
 }
 
 /// Built from `installed`, from files still as they were, and by a builder
@@ -265,7 +294,11 @@ pub fn rebuild(bios_json: &Path, out: &Path) -> Result<Freshness> {
     let _lock = BuildLock::take(out)?;
     let was = catalogue_version(out);
     let modules = build_and_swap(bios_json, out, &installed)?;
-    Ok(Freshness::Built { was, now: installed, modules })
+    Ok(Freshness::Built {
+        was,
+        now: installed,
+        modules,
+    })
 }
 
 fn build_and_swap(bios_json: &Path, out: &Path, version: &str) -> Result<usize> {
@@ -433,7 +466,9 @@ pub fn build(bios_json: &Path, out: &Path, version: &str) -> Result<usize> {
 
     let source = std::path::absolute(bios_json).unwrap_or_else(|_| bios_json.to_path_buf());
     let common = bios_json.join(format!("{COMMON_DATA}.json"));
-    let version_signal = read_value(&common).ok().and_then(|raw| version_signal(&raw));
+    let version_signal = read_value(&common)
+        .ok()
+        .and_then(|raw| version_signal(&raw));
     let modules = index.len();
     write_json(
         &out.join("index.json"),
@@ -456,7 +491,9 @@ fn read_value(path: &Path) -> Result<Value> {
 /// Every runtime aircraft name `AircraftAliases.json` maps onto `key`, once
 /// for each time it does.
 fn aircraft_for(aliases: &Value, key: &str) -> Vec<String> {
-    let Some(map) = aliases.as_object() else { return Vec::new() };
+    let Some(map) = aliases.as_object() else {
+        return Vec::new();
+    };
     let mut out = Vec::new();
     for (aircraft, modules) in map {
         if aircraft.is_empty() {
@@ -473,7 +510,9 @@ fn aircraft_for(aliases: &Value, key: &str) -> Vec<String> {
 /// Where `CommonData` puts the `VERSION` string.
 fn version_signal(raw: &Value) -> Option<VersionSignal> {
     for category in raw.as_object()?.values() {
-        let Some(control) = category.get(VERSION_SIGNAL) else { continue };
+        let Some(control) = category.get(VERSION_SIGNAL) else {
+            continue;
+        };
         let out = control.get("outputs")?.as_array()?.first()?;
         return Some(VersionSignal {
             address: u16::try_from(out.get("address")?.as_u64()?).ok()?,
@@ -573,22 +612,34 @@ struct LabelOut {
 /// id. Input-only controls, with nothing to read, are left out.
 fn convert_module(raw: &Value) -> Vec<SignalOut> {
     let mut signals = Vec::new();
-    let Some(categories) = raw.as_object() else { return signals };
+    let Some(categories) = raw.as_object() else {
+        return signals;
+    };
     for (category, controls) in categories {
-        let Some(controls) = controls.as_object() else { continue };
+        let Some(controls) = controls.as_object() else {
+            continue;
+        };
         for (id, control) in controls {
             let mut outputs = Vec::new();
             let raw_outputs = control.get("outputs").and_then(Value::as_array);
             for out in raw_outputs.into_iter().flatten() {
-                let Some(address) = out.get("address") else { continue };
+                let Some(address) = out.get("address") else {
+                    continue;
+                };
                 let values = value_labels(control, out);
                 outputs.push(OutputOut {
                     address: address.clone(),
                     mask: out.get("mask").cloned().unwrap_or(Value::Null),
                     shift: out.get("shift_by").cloned().unwrap_or(Value::from(0)),
                     max_value: out.get("max_value").cloned().unwrap_or(Value::Null),
-                    kind: out.get("type").cloned().unwrap_or_else(|| Value::from("integer")),
-                    description: out.get("description").cloned().unwrap_or_else(|| Value::from("")),
+                    kind: out
+                        .get("type")
+                        .cloned()
+                        .unwrap_or_else(|| Value::from("integer")),
+                    description: out
+                        .get("description")
+                        .cloned()
+                        .unwrap_or_else(|| Value::from("")),
                     // String outputs are sized by max_length, not max_value.
                     // Without it the decoder cannot tell how many bytes to
                     // read, so every display signal would be unreadable.
@@ -608,8 +659,14 @@ fn convert_module(raw: &Value) -> Vec<SignalOut> {
             signals.push(SignalOut {
                 id: id.clone(),
                 category,
-                description: control.get("description").cloned().unwrap_or_else(|| Value::from("")),
-                control_type: control.get("control_type").cloned().unwrap_or_else(|| Value::from("")),
+                description: control
+                    .get("description")
+                    .cloned()
+                    .unwrap_or_else(|| Value::from("")),
+                control_type: control
+                    .get("control_type")
+                    .cloned()
+                    .unwrap_or_else(|| Value::from("")),
                 outputs,
             });
         }
@@ -649,7 +706,9 @@ fn value_labels(control: &Value, out: &Value) -> Option<Vec<LabelOut>> {
                 None => text.clone(),
             });
         }
-        let label = label.filter(|l| !l.is_empty()).unwrap_or_else(|| value.to_string());
+        let label = label
+            .filter(|l| !l.is_empty())
+            .unwrap_or_else(|| value.to_string());
         values.push(LabelOut { value, label });
     }
     Some(values)
@@ -696,7 +755,11 @@ fn inline_label_at(chars: &[char], start: usize) -> Option<(Option<u64>, String,
     if i == start {
         return None;
     }
-    let value = chars[start..i].iter().collect::<String>().parse::<u64>().ok();
+    let value = chars[start..i]
+        .iter()
+        .collect::<String>()
+        .parse::<u64>()
+        .ok();
     while i < chars.len() && chars[i].is_whitespace() {
         i += 1;
     }
@@ -758,7 +821,11 @@ impl Formatter for AsciiPretty<'_> {
     fn end_array<W: ?Sized + io::Write>(&mut self, w: &mut W) -> io::Result<()> {
         self.0.end_array(w)
     }
-    fn begin_array_value<W: ?Sized + io::Write>(&mut self, w: &mut W, first: bool) -> io::Result<()> {
+    fn begin_array_value<W: ?Sized + io::Write>(
+        &mut self,
+        w: &mut W,
+        first: bool,
+    ) -> io::Result<()> {
         self.0.begin_array_value(w, first)
     }
     fn end_array_value<W: ?Sized + io::Write>(&mut self, w: &mut W) -> io::Result<()> {
@@ -770,7 +837,11 @@ impl Formatter for AsciiPretty<'_> {
     fn end_object<W: ?Sized + io::Write>(&mut self, w: &mut W) -> io::Result<()> {
         self.0.end_object(w)
     }
-    fn begin_object_key<W: ?Sized + io::Write>(&mut self, w: &mut W, first: bool) -> io::Result<()> {
+    fn begin_object_key<W: ?Sized + io::Write>(
+        &mut self,
+        w: &mut W,
+        first: bool,
+    ) -> io::Result<()> {
         self.0.begin_object_key(w, first)
     }
     fn begin_object_value<W: ?Sized + io::Write>(&mut self, w: &mut W) -> io::Result<()> {
@@ -779,7 +850,11 @@ impl Formatter for AsciiPretty<'_> {
     fn end_object_value<W: ?Sized + io::Write>(&mut self, w: &mut W) -> io::Result<()> {
         self.0.end_object_value(w)
     }
-    fn write_string_fragment<W: ?Sized + io::Write>(&mut self, w: &mut W, fragment: &str) -> io::Result<()> {
+    fn write_string_fragment<W: ?Sized + io::Write>(
+        &mut self,
+        w: &mut W,
+        fragment: &str,
+    ) -> io::Result<()> {
         if fragment.bytes().all(|b| b < 0x7f) {
             return w.write_all(fragment.as_bytes());
         }
@@ -812,9 +887,15 @@ mod tests {
     #[test]
     fn inline_labels_read_like_the_description_says() {
         let got = inline_labels("switch position -- 0 = Down, 1 = Mid,  2 = Up");
-        assert_eq!(got, vec![(0, "Down".into()), (1, "Mid".into()), (2, "Up".into())]);
+        assert_eq!(
+            got,
+            vec![(0, "Down".into()), (1, "Mid".into()), (2, "Up".into())]
+        );
         // A value with nothing after it still counts, as nothing.
-        assert_eq!(inline_labels("0 = , 1 = On"), vec![(0, String::new()), (1, "On".into())]);
+        assert_eq!(
+            inline_labels("0 = , 1 = On"),
+            vec![(0, String::new()), (1, "On".into())]
+        );
         // Digits with no `=` are not a label.
         assert!(inline_labels("rated 28 V; 400 Hz").is_empty());
     }
@@ -847,9 +928,16 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("dsc-ascii-{}", std::process::id()));
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("x.json");
-        write_json(&path, &serde_json::json!({"a": "\u{b0}\u{bb}\u{1f600}", "b": []})).unwrap();
+        write_json(
+            &path,
+            &serde_json::json!({"a": "\u{b0}\u{bb}\u{1f600}", "b": []}),
+        )
+        .unwrap();
         let text = fs::read_to_string(&path).unwrap();
         let _ = fs::remove_dir_all(&dir);
-        assert_eq!(text, "{\r\n \"a\": \"\\u00b0\\u00bb\\ud83d\\ude00\",\r\n \"b\": []\r\n}");
+        assert_eq!(
+            text,
+            "{\r\n \"a\": \"\\u00b0\\u00bb\\ud83d\\ude00\",\r\n \"b\": []\r\n}"
+        );
     }
 }

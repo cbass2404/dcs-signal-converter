@@ -20,10 +20,10 @@ use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
-use serde::Serialize;
 use dsc_bios::{Listener, Write as BiosWrite};
 use dsc_config::Module;
 use dsc_engine::Watcher;
+use serde::Serialize;
 
 /// How long a receive blocks before the thread looks at the stop flag again.
 /// Short enough that closing the panel is instant, long enough to be idle.
@@ -177,7 +177,10 @@ impl Session {
                 self.handle
                     .as_ref()
                     .is_some_and(|h| h.is_finished())
-                    .then(|| "the listener stopped unexpectedly; close learn mode and open it again".to_string())
+                    .then(|| {
+                        "the listener stopped unexpectedly; close learn mode and open it again"
+                            .to_string()
+                    })
             }),
             changes: shared
                 .watcher
@@ -239,7 +242,11 @@ impl State {
     }
 
     pub fn with<T>(&self, f: impl FnOnce(&Session) -> T) -> Option<T> {
-        self.0.lock().expect("the learn session lock").as_ref().map(f)
+        self.0
+            .lock()
+            .expect("the learn session lock")
+            .as_ref()
+            .map(f)
     }
 }
 
@@ -297,7 +304,10 @@ mod tests {
         state.start(&module());
         let first = state.with(|s| s.report().module).expect("running");
         state.start(&module());
-        assert_eq!(state.with(|s| s.report().module).as_deref(), Some(first.as_str()));
+        assert_eq!(
+            state.with(|s| s.report().module).as_deref(),
+            Some(first.as_str())
+        );
         state.stop();
     }
 }

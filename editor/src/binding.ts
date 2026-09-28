@@ -324,13 +324,14 @@ function describeBinding(
   const lines: string[] = [];
   const groups = groupsOf(b).filter((g) => g.conditions.length > 0);
   const condition = (c: Condition): string =>
-    c.source ? `${c.source} ${describeTest(c.on_when, byId.get(c.source))}` : "an unfinished condition";
+    c.source
+      ? `${c.source} ${describeTest(c.on_when, byId.get(c.source))}`
+      : "an unfinished condition";
   if (b.always) lines.push("Always on, reading no signal");
   else if (b.same_as) {
     const elsewhere = b.same_as_device && b.same_as_device !== b.device;
     lines.push(`Matches ${b.same_as}${elsewhere ? ` on ${deviceName(b.same_as_device!)}` : ""}`);
-  }
-  else if (groups.length === 0) lines.push("Unassigned, so driven off");
+  } else if (groups.length === 0) lines.push("Unassigned, so driven off");
   else if (groups.length === 1) lines.push(groups[0]!.conditions.map(condition).join("\nand "));
   else {
     const how = b.pick === "latest" ? "the one that changed last wins" : "the brightest wins";
@@ -513,14 +514,16 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
           const consequence = last
             ? `\n\n${led.name} will be left unassigned, which means it is driven off.`
             : `\n\n${led.name} will still need its other condition(s) to light.`;
-          void confirmAction(`Delete this condition?\n\n${what}${consequence}`, "Delete").then((ok) => {
-            if (!ok) return;
-            const at = group.conditions.indexOf(condition);
-            if (at >= 0) group.conditions.splice(at, 1);
-            editing.delete(condition);
-            normalise();
-            committed();
-          });
+          void confirmAction(`Delete this condition?\n\n${what}${consequence}`, "Delete").then(
+            (ok) => {
+              if (!ok) return;
+              const at = group.conditions.indexOf(condition);
+              if (at >= 0) group.conditions.splice(at, 1);
+              editing.delete(condition);
+              normalise();
+              committed();
+            },
+          );
         }),
       ),
     );
@@ -569,15 +572,7 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
     if (known) {
       text.append(
         el("span", { class: "desc" }, `Matches ${target}${where}`),
-        el(
-          "span",
-          { class: "sub" },
-          el(
-            "span",
-            { class: "test" },
-            "follows it",
-          ),
-        ),
+        el("span", { class: "sub" }, el("span", { class: "test" }, "follows it")),
       );
     } else {
       text.append(
@@ -812,7 +807,8 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
     const saved = opts.saved?.();
     if (saved && meaningfulPart(saved) !== meaningfulPart(binding)) {
       const undo = el("button", { class: "add revert", type: "button" }, "Undo unsaved changes");
-      undo.title = "Put this lamp back the way the profile was last saved. No other lamp is touched.";
+      undo.title =
+        "Put this lamp back the way the profile was last saved. No other lamp is touched.";
       undo.addEventListener("click", () => void confirmPutBack(saved, "saved"));
       into.append(undo);
     }

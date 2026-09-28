@@ -158,7 +158,12 @@ impl Panel for WctrlPanel {
                 if result.is_ok() {
                     let cells: Vec<GridCell> = dsc_config::text_cells(&w.bytes)
                         .into_iter()
-                        .map(|c| GridCell { ch: c.ch, fg: c.fg, bg: c.bg, small: c.small })
+                        .map(|c| GridCell {
+                            ch: c.ch,
+                            fg: c.fg,
+                            bg: c.bg,
+                            small: c.small,
+                        })
                         .collect();
                     result = self.dev.paint_grid(&cells).map_err(Into::into);
                 }

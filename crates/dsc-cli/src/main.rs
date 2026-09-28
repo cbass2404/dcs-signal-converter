@@ -18,8 +18,11 @@ use dsc_config::daemon::{self, STOP_TIMEOUT};
 use dsc_config::log::{self as dlog, Level};
 use dsc_config::nightly_only::{Change, NightlyOnly};
 use dsc_config::paths::{Layout, Paths};
+use dsc_config::{
+    file_stem, profile_name_for, Catalogue, DeviceInventory, DisplayCatalogue, PageLibrary, Pages,
+    Profile, Profiles, Readout, Span, Transport,
+};
 use dsc_config::{Flag, Place, Unsound};
-use dsc_config::{file_stem, profile_name_for, Catalogue, DeviceInventory, DisplayCatalogue, PageLibrary, Pages, Profile, Profiles, Readout, Span, Transport};
 use dsc_engine::{Batch, Cause, Engine, Watcher};
 use wctrl_hid::Device;
 
@@ -383,7 +386,11 @@ fn buttons_capture(pid: u16, raw: bool, seconds: Option<u64>) -> Result<()> {
             collection.usage_page,
             collection.usage,
             collection.report_len,
-            if ranges.is_empty() { "no buttons".to_string() } else { ranges.join(", ") }
+            if ranges.is_empty() {
+                "no buttons".to_string()
+            } else {
+                ranges.join(", ")
+            }
         );
         if collection.buttons.is_empty() && !raw {
             continue;
@@ -404,22 +411,37 @@ fn buttons_capture(pid: u16, raw: bool, seconds: Option<u64>) -> Result<()> {
                 }
                 let t = start.elapsed().as_secs_f64();
                 let hex = hex_trimmed(&buf);
-                let down = collection.pressed(&buf).unwrap_or_else(|| last_down.clone());
+                let down = collection
+                    .pressed(&buf)
+                    .unwrap_or_else(|| last_down.clone());
                 let mut lines = Vec::new();
                 let new: Vec<&u16> = down.iter().filter(|b| !last_down.contains(b)).collect();
                 if !new.is_empty() {
                     // Read once per report, as close to the press as this gets.
-                    let held: Vec<&str> = keyboard::held_now().into_iter().map(|m| m.name()).collect();
-                    let held = if held.is_empty() { "none".to_string() } else { held.join("+") };
+                    let held: Vec<&str> =
+                        keyboard::held_now().into_iter().map(|m| m.name()).collect();
+                    let held = if held.is_empty() {
+                        "none".to_string()
+                    } else {
+                        held.join("+")
+                    };
                     for b in new {
-                        lines.push(format!("{t:8.3}s  collection {n}  down {b:>3}  held {held:<14}  [{hex}]"));
+                        lines.push(format!(
+                            "{t:8.3}s  collection {n}  down {b:>3}  held {held:<14}  [{hex}]"
+                        ));
                     }
                 }
                 for b in last_down.iter().filter(|b| !down.contains(b)) {
-                    lines.push(format!("{t:8.3}s  collection {n}  up   {b:>3}  {:<20}  [{hex}]", ""));
+                    lines.push(format!(
+                        "{t:8.3}s  collection {n}  up   {b:>3}  {:<20}  [{hex}]",
+                        ""
+                    ));
                 }
                 if lines.is_empty() && raw {
-                    lines.push(format!("{t:8.3}s  collection {n}  report    {:<20}  [{hex}]", ""));
+                    lines.push(format!(
+                        "{t:8.3}s  collection {n}  report    {:<20}  [{hex}]",
+                        ""
+                    ));
                 }
                 for line in lines {
                     if tx.send(line).is_err() {
@@ -465,7 +487,11 @@ fn buttons_capture(_pid: u16, _raw: bool, _seconds: Option<u64>) -> Result<()> {
 #[cfg(windows)]
 fn hex_trimmed(report: &[u8]) -> String {
     let end = report.iter().rposition(|&b| b != 0).map_or(1, |i| i + 1);
-    let mut s = report[..end].iter().map(|b| format!("{b:02x}")).collect::<Vec<_>>().join(" ");
+    let mut s = report[..end]
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect::<Vec<_>>()
+        .join(" ");
     if end < report.len() {
         s.push_str(&format!(" (+{} zero)", report.len() - end));
     }
@@ -484,8 +510,13 @@ fn mcdu_test(
     use wctrl_hid::GridCell;
 
     let catalogue = DisplayCatalogue::load_dir(displays)?;
-    let display = catalogue.get("MCDU").context("no MCDU display in that directory")?;
-    let grid = display.text.as_ref().context("the MCDU display has no text grid")?;
+    let display = catalogue
+        .get("MCDU")
+        .context("no MCDU display in that directory")?;
+    let grid = display
+        .text
+        .as_ref()
+        .context("the MCDU display has no text grid")?;
     // The part is the panel's, not the screen's: the MCDU and each PFP carry
     // the same screen under their own part id.
     let inventory = DeviceInventory::load(devices)?;
@@ -499,7 +530,10 @@ fn mcdu_test(
         .part_id;
     let origin = (grid.origin[0], grid.origin[1]);
     let (rows, columns) = (grid.rows as u16, grid.columns as u16);
-    anyhow::ensure!((rows, columns) == (14, 24), "the test page is laid out for 24x14");
+    anyhow::ensure!(
+        (rows, columns) == (14, 24),
+        "the test page is laid out for 24x14"
+    );
 
     let device = open(pid)?;
     device.declare_grid(part, origin, rows, columns)?;
@@ -534,14 +568,21 @@ fn mcdu_test(
     let mut put = |row: usize, col: usize, text: &str, fg: u8, small: bool| {
         for (i, ch) in text.chars().enumerate() {
             if col + i < 24 {
-                cells[row * 24 + col + i] = GridCell { ch, fg, bg: 0, small };
+                cells[row * 24 + col + i] = GridCell {
+                    ch,
+                    fg,
+                    bg: 0,
+                    small,
+                };
             }
         }
     };
     put(0, 0, "A", 2, false);
     put(0, 7, "MCDU TEST", 2, false);
     put(0, 23, "B", 2, false);
-    let colours = ["AMBER", "WHITE", "CYAN", "GREEN", "MAGENTA", "RED", "YELLOW", "BROWN", "GREY", "KHAKI"];
+    let colours = [
+        "AMBER", "WHITE", "CYAN", "GREEN", "MAGENTA", "RED", "YELLOW", "BROWN", "GREY", "KHAKI",
+    ];
     for (n, name) in colours.iter().enumerate() {
         let row = 1 + n / 2;
         let col = (n % 2) * 12;
@@ -550,7 +591,13 @@ fn mcdu_test(
     put(7, 0, "LARGE ABCDEFGHIJKLMNOPQR", 4, false);
     put(8, 0, "small abcdefghijklmnopqr", 4, true);
     put(9, 0, "0123456789 ./-+:()*#%", 3, false);
-    put(10, 0, "\u{2610}\u{2190}\u{2191}\u{2192}\u{2193}\u{0394}\u{2b21}\u{00b0}", 7, false);
+    put(
+        10,
+        0,
+        "\u{2610}\u{2190}\u{2191}\u{2192}\u{2193}\u{0394}\u{2b21}\u{00b0}",
+        7,
+        false,
+    );
     put(12, 0, "INVERSE", 0, false);
     put(13, 0, "C", 2, false);
     put(13, 6, "ROW 14 OF 14", 1, false);
@@ -573,16 +620,16 @@ fn main() -> Result<()> {
         // Nothing is killed here. The running daemon is asked, and clears the
         // panels itself on the way out; a terminated one would leave them lit,
         // because the lamps latch and nothing else would be left to write them.
-        Command::Stop => {
-            match daemon::request_stop(STOP_TIMEOUT) {
-                Ok(true) => println!("Stopped. The panels are cleared."),
-                Ok(false) => println!("No converter is running."),
-                Err(e) => {
-                    println!("The converter did not stop: {e}");
-                    println!("It may be wedged. Nothing was killed, so the panels are as it left them.");
-                }
+        Command::Stop => match daemon::request_stop(STOP_TIMEOUT) {
+            Ok(true) => println!("Stopped. The panels are cleared."),
+            Ok(false) => println!("No converter is running."),
+            Err(e) => {
+                println!("The converter did not stop: {e}");
+                println!(
+                    "It may be wedged. Nothing was killed, so the panels are as it left them."
+                );
             }
-        }
+        },
         Command::Devices => {
             // Asks every protocol this build knows, so a panel of a brand the
             // user has just plugged in shows up here even before anything can
@@ -601,7 +648,11 @@ fn main() -> Result<()> {
             if !any {
                 println!(
                     "No devices found. Protocols this build can drive: {}.",
-                    protocols.iter().map(|p| p.name()).collect::<Vec<_>>().join(", ")
+                    protocols
+                        .iter()
+                        .map(|p| p.name())
+                        .collect::<Vec<_>>()
+                        .join(", ")
                 );
             }
         }
@@ -711,7 +762,14 @@ fn main() -> Result<()> {
             catalogue,
         } => {
             let catalogue = catalogue.unwrap_or(paths.catalogue);
-            listen(seconds, verbose, &watch, module.as_deref(), &catalogue, bios)?
+            listen(
+                seconds,
+                verbose,
+                &watch,
+                module.as_deref(),
+                &catalogue,
+                bios,
+            )?
         }
 
         Command::Learn {
@@ -874,14 +932,20 @@ fn start_log(dir: &Path, paths: &Paths) {
     match opened {
         Ok(path) => println!("logging to {}", path.display()),
         Err(e) => {
-            println!("no session log: {} could not be opened either ({e})", fallback.display());
+            println!(
+                "no session log: {} could not be opened either ({e})",
+                fallback.display()
+            );
             return;
         }
     }
     // Panics in a hidden process are otherwise invisible: the daemon simply
     // vanishes and the panels stay lit with nothing to say why.
     dlog::catch_panics();
-    dlog::header(&format!("run      DCS Signal Converter {}", dsc_config::build_label()));
+    dlog::header(&format!(
+        "run      DCS Signal Converter {}",
+        dsc_config::build_label()
+    ));
     dlog::header(&format!(
         "run      {}",
         std::env::args().collect::<Vec<_>>().join(" ")
@@ -1009,8 +1073,15 @@ fn probe_brightness(
 /// `string` so the padding survives. On a display field the padding is the
 /// layout: the Hornet UFC scratchpad is right aligned in its window.
 enum Reading {
-    Number { mask: u16, shift: u8, last: Option<u16> },
-    Text { len: u16, last: Option<String> },
+    Number {
+        mask: u16,
+        shift: u8,
+        last: Option<u16>,
+    },
+    Text {
+        len: u16,
+        last: Option<String>,
+    },
 }
 
 /// One signal being followed, and the last value seen for it.
@@ -1059,7 +1130,11 @@ fn listen(
             Some((address, mask, shift)) => watches.push(Watch {
                 label: spec.clone(),
                 address,
-                reading: Reading::Number { mask, shift, last: None },
+                reading: Reading::Number {
+                    mask,
+                    shift,
+                    last: None,
+                },
             }),
             None => unresolved.push(spec.clone()),
         }
@@ -1287,7 +1362,9 @@ fn learn(
                 let key = match module {
                     Some(key) => key.to_string(),
                     None => {
-                        let Some(aircraft) = names.string(0, 24) else { continue };
+                        let Some(aircraft) = names.string(0, 24) else {
+                            continue;
+                        };
                         let aircraft = aircraft.trim().to_string();
                         if aircraft.is_empty() {
                             continue;
@@ -1361,7 +1438,10 @@ fn learn(
             );
         }
         if changes.len() > top {
-            println!("  and {} more, which moved less recently", changes.len() - top);
+            println!(
+                "  and {} more, which moved less recently",
+                changes.len() - top
+            );
         }
         println!();
     }
@@ -1410,7 +1490,10 @@ fn nightly_only(
     bios: Option<&Path>,
 ) -> Result<()> {
     let nightly = load_catalogue(catalogue_dir, bios)?;
-    if nightly.bios_version().is_some_and(|v| !v.contains("nightly")) {
+    if nightly
+        .bios_version()
+        .is_some_and(|v| !v.contains("nightly"))
+    {
         println!(
             "note: the installed DCS-BIOS is {}, not a nightly",
             nightly.bios_version().unwrap_or_default()
@@ -1443,12 +1526,27 @@ fn nightly_only(
     // A page file that will not load would drop its signals from the list
     // without a word, and the list would pass for current.
     if !pages.broken.is_empty() {
-        let why: Vec<String> = pages.broken.iter().map(|(stem, e)| format!("{stem}: {e}")).collect();
+        let why: Vec<String> = pages
+            .broken
+            .iter()
+            .map(|(stem, e)| format!("{stem}: {e}"))
+            .collect();
         anyhow::bail!("default pages that will not load:\n  {}", why.join("\n  "));
     }
     for (module, file) in &pages.files {
-        let mut p = Profile::stub(&format!("the {module} pages"), module, module, &DeviceInventory { devices: Vec::new() });
-        p.readouts = file.pages.iter().flat_map(|page| page.fields.iter().cloned()).collect();
+        let mut p = Profile::stub(
+            &format!("the {module} pages"),
+            module,
+            module,
+            &DeviceInventory {
+                devices: Vec::new(),
+            },
+        );
+        p.readouts = file
+            .pages
+            .iter()
+            .flat_map(|page| page.fields.iter().cloned())
+            .collect();
         profiles.push(p);
     }
 
@@ -1466,7 +1564,9 @@ fn nightly_only(
                     stable.map_or("none".into(), |v| v.to_string()),
                     nightly.map_or("none".into(), |v| v.to_string())
                 ),
-                Change::Kind { stable, nightly } => format!("{stable} in stable, {nightly} in the nightly"),
+                Change::Kind { stable, nightly } => {
+                    format!("{stable} in stable, {nightly} in the nightly")
+                }
             };
             println!("  {module:<18} {id:<32} {what}");
         }
@@ -1490,10 +1590,14 @@ fn load_catalogue(dir: &Path, bios: Option<&Path>) -> Result<Catalogue> {
         .with_context(|| format!("updating the catalogue in {}", dir.display()))?;
     match &fresh {
         Freshness::Current { .. } => {}
-        Freshness::NoBios { have_catalogue: false, .. } => anyhow::bail!("{fresh}"),
+        Freshness::NoBios {
+            have_catalogue: false,
+            ..
+        } => anyhow::bail!("{fresh}"),
         _ => println!("{fresh}"),
     }
-    Catalogue::load_dir(dir).with_context(|| format!("loading the catalogue from {}", dir.display()))
+    Catalogue::load_dir(dir)
+        .with_context(|| format!("loading the catalogue from {}", dir.display()))
 }
 
 fn catalogue(
@@ -1537,9 +1641,7 @@ fn catalogue(
         .iter()
         .filter(|s| match &needle {
             None => true,
-            Some(n) => {
-                s.id.to_lowercase().contains(n) || s.description.to_lowercase().contains(n)
-            }
+            Some(n) => s.id.to_lowercase().contains(n) || s.description.to_lowercase().contains(n),
         })
         .collect();
     signals.sort_by_key(|s| (!s.is_lamp(), s.category.clone(), s.id.clone()));
@@ -1568,7 +1670,6 @@ fn catalogue(
     println!("\n{} matching signals in {}.", signals.len(), module.module);
     Ok(())
 }
-
 
 /// Names for the verbose log, so an action reads as `PTO2.HALF = 1` rather than
 /// `part 0xbf05 index 16 = 1`.
@@ -1617,8 +1718,16 @@ struct Trace {
 /// happen to share a word.
 #[derive(PartialEq)]
 enum Followed {
-    Number { name: String, mask: u16, shift: u8 },
-    Text { name: String, address: u16, len: u16 },
+    Number {
+        name: String,
+        mask: u16,
+        shift: u8,
+    },
+    Text {
+        name: String,
+        address: u16,
+        len: u16,
+    },
 }
 
 impl Followed {
@@ -1741,14 +1850,17 @@ impl Trace {
                 // with. Held by name rather than folded into the entry, so a
                 // signal that is both a lamp condition and a display field
                 // still registers once and still logs once.
-                if let Some(span) = profile
-                    .readouts
-                    .iter()
-                    .flat_map(|r| r.content.iter())
-                    .find(|s| {
-                        s.source == source
-                            && (s.reads.is_some() || !s.conversions.is_empty() || !s.value_aliases.is_empty())
-                    })
+                if let Some(span) =
+                    profile
+                        .readouts
+                        .iter()
+                        .flat_map(|r| r.content.iter())
+                        .find(|s| {
+                            s.source == source
+                                && (s.reads.is_some()
+                                    || !s.conversions.is_empty()
+                                    || !s.value_aliases.is_empty())
+                        })
                 {
                     let max = o.number_max();
                     self.converts
@@ -1878,9 +1990,9 @@ fn process_listed(stdout: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::{dlog, process_listed, Followed, Trace};
-    use std::time::Instant;
     use dsc_bios::{BiosState, Write as BiosWrite};
     use dsc_config::{Catalogue, Module, Profile};
+    use std::time::Instant;
 
     /// A module with one lamp signal and one string signal, so a trace can be
     /// followed without the generated catalogue, which is machine-local.
@@ -1956,7 +2068,10 @@ mod tests {
                 "word at {address} is part of the field"
             );
         }
-        assert!(!trace.sources.contains_key(&208), "and the field ends there");
+        assert!(
+            !trace.sources.contains_key(&208),
+            "and the field ends there"
+        );
 
         match &trace.sources[&200][0] {
             Followed::Text { name, len, .. } => {
@@ -2002,7 +2117,10 @@ mod tests {
         // the reading with the gauge in the cockpit, and a fault shows up as
         // the two disagreeing.
         let mut state = BiosState::new();
-        let writes = vec![BiosWrite { address: 300, value: 8738 }];
+        let writes = vec![BiosWrite {
+            address: 300,
+            value: 8738,
+        }];
         for w in &writes {
             state.apply(*w);
         }
@@ -2022,12 +2140,18 @@ mod tests {
         trace.follow(&profile, &cat);
 
         let mut state = BiosState::new();
-        let writes = vec![BiosWrite { address: 100, value: 0b100 }];
+        let writes = vec![BiosWrite {
+            address: 100,
+            value: 0b100,
+        }];
         for w in &writes {
             state.apply(*w);
         }
         trace.signals(&writes, &state, 0);
-        assert_eq!(trace.last.get("MASTER_CAUTION_LT").map(String::as_str), Some("1"));
+        assert_eq!(
+            trace.last.get("MASTER_CAUTION_LT").map(String::as_str),
+            Some("1")
+        );
     }
 
     #[test]
@@ -2057,7 +2181,10 @@ mod tests {
         // complete one value do not log four times.
         trace.signals(&writes, &state, 0);
         assert_eq!(
-            trace.last.get("UFC_SCRATCHPAD_NUMBER_DISPLAY").map(String::as_str),
+            trace
+                .last
+                .get("UFC_SCRATCHPAD_NUMBER_DISPLAY")
+                .map(String::as_str),
             Some("\" 264.000\""),
             "the whole field, with the padding that is its layout"
         );
@@ -2085,7 +2212,10 @@ mod tests {
         trace.follow(&profile, &cat);
 
         let mut state = BiosState::new();
-        let writes = vec![BiosWrite { address: 100, value: 0b100 }];
+        let writes = vec![BiosWrite {
+            address: 100,
+            value: 0b100,
+        }];
         for w in &writes {
             state.apply(*w);
         }
@@ -2094,7 +2224,10 @@ mod tests {
         // A burst of the same signal is held back and counted rather than
         // written a line at a time.
         for value in [0u16, 0b100, 0, 0b100] {
-            let writes = vec![BiosWrite { address: 100, value }];
+            let writes = vec![BiosWrite {
+                address: 100,
+                value,
+            }];
             for w in &writes {
                 state.apply(*w);
             }
@@ -2108,7 +2241,10 @@ mod tests {
             log.contains("TRACE        17 ms  signal  MASTER_CAUTION_LT"),
             "the signal as it arrived: {log}"
         );
-        assert!(log.contains("(x4)"), "the rest of the burst, counted: {log}");
+        assert!(
+            log.contains("(x4)"),
+            "the rest of the burst, counted: {log}"
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -2152,17 +2288,31 @@ mod tests {
         )
         .unwrap();
 
-        let loaded = load_profiles(&dir, &dir.join("no-pages"), &cat, &inventory, &displays, &NightlyOnly::default());
+        let loaded = load_profiles(
+            &dir,
+            &dir.join("no-pages"),
+            &cat,
+            &inventory,
+            &displays,
+            &NightlyOnly::default(),
+        );
         let _ = std::fs::remove_dir_all(&dir);
         assert_eq!(loaded.skipped, 0, "{:?}", loaded.messages);
         assert_eq!(loaded.profiles.len(), 1);
         let p = &loaded.profiles[0];
         assert_eq!(p.bindings[0].conditions.len(), 1, "the good row runs");
         assert!(p.bindings[1].is_placeholder(), "the flagged row is off");
-        let warning = loaded.messages.iter().find(|m| m.starts_with("warning")).expect("a warning");
+        let warning = loaded
+            .messages
+            .iter()
+            .find(|m| m.starts_with("warning"))
+            .expect("a warning");
         assert!(warning.contains("hornet.json"), "{warning}");
         assert!(
-            loaded.messages.iter().any(|m| m.contains("RENAMED_LT") && m.contains("1 lamp(s) off")),
+            loaded
+                .messages
+                .iter()
+                .any(|m| m.contains("RENAMED_LT") && m.contains("1 lamp(s) off")),
             "{:?}",
             loaded.messages
         );
@@ -2203,7 +2353,14 @@ mod page_load_tests {
         )
         .unwrap();
 
-        let loaded = load_profiles(&dir, &pages, &cat, &inventory, &displays, &NightlyOnly::default());
+        let loaded = load_profiles(
+            &dir,
+            &pages,
+            &cat,
+            &inventory,
+            &displays,
+            &NightlyOnly::default(),
+        );
         let _ = std::fs::remove_dir_all(&dir);
         assert_eq!(loaded.skipped, 0, "{:?}", loaded.messages);
         let p = &loaded.profiles[0];
@@ -2230,10 +2387,24 @@ mod page_load_tests {
             r#"{"schema_version": 1, "name": "Old", "aircraft": ["FA-18C_hornet"], "module": "FA-18C_hornet"}"#,
         )
         .unwrap();
-        let loaded = load_profiles(&dir, &dir.join("pages"), &cat, &inventory, &displays, &NightlyOnly::default());
+        let loaded = load_profiles(
+            &dir,
+            &dir.join("pages"),
+            &cat,
+            &inventory,
+            &displays,
+            &NightlyOnly::default(),
+        );
         let _ = std::fs::remove_dir_all(&dir);
         assert_eq!(loaded.skipped, 1);
-        assert!(loaded.messages.iter().any(|m| m.contains("old.json") && m.contains("before MCDU pages")), "{:?}", loaded.messages);
+        assert!(
+            loaded
+                .messages
+                .iter()
+                .any(|m| m.contains("old.json") && m.contains("before MCDU pages")),
+            "{:?}",
+            loaded.messages
+        );
     }
 }
 
@@ -2317,7 +2488,8 @@ fn load_profiles(
             continue;
         }
         for note in p.slot_notes(&pages) {
-            out.messages.push(format!("caution  {name}: {}: {}", note.device, note.text));
+            out.messages
+                .push(format!("caution  {name}: {}: {}", note.device, note.text));
         }
         // Each screen's start page becomes ordinary fields here, so what is
         // flagged and turned off below covers them like any other field.
@@ -2326,7 +2498,13 @@ fn load_profiles(
         // whole profile, and the copy that runs is the one without it.
         let flags = p.flags(module);
         if !flags.is_empty() {
-            out.messages.extend(flag_lines(&name, &p.module, &flags, cat.bios_version(), nightly));
+            out.messages.extend(flag_lines(
+                &name,
+                &p.module,
+                &flags,
+                cat.bios_version(),
+                nightly,
+            ));
         }
         let p = p.runnable(module);
 
@@ -2371,8 +2549,10 @@ fn load_profiles(
         .collect();
     out.messages.extend(twice);
     if out.skipped > 0 {
-        out.messages
-            .push(format!("{} profile(s) skipped; the rest still run.", out.skipped));
+        out.messages.push(format!(
+            "{} profile(s) skipped; the rest still run.",
+            out.skipped
+        ));
     }
     out
 }
@@ -2431,11 +2611,15 @@ fn flag_lines(
         }
     }
     for (reason, sources, counts, devices) in groups {
-        let cost: Vec<String> = [(counts[0], "lamp(s) off"), (counts[1], "alternative(s) dropped"), (counts[2], "field(s) blank")]
-            .iter()
-            .filter(|(n, _)| *n > 0)
-            .map(|(n, what)| format!("{n} {what}"))
-            .collect();
+        let cost: Vec<String> = [
+            (counts[0], "lamp(s) off"),
+            (counts[1], "alternative(s) dropped"),
+            (counts[2], "field(s) blank"),
+        ]
+        .iter()
+        .filter(|(n, _)| *n > 0)
+        .map(|(n, what)| format!("{n} {what}"))
+        .collect();
         out.push(format!(
             "           {}: {reason}. {} on {}",
             sources.join(", "),
@@ -2479,7 +2663,10 @@ fn profiles_fingerprint(dir: &PathBuf) -> Vec<(String, u64, u64)> {
             .map(|d| d.as_millis() as u64)
             .unwrap_or(0);
         out.push((
-            path.file_name().unwrap_or_default().to_string_lossy().into_owned(),
+            path.file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .into_owned(),
             meta.len(),
             stamp,
         ));
@@ -2492,7 +2679,10 @@ fn profiles_fingerprint(dir: &PathBuf) -> Vec<(String, u64, u64)> {
 /// not read: a broken file should cost the choice, not the panels.
 fn load_settings(path: &Path) -> dsc_config::settings::Settings {
     dsc_config::settings::Settings::load(path).unwrap_or_else(|e| {
-        warn!("could not read {}, so the settings are the defaults: {e}", path.display());
+        warn!(
+            "could not read {}, so the settings are the defaults: {e}",
+            path.display()
+        );
         dsc_config::settings::Settings::default()
     })
 }
@@ -2599,11 +2789,19 @@ fn run(
     // The page library the same way, and apart: each reconciles against its
     // own snapshot and neither reads the other's files.
     let pages = Pages::new(default_pages_dir, pages_dir);
-    let seeded = pages
-        .seed()
-        .with_context(|| format!("seeding {} from {}", pages_dir.display(), default_pages_dir.display()))?;
+    let seeded = pages.seed().with_context(|| {
+        format!(
+            "seeding {} from {}",
+            pages_dir.display(),
+            default_pages_dir.display()
+        )
+    })?;
     if !seeded.is_empty() {
-        say!("seeded   {} page file(s) from {}", seeded.len(), default_pages_dir.display());
+        say!(
+            "seeded   {} page file(s) from {}",
+            seeded.len(),
+            default_pages_dir.display()
+        );
     }
     for note in pages
         .merge_new(env!("CARGO_PKG_VERSION"))
@@ -2612,7 +2810,14 @@ fn run(
         say!("updated  {note}");
     }
 
-    let loaded = load_profiles(profiles_dir, pages_dir, &cat, &inventory, &displays, &nightly);
+    let loaded = load_profiles(
+        profiles_dir,
+        pages_dir,
+        &cat,
+        &inventory,
+        &displays,
+        &nightly,
+    );
     for line in &loaded.messages {
         // Kept, not merely said: which profiles ran, and which were thrown out
         // and why, is the first thing to check when a lamp does nothing.
@@ -2716,7 +2921,10 @@ fn run(
     let mut settings_seen = file_stamp(settings_path);
     kept!("keys     page modifier {}", settings.page_modifier.name());
 
-    let mut panels = Panels { handles, displays: displays.clone() };
+    let mut panels = Panels {
+        handles,
+        displays: displays.clone(),
+    };
     let mut engine = Engine::new(inventory, cat, profiles).with_displays(displays.clone());
     engine.set_connected(connected);
 
@@ -2735,7 +2943,11 @@ fn run(
 
     say!(
         "Running{}{}. Ctrl-C to stop and clear the panels.",
-        if dry_run { " (dry run - no HID writes)" } else { "" },
+        if dry_run {
+            " (dry run - no HID writes)"
+        } else {
+            ""
+        },
         if verbose { " (verbose)" } else { "" }
     );
 
@@ -2759,7 +2971,11 @@ fn run(
     // Profile hot reload. The directory is checked on a timer, and a change is
     // acted on only once it has stopped changing, so a profile caught halfway
     // through being written is not read.
-    let mut fingerprint = [profiles_fingerprint(profiles_dir), profiles_fingerprint(pages_dir)].concat();
+    let mut fingerprint = [
+        profiles_fingerprint(profiles_dir),
+        profiles_fingerprint(pages_dir),
+    ]
+    .concat();
     let mut settling: Option<Vec<(String, u64, u64)>> = None;
     let mut next_check = Instant::now() + PROFILE_POLL;
     let mut next_status = Instant::now() + STATUS_EVERY;
@@ -2788,7 +3004,10 @@ fn run(
                     // us at all" is the first question every report comes down
                     // to, and the answer is otherwise nowhere in the file.
                     if last_traffic.is_none() {
-                        say!("stream   first frame after {} ms", started.elapsed().as_millis());
+                        say!(
+                            "stream   first frame after {} ms",
+                            started.elapsed().as_millis()
+                        );
                     }
                     trace.tally.frames += 1;
                     trace.tally.words += writes.len() as u64;
@@ -2813,7 +3032,10 @@ fn run(
             if now.saturating_duration_since(seen) >= limit && now >= next_dcs_check {
                 next_dcs_check = now + DCS_RECHECK;
                 if !dcs_is_running() {
-                    say!("stream quiet for {}s and DCS is no longer running. Exiting.", limit.as_secs());
+                    say!(
+                        "stream quiet for {}s and DCS is no longer running. Exiting.",
+                        limit.as_secs()
+                    );
                     break;
                 }
             }
@@ -2827,9 +3049,16 @@ fn run(
             if stamp != settings_seen {
                 settings_seen = stamp;
                 settings = load_settings(settings_path);
-                say!("settings reloaded: page modifier {}", settings.page_modifier.name());
+                say!(
+                    "settings reloaded: page modifier {}",
+                    settings.page_modifier.name()
+                );
             }
-            let current = [profiles_fingerprint(profiles_dir), profiles_fingerprint(pages_dir)].concat();
+            let current = [
+                profiles_fingerprint(profiles_dir),
+                profiles_fingerprint(pages_dir),
+            ]
+            .concat();
             if current != fingerprint {
                 // Seen changed once; act on it when it looks the same twice
                 // running. An editor saving a file and a hand edit both settle
@@ -2838,8 +3067,14 @@ fn run(
                     fingerprint = current;
                     settling = None;
 
-                    let reloaded =
-                        load_profiles(profiles_dir, pages_dir, engine.catalogue(), engine.devices(), &displays, &nightly);
+                    let reloaded = load_profiles(
+                        profiles_dir,
+                        pages_dir,
+                        engine.catalogue(),
+                        engine.devices(),
+                        &displays,
+                        &nightly,
+                    );
                     say!(
                         "reloaded {} profile(s) from {}",
                         reloaded.profiles.len(),
@@ -2877,9 +3112,17 @@ fn run(
         // batch, so a swap goes out as soon as the loop wakes.
         while let Ok(event) = keys.try_recv() {
             match event {
-                page_keys::KeyEvent::Down { device, number, held } => {
-                    let Some(spec) = engine.devices().device(&device) else { continue };
-                    let Some(slot) = spec.slot_of_button(number) else { continue };
+                page_keys::KeyEvent::Down {
+                    device,
+                    number,
+                    held,
+                } => {
+                    let Some(spec) = engine.devices().device(&device) else {
+                        continue;
+                    };
+                    let Some(slot) = spec.slot_of_button(number) else {
+                        continue;
+                    };
                     let key = spec.page_keys[slot].clone();
                     // The chosen modifier alone, or the press is DCS's.
                     if !settings.page_modifier.alone_in(&held) {
@@ -2899,7 +3142,10 @@ fn run(
                             kept!("page     {device} {key}  ->  slot {}{what}", slot + 1);
                             apply(&batch, &mut panels, dry_run, &mut trace, elapsed)?;
                         }
-                        None => note!("page     {device} {key}  ->  slot {} changes nothing", slot + 1),
+                        None => note!(
+                            "page     {device} {key}  ->  slot {} changes nothing",
+                            slot + 1
+                        ),
                     }
                 }
                 page_keys::KeyEvent::Lost { device, why } => {
@@ -2951,7 +3197,8 @@ fn run(
                         // Write a stub so the aircraft shows up in the editor
                         // with every lamp listed and nothing assigned. Takes
                         // effect next run; the panel stays cleared this time.
-                        if let Err(e) = write_stub(profiles_dir, name, engine.catalogue(), engine.devices())
+                        if let Err(e) =
+                            write_stub(profiles_dir, name, engine.catalogue(), engine.devices())
                         {
                             warn!("  could not write a starter profile: {e:#}");
                         }
@@ -2974,7 +3221,11 @@ fn run(
                     warn!("DCS-BIOS does not report its version, so it cannot be checked against the catalogue.");
                 }
                 Running::Differs(running) => {
-                    let built = engine.catalogue().bios_version().unwrap_or("unknown").to_string();
+                    let built = engine
+                        .catalogue()
+                        .bios_version()
+                        .unwrap_or("unknown")
+                        .to_string();
                     let installed = catalogue_build::installed_version(&bios_json);
                     // The catalogue is behind the installed DCS-BIOS: it was
                     // updated between missions while this daemon ran. What DCS
@@ -2985,7 +3236,14 @@ fn run(
                         rebuilt = true;
                         say!("catalogue rebuilt: DCS is running DCS-BIOS {running:?}");
                         let cat = load_catalogue(catalogue_dir, bios)?;
-                        let reloaded = load_profiles(profiles_dir, pages_dir, &cat, engine.devices(), &displays, &nightly);
+                        let reloaded = load_profiles(
+                            profiles_dir,
+                            pages_dir,
+                            &cat,
+                            engine.devices(),
+                            &displays,
+                            &nightly,
+                        );
                         for line in &reloaded.messages {
                             emit(line);
                         }
@@ -3141,7 +3399,11 @@ fn apply(
         // worth reading afterwards. A bitmap is logged as its head and its
         // length: a screen's worth of hex, even once a second, would be most
         // of the file and tells nobody anything they could check.
-        let logged = if w.transport == Transport::Text { shown } else { brief(&w.bytes) };
+        let logged = if w.transport == Transport::Text {
+            shown
+        } else {
+            brief(&w.bytes)
+        };
         trace.log(
             &format!("lcd:{}/{}", w.device, w.group),
             now,
@@ -3222,7 +3484,10 @@ fn write_stub(
     // No profile loaded is not the same as none claiming it: one that was
     // skipped still does, and a stub beside it would claim the aircraft twice
     // once that one is fixed. Only the active folder is read, so no defaults.
-    if let Some(owner) = Profiles::new(PathBuf::new(), profiles_dir).claimed_aircraft().get(aircraft) {
+    if let Some(owner) = Profiles::new(PathBuf::new(), profiles_dir)
+        .claimed_aircraft()
+        .get(aircraft)
+    {
         warn!("  {owner} claims {aircraft} but was skipped; fix it rather than starting another.");
         return Ok(());
     }

@@ -154,7 +154,11 @@ pub fn parts(source: &Profile, devices: &DeviceInventory) -> Parts {
             })
             .map(|(_, l)| LampPart {
                 led: l.name.clone(),
-                label: if l.label.is_empty() { l.name.clone() } else { l.label.clone() },
+                label: if l.label.is_empty() {
+                    l.name.clone()
+                } else {
+                    l.label.clone()
+                },
             })
             .collect();
         if !lamps.is_empty() {
@@ -171,19 +175,27 @@ pub fn parts(source: &Profile, devices: &DeviceInventory) -> Parts {
 /// Every filled page slot `source` has, by panel, named with `name_of`.
 ///
 /// A panel the source has following another is left out, as for `parts`.
-pub fn slot_parts(source: &Profile, devices: &DeviceInventory, name_of: impl Fn(&str) -> Option<String>) -> Vec<SlotPart> {
+pub fn slot_parts(
+    source: &Profile,
+    devices: &DeviceInventory,
+    name_of: impl Fn(&str) -> Option<String>,
+) -> Vec<SlotPart> {
     let mut out = Vec::new();
     for spec in &devices.devices {
         if source.follows.contains_key(&spec.key) {
             continue;
         }
-        let Some(slots) = source.screens.get(&spec.key) else { continue };
+        let Some(slots) = source.screens.get(&spec.key) else {
+            continue;
+        };
         for (i, slot) in slots.filled() {
             out.push(SlotPart {
                 device: spec.key.clone(),
                 screen: device_label(devices, &spec.key),
                 slot: i + 1,
-                page: slot.page.as_ref().map_or(String::new(), |id| name_of(id).unwrap_or_else(|| id.clone())),
+                page: slot.page.as_ref().map_or(String::new(), |id| {
+                    name_of(id).unwrap_or_else(|| id.clone())
+                }),
                 blank: slot.page.is_none(),
                 start: slots.start == Some(i + 1),
             });
@@ -234,10 +246,17 @@ pub fn merge(
         let picked = |b: &&crate::Binding| {
             b.device == device
                 && !b.is_placeholder()
-                && pick.lights.iter().any(|l| l.device == device && l.led == b.led)
+                && pick
+                    .lights
+                    .iter()
+                    .any(|l| l.device == device && l.led == b.led)
         };
         for b in source.bindings.iter().filter(picked) {
-            match profile.bindings.iter_mut().find(|t| t.device == b.device && t.led == b.led) {
+            match profile
+                .bindings
+                .iter_mut()
+                .find(|t| t.device == b.device && t.led == b.led)
+            {
                 Some(t) if same(t, b) => change.unchanged += 1,
                 Some(t) => {
                     *t = b.clone();
@@ -255,10 +274,21 @@ pub fn merge(
 
     for pick in &pick.slots {
         let i = pick.slot.saturating_sub(1);
-        let incoming = source.screens.get(&pick.device).and_then(|s| s.slots.get(i)).cloned().flatten();
-        let mut slots = profile.screens.get(&pick.device).cloned().unwrap_or_default();
+        let incoming = source
+            .screens
+            .get(&pick.device)
+            .and_then(|s| s.slots.get(i))
+            .cloned()
+            .flatten();
+        let mut slots = profile
+            .screens
+            .get(&pick.device)
+            .cloned()
+            .unwrap_or_default();
         let count = devices.device(&pick.device).map_or(1, |d| d.slot_count());
-        slots.slots.resize(count.max(slots.slots.len()).max(i + 1), None);
+        slots
+            .slots
+            .resize(count.max(slots.slots.len()).max(i + 1), None);
         let mut change = Change {
             label: format!("{} slot {}", device_label(devices, &pick.device), pick.slot),
             added: 0,
@@ -302,7 +332,11 @@ pub fn merge(
             ));
         }
     }
-    Ok(Merged { profile, changes, notes })
+    Ok(Merged {
+        profile,
+        changes,
+        notes,
+    })
 }
 
 /// Put a device's slots on `profile`, leaving no entry for six empty ones.

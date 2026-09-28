@@ -75,9 +75,9 @@ export function noteEditor(row: Annotated, what: string, onChange: () => void): 
         infoIcon(
           "About notes",
           "Nothing reads this but the next person to open the profile, which is " +
-          "usually you. The shipped profiles use it for the reasoning a row " +
-          "cannot show on its own: why a lamp is left unassigned, or which " +
-          "cells a display's lines were chosen to land on.",
+            "usually you. The shipped profiles use it for the reasoning a row " +
+            "cannot show on its own: why a lamp is left unassigned, or which " +
+            "cells a display's lines were chosen to land on.",
         ),
       ),
       box,

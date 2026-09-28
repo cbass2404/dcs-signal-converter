@@ -116,7 +116,10 @@ fn the_window_shows_the_station_you_are_sitting_in() {
     let mut writes = text_at(0, "TEST_TWOSEAT\0\0\0\0\0\0\0\0\0\0\0\0");
     writes.extend(text_at(200, " 7"));
     writes.extend(text_at(210, " 4"));
-    writes.push(BiosWrite { address: 100, value: 0 });
+    writes.push(BiosWrite {
+        address: 100,
+        value: 0,
+    });
 
     let t0 = Instant::now();
     assert_eq!(
@@ -126,7 +129,10 @@ fn the_window_shows_the_station_you_are_sitting_in() {
     );
 
     // Move to the other station. Nothing else changes.
-    let moved = vec![BiosWrite { address: 100, value: 1 }];
+    let moved = vec![BiosWrite {
+        address: 100,
+        value: 1,
+    }];
     assert_eq!(
         painted(&mut e, &moved, t0 + Duration::from_secs(10)),
         expected(&displays, " 4"),

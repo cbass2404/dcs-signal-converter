@@ -43,7 +43,11 @@ fn every_declared_display_has_a_map() {
         DisplayCatalogue::load_dir(&root().join("../../data/displays")).expect("displays load");
     for device in &inventory().devices {
         for (_, key) in device.displays() {
-            assert!(displays.get(key).is_some(), "{}: no display map named {key:?}", device.key);
+            assert!(
+                displays.get(key).is_some(),
+                "{}: no display map named {key:?}",
+                device.key
+            );
         }
     }
 }
@@ -82,13 +86,20 @@ fn the_cdus_share_a_screen_and_nothing_else() {
             .iter()
             .map(|seat| {
                 let key = format!("{family}_{seat}");
-                inventory.device(&key).unwrap_or_else(|| panic!("{key} is in devices.json"))
+                inventory
+                    .device(&key)
+                    .unwrap_or_else(|| panic!("{key} is in devices.json"))
             })
             .collect()
     };
     for family in families {
         for a in names(family) {
-            assert_eq!(a.part_with_display("MCDU").map(|_| ()), Some(()), "{} has the MCDU screen", a.key);
+            assert_eq!(
+                a.part_with_display("MCDU").map(|_| ()),
+                Some(()),
+                "{} has the MCDU screen",
+                a.key
+            );
             for other in families {
                 for b in names(other) {
                     assert_eq!(

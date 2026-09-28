@@ -95,7 +95,11 @@ fn a_missing_catalogue_is_built_and_reads_back() {
     let fresh = ensure(&install.bios_json(), &install.catalogue()).unwrap();
     assert_eq!(
         fresh,
-        Freshness::Built { was: None, now: "2026.09.18-nightly".into(), modules: 1 }
+        Freshness::Built {
+            was: None,
+            now: "2026.09.18-nightly".into(),
+            modules: 1
+        }
     );
 
     let cat = Catalogue::load_dir(&install.catalogue()).unwrap();
@@ -116,9 +120,16 @@ fn a_missing_catalogue_is_built_and_reads_back() {
 fn the_same_version_is_not_built_twice() {
     // What the second of the daemon and the editor to start sees.
     let install = Install::new("same");
-    assert!(built(&ensure(&install.bios_json(), &install.catalogue()).unwrap()));
+    assert!(built(
+        &ensure(&install.bios_json(), &install.catalogue()).unwrap()
+    ));
     let again = ensure(&install.bios_json(), &install.catalogue()).unwrap();
-    assert_eq!(again, Freshness::Current { version: "2026.09.18-nightly".into() });
+    assert_eq!(
+        again,
+        Freshness::Current {
+            version: "2026.09.18-nightly".into()
+        }
+    );
 }
 
 #[test]
@@ -142,7 +153,10 @@ fn a_new_version_replaces_the_whole_catalogue() {
     assert_eq!(signal_ids(&install.catalogue()), ["MASTER_CAUTION_LT"]);
     // And nothing is left beside it from the swap.
     for leftover in ["catalogue.building", "catalogue.old", "catalogue.lock"] {
-        assert!(!install.root.join(leftover).exists(), "{leftover} was left behind");
+        assert!(
+            !install.root.join(leftover).exists(),
+            "{leftover} was left behind"
+        );
     }
 }
 
@@ -165,7 +179,9 @@ fn changed_files_under_the_same_version_are_rebuilt() {
     );
     assert_eq!(fresh.to_string(), "catalogue rebuilt: the DCS-BIOS 2026.09.18-nightly files changed since the last build: 1 modules");
     assert_eq!(signal_ids(&install.catalogue()), ["MASTER_CAUTION_LT"]);
-    assert!(!built(&ensure(&install.bios_json(), &install.catalogue()).unwrap()));
+    assert!(!built(
+        &ensure(&install.bios_json(), &install.catalogue()).unwrap()
+    ));
 }
 
 #[test]
@@ -193,8 +209,12 @@ fn a_catalogue_from_the_python_builder_is_rebuilt_once() {
         r#"{"bios_version": "2026.09.18-nightly", "source": "x", "modules": {}}"#,
     )
     .unwrap();
-    assert!(built(&ensure(&install.bios_json(), &install.catalogue()).unwrap()));
-    assert!(!built(&ensure(&install.bios_json(), &install.catalogue()).unwrap()));
+    assert!(built(
+        &ensure(&install.bios_json(), &install.catalogue()).unwrap()
+    ));
+    assert!(!built(
+        &ensure(&install.bios_json(), &install.catalogue()).unwrap()
+    ));
 }
 
 #[test]
@@ -204,12 +224,30 @@ fn no_dcs_bios_says_so_and_keeps_what_is_there() {
     fs::remove_dir_all(install.root.join("DCS-BIOS")).unwrap();
 
     let fresh = ensure(&install.bios_json(), &install.catalogue()).unwrap();
-    assert!(matches!(fresh, Freshness::NoBios { have_catalogue: true, .. }), "{fresh:?}");
+    assert!(
+        matches!(
+            fresh,
+            Freshness::NoBios {
+                have_catalogue: true,
+                ..
+            }
+        ),
+        "{fresh:?}"
+    );
     assert!(install.catalogue().join("TestJet.json").is_file());
 
     fs::remove_dir_all(install.catalogue()).unwrap();
     let fresh = ensure(&install.bios_json(), &install.catalogue()).unwrap();
-    assert!(matches!(fresh, Freshness::NoBios { have_catalogue: false, .. }), "{fresh:?}");
+    assert!(
+        matches!(
+            fresh,
+            Freshness::NoBios {
+                have_catalogue: false,
+                ..
+            }
+        ),
+        "{fresh:?}"
+    );
     assert!(rebuild(&install.bios_json(), &install.catalogue()).is_err());
 }
 
@@ -219,9 +257,16 @@ fn a_lock_left_by_a_crashed_build_does_not_block_forever() {
     let lock = install.root.join("catalogue.lock");
     fs::write(&lock, "12345").unwrap();
     let old = SystemTime::now() - Duration::from_secs(600);
-    fs::File::options().write(true).open(&lock).unwrap().set_modified(old).unwrap();
+    fs::File::options()
+        .write(true)
+        .open(&lock)
+        .unwrap()
+        .set_modified(old)
+        .unwrap();
 
-    assert!(built(&ensure(&install.bios_json(), &install.catalogue()).unwrap()));
+    assert!(built(
+        &ensure(&install.bios_json(), &install.catalogue()).unwrap()
+    ));
     assert!(!lock.exists());
 }
 

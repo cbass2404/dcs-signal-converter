@@ -8,14 +8,18 @@
 
 use std::path::Path;
 
-use dsc_config::{Catalogue, DeviceInventory, DisplayCatalogue, PageLibrary, Profile, Readout, Span};
+use dsc_config::{
+    Catalogue, DeviceInventory, DisplayCatalogue, PageLibrary, Profile, Readout, Span,
+};
 
 fn r(p: &str) -> std::path::PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..").join(p)
 }
 
 fn fixture(name: &str) -> Profile {
-    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures").join(name);
+    let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures")
+        .join(name);
     Profile::load(&path).expect("fixture profile")
 }
 
@@ -41,7 +45,10 @@ fn checks(p: &Profile) -> (Vec<String>, Vec<String>) {
 fn flagged(p: &Profile, value: &str) -> bool {
     let (cautions, refusals) = checks(p);
     let says = format!("{value:?} is not something");
-    assert!(!refusals.iter().any(|e| e.contains(&says)), "refused, not flagged: {refusals:?}");
+    assert!(
+        !refusals.iter().any(|e| e.contains(&says)),
+        "refused, not flagged: {refusals:?}"
+    );
     cautions.iter().any(|c| c.contains(&says))
 }
 
@@ -52,12 +59,18 @@ fn typed(mut p: Profile, cells: &str, spans: Vec<Span>) -> Profile {
         .iter()
         .position(|f| f.cells.to_string() == cells)
         .expect("a field on those cells");
-    p.readouts[at] = Readout { content: spans, ..p.readouts[at].clone() };
+    p.readouts[at] = Readout {
+        content: spans,
+        ..p.readouts[at].clone()
+    };
     p
 }
 
 fn text(s: &str) -> Span {
-    Span { text: s.into(), ..Span::default() }
+    Span {
+        text: s.into(),
+        ..Span::default()
+    }
 }
 
 #[test]
@@ -79,9 +92,16 @@ fn lowercase_is_flagged_on_the_ded_except_its_symbols() {
 
 #[test]
 fn everything_the_ded_draws_says_nothing() {
-    let p = typed(fixture("f-16.json"), "0-23", vec![text("STPT a 12 <>[]+=|,!?;&_'\"%#@ud")]);
+    let p = typed(
+        fixture("f-16.json"),
+        "0-23",
+        vec![text("STPT a 12 <>[]+=|,!?;&_'\"%#@ud")],
+    );
     let (cautions, _) = checks(&p);
-    assert!(!cautions.iter().any(|c| c.contains("is not something")), "{cautions:?}");
+    assert!(
+        !cautions.iter().any(|c| c.contains("is not something")),
+        "{cautions:?}"
+    );
 }
 
 #[test]
@@ -113,7 +133,10 @@ fn a_comm_window_is_checked_as_one_value() {
     // spelling, and "AB" is nothing it has.
     let fine = typed(fixture("fa-18.json"), "34", vec![text("12")]);
     let (cautions, _) = checks(&fine);
-    assert!(!cautions.iter().any(|c| c.contains("is not something")), "{cautions:?}");
+    assert!(
+        !cautions.iter().any(|c| c.contains("is not something")),
+        "{cautions:?}"
+    );
     let dark = typed(fixture("fa-18.json"), "34", vec![text("AB")]);
     assert!(flagged(&dark, "AB"), "{:?}", checks(&dark));
 }

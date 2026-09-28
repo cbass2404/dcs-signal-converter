@@ -187,19 +187,32 @@ pub fn pixel_commit_frame(part_id: u32, clock_ms: u32) -> Vec<u8> {
 /// and the colours are `B G R A`. Taken verbatim from WwDevicesDotnet, which
 /// took them from SimAppPro.
 const GRID_FEATURES: [&str; 27] = [
-    "0100050000000200000000000000", "0100060000000300000000000000",
-    "0200000000ff0400000000000000", "020000a5ffff0500000000000000",
-    "0200ffffffff0600000000000000", "0200ffff00ff0700000000000000",
-    "02003dff00ff0800000000000000", "0200ff63ffff0900000000000000",
-    "02000000ffff0a00000000000000", "020000ffffff0b00000000000000",
-    "0200425c61ff0c00000000000000", "0200777777ff0d00000000000000",
-    "02005e7379ff0e00000000000000", "0300000000ff0f00000000000000",
-    "030000a5ffff1000000000000000", "0300ffffffff1100000000000000",
-    "0300ffff00ff1200000000000000", "03003dff00ff1300000000000000",
-    "0300ff63ffff1400000000000000", "03000000ffff1500000000000000",
-    "030000ffffff1600000000000000", "0300425c61ff1700000000000000",
-    "0300777777ff1800000000000000", "03005e7379ff1900000000000000",
-    "0400000000001a00000000000000", "0400010000001b00000000000000",
+    "0100050000000200000000000000",
+    "0100060000000300000000000000",
+    "0200000000ff0400000000000000",
+    "020000a5ffff0500000000000000",
+    "0200ffffffff0600000000000000",
+    "0200ffff00ff0700000000000000",
+    "02003dff00ff0800000000000000",
+    "0200ff63ffff0900000000000000",
+    "02000000ffff0a00000000000000",
+    "020000ffffff0b00000000000000",
+    "0200425c61ff0c00000000000000",
+    "0200777777ff0d00000000000000",
+    "02005e7379ff0e00000000000000",
+    "0300000000ff0f00000000000000",
+    "030000a5ffff1000000000000000",
+    "0300ffffffff1100000000000000",
+    "0300ffff00ff1200000000000000",
+    "03003dff00ff1300000000000000",
+    "0300ff63ffff1400000000000000",
+    "03000000ffff1500000000000000",
+    "030000ffffff1600000000000000",
+    "0300425c61ff1700000000000000",
+    "0300777777ff1800000000000000",
+    "03005e7379ff1900000000000000",
+    "0400000000001a00000000000000",
+    "0400010000001b00000000000000",
     "0400020000001c00000000000000",
 ];
 
@@ -226,9 +239,19 @@ pub fn grid_format_table(
     }
     out.extend(structured(part_id, SET_SCREEN_INFO, clock_ms, &info));
     for feature in GRID_FEATURES {
-        out.extend(structured(part_id, SET_FEATURE_INFO, clock_ms, &hex(feature)));
+        out.extend(structured(
+            part_id,
+            SET_FEATURE_INFO,
+            clock_ms,
+            &hex(feature),
+        ));
     }
-    out.extend(structured(part_id, SET_COMPOSITE_INDEX_BYTES, clock_ms, &[2]));
+    out.extend(structured(
+        part_id,
+        SET_COMPOSITE_INDEX_BYTES,
+        clock_ms,
+        &[2],
+    ));
     out.extend(structured(part_id, BUILD_FORMAT_TABLE, clock_ms, &[]));
     out
 }
@@ -245,7 +268,12 @@ pub struct GridCell {
 }
 
 impl GridCell {
-    pub const BLANK: GridCell = GridCell { ch: ' ', fg: 2, bg: 0, small: false };
+    pub const BLANK: GridCell = GridCell {
+        ch: ' ',
+        fg: 2,
+        bg: 0,
+        small: false,
+    };
 
     /// The cell's index into the format table. The strides are the product's:
     /// 363 per font, 33 per foreground, 3 per background, then 1 for the first
@@ -392,7 +420,8 @@ impl Device {
         let mut fallback = None;
         let mut failed = None;
         for info in candidates {
-            let path = std::ffi::CString::new(info.path.clone()).expect("hid path has no interior nul");
+            let path =
+                std::ffi::CString::new(info.path.clone()).expect("hid path has no interior nul");
             let handle = match api.open_path(&path) {
                 Ok(h) => h,
                 Err(e) => {
@@ -471,8 +500,20 @@ impl Device {
 
     /// Declare a grid screen and its format table. The grid draws nothing
     /// until this has been sent, and a font upload resets the grid to 24x14.
-    pub fn declare_grid(&self, part_id: u32, origin: (u16, u16), rows: u16, columns: u16) -> Result<()> {
-        self.send_pixel_frame(&grid_format_table(part_id, self.clock_ms(), origin, rows, columns))
+    pub fn declare_grid(
+        &self,
+        part_id: u32,
+        origin: (u16, u16),
+        rows: u16,
+        columns: u16,
+    ) -> Result<()> {
+        self.send_pixel_frame(&grid_format_table(
+            part_id,
+            self.clock_ms(),
+            origin,
+            rows,
+            columns,
+        ))
     }
 
     /// Paint a whole grid screen. The screen keeps it after the process exits.
@@ -582,7 +623,9 @@ mod tests {
 
     #[test]
     fn reply_strips_the_bias() {
-        let raw = [0x02, 0x05, 0xcf, 0x00, 0x00, 0x03, 0x49, 0x01, 0xff, 0, 0, 0, 0, 0];
+        let raw = [
+            0x02, 0x05, 0xcf, 0x00, 0x00, 0x03, 0x49, 0x01, 0xff, 0, 0, 0, 0, 0,
+        ];
         let reply = Reply::parse(&raw).unwrap();
         assert_eq!(reply.part_id, 0xbf05);
         assert_eq!(reply.data, vec![0x49, 0x01, 0xff]);
@@ -674,10 +717,9 @@ mod tests {
     fn the_format_table_is_the_one_simapppro_declares() {
         // SimAppPro's font upload, as WwDevicesDotnet recorded it, declares
         // the grid and its format table at the end. Ours has to say the same.
-        let map: serde_json::Value = serde_json::from_str(include_str!(
-            "../../../data/mcdu/font-packet-map-3x31.json"
-        ))
-        .unwrap();
+        let map: serde_json::Value =
+            serde_json::from_str(include_str!("../../../data/mcdu/font-packet-map-3x31.json"))
+                .unwrap();
         let mut stream = Vec::new();
         for p in map["Packets"].as_array().unwrap() {
             let p = p.as_str().unwrap().replace("{CP}", "32bb");
@@ -725,7 +767,12 @@ mod tests {
 
     #[test]
     fn a_small_coloured_glyph_carries_its_utf8_whole() {
-        let cell = GridCell { ch: '☐', fg: 4, bg: 0, small: true };
+        let cell = GridCell {
+            ch: '☐',
+            fg: 4,
+            bg: 0,
+            small: true,
+        };
         let reports = grid_reports(&[GridCell::BLANK, cell, GridCell::BLANK]);
         // Green is 4 * 0x21 = 0x84, small adds 0x16b: 0x1ef.
         assert_eq!(&reports[0][4..9], &[0xef, 0x01, 0xe2, 0x98, 0x90]);
@@ -739,7 +786,9 @@ mod tests {
     }
 
     fn hex(s: &str) -> Vec<u8> {
-        s.split_whitespace().map(|b| u8::from_str_radix(b, 16).unwrap()).collect()
+        s.split_whitespace()
+            .map(|b| u8::from_str_radix(b, 16).unwrap())
+            .collect()
     }
 
     /// The three collections a CarrierAce MFD (PID 0xbee2) presents in

@@ -30,7 +30,8 @@ fn engine() -> Engine {
     let devices = DeviceInventory::load(&r("data/devices.json")).expect("devices");
     let cat = Catalogue::load_dir(&r("data/catalogue")).expect("catalogue");
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).expect("displays");
-    let profile = Profile::load(&r("crates/dsc-engine/tests/fixtures/fa-18.json")).expect("hornet profile");
+    let profile =
+        Profile::load(&r("crates/dsc-engine/tests/fixtures/fa-18.json")).expect("hornet profile");
     let mut e = Engine::new(devices, cat, vec![profile]).with_displays(displays);
     e.set_connected(vec![
         "TAKEOFF_PLANEL_2".into(),
@@ -156,5 +157,9 @@ fn a_mission_ending_blanks_the_glass() {
         ended.lcd.iter().all(|w| w.bytes.iter().all(|b| *b == 0)),
         "every group written on mission end must be zeros"
     );
-    assert_eq!(lcd_backlight(&ended), Some(0), "and its backlight goes off with it");
+    assert_eq!(
+        lcd_backlight(&ended),
+        Some(0),
+        "and its backlight goes off with it"
+    );
 }

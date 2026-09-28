@@ -432,7 +432,10 @@ mod tests {
         put_text(&mut state, 0x7446, b"       3");
         assert_eq!(state.text(0x7446, 8), Some("       3".to_string()));
         // `string` is for names, and would put the digit in the leftmost cell.
-        assert_eq!(state.string(0x7446, 8), Some("       3".trim_end().to_string()));
+        assert_eq!(
+            state.string(0x7446, 8),
+            Some("       3".trim_end().to_string())
+        );
     }
 
     #[test]
@@ -476,7 +479,10 @@ mod tests {
         // and a box. Each is one byte, so one cell, and each must survive
         // distinct: as UTF-8 all three are the same replacement character.
         put_text(&mut state, 0x11c0, b"\xabWP\xbb \xa1");
-        assert_eq!(state.text(0x11c0, 6), Some("\u{ab}WP\u{bb} \u{a1}".to_string()));
+        assert_eq!(
+            state.text(0x11c0, 6),
+            Some("\u{ab}WP\u{bb} \u{a1}".to_string())
+        );
     }
 
     #[test]

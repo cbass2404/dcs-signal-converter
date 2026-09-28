@@ -74,7 +74,9 @@ impl Settings {
     /// to name and then carry on with the defaults.
     pub fn load(path: &Path) -> Result<Settings> {
         match std::fs::read_to_string(path) {
-            Ok(text) => serde_json::from_str(&text).map_err(|e| Error::Json(e, path.display().to_string())),
+            Ok(text) => {
+                serde_json::from_str(&text).map_err(|e| Error::Json(e, path.display().to_string()))
+            }
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Settings::default()),
             Err(e) => Err(e.into()),
         }
@@ -108,8 +110,14 @@ mod tests {
         use Modifier::*;
         assert!(Ctrl.alone_in(&[Ctrl]));
         assert!(!Ctrl.alone_in(&[]));
-        assert!(!Ctrl.alone_in(&[Ctrl, Shift]), "Ctrl+Shift is another DCS button");
-        assert!(!Alt.alone_in(&[Ctrl, Alt]), "AltGr reads as Ctrl and Alt, and is not Alt");
+        assert!(
+            !Ctrl.alone_in(&[Ctrl, Shift]),
+            "Ctrl+Shift is another DCS button"
+        );
+        assert!(
+            !Alt.alone_in(&[Ctrl, Alt]),
+            "AltGr reads as Ctrl and Alt, and is not Alt"
+        );
         assert!(!Shift.alone_in(&[Ctrl]));
     }
 
@@ -126,7 +134,10 @@ mod tests {
         assert_eq!(read.theme, Theme::Dark);
         assert_eq!(read.page_modifier, Modifier::Ctrl);
 
-        let chosen = Settings { page_modifier: Modifier::Alt, theme: Theme::Light };
+        let chosen = Settings {
+            page_modifier: Modifier::Alt,
+            theme: Theme::Light,
+        };
         chosen.save(&path).unwrap();
         assert_eq!(Settings::load(&path).unwrap(), chosen);
 

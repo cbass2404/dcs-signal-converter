@@ -7,7 +7,9 @@
 
 use std::path::{Path, PathBuf};
 
-use dsc_config::{DeviceInventory, Error, Page, PageLibrary, PageSlots, Profile, Readout, Slot, SlotRun};
+use dsc_config::{
+    DeviceInventory, Error, Page, PageLibrary, PageSlots, Profile, Readout, Slot, SlotRun,
+};
 
 const CAPTAIN: &str = "MCDU_Captain";
 const COPILOT: &str = "MCDU_CoPilot";
@@ -47,10 +49,18 @@ fn the_mcdu_page_keys_are_the_left_line_select_keys() {
         let d = devices.device(key).expect("an MCDU entry");
         assert_eq!(d.slot_count(), 6, "{key}");
         for n in 1..=6u16 {
-            assert_eq!(d.slot_of_button(n), Some(usize::from(n) - 1), "{key} button {n}");
+            assert_eq!(
+                d.slot_of_button(n),
+                Some(usize::from(n) - 1),
+                "{key} button {n}"
+            );
         }
         assert_eq!(d.button("LSK_1R").map(|b| b.number), Some(7));
-        assert_eq!(d.slot_of_button(7), None, "LSK 1R is a button, not a page key");
+        assert_eq!(
+            d.slot_of_button(7),
+            None,
+            "LSK 1R is a button, not a page key"
+        );
     }
 }
 
@@ -65,11 +75,20 @@ fn a_page_key_must_name_a_button_of_its_own_device() {
     let one = r#"{"number": 1, "name": "A"}"#;
     assert!(inventory(one, r#""A""#).is_ok());
     assert!(matches!(inventory(one, r#""B""#), Err(Error::UnknownPageKey(_, k)) if k == "B"));
-    assert!(matches!(inventory(one, r#""A", "A""#), Err(Error::ButtonTwice(..))));
+    assert!(matches!(
+        inventory(one, r#""A", "A""#),
+        Err(Error::ButtonTwice(..))
+    ));
     let twice = r#"{"number": 1, "name": "A"}, {"number": 1, "name": "B"}"#;
-    assert!(matches!(inventory(twice, ""), Err(Error::ButtonTwice(..))), "one number, two names");
+    assert!(
+        matches!(inventory(twice, ""), Err(Error::ButtonTwice(..))),
+        "one number, two names"
+    );
     let same = r#"{"number": 1, "name": "A"}, {"number": 2, "name": "A"}"#;
-    assert!(matches!(inventory(same, ""), Err(Error::ButtonTwice(..))), "one name, two numbers");
+    assert!(
+        matches!(inventory(same, ""), Err(Error::ButtonTwice(..))),
+        "one name, two numbers"
+    );
 }
 
 fn field(cells: &str) -> Readout {
@@ -79,8 +98,10 @@ fn field(cells: &str) -> Readout {
 }
 
 fn profile() -> Profile {
-    let mut p: Profile =
-        serde_json::from_str(r#"{"schema_version": 2, "name": "T", "aircraft": ["TEST"], "module": "TEST"}"#).unwrap();
+    let mut p: Profile = serde_json::from_str(
+        r#"{"schema_version": 2, "name": "T", "aircraft": ["TEST"], "module": "TEST"}"#,
+    )
+    .unwrap();
     let mut s = PageSlots::empty(6);
     s.slots[0] = Some(Slot::new("aaaaaa"));
     s.slots[1] = Some(Slot::blank());
@@ -98,11 +119,21 @@ fn library() -> PageLibrary {
         display: "MCDU".into(),
         fields: vec![field(cells)],
     };
-    PageLibrary::of("TEST", vec![page("aaaaaa", "Radios", "0-1"), page("bbbbbb", "Fuel", "24-25")])
+    PageLibrary::of(
+        "TEST",
+        vec![
+            page("aaaaaa", "Radios", "0-1"),
+            page("bbbbbb", "Fuel", "24-25"),
+        ],
+    )
 }
 
 fn cells(p: &Profile, device: &str) -> Vec<String> {
-    p.readouts.iter().filter(|r| r.device == device).map(|r| r.cells.to_string()).collect()
+    p.readouts
+        .iter()
+        .filter(|r| r.device == device)
+        .map(|r| r.cells.to_string())
+        .collect()
 }
 
 #[test]
@@ -112,7 +143,10 @@ fn every_slot_is_resolved_when_the_profile_runs() {
     assert_eq!((pages.start, pages.shown), (0, 0));
     assert!(matches!(&pages.slots[0], SlotRun::Page { name, .. } if name == "Radios"));
     assert!(matches!(pages.slots[1], SlotRun::Blank));
-    assert!(matches!(pages.slots[2], SlotRun::Off), "a page not in the library does nothing");
+    assert!(
+        matches!(pages.slots[2], SlotRun::Off),
+        "a page not in the library does nothing"
+    );
     assert!(matches!(&pages.slots[3], SlotRun::Page { name, .. } if name == "Fuel"));
     assert!(matches!(pages.slots[4], SlotRun::Off));
 }
@@ -128,7 +162,10 @@ fn showing_a_slot_swaps_only_the_page_fields_of_its_device() {
     assert!(!run.show_slot(CAPTAIN, 4), "disabled");
     assert_eq!(cells(&run, CAPTAIN), vec!["24-25"], "the page shown stays");
     assert!(run.show_slot(CAPTAIN, 1));
-    assert!(cells(&run, CAPTAIN).is_empty(), "blank takes the screen dark");
+    assert!(
+        cells(&run, CAPTAIN).is_empty(),
+        "blank takes the screen dark"
+    );
     run.reset_pages();
     assert_eq!(cells(&run, CAPTAIN), vec!["0-1"], "back to the start page");
 }
@@ -141,5 +178,9 @@ fn a_follower_has_the_leaders_slots_and_its_own_page() {
     assert_eq!(cells(&run, COPILOT), vec!["0-1"], "it starts alike");
     assert!(run.show_slot(COPILOT, 3));
     assert_eq!(cells(&run, COPILOT), vec!["24-25"]);
-    assert_eq!(cells(&run, CAPTAIN), vec!["0-1"], "and the leader stays where it was");
+    assert_eq!(
+        cells(&run, CAPTAIN),
+        vec!["0-1"],
+        "and the leader stays where it was"
+    );
 }

@@ -61,7 +61,9 @@ fn profile() -> Profile {
 }
 
 fn fixture(name: &str) -> std::path::PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures").join(name)
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures")
+        .join(name)
 }
 
 fn engine(p: Profile) -> Engine {
@@ -122,7 +124,10 @@ fn cautions(p: &Profile) -> Vec<String> {
     let devices = DeviceInventory::load(&r("data/devices.json")).unwrap();
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).unwrap();
     let module = e.catalogue().module(&p.module).expect("the module");
-    p.field_cautions(module, &devices, &displays).into_iter().map(|(_, c)| c).collect()
+    p.field_cautions(module, &devices, &displays)
+        .into_iter()
+        .map(|(_, c)| c)
+        .collect()
 }
 
 fn refusals(p: &Profile) -> Vec<String> {
@@ -130,7 +135,13 @@ fn refusals(p: &Profile) -> Vec<String> {
     let devices = DeviceInventory::load(&r("data/devices.json")).unwrap();
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).unwrap();
     let module = e.catalogue().module(&p.module).expect("the module");
-    resolved(p).problems(module, &devices, &displays, &dsc_config::PageLibrary::default())
+    resolved(p)
+        .problems(
+            module,
+            &devices,
+            &displays,
+            &dsc_config::PageLibrary::default(),
+        )
         .iter()
         .map(|e| e.to_string())
         .collect()
@@ -149,11 +160,17 @@ fn on_row_one(content: Vec<Span>) -> Readout {
 }
 
 fn text(s: &str) -> Span {
-    Span { text: s.into(), ..Span::default() }
+    Span {
+        text: s.into(),
+        ..Span::default()
+    }
 }
 
 fn reading(source: &str) -> Span {
-    Span { source: source.into(), ..Span::default() }
+    Span {
+        source: source.into(),
+        ..Span::default()
+    }
 }
 
 // --- drawing a chain ---------------------------------------------------------
@@ -163,8 +180,11 @@ fn typed_characters_and_a_reading_are_drawn_on_one_row() {
     // The A-10C uses rows 4 to 14, so rows 1 to 3 are the user's. This is what
     // they are for.
     let mut p = profile();
-    p.readouts
-        .push(on_row_one(vec![text("PAGE "), reading("CDU_LINE1"), text(" END")]));
+    p.readouts.push(on_row_one(vec![
+        text("PAGE "),
+        reading("CDU_LINE1"),
+        text(" END"),
+    ]));
     let mut e = engine(p);
     let batch = fly(&mut e, "A-10C", &[(1, b"ALPHA")]);
     let w = screen(&batch);
@@ -179,8 +199,17 @@ fn typed_characters_and_a_reading_are_drawn_on_one_row() {
 fn each_piece_keeps_its_own_colour_and_size() {
     let mut p = profile();
     p.readouts.push(on_row_one(vec![
-        Span { text: "RALT".into(), colour: Some(Colour::Red), small: true, ..Span::default() },
-        Span { text: "250".into(), colour: Some(Colour::Green), ..Span::default() },
+        Span {
+            text: "RALT".into(),
+            colour: Some(Colour::Red),
+            small: true,
+            ..Span::default()
+        },
+        Span {
+            text: "250".into(),
+            colour: Some(Colour::Green),
+            ..Span::default()
+        },
     ]));
     let mut e = engine(p);
     let batch = fly(&mut e, "A-10C", &[]);
@@ -265,7 +294,9 @@ fn a_character_the_font_does_not_draw_is_refused() {
     let mut p = profile();
     p.readouts.push(on_row_one(vec![text("Fuel")]));
     assert!(
-        refusals(&p).iter().any(|e| e.contains("is not a character the font")),
+        refusals(&p)
+            .iter()
+            .any(|e| e.contains("is not a character the font")),
         "{:?}",
         refusals(&p)
     );
@@ -278,7 +309,9 @@ fn the_same_characters_are_fine_in_a_font_that_draws_them() {
     p.font = Some(F14BU_FONT.into());
     p.readouts.push(on_row_one(vec![text("Fuel")]));
     assert!(
-        !refusals(&p).iter().any(|e| e.contains("is not a character the font")),
+        !refusals(&p)
+            .iter()
+            .any(|e| e.contains("is not a character the font")),
         "{:?}",
         refusals(&p)
     );
@@ -294,10 +327,15 @@ fn a_piece_marked_small_is_checked_against_the_small_alphabet() {
     assert!(refusals(&p).is_empty(), "{:?}", refusals(&p));
 
     let mut p = profile();
-    p.readouts
-        .push(on_row_one(vec![Span { text: "^".into(), small: true, ..Span::default() }]));
+    p.readouts.push(on_row_one(vec![Span {
+        text: "^".into(),
+        small: true,
+        ..Span::default()
+    }]));
     assert!(
-        refusals(&p).iter().any(|e| e.contains("is not a character the font")),
+        refusals(&p)
+            .iter()
+            .any(|e| e.contains("is not a character the font")),
         "{:?}",
         refusals(&p)
     );
@@ -326,7 +364,9 @@ fn a_piece_with_nothing_in_it_is_unfinished_rather_than_ignored() {
     p.readouts
         .push(on_row_one(vec![text("RALT"), Span::default()]));
     assert!(
-        refusals(&p).iter().any(|e| e.contains("a piece with nothing in it")),
+        refusals(&p)
+            .iter()
+            .any(|e| e.contains("a piece with nothing in it")),
         "{:?}",
         refusals(&p)
     );
@@ -374,7 +414,9 @@ fn a_gauge_shown_as_sent_is_measured_by_its_maximum() {
     let module = e.catalogue().module(&p.module).expect("the module");
     let cautions = p.width_cautions(module);
     assert!(
-        cautions.iter().any(|c| c.contains("needs up to 5 cells and has 4")),
+        cautions
+            .iter()
+            .any(|c| c.contains("needs up to 5 cells and has 4")),
         "{cautions:?}"
     );
 }
@@ -388,7 +430,8 @@ fn a_run_of_one_cell_is_never_measured_by_character() {
     // whole. Counted by character they all read as a field about to lose its
     // last character, and the editor showed four warnings on a screen that
     // draws exactly what it was built to draw.
-    let p = Profile::load(&r("crates/dsc-engine/tests/fixtures/fa-18.json")).expect("the Hornet fixture");
+    let p = Profile::load(&r("crates/dsc-engine/tests/fixtures/fa-18.json"))
+        .expect("the Hornet fixture");
     let cat = Catalogue::load_dir(&r("data/catalogue")).expect("catalogue");
     let module = cat.module(&p.module).expect("the module");
     // The whole screen rather than the four fields, because a profile that
@@ -412,7 +455,9 @@ fn a_run_of_two_cells_still_counts_characters() {
     let e = engine(p.clone());
     let module = e.catalogue().module(&p.module).expect("the module");
     assert!(
-        p.width_cautions(module).iter().any(|c| c.contains("would be dropped")),
+        p.width_cautions(module)
+            .iter()
+            .any(|c| c.contains("would be dropped")),
         "{:?}",
         p.width_cautions(module)
     );
@@ -421,7 +466,10 @@ fn a_run_of_two_cells_still_counts_characters() {
 // --- gaps: pushing content to both ends -------------------------------------
 
 fn gap() -> Span {
-    Span { gap: true, ..Span::default() }
+    Span {
+        gap: true,
+        ..Span::default()
+    }
 }
 
 #[test]
@@ -442,8 +490,13 @@ fn a_gap_pushes_what_follows_to_the_far_end() {
 #[test]
 fn two_gaps_space_three_pieces_across_the_line() {
     let mut p = profile();
-    p.readouts
-        .push(on_row_one(vec![text("A"), gap(), text("B"), gap(), text("C")]));
+    p.readouts.push(on_row_one(vec![
+        text("A"),
+        gap(),
+        text("B"),
+        gap(),
+        text("C"),
+    ]));
     let mut e = engine(p);
     let batch = fly(&mut e, "A-10C", &[]);
     // 21 cells spare across two gaps: 11 then 10, the remainder going to the
@@ -490,7 +543,11 @@ fn a_gap_asks_for_no_room_of_its_own() {
         .push(on_row_one(vec![text("LEFT"), gap(), text("RIGHT")]));
     let e = engine(p.clone());
     let module = e.catalogue().module(&p.module).expect("the module");
-    assert!(p.width_cautions(module).is_empty(), "{:?}", p.width_cautions(module));
+    assert!(
+        p.width_cautions(module).is_empty(),
+        "{:?}",
+        p.width_cautions(module)
+    );
 }
 
 #[test]
@@ -502,7 +559,9 @@ fn a_gap_that_also_has_something_to_draw_is_refused() {
         ..Span::default()
     }]));
     assert!(
-        refusals(&p).iter().any(|e| e.contains("draws nothing of its own")),
+        refusals(&p)
+            .iter()
+            .any(|e| e.contains("draws nothing of its own")),
         "{:?}",
         refusals(&p)
     );
@@ -525,9 +584,17 @@ fn a_field_of_nothing_but_gaps_is_refused() {
 fn a_gap_keeps_each_side_in_its_own_colour() {
     let mut p = profile();
     p.readouts.push(on_row_one(vec![
-        Span { text: "L".into(), colour: Some(Colour::Green), ..Span::default() },
+        Span {
+            text: "L".into(),
+            colour: Some(Colour::Green),
+            ..Span::default()
+        },
         gap(),
-        Span { text: "R".into(), colour: Some(Colour::Amber), ..Span::default() },
+        Span {
+            text: "R".into(),
+            colour: Some(Colour::Amber),
+            ..Span::default()
+        },
     ]));
     let mut e = engine(p);
     let batch = fly(&mut e, "A-10C", &[]);
@@ -548,7 +615,11 @@ fn a_boxed_piece_keeps_what_follows_it_in_the_same_cells() {
     let mut p = profile();
     p.readouts.push(on_row_one(vec![
         text("W "),
-        Span { source: "CDU_LINE1".into(), width: 8, ..Span::default() },
+        Span {
+            source: "CDU_LINE1".into(),
+            width: 8,
+            ..Span::default()
+        },
         text("KT"),
     ]));
     let mut e = engine(p);
@@ -577,7 +648,11 @@ fn a_right_aligned_box_pins_its_reading_to_the_end_of_the_box() {
     // The reading is the whole 24 character line, so the box crops it from the
     // front: what a right aligned run keeps is its tail.
     let drawn = row(screen(&batch), 1);
-    assert_eq!(&drawn[2..10], "        ", "the line's trailing blanks are its end");
+    assert_eq!(
+        &drawn[2..10],
+        "        ",
+        "the line's trailing blanks are its end"
+    );
     assert_eq!(&drawn[10..12], "KT");
 }
 
@@ -590,7 +665,9 @@ fn a_box_wider_than_the_field_is_refused() {
         ..Span::default()
     }]));
     assert!(
-        refusals(&p).iter().any(|e| e.contains("wider than the 24 cells")),
+        refusals(&p)
+            .iter()
+            .any(|e| e.contains("wider than the 24 cells")),
         "{:?}",
         refusals(&p)
     );
@@ -606,7 +683,11 @@ fn a_rule_fills_the_room_between_two_pieces_on_the_panel() {
     let mut p = profile();
     p.readouts.push(on_row_one(vec![
         text("NAV"),
-        Span { gap: true, rule: true, ..Span::default() },
+        Span {
+            gap: true,
+            rule: true,
+            ..Span::default()
+        },
         text("END"),
     ]));
     let mut e = engine(p);
@@ -632,14 +713,27 @@ fn a_boxed_rule_carries_a_label_and_its_own_colour() {
     let mut e = engine(p);
     let batch = fly(&mut e, "A-10C", &[]);
     let w = screen(&batch);
-    assert_eq!(row(w, 1), format!("A{}", dsc_config::divider_text(23, "FUEL")));
+    assert_eq!(
+        row(w, 1),
+        format!("A{}", dsc_config::divider_text(23, "FUEL"))
+    );
     let cells = text_cells(&w.bytes);
-    let label: Vec<usize> = (0..24).filter(|&i| cells[i].ch == 'F' || cells[i].ch == 'U').collect();
+    let label: Vec<usize> = (0..24)
+        .filter(|&i| cells[i].ch == 'F' || cells[i].ch == 'U')
+        .collect();
     assert!(!label.is_empty(), "the label is on the glass");
     for i in label {
-        assert_eq!(cells[i].fg, Colour::Amber.ordinal(), "cell {i} is the label");
+        assert_eq!(
+            cells[i].fg,
+            Colour::Amber.ordinal(),
+            "cell {i} is the label"
+        );
     }
-    assert_eq!(cells[1].fg, Colour::Green.ordinal(), "the line keeps its own");
+    assert_eq!(
+        cells[1].fg,
+        Colour::Green.ordinal(),
+        "the line keeps its own"
+    );
 }
 
 #[test]
@@ -651,7 +745,12 @@ fn a_label_on_a_rule_a_reading_can_squeeze_is_cautioned_not_refused() {
     let mut p = profile();
     p.readouts.push(on_row_one(vec![
         text("NAV"),
-        Span { gap: true, rule: true, label: "FUEL".into(), ..Span::default() },
+        Span {
+            gap: true,
+            rule: true,
+            label: "FUEL".into(),
+            ..Span::default()
+        },
         reading("CDU_LINE1"),
     ]));
     assert!(refusals(&p).is_empty(), "{:?}", refusals(&p));
@@ -668,8 +767,12 @@ fn a_rule_with_the_line_to_itself_carries_a_label_without_a_box() {
     // in every frame: a width that holds still without anybody writing one
     // down, which is all a label ever needed.
     let mut p = profile();
-    p.readouts
-        .push(on_row_one(vec![Span { gap: true, rule: true, label: "FUEL".into(), ..Span::default() }]));
+    p.readouts.push(on_row_one(vec![Span {
+        gap: true,
+        rule: true,
+        label: "FUEL".into(),
+        ..Span::default()
+    }]));
     assert!(refusals(&p).is_empty(), "{:?}", refusals(&p));
     assert!(cautions(&p).is_empty(), "{:?}", cautions(&p));
     let mut e = engine(p);
@@ -688,15 +791,28 @@ fn two_rules_on_a_settled_line_split_the_leftover_and_the_odd_cell_goes_left() {
     let mut p = profile();
     p.readouts.push(on_row_one(vec![
         text("A"),
-        Span { gap: true, rule: true, label: label.into(), ..Span::default() },
-        Span { gap: true, rule: true, ..Span::default() },
+        Span {
+            gap: true,
+            rule: true,
+            label: label.into(),
+            ..Span::default()
+        },
+        Span {
+            gap: true,
+            rule: true,
+            ..Span::default()
+        },
     ]));
     assert!(refusals(&p).is_empty(), "{:?}", refusals(&p));
     let mut e = engine(p.clone());
     let batch = fly(&mut e, "A-10C", &[]);
     assert_eq!(
         row(screen(&batch), 1),
-        format!("A{}{}", dsc_config::divider_text(12, label), dsc_config::divider_text(11, ""))
+        format!(
+            "A{}{}",
+            dsc_config::divider_text(12, label),
+            dsc_config::divider_text(11, "")
+        )
     );
 
     let field = p.readouts.last_mut().expect("the field just pushed");
@@ -718,8 +834,17 @@ fn a_label_too_wide_for_the_cells_a_settled_rule_gets_is_refused() {
     let mut p = profile();
     p.readouts.push(on_row_one(vec![
         text("NAV"),
-        Span { gap: true, rule: true, label: "STEERPOINT".into(), ..Span::default() },
-        Span { source: "CDU_LINE1".into(), width: 15, ..Span::default() },
+        Span {
+            gap: true,
+            rule: true,
+            label: "STEERPOINT".into(),
+            ..Span::default()
+        },
+        Span {
+            source: "CDU_LINE1".into(),
+            width: 15,
+            ..Span::default()
+        },
     ]));
     assert!(
         refusals(&p).iter().any(|e| e.contains("does not fit")),
@@ -732,7 +857,13 @@ fn a_label_too_wide_for_the_cells_a_settled_rule_gets_is_refused() {
 fn a_label_too_wide_for_its_rule_is_refused() {
     let mut p = profile();
     p.readouts.push(on_row_one(vec![
-        Span { gap: true, rule: true, width: 6, label: "STEERPOINT".into(), ..Span::default() },
+        Span {
+            gap: true,
+            rule: true,
+            width: 6,
+            label: "STEERPOINT".into(),
+            ..Span::default()
+        },
         text("X"),
     ]));
     assert!(
@@ -745,10 +876,15 @@ fn a_label_too_wide_for_its_rule_is_refused() {
 #[test]
 fn a_rule_written_on_a_piece_that_draws_its_own_content_is_refused() {
     let mut p = profile();
-    p.readouts
-        .push(on_row_one(vec![Span { text: "NAV".into(), rule: true, ..Span::default() }]));
+    p.readouts.push(on_row_one(vec![Span {
+        text: "NAV".into(),
+        rule: true,
+        ..Span::default()
+    }]));
     assert!(
-        refusals(&p).iter().any(|e| e.contains("only a gap can be a rule")),
+        refusals(&p)
+            .iter()
+            .any(|e| e.contains("only a gap can be a rule")),
         "{:?}",
         refusals(&p)
     );
@@ -757,8 +893,11 @@ fn a_rule_written_on_a_piece_that_draws_its_own_content_is_refused() {
 #[test]
 fn a_label_written_on_a_piece_that_is_not_a_rule_is_refused() {
     let mut p = profile();
-    p.readouts
-        .push(on_row_one(vec![Span { text: "NAV".into(), label: "FUEL".into(), ..Span::default() }]));
+    p.readouts.push(on_row_one(vec![Span {
+        text: "NAV".into(),
+        label: "FUEL".into(),
+        ..Span::default()
+    }]));
     assert!(
         refusals(&p).iter().any(|e| e.contains("not a rule")),
         "{:?}",

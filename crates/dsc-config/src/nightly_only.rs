@@ -35,7 +35,10 @@ pub enum Change {
     Missing,
     /// Both have it, with a different highest value (a selector that gained a
     /// position) or, for text, a different length.
-    Range { stable: Option<u32>, nightly: Option<u32> },
+    Range {
+        stable: Option<u32>,
+        nightly: Option<u32>,
+    },
     /// Both have it, but one reports a number and the other text.
     Kind { stable: String, nightly: String },
 }
@@ -77,16 +80,24 @@ impl NightlyOnly {
         let mut unknown = Vec::new();
         for profile in profiles {
             let Some(module) = nightly.module(&profile.module) else {
-                unknown.push(format!("{}: module {} is not in the nightly", profile.name, profile.module));
+                unknown.push(format!(
+                    "{}: module {} is not in the nightly",
+                    profile.name, profile.module
+                ));
                 continue;
             };
             let stable_module = stable.module(&profile.module);
             for id in profile.signals_read() {
                 let Some(now) = module.signal(id).and_then(|s| s.primary()) else {
-                    unknown.push(format!("{}: {id} is not in {} in the nightly", profile.name, profile.module));
+                    unknown.push(format!(
+                        "{}: {id} is not in {} in the nightly",
+                        profile.name, profile.module
+                    ));
                     continue;
                 };
-                let then = stable_module.and_then(|m| m.signal(id)).and_then(|s| s.primary());
+                let then = stable_module
+                    .and_then(|m| m.signal(id))
+                    .and_then(|s| s.primary());
                 if let Some(change) = difference(then, now) {
                     list.signals
                         .entry(profile.module.clone())
@@ -178,11 +189,17 @@ mod tests {
         assert_eq!(list.get("Jet", "NEW"), Some(&Change::Missing));
         assert_eq!(
             list.get("Jet", "WIDER"),
-            Some(&Change::Range { stable: Some(2), nightly: Some(3) })
+            Some(&Change::Range {
+                stable: Some(2),
+                nightly: Some(3)
+            })
         );
         assert_eq!(
             list.get("Jet", "TEXT"),
-            Some(&Change::Range { stable: Some(6), nightly: Some(8) })
+            Some(&Change::Range {
+                stable: Some(6),
+                nightly: Some(8)
+            })
         );
         // Unchanged, and unused, signals say nothing.
         assert_eq!(list.get("Jet", "SAME"), None);
@@ -192,9 +209,9 @@ mod tests {
 
     #[test]
     fn a_signal_the_nightly_lacks_is_a_fault_not_a_difference() {
-        let nightly = Catalogue::from_modules(vec![module(serde_json::json!([
-            signal("SAME", "integer", 1, None),
-        ]))]);
+        let nightly = Catalogue::from_modules(vec![module(serde_json::json!([signal(
+            "SAME", "integer", 1, None
+        ),]))]);
         let stable = Catalogue::from_modules(vec![module(serde_json::json!([]))]);
         let (list, unknown) = NightlyOnly::compare(&[profile()], &nightly, &stable);
         assert_eq!(unknown.len(), 3, "{unknown:?}");
@@ -203,11 +220,20 @@ mod tests {
 
     #[test]
     fn the_list_reads_back_as_written() {
-        let mut list = NightlyOnly { stable: "0.11.7".into(), nightly: "n".into(), ..Default::default() };
-        list.signals.entry("F-14".into()).or_default().insert("RIO_CDNU_LINE1".into(), Change::Missing);
+        let mut list = NightlyOnly {
+            stable: "0.11.7".into(),
+            nightly: "n".into(),
+            ..Default::default()
+        };
+        list.signals
+            .entry("F-14".into())
+            .or_default()
+            .insert("RIO_CDNU_LINE1".into(), Change::Missing);
         let text = serde_json::to_string(&list).unwrap();
         assert!(text.contains(r#""change":"missing""#), "{text}");
         assert_eq!(serde_json::from_str::<NightlyOnly>(&text).unwrap(), list);
-        assert!(NightlyOnly::load(Path::new("no/such/file.json")).unwrap().is_empty());
+        assert!(NightlyOnly::load(Path::new("no/such/file.json"))
+            .unwrap()
+            .is_empty());
     }
 }

@@ -93,7 +93,10 @@ fn armed(t0: Instant) -> Watcher {
     let mut watcher = Watcher::new(&module(), t0);
     watcher.ingest(&sweep(0, 5000, "  12  "), t0);
     watcher.ingest(&sweep(0, 5000, "  12  "), t0 + DEFAULT_BASELINE_QUIET);
-    assert!(watcher.ready(), "one quiet cycle is enough to have a baseline");
+    assert!(
+        watcher.ready(),
+        "one quiet cycle is enough to have a baseline"
+    );
     watcher
 }
 
@@ -129,7 +132,10 @@ fn a_switch_thrown_once_outranks_the_gauges_that_never_stop() {
 
     // The gauge is still listed. Somebody mapping an altimeter to a display
     // field needs to find it, and it is obvious from the count what it is.
-    let gauge = changes.iter().find(|c| c.id == "ALTIMETER").expect("listed");
+    let gauge = changes
+        .iter()
+        .find(|c| c.id == "ALTIMETER")
+        .expect("listed");
     assert_eq!(gauge.moves, 29);
     assert!(
         changes.iter().position(|c| c.id == "ALTIMETER") > Some(0),
@@ -169,7 +175,10 @@ fn a_string_spanning_several_words_counts_as_one_movement() {
     assert_eq!(changes[0].moves, 1);
     assert_eq!(changes[0].from.as_deref(), Some("  12  "));
     assert_eq!(changes[0].to, "ABCDEF");
-    assert!(changes[0].text, "so the caller can quote it and keep the padding");
+    assert!(
+        changes[0].text,
+        "so the caller can quote it and keep the padding"
+    );
 }
 
 #[test]
@@ -218,7 +227,10 @@ fn watching_again_forgets_what_moved_but_not_where_things_are() {
 
     let again = t0 + Duration::from_secs(2);
     watcher.rearm(again);
-    assert!(watcher.changes().is_empty(), "a clean sheet for the next flip");
+    assert!(
+        watcher.changes().is_empty(),
+        "a clean sheet for the next flip"
+    );
     assert!(
         watcher.ready(),
         "and no second wait for the map, which is the point of keeping it"
@@ -245,7 +257,11 @@ fn the_aircraft_in_the_stream_is_reported() {
     assert_eq!(watcher.aircraft().as_deref(), Some("TEST_LEARN"));
 
     let empty = Watcher::new(&module(), t0);
-    assert_eq!(empty.aircraft(), None, "before the stream has said anything");
+    assert_eq!(
+        empty.aircraft(),
+        None,
+        "before the stream has said anything"
+    );
 }
 
 #[test]

@@ -19,7 +19,11 @@ use crate::{buttons, keyboard};
 
 pub enum KeyEvent {
     /// A button went down on a device, with the modifiers held at the time.
-    Down { device: String, number: u16, held: Vec<Modifier> },
+    Down {
+        device: String,
+        number: u16,
+        held: Vec<Modifier>,
+    },
     /// A reader stopped, most likely because the panel was unplugged. Its
     /// keys do nothing until the converter starts again.
     Lost { device: String, why: String },
@@ -27,14 +31,20 @@ pub enum KeyEvent {
 
 /// Keys are read through Windows' own HID parser, so elsewhere there are none.
 #[cfg(not(windows))]
-pub fn start(_inventory: &DeviceInventory, _connected: &[String]) -> (Receiver<KeyEvent>, Vec<String>) {
+pub fn start(
+    _inventory: &DeviceInventory,
+    _connected: &[String],
+) -> (Receiver<KeyEvent>, Vec<String>) {
     (mpsc::channel().1, Vec::new())
 }
 
 /// Start a reader for each connected device with page keys. Returns the
 /// channel keys arrive on and a line per device for the log.
 #[cfg(windows)]
-pub fn start(inventory: &DeviceInventory, connected: &[String]) -> (Receiver<KeyEvent>, Vec<String>) {
+pub fn start(
+    inventory: &DeviceInventory,
+    connected: &[String],
+) -> (Receiver<KeyEvent>, Vec<String>) {
     let (tx, rx) = mpsc::channel();
     let mut lines = Vec::new();
     let with_keys: Vec<_> = inventory
@@ -48,7 +58,9 @@ pub fn start(inventory: &DeviceInventory, connected: &[String]) -> (Receiver<Key
     let api = match hidapi::HidApi::new() {
         Ok(api) => api,
         Err(e) => {
-            lines.push(format!("keys     could not list the panels to read page keys: {e}"));
+            lines.push(format!(
+                "keys     could not list the panels to read page keys: {e}"
+            ));
             return (rx, lines);
         }
     };
@@ -62,7 +74,10 @@ pub fn start(inventory: &DeviceInventory, connected: &[String]) -> (Receiver<Key
             .filter_map(|d| buttons::Collection::open(&d.path).ok())
             .find(|c| !c.buttons.is_empty());
         let Some(collection) = collection else {
-            lines.push(format!("keys     {}: no collection declares buttons, so its page keys do nothing", spec.key));
+            lines.push(format!(
+                "keys     {}: no collection declares buttons, so its page keys do nothing",
+                spec.key
+            ));
             continue;
         };
         lines.push(format!(
@@ -79,19 +94,28 @@ pub fn start(inventory: &DeviceInventory, connected: &[String]) -> (Receiver<Key
             let mut last: Vec<u16> = Vec::new();
             loop {
                 if let Err(e) = collection.read(&mut buf) {
-                    let _ = tx.send(KeyEvent::Lost { device, why: e.to_string() });
+                    let _ = tx.send(KeyEvent::Lost {
+                        device,
+                        why: e.to_string(),
+                    });
                     return;
                 }
                 // A report with no buttons in it leaves them as they were.
                 // Acting only on keys going down, never on the report
                 // changing, is what keeps the MCDU's restless bytes 17 to 24
                 // from reading as presses.
-                let Some(down) = collection.pressed(&buf) else { continue };
+                let Some(down) = collection.pressed(&buf) else {
+                    continue;
+                };
                 let new: Vec<u16> = down.iter().copied().filter(|b| !last.contains(b)).collect();
                 if !new.is_empty() {
                     let held = keyboard::held_now();
                     for number in new {
-                        let event = KeyEvent::Down { device: device.clone(), number, held: held.clone() };
+                        let event = KeyEvent::Down {
+                            device: device.clone(),
+                            number,
+                            held: held.clone(),
+                        };
                         if tx.send(event).is_err() {
                             return;
                         }

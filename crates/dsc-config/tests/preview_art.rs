@@ -105,7 +105,11 @@ fn a_value_this_glass_cannot_draw_lights_nothing() {
     let ufc = cat.get("UFC1").unwrap();
     let seven = ufc.cell(2).expect("a scratchpad digit");
     assert!(ufc.lit(seven, "8", false).is_some());
-    assert_eq!(ufc.lit(seven, "Q", false), None, "a digit cell has no letters");
+    assert_eq!(
+        ufc.lit(seven, "Q", false),
+        None,
+        "a digit cell has no letters"
+    );
 }
 
 /// One display on its own, for the faults a shipped file does not have.
@@ -152,7 +156,10 @@ fn a_shape_with_art_and_one_without_are_both_reported_honestly() {
     let fine = r#"{ "two": { "width": 4, "height": 8, "stroke": 1,
                    "slots": [[[1, 4, 3, 4]], [[1, 6, 3, 6]]] } }"#;
     let display = made(fine).expect("art that matches its cells");
-    assert!(matches!(display.shape_art().get("two"), Some(ShapeArt::Strokes(_))));
+    assert!(matches!(
+        display.shape_art().get("two"),
+        Some(ShapeArt::Strokes(_))
+    ));
     let mut bare = display.clone();
     bare.art.clear();
     assert!(bare.shape_art().is_empty(), "no art, no picture");

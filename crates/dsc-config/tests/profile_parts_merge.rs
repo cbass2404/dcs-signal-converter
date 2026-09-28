@@ -16,7 +16,12 @@ fn inventory() -> DeviceInventory {
 }
 
 fn lamps(device: &str, leds: &[&str]) -> Vec<LampPick> {
-    leds.iter().map(|l| LampPick { device: device.into(), led: (*l).into() }).collect()
+    leds.iter()
+        .map(|l| LampPick {
+            device: device.into(),
+            led: (*l).into(),
+        })
+        .collect()
 }
 
 fn profile(json: &str) -> Profile {
@@ -61,34 +66,69 @@ fn parts_offer_only_what_the_source_sets_up() {
     let lights: Vec<(&str, Vec<&str>)> = parts
         .lights
         .iter()
-        .map(|l| (l.device.as_str(), l.lamps.iter().map(|p| p.led.as_str()).collect()))
+        .map(|l| {
+            (
+                l.device.as_str(),
+                l.lamps.iter().map(|p| p.led.as_str()).collect(),
+            )
+        })
         .collect();
-    assert!(lights.contains(&("TAKEOFF_PLANEL_2", vec!["NOSE", "HOOK"])), "{lights:?}");
-    assert!(lights.contains(&("CarrierAce_UFC", vec!["LCDBacklight"])), "{lights:?}");
+    assert!(
+        lights.contains(&("TAKEOFF_PLANEL_2", vec!["NOSE", "HOOK"])),
+        "{lights:?}"
+    );
+    assert!(
+        lights.contains(&("CarrierAce_UFC", vec!["LCDBacklight"])),
+        "{lights:?}"
+    );
 }
 
 #[test]
 fn a_picked_panel_takes_assigned_lamps_and_keeps_the_rest() {
-    let pick = Pick { lights: lamps("TAKEOFF_PLANEL_2", &["HOOK", "NOSE", "Backlight"]), slots: vec![] };
+    let pick = Pick {
+        lights: lamps("TAKEOFF_PLANEL_2", &["HOOK", "NOSE", "Backlight"]),
+        slots: vec![],
+    };
     let merged = merge::merge(&target(), &source(), &pick, &inventory()).unwrap();
     let row = |led: &str| {
-        merged.profile.bindings.iter().find(|b| b.device == "TAKEOFF_PLANEL_2" && b.led == led).unwrap()
+        merged
+            .profile
+            .bindings
+            .iter()
+            .find(|b| b.device == "TAKEOFF_PLANEL_2" && b.led == led)
+            .unwrap()
     };
     assert_eq!(row("HOOK").conditions[0].source, "HOOK_LIGHT", "replaced");
     assert_eq!(row("NOSE").conditions[0].source, "NOSE_LIGHT", "added");
-    assert_eq!(row("Backlight").note, "mine", "unassigned in the source, so the target's stays");
-    let ufc = merged.profile.bindings.iter().find(|b| b.device == "CarrierAce_UFC").unwrap();
+    assert_eq!(
+        row("Backlight").note,
+        "mine",
+        "unassigned in the source, so the target's stays"
+    );
+    let ufc = merged
+        .profile
+        .bindings
+        .iter()
+        .find(|b| b.device == "CarrierAce_UFC")
+        .unwrap();
     assert!(!ufc.always, "a panel not picked is untouched");
     let c = &merged.changes[0];
     assert_eq!((c.added, c.replaced, c.removed, c.unchanged), (1, 1, 0, 0));
     assert_eq!(merged.profile.name, "Target");
     assert_eq!(merged.profile.aircraft, vec!["F-14BU".to_string()]);
-    assert_eq!(merged.profile.follows.len(), 1, "followers are the target's own business");
+    assert_eq!(
+        merged.profile.follows.len(),
+        1,
+        "followers are the target's own business"
+    );
 }
 
 #[test]
 fn a_lamp_not_picked_keeps_the_target_row() {
-    let pick = Pick { lights: lamps("TAKEOFF_PLANEL_2", &["NOSE"]), slots: vec![] };
+    let pick = Pick {
+        lights: lamps("TAKEOFF_PLANEL_2", &["NOSE"]),
+        slots: vec![],
+    };
     let merged = merge::merge(&target(), &source(), &pick, &inventory()).unwrap();
     let hook = merged
         .profile
@@ -107,9 +147,19 @@ fn merging_onto_a_follower_says_it_will_not_be_used() {
     let mut slots = PageSlots::empty(6);
     slots.slots[0] = Some(Slot::new("a"));
     source.screens.insert("MCDU_CoPilot".into(), slots);
-    let pick = Pick { slots: vec![SlotPick { device: "MCDU_CoPilot".into(), slot: 1 }], ..Pick::default() };
+    let pick = Pick {
+        slots: vec![SlotPick {
+            device: "MCDU_CoPilot".into(),
+            slot: 1,
+        }],
+        ..Pick::default()
+    };
     let merged = merge::merge(&target(), &source, &pick, &inventory()).unwrap();
-    assert!(merged.notes.iter().any(|n| n.contains("follows")), "{:?}", merged.notes);
+    assert!(
+        merged.notes.iter().any(|n| n.contains("follows")),
+        "{:?}",
+        merged.notes
+    );
 }
 
 #[test]

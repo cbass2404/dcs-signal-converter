@@ -89,7 +89,12 @@
       body {
         background: var(--ground);
         color: var(--ink);
-        font-family: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+        font-family:
+          "Barlow",
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
         font-size: 17px;
         line-height: 1.62;
         margin: 0;
@@ -370,18 +375,20 @@
           <span class="eyebrow">Reference</span>
           <h1 style="margin-top: 10px">Uneven gauges</h1>
           <p class="lede">
-            The DCS gauges whose marks are not evenly spaced, each with the <code>conversions</code> rows that
-            turn what DCS-BIOS sends into what the dial reads. Copy a gauge's rows into its reading.
+            The DCS gauges whose marks are not evenly spaced, each with the
+            <code>conversions</code> rows that turn what DCS-BIOS sends into what the dial reads.
+            Copy a gauge's rows into its reading.
           </p>
           <div class="caution" role="note">
             <p>
-              <strong>This is parsed data, not flown.</strong> Every row here is worked out from the gauge
-              tables in each module's files and the limits in DCS-BIOS, by a script. It has not been checked
-              against each needle in the cockpit.
+              <strong>This is parsed data, not flown.</strong> Every row here is worked out from the
+              gauge tables in each module's files and the limits in DCS-BIOS, by a script. It has
+              not been checked against each needle in the cockpit.
             </p>
             <p>
-              Expect to adjust it when you set a gauge up: use Learn with the needle on a mark and fix the row
-              that is off. A DCS module update or a new DCS-BIOS can move any of these numbers without notice.
+              Expect to adjust it when you set a gauge up: use Learn with the needle on a mark and
+              fix the row that is off. A DCS module update or a new DCS-BIOS can move any of these
+              numbers without notice.
             </p>
             <p class="note" id="versions"></p>
           </div>
@@ -396,32 +403,35 @@
           </div>
           <div class="prose">
             <p>
-              Each module lists its gauges as pairs: a value, and where the needle points for it, with straight
-              lines in between. DCS-BIOS sends that needle position as 0 to 65535, spread over limits
+              Each module lists its gauges as pairs: a value, and where the needle points for it,
+              with straight lines in between. DCS-BIOS sends that needle position as 0 to 65535,
+              spread over limits
               <code>lo</code> to <code>hi</code> from its own module file:
             </p>
           </div>
           <pre>raw = round((needle - lo) / (hi - lo) &times; 65535)</pre>
           <div class="prose">
             <p>
-              So a gauge whose DCS-BIOS limits are <code>{-1, 1}</code> puts a needle at 0 on raw 32768, not raw
-              0. The table shows each gauge's breakpoints as raw &rarr; reads, and <strong>Copy rows</strong>
-              gives the same breakpoints as <code>conversions</code> rows, one per section.
+              So a gauge whose DCS-BIOS limits are <code>{-1, 1}</code> puts a needle at 0 on raw
+              32768, not raw 0. The table shows each gauge's breakpoints as raw &rarr; reads, and
+              <strong>Copy rows</strong> gives the same breakpoints as
+              <code>conversions</code> rows, one per section.
             </p>
             <p>
-              <strong>Straight line off by</strong> is how far a plain <code>reads</code> from one end to the
-              other would be wrong at its worst mark, as a share of the whole dial. Under 5% you may not need
-              rows at all.
+              <strong>Straight line off by</strong> is how far a plain <code>reads</code> from one
+              end to the other would be wrong at its worst mark, as a share of the whole dial. Under
+              5% you may not need rows at all.
             </p>
             <p>
-              Where a note says the first or last row is the needle's rest, that row is the needle lying off the
-              scale with the power off or the tank dry. Give it the same reads at both ends if you want the
-              screen to hold the scale's end instead.
+              Where a note says the first or last row is the needle's rest, that row is the needle
+              lying off the scale with the power off or the tank dry. Give it the same reads at both
+              ends if you want the screen to hold the scale's end instead.
             </p>
             <p>
-              Reads are in the dial's own units where the unit is known. Where DCS works in m/s, radians or
-              &deg;C and the dial does not, the reads are already converted and the note says so. A gauge
-              marked <em>DCS units</em> reads in DCS's numbers, which may not match the dial's marks.
+              Reads are in the dial's own units where the unit is known. Where DCS works in m/s,
+              radians or &deg;C and the dial does not, the reads are already converted and the note
+              says so. A gauge marked <em>DCS units</em> reads in DCS's numbers, which may not match
+              the dial's marks.
             </p>
           </div>
         </div>
@@ -434,7 +444,12 @@
             <h2><a class="self" href="#gauges">Gauges</a></h2>
           </div>
           <div class="tools">
-            <input type="search" id="find" placeholder="Find a gauge: fuel, VVI, PORT_FUEL_IN_G..." aria-label="Find a gauge" />
+            <input
+              type="search"
+              id="find"
+              placeholder="Find a gauge: fuel, VVI, PORT_FUEL_IN_G..."
+              aria-label="Find a gauge"
+            />
             <span class="count" id="count"></span>
           </div>
           <div class="jump" id="jump" role="group" aria-label="Aircraft"></div>
@@ -451,35 +466,46 @@
           </div>
           <div class="prose">
             <p>
-              These gauges are uneven in DCS but have no rows here. Aircraft whose gauges are all evenly spaced
-              need no rows.
+              These gauges are uneven in DCS but have no rows here. Aircraft whose gauges are all
+              evenly spaced need no rows.
             </p>
           </div>
           <div class="table-scroll">
             <table class="ref">
-              <thead><tr><th>Aircraft</th><th>DCS gauge</th><th>Why</th></tr></thead>
+              <thead>
+                <tr>
+                  <th>Aircraft</th>
+                  <th>DCS gauge</th>
+                  <th>Why</th>
+                </tr>
+              </thead>
               <tbody id="left"></tbody>
             </table>
           </div>
           <p class="note" id="even"></p>
           <div class="prose">
             <p>
-              These installed aircraft are not read at all. Where the reason is compiled code, the rows can
-              still be measured in Learn against the dial in the cockpit.
+              These installed aircraft are not read at all. Where the reason is compiled code, the
+              rows can still be measured in Learn against the dial in the cockpit.
             </p>
           </div>
           <div class="table-scroll">
             <table class="ref">
-              <thead><tr><th>Aircraft</th><th>Why</th></tr></thead>
+              <thead>
+                <tr>
+                  <th>Aircraft</th>
+                  <th>Why</th>
+                </tr>
+              </thead>
               <tbody id="uncovered"></tbody>
             </table>
           </div>
           <p class="note" id="absent"></p>
           <div class="prose">
             <p>
-              The RAZBAM modules (M-2000C, MiG-19P, AV-8B and F-15E) are not included because I don't have
-              them and can no longer get them. If you have one and would like to help fill in its gauges,
-              please reach out on
+              The RAZBAM modules (M-2000C, MiG-19P, AV-8B and F-15E) are not included because I
+              don't have them and can no longer get them. If you have one and would like to help
+              fill in its gauges, please reach out on
               <a href="https://github.com/cbass2404/dcs-signal-converter/issues">GitHub</a>.
             </p>
           </div>
@@ -492,9 +518,16 @@
         <div class="foot">
           <span>
             Built by <code>tools/gen_gauges.py</code> into <code>gauges.json</code>. How
-            <code>conversions</code> work is in <a href="language.html#readings">the profile language</a>.
+            <code>conversions</code> work is in
+            <a href="language.html#readings">the profile language</a>.
           </span>
-          <span><a href="./">DCS Signal Converter</a> &middot; <a href="https://discord.gg/W9tsVe3g3P" target="_blank" rel="noopener noreferrer">Discord</a> &middot; <a href="https://github.com/cbass2404/dcs-signal-converter">GitHub</a></span>
+          <span
+            ><a href="./">DCS Signal Converter</a> &middot;
+            <a href="https://discord.gg/W9tsVe3g3P" target="_blank" rel="noopener noreferrer"
+              >Discord</a
+            >
+            &middot; <a href="https://github.com/cbass2404/dcs-signal-converter">GitHub</a></span
+          >
         </div>
       </div>
     </footer>
@@ -512,9 +545,18 @@
         n.append(...kids.filter((k) => k != null));
         return n;
       };
-      const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const slug = (s) =>
+        s
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "");
       // One conversions row per line, as the profile files read.
-      const rowsJson = (rows) => "[\n" + rows.map((r) => "  " + JSON.stringify(r).replace(/,/g, ", ").replace(/:/g, ": ")).join(",\n") + "\n]";
+      const rowsJson = (rows) =>
+        "[\n" +
+        rows
+          .map((r) => "  " + JSON.stringify(r).replace(/,/g, ", ").replace(/:/g, ": "))
+          .join(",\n") +
+        "\n]";
 
       async function copy(btn, text) {
         try {
@@ -535,7 +577,10 @@
       }
 
       function breakpoints(rows) {
-        const pts = [[rows[0].raw[0], rows[0].reads[0]], ...rows.map((r) => [r.raw[1], r.reads[1]])];
+        const pts = [
+          [rows[0].raw[0], rows[0].reads[0]],
+          ...rows.map((r) => [r.raw[1], r.reads[1]]),
+        ];
         const cell = h("td", { class: "bp mono" });
         pts.forEach(([raw, reads], i) => {
           if (i) cell.append(" · ");
@@ -565,7 +610,13 @@
       function draw(data) {
         $("versions").textContent = `Parsed from DCS ${data.dcs} and DCS-BIOS ${data.dcs_bios}.`;
         const tables = $("tables");
-        $("jump").append(h("button", { type: "button", class: "chip", "data-pick": "all", "aria-pressed": "false" }, "All"));
+        $("jump").append(
+          h(
+            "button",
+            { type: "button", class: "chip", "data-pick": "all", "aria-pressed": "false" },
+            "All",
+          ),
+        );
         for (const a of data.aircraft) {
           const id = slug(a.aircraft);
           $("jump").append(
@@ -591,7 +642,13 @@
                   h(
                     "thead",
                     {},
-                    h("tr", {}, ...["DCS-BIOS", "Unit", "Raw → reads", "Straight line off by", ""].map((t) => h("th", {}, t))),
+                    h(
+                      "tr",
+                      {},
+                      ...["DCS-BIOS", "Unit", "Raw → reads", "Straight line off by", ""].map((t) =>
+                        h("th", {}, t),
+                      ),
+                    ),
                   ),
                   body,
                 ),
@@ -600,18 +657,30 @@
           );
         }
         for (const l of data.left_out) {
-          $("left").append(h("tr", {}, h("td", {}, l.aircraft), h("td", {}, h("code", {}, l.dcs_gauge)), h("td", {}, l.why)));
+          $("left").append(
+            h(
+              "tr",
+              {},
+              h("td", {}, l.aircraft),
+              h("td", {}, h("code", {}, l.dcs_gauge)),
+              h("td", {}, l.why),
+            ),
+          );
         }
-        if (data.none_found.length) $("even").textContent = `Every gauge even, so nothing to list: ${data.none_found.join(", ")}.`;
+        if (data.none_found.length)
+          $("even").textContent =
+            `Every gauge even, so nothing to list: ${data.none_found.join(", ")}.`;
         for (const u of data.not_covered || []) {
           $("uncovered").append(h("tr", {}, h("td", {}, u.aircraft), h("td", {}, u.why)));
         }
         if (data.not_installed?.length)
-          $("absent").textContent = `Not installed where this was built, so not read yet (DCS-BIOS module names): ${data.not_installed.join(", ")}.`;
+          $("absent").textContent =
+            `Not installed where this was built, so not read yet (DCS-BIOS module names): ${data.not_installed.join(", ")}.`;
         // A link to one aircraft opens on it; otherwise nothing shows until
         // an aircraft is picked, so the page doesn't open on every table.
         const linked = location.hash.slice(1);
-        if (linked === "all" || document.querySelector(`[data-pick="${CSS.escape(linked)}"]`)) pick = linked;
+        if (linked === "all" || document.querySelector(`[data-pick="${CSS.escape(linked)}"]`))
+          pick = linked;
         filter();
       }
 
@@ -635,7 +704,8 @@
           }
           sec.hidden = !any;
         }
-        for (const b of $("jump").querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.pick === pick));
+        for (const b of $("jump").querySelectorAll("button"))
+          b.setAttribute("aria-pressed", String(b.dataset.pick === pick));
         $("status").hidden = Boolean(q || pick);
         $("status").textContent = "Pick an aircraft above, or All, to see its gauges.";
         $("count").textContent = q ? `${shown} of ${total}` : `${total} gauges`;

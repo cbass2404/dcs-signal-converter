@@ -11,7 +11,9 @@ use std::path::Path;
 use std::time::{Duration, Instant};
 
 use dsc_bios::Write as BiosWrite;
-use dsc_config::{Catalogue, DeviceInventory, DisplayCatalogue, Page, PageLibrary, PageSlots, Profile, Slot};
+use dsc_config::{
+    Catalogue, DeviceInventory, DisplayCatalogue, Page, PageLibrary, PageSlots, Profile, Slot,
+};
 use dsc_engine::{Batch, Cause, Engine};
 
 const CAPTAIN: &str = "MCDU_Captain";
@@ -36,14 +38,33 @@ fn text_at(address: u16, s: &str) -> Vec<BiosWrite> {
 /// All, One, Blank, then three disabled, starting on All.
 fn hornet(follow: bool) -> Profile {
     let mut p = Profile::load(&r("crates/dsc-engine/tests/fixtures/fa-18.json")).expect("hornet");
-    let mut fields: Vec<_> = p.readouts.iter().filter(|f| f.display == "MCDU" && f.device == CAPTAIN).cloned().collect();
-    assert!(fields.len() > 1, "the fixture has more than one field on the Captain's screen");
+    let mut fields: Vec<_> = p
+        .readouts
+        .iter()
+        .filter(|f| f.display == "MCDU" && f.device == CAPTAIN)
+        .cloned()
+        .collect();
+    assert!(
+        fields.len() > 1,
+        "the fixture has more than one field on the Captain's screen"
+    );
     for f in &mut fields {
         f.device.clear();
     }
     p.readouts.retain(|f| f.display != "MCDU");
-    let page = |id: &str, fields: Vec<_>| Page { id: id.into(), name: id.into(), display: "MCDU".into(), fields };
-    let lib = PageLibrary::of(&p.module.clone(), vec![page("All", fields.clone()), page("One", vec![fields[0].clone()])]);
+    let page = |id: &str, fields: Vec<_>| Page {
+        id: id.into(),
+        name: id.into(),
+        display: "MCDU".into(),
+        fields,
+    };
+    let lib = PageLibrary::of(
+        &p.module.clone(),
+        vec![
+            page("All", fields.clone()),
+            page("One", vec![fields[0].clone()]),
+        ],
+    );
     let mut slots = PageSlots::empty(6);
     slots.slots[0] = Some(Slot::new("All"));
     slots.slots[1] = Some(Slot::new("One"));
@@ -90,7 +111,11 @@ fn a_page_slot_repaints_its_one_screen() {
     let batch = e.show_slot(CAPTAIN, 1).expect("slot 2 holds a page");
     assert_eq!(batch.cause, Cause::PageSwap);
     assert!(!batch.lcd.is_empty(), "the fields that went are blanked");
-    assert_eq!(screens_of(&batch), vec![CAPTAIN], "and nothing but the Captain's screen is sent");
+    assert_eq!(
+        screens_of(&batch),
+        vec![CAPTAIN],
+        "and nothing but the Captain's screen is sent"
+    );
     assert_eq!(shown(&e, CAPTAIN), 1);
 }
 
@@ -112,20 +137,33 @@ fn a_blank_slot_takes_the_screen_dark() {
     let batch = e.show_slot(CAPTAIN, 2).expect("slot 3 is blank");
     assert!(!batch.lcd.is_empty());
     assert!(
-        e.active_profile().unwrap().readouts.iter().all(|f| f.device != CAPTAIN || f.display != "MCDU"),
+        e.active_profile()
+            .unwrap()
+            .readouts
+            .iter()
+            .all(|f| f.device != CAPTAIN || f.display != "MCDU"),
         "nothing is left to draw on it"
     );
     // Its backlight goes with it, as on any screen with nothing to show.
-    assert!(batch.writes.iter().any(|w| w.id.device == CAPTAIN && w.value == 0));
+    assert!(batch
+        .writes
+        .iter()
+        .any(|w| w.id.device == CAPTAIN && w.value == 0));
 }
 
 #[test]
 fn a_follower_starts_alike_and_swaps_on_its_own() {
     let mut e = engine(hornet(true));
     fly(&mut e, Instant::now());
-    assert_eq!(shown(&e, COPILOT), 0, "it starts on the Captain's start page");
+    assert_eq!(
+        shown(&e, COPILOT),
+        0,
+        "it starts on the Captain's start page"
+    );
 
-    let batch = e.show_slot(COPILOT, 1).expect("the follower has the Captain's slots");
+    let batch = e
+        .show_slot(COPILOT, 1)
+        .expect("the follower has the Captain's slots");
     assert_eq!(screens_of(&batch), vec![COPILOT]);
     assert_eq!(shown(&e, CAPTAIN), 0, "the Captain's screen is its own");
     assert_eq!(shown(&e, COPILOT), 1);

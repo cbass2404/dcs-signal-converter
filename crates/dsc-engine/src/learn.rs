@@ -100,7 +100,9 @@ impl Watcher {
         for signal in &module.signals {
             // The first output is the canonical one everywhere else in this
             // codebase, and a signal that publishes none cannot be watched.
-            let Some(out) = signal.primary() else { continue };
+            let Some(out) = signal.primary() else {
+                continue;
+            };
             let reading = if out.r#type == "string" {
                 // A string with no max_length gives no way to know where the
                 // field ends. Skipping it is better than reading a guessed

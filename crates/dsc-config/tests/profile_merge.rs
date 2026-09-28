@@ -39,10 +39,8 @@ fn scratch(name: &str) -> Scratch {
 }
 
 fn inventory() -> DeviceInventory {
-    DeviceInventory::load(
-        &Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/devices.json"),
-    )
-    .expect("devices.json loads")
+    DeviceInventory::load(&Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/devices.json"))
+        .expect("devices.json loads")
 }
 
 /// A profile from before the UFC existed: PTO2 lamps only, one of them tuned.
@@ -110,10 +108,17 @@ fn a_profile_gains_a_display_field_the_default_has_added() {
     assert!(
         after.readouts.iter().any(|r| r.divider),
         "the divider reached the file: {:?}",
-        after.readouts.iter().map(|r| r.cells.to_string()).collect::<Vec<_>>()
+        after
+            .readouts
+            .iter()
+            .map(|r| r.cells.to_string())
+            .collect::<Vec<_>>()
     );
     assert!(
-        after.readouts.iter().any(|r| r.sources() == vec!["CDU_LINE0"]),
+        after
+            .readouts
+            .iter()
+            .any(|r| r.sources() == vec!["CDU_LINE0"]),
         "and the user's own field is still there"
     );
 }
@@ -153,7 +158,11 @@ fn a_shipped_field_never_displaces_one_the_user_put_there() {
         .expect("merge runs");
 
     let after = Profile::load(&dir.join("active/a-10c.json")).expect("still loads");
-    assert_eq!(after.readouts.len(), 1, "nothing was added over the user's field");
+    assert_eq!(
+        after.readouts.len(),
+        1,
+        "nothing was added over the user's field"
+    );
     assert_eq!(after.readouts[0].sources(), vec!["CDU_LINE9"]);
 }
 
@@ -273,7 +282,10 @@ fn bindings_a_shipped_default_gained_are_carried_across() {
         .iter()
         .find(|b| b.device == "TAKEOFF_PLANEL_2" && b.led == "Backlight")
         .unwrap();
-    assert_eq!(backlight.off, 12, "the user's value won, not the shipped one");
+    assert_eq!(
+        backlight.off, 12,
+        "the user's value won, not the shipped one"
+    );
     assert_eq!(backlight.note, "mine");
 }
 
@@ -352,8 +364,14 @@ fn claimed_aircraft_is_keyed_by_aircraft_not_module() {
 
     let claimed = Profiles::new(dir.join("defaults"), &active).claimed_aircraft();
     assert_eq!(claimed.len(), 2, "{claimed:?}");
-    assert_eq!(claimed.get("FA-18C_hornet").map(String::as_str), Some("Hornet"));
-    assert_eq!(claimed.get("FA-18E").map(String::as_str), Some("Super Hornet"));
+    assert_eq!(
+        claimed.get("FA-18C_hornet").map(String::as_str),
+        Some("Hornet")
+    );
+    assert_eq!(
+        claimed.get("FA-18E").map(String::as_str),
+        Some("Super Hornet")
+    );
 }
 
 #[test]
@@ -368,7 +386,9 @@ fn any_profile_deletes_but_nothing_outside_the_folder() {
     assert!(profiles.delete("../defaults/old.json").is_err());
     assert!(dir.join("defaults/old.json").is_file());
 
-    profiles.delete("mine.json").expect("a profile the user made deletes");
+    profiles
+        .delete("mine.json")
+        .expect("a profile the user made deletes");
     assert!(!dir.join("active/mine.json").exists());
     profiles.delete("old.json").expect("so does a shipped one");
     assert!(!dir.join("active/old.json").exists());
@@ -394,8 +414,16 @@ fn a_default_whose_aircraft_are_all_claimed_is_not_seeded() {
     // both aircraft two profiles, and the daemon would fly whichever sorted
     // first.
     let dir = scratch("seed-claimed");
-    std::fs::write(dir.join("defaults/a-10c.json"), a10("A-10C", &["A-10C_2", "A-10C"])).unwrap();
-    std::fs::write(dir.join("active/warthog.json"), a10("Warthog", &["A-10C_2", "A-10C"])).unwrap();
+    std::fs::write(
+        dir.join("defaults/a-10c.json"),
+        a10("A-10C", &["A-10C_2", "A-10C"]),
+    )
+    .unwrap();
+    std::fs::write(
+        dir.join("active/warthog.json"),
+        a10("Warthog", &["A-10C_2", "A-10C"]),
+    )
+    .unwrap();
     let profiles = Profiles::new(dir.join("defaults"), dir.join("active"));
 
     assert!(profiles.seed().unwrap().is_empty());
@@ -408,15 +436,28 @@ fn a_default_comes_back_for_only_the_aircraft_nothing_claims() {
     // profile of the user's; the A-10C was left with nowhere to go, so the
     // shipped profile returns for it and for it alone.
     let dir = scratch("seed-partial");
-    std::fs::write(dir.join("defaults/a-10c.json"), a10("A-10C", &["A-10C_2", "A-10C"])).unwrap();
+    std::fs::write(
+        dir.join("defaults/a-10c.json"),
+        a10("A-10C", &["A-10C_2", "A-10C"]),
+    )
+    .unwrap();
     std::fs::write(dir.join("active/mine.json"), a10("Mine", &["A-10C_2"])).unwrap();
     let profiles = Profiles::new(dir.join("defaults"), dir.join("active"));
 
     let seeded = profiles.seed().unwrap();
     assert_eq!(seeded.len(), 1, "{seeded:?}");
-    assert!(seeded[0].contains("A-10C_2"), "says what it left out: {seeded:?}");
-    assert_eq!(aircraft_of(&dir.join("active/a-10c.json")), vec!["A-10C".to_string()]);
-    assert_eq!(aircraft_of(&dir.join("active/mine.json")), vec!["A-10C_2".to_string()]);
+    assert!(
+        seeded[0].contains("A-10C_2"),
+        "says what it left out: {seeded:?}"
+    );
+    assert_eq!(
+        aircraft_of(&dir.join("active/a-10c.json")),
+        vec!["A-10C".to_string()]
+    );
+    assert_eq!(
+        aircraft_of(&dir.join("active/mine.json")),
+        vec!["A-10C_2".to_string()]
+    );
 }
 
 #[test]
@@ -424,16 +465,27 @@ fn reset_takes_back_only_the_aircraft_no_other_profile_has() {
     // Copy to... moved the A-10C II out of the shipped profile. Resetting the
     // shipped half puts its lamps back, not its claim on the A-10C II.
     let dir = scratch("reset-claims");
-    std::fs::write(dir.join("defaults/a-10c.json"), a10("A-10C", &["A-10C_2", "A-10C"])).unwrap();
+    std::fs::write(
+        dir.join("defaults/a-10c.json"),
+        a10("A-10C", &["A-10C_2", "A-10C"]),
+    )
+    .unwrap();
     std::fs::write(dir.join("active/a-10c.json"), a10("Renamed", &["A-10C"])).unwrap();
-    std::fs::write(dir.join("active/a-10c-ii.json"), a10("A-10C II", &["A-10C_2"])).unwrap();
+    std::fs::write(
+        dir.join("active/a-10c-ii.json"),
+        a10("A-10C II", &["A-10C_2"]),
+    )
+    .unwrap();
     let profiles = Profiles::new(dir.join("defaults"), dir.join("active"));
 
     profiles.reset_to_default("a-10c.json").unwrap();
     let reset = Profile::load(&dir.join("active/a-10c.json")).unwrap();
     assert_eq!(reset.name, "A-10C", "the rest goes back to how it shipped");
     assert_eq!(reset.aircraft, vec!["A-10C".to_string()]);
-    assert_eq!(aircraft_of(&dir.join("active/a-10c-ii.json")), vec!["A-10C_2".to_string()]);
+    assert_eq!(
+        aircraft_of(&dir.join("active/a-10c-ii.json")),
+        vec!["A-10C_2".to_string()]
+    );
 
     // With the other profile gone, reset takes the whole shipped list again.
     profiles.delete("a-10c-ii.json").unwrap();

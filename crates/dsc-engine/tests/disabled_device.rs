@@ -33,7 +33,8 @@ fn engine(drive_ufc: bool) -> Engine {
     let devices = DeviceInventory::load(&r("data/devices.json")).expect("devices");
     let cat = Catalogue::load_dir(&r("data/catalogue")).expect("catalogue");
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).expect("displays");
-    let mut profile = Profile::load(&r("crates/dsc-engine/tests/fixtures/fa-18.json")).expect("hornet");
+    let mut profile =
+        Profile::load(&r("crates/dsc-engine/tests/fixtures/fa-18.json")).expect("hornet");
     if !drive_ufc {
         profile.disabled_devices.push(UFC.into());
     }
@@ -54,12 +55,21 @@ fn fly(e: &mut Engine) -> Vec<Batch> {
         .address;
     let t0 = Instant::now();
     let mut writes = text_at(0, "FA-18C_hornet\0\0\0\0\0\0\0\0\0\0\0");
-    writes.push(BiosWrite { address: dimmer, value: 10_000 });
+    writes.push(BiosWrite {
+        address: dimmer,
+        value: 10_000,
+    });
     writes.extend(text_at(29746, "GRCV"));
     let mut out = vec![e.ingest(&writes, t0)];
     out.push(e.tick(t0 + Duration::from_secs(5)));
     let later = t0 + Duration::from_secs(6);
-    out.push(e.ingest(&[BiosWrite { address: dimmer, value: 50_000 }], later));
+    out.push(e.ingest(
+        &[BiosWrite {
+            address: dimmer,
+            value: 50_000,
+        }],
+        later,
+    ));
     out.push(e.mission_ended());
     out
 }
@@ -102,7 +112,10 @@ fn other() -> Profile {
 }
 
 fn ufc_lamps_lit(batch: &Batch) -> bool {
-    batch.writes.iter().any(|w| w.id.device == UFC && w.value != 0)
+    batch
+        .writes
+        .iter()
+        .any(|w| w.id.device == UFC && w.value != 0)
 }
 
 #[test]
@@ -118,13 +131,21 @@ fn switching_to_an_aircraft_without_the_ufc_takes_back_what_the_last_one_lit() {
     assert!(ufc_lamps_lit(&hornet) && hornet.lcd.iter().any(|w| w.device == UFC));
 
     let t1 = t0 + Duration::from_secs(10);
-    e.ingest(&text_at(0, "OTHER\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"), t1);
+    e.ingest(
+        &text_at(0, "OTHER\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"),
+        t1,
+    );
     let swap = e.tick(t1 + Duration::from_secs(5));
     let ufc: Vec<_> = swap.writes.iter().filter(|w| w.id.device == UFC).collect();
     assert!(!ufc.is_empty(), "the UFC's lamps are taken back: {swap:?}");
-    assert!(ufc.iter().all(|w| w.value == 0), "and only ever to zero: {ufc:?}");
     assert!(
-        swap.lcd.iter().any(|w| w.device == UFC && w.bytes.iter().all(|b| *b == 0)),
+        ufc.iter().all(|w| w.value == 0),
+        "and only ever to zero: {ufc:?}"
+    );
+    assert!(
+        swap.lcd
+            .iter()
+            .any(|w| w.device == UFC && w.bytes.iter().all(|b| *b == 0)),
         "the Hornet's page is wiped off the glass"
     );
 

@@ -27,8 +27,12 @@ fn line_of(fb: &[u8], line: usize) -> &[u8] {
 }
 
 fn fixture(name: &str) -> String {
-    std::fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures").join(name))
-        .expect("fixture is readable")
+    std::fs::read_to_string(
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures")
+            .join(name),
+    )
+    .expect("fixture is readable")
 }
 
 fn ded() -> Display {
@@ -44,7 +48,9 @@ fn committed_frames(name: &str) -> Vec<(String, Vec<u8>)> {
     let mut fb = vec![0u8; LINES * LINE_BYTES];
     let mut out = Vec::new();
     for line in fixture(name).lines() {
-        let Some(open) = line.find("[f0 ") else { continue };
+        let Some(open) = line.find("[f0 ") else {
+            continue;
+        };
         let time = line[12..24].to_string();
         let close = open + line[open..].find(']').unwrap();
         let raw: Vec<u8> = line[open + 1..close]
@@ -70,9 +76,13 @@ fn committed_frames(name: &str) -> Vec<(String, Vec<u8>)> {
 fn bios_lines(name: &str) -> Vec<(BTreeSet<String>, BTreeSet<String>)> {
     let mut out = vec![(BTreeSet::new(), BTreeSet::new()); LINES];
     for line in fixture(name).lines() {
-        let Some(at) = line.find("DED_L") else { continue };
+        let Some(at) = line.find("DED_L") else {
+            continue;
+        };
         let name = line[at..].split_whitespace().next().unwrap();
-        let (Some(a), Some(b)) = (line.find('"'), line.rfind('"')) else { continue };
+        let (Some(a), Some(b)) = (line.find('"'), line.rfind('"')) else {
+            continue;
+        };
         let value = line[a + 1..b].to_string();
         assert_eq!(value.chars().count(), COLUMNS, "{line}");
         let n: usize = name[5..6].parse().unwrap();
@@ -128,7 +138,9 @@ fn every_line_simapppro_drew_is_reproduced_from_the_bios_text() {
         for (line, (texts, formats)) in bios.iter().enumerate() {
             let want = line_of(fb, line);
             let hit = texts.iter().find(|text| {
-                formats.iter().any(|format| render_line(&ded, line, text, format) == want)
+                formats
+                    .iter()
+                    .any(|format| render_line(&ded, line, text, format) == want)
             });
             match hit {
                 Some(text) => {
@@ -142,12 +154,15 @@ fn every_line_simapppro_drew_is_reproduced_from_the_bios_text() {
     // The one frame that is not explained is the TCN page as it first came up,
     // showing other values than the listener caught. Its inverse cells are
     // checked on their own below.
-    assert_eq!(unexplained, [
-        "13:05:45.199 line 1",
-        "13:05:45.199 line 3",
-        "13:05:45.199 line 4",
-        "13:05:45.199 line 5",
-    ]);
+    assert_eq!(
+        unexplained,
+        [
+            "13:05:45.199 line 1",
+            "13:05:45.199 line 3",
+            "13:05:45.199 line 4",
+            "13:05:45.199 line 5",
+        ]
+    );
     // The CNI page, the clock ticking over, the blank lines between, and the
     // TCN page's selected fields, which are only right if the format line was
     // drawn inverse.
@@ -160,7 +175,11 @@ fn every_line_simapppro_drew_is_reproduced_from_the_bios_text() {
         assert!(reproduced.contains(text), "{text:?} was never matched");
     }
     assert!(
-        reproduced.iter().filter(|t| t.starts_with(" VHF  123.35")).count() > 10,
+        reproduced
+            .iter()
+            .filter(|t| t.starts_with(" VHF  123.35"))
+            .count()
+            > 10,
         "the CNI clock should match on every tick: {reproduced:?}"
     );
 }
@@ -197,7 +216,10 @@ fn the_second_flight_reproduces_a_line_with_each_glyph_it_captured() {
         }
     }
     for c in "JKWYZ>-/#'".chars() {
-        assert!(reproduced.iter().any(|t| t.contains(c)), "no line with {c:?} was matched");
+        assert!(
+            reproduced.iter().any(|t| t.contains(c)),
+            "no line with {c:?} was matched"
+        );
     }
 }
 
@@ -212,9 +234,20 @@ fn an_inverse_star_is_the_box_simapppro_draws() {
         .find(|(t, _)| t == "13:05:45.199")
         .expect("the TCN frame");
     let mut screen = Screen::new(&ded);
-    let cells = [(2, 7), (2, 14), (3, 4), (3, 8), (3, 16), (3, 23), (4, 16), (4, 21)];
+    let cells = [
+        (2, 7),
+        (2, 14),
+        (3, 4),
+        (3, 8),
+        (3, 16),
+        (3, 23),
+        (4, 16),
+        (4, 21),
+    ];
     for (line, col) in cells {
-        screen.draw_styled(&ded, line * COLUMNS + col, "*", true).unwrap();
+        screen
+            .draw_styled(&ded, line * COLUMNS + col, "*", true)
+            .unwrap();
     }
     for (line, col) in cells {
         for row in 0..13 {
@@ -223,7 +256,8 @@ fn an_inverse_star_is_the_box_simapppro_draws() {
                 continue;
             }
             assert_eq!(
-                screen.bytes()[at], fb[at],
+                screen.bytes()[at],
+                fb[at],
                 "line {} column {col} row {row}",
                 line + 1
             );

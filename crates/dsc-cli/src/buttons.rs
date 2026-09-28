@@ -11,11 +11,14 @@ use std::os::windows::ffi::OsStrExt;
 
 use anyhow::{bail, Result};
 use windows_sys::Win32::Devices::HumanInterfaceDevice::{
-    HidD_FreePreparsedData, HidD_GetPreparsedData, HidP_GetButtonCaps, HidP_GetCaps, HidP_GetUsages, HidP_Input,
-    HidP_MaxUsageListLength, HIDP_BUTTON_CAPS, HIDP_CAPS, HIDP_STATUS_SUCCESS, PHIDP_PREPARSED_DATA,
+    HidD_FreePreparsedData, HidD_GetPreparsedData, HidP_GetButtonCaps, HidP_GetCaps,
+    HidP_GetUsages, HidP_Input, HidP_MaxUsageListLength, HIDP_BUTTON_CAPS, HIDP_CAPS,
+    HIDP_STATUS_SUCCESS, PHIDP_PREPARSED_DATA,
 };
 use windows_sys::Win32::Foundation::{CloseHandle, GENERIC_READ, HANDLE, INVALID_HANDLE_VALUE};
-use windows_sys::Win32::Storage::FileSystem::{CreateFileW, ReadFile, FILE_SHARE_READ, FILE_SHARE_WRITE, OPEN_EXISTING};
+use windows_sys::Win32::Storage::FileSystem::{
+    CreateFileW, ReadFile, FILE_SHARE_READ, FILE_SHARE_WRITE, OPEN_EXISTING,
+};
 
 /// The HID usage page every button is on. A button's usage on it is its number.
 const BUTTON_PAGE: u16 = 0x09;
@@ -79,8 +82,11 @@ impl Collection {
 
         let mut count = caps.NumberInputButtonCaps;
         if count > 0 {
-            let mut list: Vec<HIDP_BUTTON_CAPS> = vec![unsafe { std::mem::zeroed() }; count as usize];
-            if unsafe { HidP_GetButtonCaps(HidP_Input, list.as_mut_ptr(), &mut count, preparsed) } == HIDP_STATUS_SUCCESS {
+            let mut list: Vec<HIDP_BUTTON_CAPS> =
+                vec![unsafe { std::mem::zeroed() }; count as usize];
+            if unsafe { HidP_GetButtonCaps(HidP_Input, list.as_mut_ptr(), &mut count, preparsed) }
+                == HIDP_STATUS_SUCCESS
+            {
                 for c in &list[..count as usize] {
                     if c.UsagePage != BUTTON_PAGE {
                         continue;
@@ -103,7 +109,15 @@ impl Collection {
     pub fn read(&self, buf: &mut Vec<u8>) -> Result<()> {
         buf.resize(self.report_len, 0);
         let mut read = 0u32;
-        let ok = unsafe { ReadFile(self.handle, buf.as_mut_ptr(), buf.len() as u32, &mut read, std::ptr::null_mut()) };
+        let ok = unsafe {
+            ReadFile(
+                self.handle,
+                buf.as_mut_ptr(),
+                buf.len() as u32,
+                &mut read,
+                std::ptr::null_mut(),
+            )
+        };
         if ok == 0 {
             bail!(std::io::Error::last_os_error());
         }

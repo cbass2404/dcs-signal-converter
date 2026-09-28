@@ -43,7 +43,11 @@ impl Bundle {
             .filter(|p| used.contains(&p.id) || also.contains(&p.id))
             .cloned()
             .collect();
-        Bundle { schema_version: SCHEMA_VERSION, profile: profile.clone(), pages }
+        Bundle {
+            schema_version: SCHEMA_VERSION,
+            profile: profile.clone(),
+            pages,
+        }
     }
 
     /// Read a shared file: a bundle, or a profile without pages. Each page's
@@ -54,7 +58,11 @@ impl Bundle {
             serde_json::from_str(&text).map_err(|e| Error::Json(e, path.display().to_string()))?;
         let mut bundle = match shared {
             Shared::Bundle(b) => b,
-            Shared::Profile(p) => Bundle { schema_version: p.schema_version, profile: p, pages: Vec::new() },
+            Shared::Profile(p) => Bundle {
+                schema_version: p.schema_version,
+                profile: p,
+                pages: Vec::new(),
+            },
         };
         for page in &mut bundle.pages {
             for f in &mut page.fields {
@@ -119,7 +127,8 @@ pub struct PageTake {
 /// Whether two pages draw the same thing. The name is left out: a page
 /// renamed here is still the page that was shared.
 fn same_page(a: &Page, b: &Page) -> bool {
-    a.display == b.display && serde_json::to_value(&a.fields).ok() == serde_json::to_value(&b.fields).ok()
+    a.display == b.display
+        && serde_json::to_value(&a.fields).ok() == serde_json::to_value(&b.fields).ok()
 }
 
 fn fate(lib: &PageLibrary, module: &str, page: &Page) -> Fate {
@@ -141,13 +150,18 @@ pub fn plan(lib: &PageLibrary, profile: &Profile, incoming: &[Page]) -> Vec<Page
     for page in incoming {
         let fate = fate(lib, module, page);
         let name_after = match fate {
-            Fate::Same => lib.page_on(module, &page.id).map_or(page.name.clone(), |p| p.name.clone()),
+            Fate::Same => lib
+                .page_on(module, &page.id)
+                .map_or(page.name.clone(), |p| p.name.clone()),
             _ => names.free_name(module, &page.name, None),
         };
         if fate != Fate::Same {
             // Held while the rest are named, so two pages brought in under
             // one name are told apart too.
-            let named = Page { name: name_after.clone(), ..page.clone() };
+            let named = Page {
+                name: name_after.clone(),
+                ..page.clone()
+            };
             names = with_added(&names, module, std::slice::from_ref(&named));
         }
         out.push(PagePlan {
@@ -195,10 +209,20 @@ pub fn bring_in(
         }
         let name = t.name.trim().to_string();
         if name.is_empty() {
-            return Err(format!("the page {:?} needs a name to come in under", page.name));
+            return Err(format!(
+                "the page {:?} needs a name to come in under",
+                page.name
+            ));
         }
-        if names.on_module(&module).iter().any(|p| same_name(&p.name, &name)) {
-            return Err(format!("a page on {module} is already called {name}; give {:?} another name", page.name));
+        if names
+            .on_module(&module)
+            .iter()
+            .any(|p| same_name(&p.name, &name))
+        {
+            return Err(format!(
+                "a page on {module} is already called {name}; give {:?} another name",
+                page.name
+            ));
         }
         let id = match fate {
             Fate::NewId => {
@@ -215,11 +239,19 @@ pub fn bring_in(
             }
             _ => page.id.clone(),
         };
-        let arrived = Page { id, name, display: page.display.clone(), fields: page.fields.clone() };
+        let arrived = Page {
+            id,
+            name,
+            display: page.display.clone(),
+            fields: page.fields.clone(),
+        };
         names
             .files
             .entry(module.clone())
-            .or_insert_with(|| crate::PageFile { module: module.clone(), pages: Vec::new() })
+            .or_insert_with(|| crate::PageFile {
+                module: module.clone(),
+                pages: Vec::new(),
+            })
             .pages
             .push(arrived.clone());
         added.push(arrived);
@@ -232,7 +264,10 @@ pub fn with_added(lib: &PageLibrary, module: &str, pages: &[Page]) -> PageLibrar
     let mut lib = lib.clone();
     lib.files
         .entry(module.to_string())
-        .or_insert_with(|| crate::PageFile { module: module.to_string(), pages: Vec::new() })
+        .or_insert_with(|| crate::PageFile {
+            module: module.to_string(),
+            pages: Vec::new(),
+        })
         .pages
         .extend(pages.iter().cloned());
     lib

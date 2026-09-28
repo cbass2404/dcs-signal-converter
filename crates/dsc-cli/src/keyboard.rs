@@ -7,7 +7,9 @@
 //! with the settings in `dsc-config`; asking Windows about it lives here.
 
 use dsc_config::settings::Modifier;
-use windows_sys::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_CONTROL, VK_MENU, VK_SHIFT};
+use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
+    GetAsyncKeyState, VK_CONTROL, VK_MENU, VK_SHIFT,
+};
 
 /// Whether a modifier is down on the keyboard right now, whichever window has
 /// focus. Asked at the moment a panel key goes down, so nothing polls it.

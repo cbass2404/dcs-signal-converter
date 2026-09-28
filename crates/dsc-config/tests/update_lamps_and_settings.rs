@@ -109,8 +109,14 @@ fn a_lamp_row_still_as_shipped_takes_the_new_one() {
     let notes = merge(&dir, "alpha.004");
 
     let after = mine(&dir);
-    assert_eq!(mfd_l(&after).same_as_device.as_deref(), Some("TAKEOFF_PLANEL_2"));
-    assert!(notes.iter().any(|n| n.contains("1 unchanged lamp row")), "{notes:?}");
+    assert_eq!(
+        mfd_l(&after).same_as_device.as_deref(),
+        Some("TAKEOFF_PLANEL_2")
+    );
+    assert!(
+        notes.iter().any(|n| n.contains("1 unchanged lamp row")),
+        "{notes:?}"
+    );
 }
 
 #[test]
@@ -128,14 +134,27 @@ fn a_lamp_row_the_user_changed_is_theirs() {
 #[test]
 fn follows_and_font_still_as_shipped_take_the_new_ones() {
     let dir = scratch("settings-new");
-    lay(&dir, ("", OWN), (&format!("{FOLLOWS}{FONT}"), OWN), ("", OWN));
+    lay(
+        &dir,
+        ("", OWN),
+        (&format!("{FOLLOWS}{FONT}"), OWN),
+        ("", OWN),
+    );
 
     let notes = merge(&dir, "alpha.004");
 
     let after = mine(&dir);
-    assert_eq!(after.follows.get("MCDU_CoPilot").map(String::as_str), Some("MCDU_Captain"));
+    assert_eq!(
+        after.follows.get("MCDU_CoPilot").map(String::as_str),
+        Some("MCDU_Captain")
+    );
     assert_eq!(after.font.as_deref(), Some("../mcdu/f14bu-font-21x31.json"));
-    assert!(notes.iter().any(|n| n.contains("2 unchanged profile setting")), "{notes:?}");
+    assert!(
+        notes
+            .iter()
+            .any(|n| n.contains("2 unchanged profile setting")),
+        "{notes:?}"
+    );
 }
 
 /// Kept apart on purpose is a decision, and so is a font of their own.
@@ -143,12 +162,20 @@ fn follows_and_font_still_as_shipped_take_the_new_ones() {
 fn follows_and_font_the_user_set_are_theirs() {
     let dir = scratch("settings-theirs");
     let own = r#""follows": { "MCDU_CoPilot": "MCDU_Observer" }, "font": "../mcdu/a10c-font-21x31.json","#;
-    lay(&dir, ("", OWN), (&format!("{FOLLOWS}{FONT}"), OWN), (own, OWN));
+    lay(
+        &dir,
+        ("", OWN),
+        (&format!("{FOLLOWS}{FONT}"), OWN),
+        (own, OWN),
+    );
 
     merge(&dir, "alpha.004");
 
     let after = mine(&dir);
-    assert_eq!(after.follows.get("MCDU_CoPilot").map(String::as_str), Some("MCDU_Observer"));
+    assert_eq!(
+        after.follows.get("MCDU_CoPilot").map(String::as_str),
+        Some("MCDU_Observer")
+    );
     assert_eq!(after.font.as_deref(), Some("../mcdu/a10c-font-21x31.json"));
 }
 
@@ -171,16 +198,32 @@ fn a_device_disabled_by_the_release_is_disabled_unless_the_user_decided() {
     let both = r#""disabled_devices": ["ViperAce_ICP", "MCDU_Observer"],"#;
     // ICP: shipped disabled, now enabled, user left it: enabled.
     // Observer: newly disabled, user never touched it: disabled.
-    lay(&dir, (icp, OWN), (r#""disabled_devices": ["MCDU_Observer"],"#, OWN), (icp, OWN));
+    lay(
+        &dir,
+        (icp, OWN),
+        (r#""disabled_devices": ["MCDU_Observer"],"#, OWN),
+        (icp, OWN),
+    );
     merge(&dir, "alpha.004");
-    assert_eq!(mine(&dir).disabled_devices, vec!["MCDU_Observer".to_string()]);
+    assert_eq!(
+        mine(&dir).disabled_devices,
+        vec!["MCDU_Observer".to_string()]
+    );
 
     // The user had already enabled the ICP and disabled the Observer
     // themselves: nothing to do.
     let dir = scratch("disabled-theirs");
-    lay(&dir, (icp, OWN), (both, OWN), (r#""disabled_devices": ["MCDU_Observer"],"#, OWN));
+    lay(
+        &dir,
+        (icp, OWN),
+        (both, OWN),
+        (r#""disabled_devices": ["MCDU_Observer"],"#, OWN),
+    );
     merge(&dir, "alpha.004");
-    assert_eq!(mine(&dir).disabled_devices, vec!["MCDU_Observer".to_string()]);
+    assert_eq!(
+        mine(&dir).disabled_devices,
+        vec!["MCDU_Observer".to_string()]
+    );
 }
 
 /// Not driving a panel is not a decision about its rows. They still take the
@@ -195,7 +238,10 @@ fn a_panel_the_user_stopped_driving_still_takes_the_update() {
     merge(&dir, "alpha.004");
 
     let after = mine(&dir);
-    assert_eq!(mfd_l(&after).same_as_device.as_deref(), Some("TAKEOFF_PLANEL_2"));
+    assert_eq!(
+        mfd_l(&after).same_as_device.as_deref(),
+        Some("TAKEOFF_PLANEL_2")
+    );
     assert_eq!(after.disabled_devices, vec!["CarrierAce_MFD_L".to_string()]);
 }
 
@@ -204,7 +250,12 @@ fn a_panel_the_user_stopped_driving_still_takes_the_update() {
 #[test]
 fn with_no_snapshot_lamps_and_settings_stay_put() {
     let dir = scratch("no-snapshot");
-    lay(&dir, ("", OWN), (&format!("{FOLLOWS}{FONT}"), MATCHED), ("", OWN));
+    lay(
+        &dir,
+        ("", OWN),
+        (&format!("{FOLLOWS}{FONT}"), MATCHED),
+        ("", OWN),
+    );
     std::fs::remove_dir_all(dir.join("defaults-previous")).unwrap();
 
     merge(&dir, "alpha.004");

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Your WinWing panels, lit by the DCS cockpit you are actually sitting in. Lamps, backlights and screens follow the aircraft. Free and open source."
+      content="Your sim cockpit panels, lit by the DCS cockpit you are actually sitting in. Lamps, backlights and screens follow the aircraft. Free and open source."
     />
     <meta name="color-scheme" content="light dark" />
     <meta
@@ -23,15 +23,15 @@
     <meta property="og:title" content="DCS Signal Converter" />
     <meta
       property="og:description"
-      content="Your WinWing panels, lit by the DCS cockpit you are actually sitting in. Lamps, backlights and screens follow the aircraft. Free and open source."
+      content="Your sim cockpit panels, lit by the DCS cockpit you are actually sitting in. Lamps, backlights and screens follow the aircraft. Free and open source."
     />
     <meta
       property="og:url"
-      content="https://cbass2404.github.io/wctrl-module-signal-converter/"
+      content="https://cbass2404.github.io/dcs-signal-converter/"
     />
     <meta
       property="og:image"
-      content="https://cbass2404.github.io/wctrl-module-signal-converter/img/profile-editor-device-expanded.png"
+      content="https://cbass2404.github.io/dcs-signal-converter/img/profile-editor-device-expanded.png"
     />
     <meta name="twitter:card" content="summary_large_image" />
 
@@ -709,12 +709,12 @@
           </div>
           <div class="badges">
             <span class="badge hot">Beta</span>
-            <span class="badge">WinWing panels</span>
+            <span class="badge">Sim cockpit panels</span>
             <span class="badge">DCS-BIOS</span>
             <span class="badge">Free &amp; open source</span>
           </div>
           <h1>
-            Your WinWing panels, lit by
+            Your panels, lit by
             <span class="em">the cockpit you are actually sitting in</span>.
           </h1>
           <p class="lede">
@@ -725,9 +725,9 @@
           </p>
           <div class="cta-row">
             <span class="btn-note"
-              >Download the latest release from the top of the page and run
-              the <span class="mono">setup.exe</span>. No admin prompt, no
-              SimAppPro.</span
+              >Download the latest release from the top of the page and run the
+              <span class="mono">setup.exe</span>. No admin prompt, no
+              vendor app needed.</span
             >
           </div>
         </div>
@@ -747,9 +747,9 @@
         <div class="prose" style="margin-bottom: 26px">
           <p>
             DCS Signal Converter reads the cockpit through DCS-BIOS and drives
-            the lamps, backlights and screens on your WinWing panels to match.
-            It starts with DCS on its own, so there is nothing to remember
-            before a flight and no alt-tabbing when you change aircraft.
+            the lamps, backlights and screens on your panels to match. It starts
+            with DCS on its own, so there is nothing to remember before a flight
+            and no alt-tabbing when you change aircraft.
           </p>
         </div>
         <div class="feats">
@@ -791,13 +791,14 @@
         <div class="groups">
           <div class="group">
             <div class="group-head">
-              <span class="group-title">Panels</span>
+              <span class="group-title">WinWing panels</span>
               <span class="group-count">8</span>
             </div>
             <p class="group-why">
               Any that are plugged in. The rest are skipped, so a profile can
               bind a panel you do not own without harm. The PFPs are not yet
-              tried on a real panel here.
+              tried on a real panel here. The same hardware sold as
+              WinCtrl is the same device and works the same.
             </p>
             <ul class="group-list">
               <li><span class="gi-name">PTO2</span></li>
@@ -921,7 +922,7 @@
           </p>
         </div>
         <div class="after caution">
-          <span class="t">Running SimAppPro alongside</span>
+          <span class="t">Running WinWing's SimAppPro alongside</span>
           <p>
             The converter can run with SimAppPro open, but SimAppPro must stop
             driving the same panels. Set the lights on each device in SimAppPro
@@ -941,11 +942,29 @@
           <span class="eyebrow">The editor</span>
           <h2>Every lamp is yours to reassign, per aircraft</h2>
         </div>
-        <div class="showcase" role="region" aria-roledescription="carousel" aria-label="Editor screenshots" tabindex="0">
+        <div
+          class="showcase"
+          role="region"
+          aria-roledescription="carousel"
+          aria-label="Editor screenshots"
+          tabindex="0"
+        >
           <div class="show-bar">
-            <button type="button" class="show-prev" aria-label="Previous screenshot">&larr; prev</button>
+            <button
+              type="button"
+              class="show-prev"
+              aria-label="Previous screenshot"
+            >
+              &larr; prev
+            </button>
             <div class="show-dots"></div>
-            <button type="button" class="show-next" aria-label="Next screenshot">next &rarr;</button>
+            <button
+              type="button"
+              class="show-next"
+              aria-label="Next screenshot"
+            >
+              next &rarr;
+            </button>
             <span class="show-count" aria-live="polite"></span>
           </div>
           <div class="shots">
@@ -960,9 +979,9 @@
                 />
               </div>
               <figcaption>
-                <b>One profile per aircraft, picked for you.</b> Jump into a
-                jet and the converter loads its profile. Click a row when you
-                want to change what it does.
+                <b>One profile per aircraft, picked for you.</b> Jump into a jet
+                and the converter loads its profile. Click a row when you want
+                to change what it does.
               </figcaption>
             </figure>
             <figure>
@@ -1009,8 +1028,8 @@
               </div>
               <figcaption>
                 <b>Start from someone else's setup.</b> Import a shared profile
-                as one of your own, or merge it into yours. It is checked
-                first, and refused if it would not load.
+                as one of your own, or merge it into yours. It is checked first,
+                and refused if it would not load.
               </figcaption>
             </figure>
             <figure>
@@ -1072,10 +1091,10 @@
                 />
               </div>
               <figcaption>
-                <b>Do not know what a switch is called?</b> Press
-                <b>Learn</b>, flip it in the cockpit, and what you just moved is
-                at the top of the list. It only listens, and never sends
-                anything to DCS or the panels, so it is safe mid-mission.
+                <b>Do not know what a switch is called?</b> Press <b>Learn</b>,
+                flip it in the cockpit, and what you just moved is at the top of
+                the list. It only listens, and never sends anything to DCS or
+                the panels, so it is safe mid-mission.
               </figcaption>
             </figure>
             <figure>
@@ -1105,10 +1124,10 @@
                 />
               </div>
               <figcaption>
-                <b>Six pages per screen, a key press apart.</b> Each slot is
-                one of the panel's keys: the MCDU's line select keys, the UFC's
-                A/P to BCN, the ICP's COM 1 to A-G. Hold Ctrl and press the key
-                in flight to swap.
+                <b>Six pages per screen, a key press apart.</b> Each slot is one
+                of the panel's keys: the MCDU's line select keys, the UFC's A/P
+                to BCN, the ICP's COM 1 to A-G. Hold Ctrl and press the key in
+                flight to swap.
               </figcaption>
             </figure>
             <figure>
@@ -1122,8 +1141,8 @@
                 />
               </div>
               <figcaption>
-                <b>A page reads like the screen it draws.</b> Each row names
-                its signals and previews what it will show. One page can sit on
+                <b>A page reads like the screen it draws.</b> Each row names its
+                signals and previews what it will show. One page can sit on
                 several screens, and saving it updates every one.
               </figcaption>
             </figure>
@@ -1174,8 +1193,8 @@
               </div>
               <figcaption>
                 <b>Light or dark, and your choice of key.</b> Follow Windows or
-                pick a theme, and choose whether Ctrl, Shift or Alt swaps
-                pages, to suit how DCS is bound on your PC.
+                pick a theme, and choose whether Ctrl, Shift or Alt swaps pages,
+                to suit how DCS is bound on your PC.
               </figcaption>
             </figure>
             <figure>
@@ -1190,9 +1209,9 @@
               </div>
               <figcaption>
                 <b>Recover without restarting DCS.</b> Restart the converter
-                after plugging in a panel or updating DCS-BIOS. Saving a
-                profile never needs it: a running converter picks it up within
-                about a second.
+                after plugging in a panel or updating DCS-BIOS. Saving a profile
+                never needs it: a running converter picks it up within about a
+                second.
               </figcaption>
             </figure>
           </div>
@@ -1309,7 +1328,7 @@
           <div class="feat">
             <h3>Touches nothing else</h3>
             <p>
-              Runs unelevated. No DCS, DCS-BIOS, SimAppPro or WinWing file is
+              Runs unelevated. No DCS, DCS-BIOS or vendor software file is
               modified.
             </p>
           </div>
@@ -1343,16 +1362,14 @@
             </div>
           </div>
           <div class="req">
-            <div class="lbl">WinWing panels</div>
-            <div class="txt">
-              Any of the panels above. The same hardware sold as WinCtrl is the
-              same device and works the same.
-            </div>
+            <div class="lbl">Supported panels</div>
+            <div class="txt">Any of the panels above.</div>
           </div>
           <div class="req">
             <div class="lbl">Not SimAppPro</div>
             <div class="txt">
-              It does not need to be running, and can stay closed. If you do run
+              WinWing's SimAppPro does not need to be running, and can
+              stay closed. If you do run
               it, turn off <strong>Sync with DCS</strong> for each panel so the
               two do not fight over the backlights. In the Hornet and the Viper
               it also draws the UFC and the DED itself; to leave those to
@@ -1369,22 +1386,21 @@
         <div class="beta">
           <span class="h">Read this bit: it is a beta</span>
           <p>
-            It is flown daily on the author's panels, but WinWing do not publish
-            how their panels talk to the PC, so the USB protocol was
+            It is flown daily on the author's panels, but panel makers do not
+            publish their USB protocols, so each one here was
             reverse-engineered, and the installer is new. Treat it as community
             software rather than a vendor feature.
           </p>
           <p>
             An independent project. It is not made, endorsed or supported by
-            WinCtrl or WinWing; their names appear here only to say which
+            WinWing or any other panel maker; their names appear here only to say which
             hardware it drives. Bug reports very welcome.
           </p>
         </div>
         <div class="cta-row" style="margin-top: 30px">
           <span class="btn-note"
             >Full setup and troubleshooting are in the
-            <a
-              href="https://github.com/cbass2404/wctrl-module-signal-converter#readme"
+            <a href="https://github.com/cbass2404/dcs-signal-converter#readme"
               >README</a
             >.</span
           >
@@ -1429,10 +1445,15 @@
             <span style="color: var(--ink-3)">&nbsp;&middot;&nbsp;</span>
             <a href="language.html">profile language</a>
             <span style="color: var(--ink-3)">&nbsp;&middot;&nbsp;</span>
-            <a href="https://discord.gg/W9tsVe3g3P" target="_blank" rel="noopener noreferrer">discord</a>
+            <a
+              href="https://discord.gg/W9tsVe3g3P"
+              target="_blank"
+              rel="noopener noreferrer"
+              >discord</a
+            >
             <span style="color: var(--ink-3)">&nbsp;&middot;&nbsp;</span>
-            <a href="https://github.com/cbass2404/wctrl-module-signal-converter"
-              >github.com/cbass2404/wctrl-module-signal-converter</a
+            <a href="https://github.com/cbass2404/dcs-signal-converter"
+              >github.com/cbass2404/dcs-signal-converter</a
             >
           </span>
         </div>
@@ -1455,19 +1476,29 @@
             f.classList.toggle("now", j === at);
             f.setAttribute("aria-hidden", String(j !== at));
           });
-          marks.forEach((m, j) => m.setAttribute("aria-current", String(j === at)));
+          marks.forEach((m, j) =>
+            m.setAttribute("aria-current", String(j === at)),
+          );
           count.textContent = `${pad(at + 1)} / ${pad(figs.length)}`;
         };
         const marks = figs.map((f, i) => {
           const m = document.createElement("button");
           m.type = "button";
-          m.setAttribute("aria-label", f.querySelector("figcaption b")?.textContent ?? `Screenshot ${i + 1}`);
+          m.setAttribute(
+            "aria-label",
+            f.querySelector("figcaption b")?.textContent ??
+              `Screenshot ${i + 1}`,
+          );
           m.addEventListener("click", () => show(i));
           dots.append(m);
           return m;
         });
-        box.querySelector(".show-prev").addEventListener("click", () => show(at - 1));
-        box.querySelector(".show-next").addEventListener("click", () => show(at + 1));
+        box
+          .querySelector(".show-prev")
+          .addEventListener("click", () => show(at - 1));
+        box
+          .querySelector(".show-next")
+          .addEventListener("click", () => show(at + 1));
         box.addEventListener("keydown", (e) => {
           if (e.key === "ArrowLeft") show(at - 1);
           else if (e.key === "ArrowRight") show(at + 1);

@@ -5,7 +5,7 @@
 //! the whole module-load sequence be tested without hardware or DCS.
 //!
 //! Two behaviours here are driven by measured hardware facts rather than
-//! preference, and both are documented in `docs/PROTOCOL.md`:
+//! preference, and both are documented in `docs/PROTOCOL-WINCTRL.md`:
 //!
 //! * **LED state latches in the device.** There is no host watchdog, so the
 //!   engine writes only on change and must clear LEDs on the way out.

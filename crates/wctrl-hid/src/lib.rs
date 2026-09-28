@@ -1,6 +1,6 @@
 //! HID transport for WinCtrl / WinWing panels.
 //!
-//! Frame layout, verified against captured SimAppPro traffic (docs/PROTOCOL.md):
+//! Frame layout, verified against captured SimAppPro traffic (docs/PROTOCOL-WINCTRL.md):
 //!
 //! ```text
 //! byte  0      0x02    report id
@@ -46,7 +46,7 @@ const CMD_SET_LCDS: u8 = 0x4c;
 pub const CMD_SET_LEDX_WITH_DURATION: u8 = 0x4B;
 
 /// Commands that alter persistent state, calibration, or firmware. This crate
-/// refuses to transmit any of them; see docs/PROTOCOL.md for why that matters
+/// refuses to transmit any of them; see docs/PROTOCOL-WINCTRL.md for why that matters
 /// (`0x40` is the bootloader, one bit from `SET_HIDE_MODE`).
 const FORBIDDEN: &[(u8, &str)] = &[
     (0x04, "DEVICE_RESTART"),
@@ -106,7 +106,7 @@ pub fn build_frame(part_id: u32, data: &[u8]) -> Result<[u8; FRAME_LEN]> {
 
 // ------------------------------------------------------------- pixel channel
 //
-// Confirmed on a ViperAce ICP 2026-09-18 (docs/PROTOCOL.md, "Driving a pixel
+// Confirmed on a ViperAce ICP 2026-09-18 (docs/PROTOCOL-WINCTRL.md, "Driving a pixel
 // display"). A logical frame is a structured command:
 //
 //   part id u32 | function u32 | clock u32 ms | respond u8 | payload len u32 | payload
@@ -176,7 +176,7 @@ pub fn pixel_commit_frame(part_id: u32, clock_ms: u32) -> Vec<u8> {
 //
 // The MCDU's screen as a text grid, ported from WwDevicesDotnet (BSD-3-Clause,
 // Andrew Whewell and Laurent André; Winctrl/CommonWinctrlPanel.cs and
-// Winctrl/ScreenWriter.cs; see THIRD_PARTY_NOTICES.md). docs/PROTOCOL.md,
+// Winctrl/ScreenWriter.cs; see THIRD_PARTY_NOTICES.md). docs/PROTOCOL-WINCTRL.md,
 // "Driving a text grid", has the detail. Before the device takes grid data it has to be told what a cell can
 // look like: four features, the values each may take, and the device indexes
 // the cartesian product. A cell then names its look by that index.

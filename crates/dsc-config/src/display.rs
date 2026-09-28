@@ -4,7 +4,7 @@
 //! segments, written a few bytes at a time, and a character position is a set
 //! of bit indices scattered through that bitmap. `data/displays/*.json` holds
 //! the map, transcribed from SimAppPro's tables and confirmed against captured
-//! hardware traffic. See `docs/PROTOCOL.md`.
+//! hardware traffic. See `docs/PROTOCOL-WINCTRL.md`.
 //!
 //! A pixel screen is the same model with a regular layout. Its bit index is a
 //! pixel, `y * width + x`, so a character cell is the pixels of its box and a

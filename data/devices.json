@@ -1,5 +1,5 @@
 {
-  "_comment": "Device and LED inventory. Indices and names come from SimAppPro's www/js/DeviceConfig.js; part ids come from a broadcast ONLINE_HEARTBEAT. See docs/PROTOCOL.md.",
+  "_comment": "Device and LED inventory. Indices and names come from SimAppPro's www/js/DeviceConfig.js; part ids come from a broadcast ONLINE_HEARTBEAT. See docs/PROTOCOL-WINCTRL.md.",
   "_status": "PTO2 and Orion Throttle Base II both fully verified 2026-09-16. Indices 0/1/2 are dimmers taking 0-255. Indices 4-17 are indicators taking 0 or 1 only; a value of 255 is out of range and is silently ignored (it acks, and nothing lights). CarrierAce UFC + HUD verified 2026-09-17: three dimmers and a segment display, no indicators. CarrierAce MFD verified 2026-09-18: one dimmer, under three names and PIDs. Orion Combat Rudder Pedals verified 2026-09-18: three dimmers at 0, 1 and 3; index 2 writes both pedal lights and is left alone.",
   "_evidence": {
     "dimmer": "Indices 0, 1 and 2 observed taking 1, 2, 11, 13, 20, 22, 111, 137, 200, 222 and 255 from SimAppPro's sliders.",
@@ -373,7 +373,7 @@
       "page_keys": ["COM_1", "COM_2", "IFF", "LIST", "A_A", "A_G"],
       "_notes": [
         "One USB interface at PID 0xbf06 answering as part 0xbf06. It declares 64-byte reports and a second output channel, 0xf0, for the screen.",
-        "The DED is a 200x64 pixel screen, not a segment display. Its map is data/displays/ded.json and its protocol is in docs/PROTOCOL.md under \"Driving a pixel display\".",
+        "The DED is a 200x64 pixel screen, not a segment display. Its map is data/displays/ded.json and its protocol is in docs/PROTOCOL-WINCTRL.md under \"Driving a pixel display\".",
         "THE SCREEN LATCHES, verified on hardware 2026-09-18: a page stays on the glass after the writing process exits. It must be blanked on mission end and on shutdown exactly as the lamps are.",
         "A PAGE CHANGE FLASHES, observed 2026-09-18: the DED shows a brief full-bright flash between the old page and the new one. SimAppPro driving the same panel does exactly the same, so it is the device, not our writes, and there is nothing to fix.",
         "The lamp indices are SimAppPro's (www/js/DeviceConfig.js, AllDevice[PIDByName.ICP]): Backlight 0, Screen_Backlight 1. Both verified on hardware 2026-09-18.",
@@ -656,7 +656,7 @@
         "One physical MCDU, three possible identities. SimAppPro renames it CAPTAIN, CO-PILOT or OBSERVER, and each name is its own USB PID: CAPTAIN 0xbb36, CO-PILOT 0xbb3e, OBSERVER 0xbb3a, all measured 2026-09-18. Same part 0xbb32 and same serial under every name, so this entry, MCDU_CoPilot and MCDU_Observer differ only in PID and name. It declares 64-byte reports and the 0xf0 screen channel, like the ICP.",
         "The name lives in config offset 0xcc, byte 1: CAPTAIN 0, OBSERVER 1, CO-PILOT 2, all captured 2026-09-18 (byte 0 is 01 each time). Before the first rename it read ff and the panel was CAPTAIN. Writing it drops the device off USB and it re-enumerates about three seconds later under the new PID. We never write it; WRITE_CFG_DATA is forbidden.",
         "Every index captured from SimAppPro 2026-09-18. The nine indicators were switched on and off in index order and only ever took 1 or 0. Indices 3 to 7 were never written.",
-        "The screen is a 24x14 text grid on report 0xf2, drawn from a font the panel is sent (data/displays/mcdu.json). SimAppPro's own screen buttons send only self-tests, cmd 0x104 with values 13 to 20 (white, black, red, green, blue, lime, purple, the WinWing logo). See docs/PROTOCOL.md.",
+        "The screen is a 24x14 text grid on report 0xf2, drawn from a font the panel is sent (data/displays/mcdu.json). SimAppPro's own screen buttons send only self-tests, cmd 0x104 with values 13 to 20 (white, black, red, green, blue, lime, purple, the WinWing logo). See docs/PROTOCOL-WINCTRL.md.",
         "The keys arrive on a game controller collection (usage page 0x01, usage 0x04), report id 1, 64 bytes, 128 buttons, captured on the Captain 2026-09-23 with dcs-signal buttons. LSK 1L to 6L are bits 0 to 5 of byte 1, buttons 1 to 6, and LSK 1R is bit 6, button 7: the numbers SimAppPro lights and DCS binds. Bytes 17 to 24 change with no key pressed, so keys are read by what goes down, never by the report changing. Only captured keys are listed. The page keys are LSK 1L to 6L, one per slot."
       ]
     },

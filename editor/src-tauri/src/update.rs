@@ -13,7 +13,7 @@ use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
-const REPO: &str = "cbass2404/wctrl-module-signal-converter";
+const REPO: &str = "cbass2404/dcs-signal-converter";
 
 /// The fields of GitHub's release listing this reads.
 #[derive(Debug, Deserialize)]

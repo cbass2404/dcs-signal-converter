@@ -10,7 +10,7 @@
   python tools/hid_probe.py lcd    --clear
   python tools/hid_probe.py cfg    [--pid 0xbf06] [--part 0xbf06] --offset 0xc8
 
-Wire protocol (14-byte reports, see docs/PROTOCOL.md):
+Wire protocol (14-byte reports, see docs/PROTOCOL-WINCTRL.md):
 
     byte  0     0x02   report id
     bytes 1-4   uint32 target part id, little-endian; 0x00000001 broadcasts

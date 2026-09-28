@@ -5,7 +5,7 @@
 // own button is lit, and is not a link, since it would only reload the page.
 (() => {
   "use strict";
-  const REPO = "https://github.com/cbass2404/wctrl-module-signal-converter";
+  const REPO = "https://github.com/cbass2404/dcs-signal-converter";
   const bar = document.querySelector("nav.site-bar");
   if (!bar) return;
   const here = bar.dataset.here;

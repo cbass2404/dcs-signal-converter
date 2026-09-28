@@ -4,7 +4,7 @@
 //! address is fixed here and the window can only ask for this one page.
 
 /// Where the guide is published, beside the landing page.
-const GUIDE: &str = "https://cbass2404.github.io/wctrl-module-signal-converter/language.html";
+const GUIDE: &str = "https://cbass2404.github.io/dcs-signal-converter/language.html";
 
 /// Opens the profile language guide in the default browser.
 #[tauri::command]

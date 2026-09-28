@@ -1,0 +1,11 @@
+# Prettier covers the editor frontend and the docs site pages only.
+# Rust goes through cargo fmt (rustfmt.toml); data and generated output are left alone.
+target/
+**/node_modules/
+editor/dist/
+editor/src-tauri/
+crates/
+data/
+tools/
+*.md
+*.json

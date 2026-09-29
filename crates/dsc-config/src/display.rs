@@ -1745,8 +1745,8 @@ pub struct Span {
     /// Draw this whole part inverse, on glass that draws inverse at all.
     ///
     /// The `format` signal does this per character for a source the module
-    /// highlights itself. This is the same thing for a part the user wrote,
-    /// where there is no signal to ask.
+    /// highlights itself. This is the same thing for text the user typed or a
+    /// reading they placed, where there is no signal to ask.
     #[serde(default, skip_serializing_if = "is_false")]
     pub inverse: bool,
     /// A second string signal, laid out like `source`, whose characters pick

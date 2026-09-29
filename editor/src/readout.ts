@@ -2239,22 +2239,31 @@ function spanEditor(
     );
   }
 
-  if (display.draws_inverse && isLiteral(span)) {
+  // Typed text and a reading alike: a reading the user put on the glass has no
+  // highlighting signal of its own to ask, so this is the only way to mark it.
+  if (display.draws_inverse && (isLiteral(span) || kindOf(span) === "signal")) {
     const flip = el("input", { type: "checkbox" });
     flip.checked = span.inverse === true;
     flip.addEventListener("change", () => {
       if (flip.checked) span.inverse = true;
       else delete span.inverse;
-      edited();
+      // Whether the highlighting chooser is offered depends on this, so it
+      // rebuilds.
+      setContent(readout, spans);
+      redraw();
+      onChange();
     });
     style.append(el("label", { class: "meta" }, flip, " inverse"));
   }
 
   // A highlighting signal marks characters, so it means nothing over a number,
-  // and nothing at all on glass with no inverse form to draw.
+  // and nothing at all on glass with no inverse form to draw. A piece drawn
+  // inverse whole leaves it nothing to mark, so it is not offered then; one
+  // already chosen is kept for when the box is cleared.
   if (
     display.draws_inverse &&
     !isLiteral(span) &&
+    span.inverse !== true &&
     span.source &&
     (isText(signals, span.source) || span.format !== undefined)
   ) {

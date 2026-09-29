@@ -56,11 +56,13 @@ pub fn tidy(pages: &[Page]) -> Vec<Page> {
     pages
 }
 
-/// The library in use, with the page being edited in place of the saved
+/// The library in use, with each page being edited in place of the saved
 /// one with its id, or added when it is new.
-pub fn library_with(paths: &Paths, module: &str, working: &Page) -> PageLibrary {
+pub fn library_with(paths: &Paths, module: &str, working: &[Page]) -> PageLibrary {
     let mut lib = paths.pages.library();
-    let working = tidy(std::slice::from_ref(working)).remove(0);
+    if working.is_empty() {
+        return lib;
+    }
     let file = lib
         .files
         .entry(module.to_string())
@@ -68,9 +70,11 @@ pub fn library_with(paths: &Paths, module: &str, working: &Page) -> PageLibrary 
             module: module.to_string(),
             pages: Vec::new(),
         });
-    match file.pages.iter_mut().find(|p| p.id == working.id) {
-        Some(there) => *there = working,
-        None => file.pages.push(working),
+    for page in tidy(working) {
+        match file.pages.iter_mut().find(|p| p.id == page.id) {
+            Some(there) => *there = page,
+            None => file.pages.push(page),
+        }
     }
     lib
 }

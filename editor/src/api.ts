@@ -102,12 +102,12 @@ export const saveProfile = (file: string, profile: Profile) =>
 /**
  * Everything the daemon would refuse this profile for, in its own words, and
  * everything it would caution about. No problems means it will load. Run after
- * each edit, not only on save. `working` is the page open for editing on
- * `device`, if one is: its rows are marked, and why it could not be saved is
- * said apart from the profile's own problems.
+ * each edit, not only on save. `working` is the pages open for editing, each
+ * with the screen showing it: their rows are marked, and why each could not
+ * be saved is said apart from the profile's own problems.
  */
-export const checkProfile = (profile: Profile, working: Page | null, device: string | null) =>
-  invoke<Findings>("check_profile", { profile, working, device });
+export const checkProfile = (profile: Profile, working: { page: Page; device: string }[]) =>
+  invoke<Findings>("check_profile", { profile, working });
 /**
  * Every field of a module's pages as the window works with them: a divider
  * from an older file arrives as the rule piece that draws the same line.

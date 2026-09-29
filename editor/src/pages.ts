@@ -43,7 +43,7 @@ function el<K extends keyof HTMLElementTagNameMap>(
   return node;
 }
 
-/** The page open for editing, if one is. */
+/** A page open for editing on one screen. */
 interface Editing {
   /** A copy, so nothing saved changes until Save page. */
   page: Page;
@@ -95,13 +95,18 @@ export interface PageBook {
   used: PageUse[];
   /** The module's pages as they shipped. */
   shipped: Page[];
-  editing: Editing | null;
-  /** Why the page being edited could not be saved, from the last check. */
-  problems: string[];
+  /**
+   * The page open on each screen, by device key. One per screen, so an edit
+   * cannot be dropped by opening another over it, but any number of screens,
+   * so one page can be read while another is built.
+   */
+  editing: Map<string, Editing>;
+  /** Why each open page could not be saved, from the last check, by device key. */
+  problems: Map<string, string[]>;
   /** Every screen section's redraw. */
   sections: (() => void)[];
-  /** Where each section shows `problems`, refreshed after every check. */
-  problemViews: (() => void)[];
+  /** Where each open editor shows its problems, refreshed after every check, by device key. */
+  problemViews: Map<string, () => void>;
 }
 
 /** What a screen section needs from the profile page around it. */
@@ -129,28 +134,45 @@ export function pageBook(module: string, file: string, view: PagesView): PageBoo
     broken: view.broken,
     used: view.used.filter((u) => u.file !== file),
     shipped: view.shipped,
-    editing: null,
-    problems: [],
+    editing: new Map(),
+    problems: new Map(),
     sections: [],
-    problemViews: [],
+    problemViews: new Map(),
   };
 }
 
-/** Whether the page open for editing has changes Save page has not written. */
+/** Whether this open page has changes Save page has not written. */
+function unsaved(e: Editing): boolean {
+  return e.fresh || JSON.stringify(e.page) !== e.baseline;
+}
+
+/** Whether any open page has changes Save page has not written. */
 export function pageUnsaved(book: PageBook): boolean {
-  const e = book.editing;
-  return e !== null && (e.fresh || JSON.stringify(e.page) !== e.baseline);
+  return [...book.editing.values()].some(unsaved);
+}
+
+/** Every page open for editing, with the screen showing it, for a check. */
+export function pagesOpen(book: PageBook): { page: Page; device: string }[] {
+  return [...book.editing.values()].map((e) => ({ page: e.page, device: e.device }));
 }
 
 /**
- * The pages a check's findings are placed against: as saved, with the one
- * being edited in place of its saved self. The working copy itself, not a
- * clone, since a mark is found by the field object its row was drawn from.
+ * The pages a check's findings are placed against: as saved, with each one
+ * being edited in place of its saved self. The working copies themselves, not
+ * clones, since a mark is found by the field object its row was drawn from.
  */
 export function pagesChecked(book: PageBook): Page[] {
-  const e = book.editing;
-  if (!e) return book.saved;
-  return [...book.saved.filter((p) => p.id !== e.page.id), e.page];
+  const open = [...book.editing.values()].map((e) => e.page);
+  if (open.length === 0) return book.saved;
+  return [...book.saved.filter((p) => !open.some((o) => o.id === p.id)), ...open];
+}
+
+/** The screen other than `device` that has page `id` open, if one does. */
+function openElsewhere(book: PageBook, id: string, device: string): string | null {
+  for (const e of book.editing.values()) {
+    if (e.device !== device && e.page.id === id) return e.device;
+  }
+  return null;
 }
 
 /** Take in what a save or a delete says the library now holds. */
@@ -171,7 +193,10 @@ const sameName = (a: string, b: string): boolean =>
 /** A name on the module no saved page but `except` has: `name`, or `name 2`, `name 3` and so on. */
 function freeName(book: PageBook, name: string, except?: string): string {
   const taken = (n: string): boolean =>
-    book.saved.some((p) => p.id !== except && sameName(p.name, n));
+    book.saved.some((p) => p.id !== except && sameName(p.name, n)) ||
+    [...book.editing.values()].some(
+      (e) => e.fresh && e.page.id !== except && sameName(e.page.name, n),
+    );
   const base = name.trim() || "New page";
   if (!taken(base)) return base;
   for (let k = 2; ; k += 1) {
@@ -228,8 +253,7 @@ export function pageSection(device: Device, display: DisplayInfo, ctx: PageConte
 
   const draw = (): void => {
     const s = slotsOf(ctx.profile, device);
-    const editingHere = book.editing?.device === device.key ? book.editing : null;
-    const busy = book.editing !== null;
+    const editingHere = book.editing.get(device.key) ?? null;
 
     // The head names the screen and, on a text grid where the aircraft has
     // no font of its own, offers the profile's, since every page here is
@@ -360,33 +384,47 @@ export function pageSection(device: Device, display: DisplayInfo, ctx: PageConte
       body,
     );
 
-    // Opening a page, or making one. Held while a page is open anywhere, so
-    // an edit cannot be dropped by opening another over it.
+    // Opening a page, or making one. Held while a page is open on this
+    // screen, so an edit cannot be dropped by opening another over it. Other
+    // screens stay free, so one page can be read while another is built. A
+    // page open on another screen cannot be opened here too, since two
+    // copies would each save over the other.
     const pick = el("select", { class: "test" }) as HTMLSelectElement;
-    for (const p of here) pick.append(el("option", { value: p.id }, p.name));
+    for (const p of here) {
+      const there = openElsewhere(book, p.id, device.key);
+      const option = el(
+        "option",
+        { value: p.id },
+        there ? `${p.name} (open on ${ctx.nameOf(there)})` : p.name,
+      );
+      if (there) option.setAttribute("disabled", "");
+      pick.append(option);
+    }
+    const free = here.filter((p) => !openElsewhere(book, p.id, device.key));
     const startPage = start?.page ?? null;
-    if (startPage !== null && here.some((p) => p.id === startPage)) pick.value = startPage;
+    pick.value =
+      startPage !== null && free.some((p) => p.id === startPage) ? startPage : (free[0]?.id ?? "");
     const open = el("button", { class: "add" }, "Edit page");
     open.addEventListener("click", () => {
       const page = book.saved.find((p) => p.id === pick.value);
-      if (page) edit(structuredClone(page), false);
+      if (page && !openElsewhere(book, page.id, device.key)) edit(structuredClone(page), false);
     });
     const make = el("button", { class: "add" }, "+ New page");
     make.addEventListener("click", () => {
       void (async () => {
         try {
-          const id = await newPageId([]);
+          const id = await newPageId(freshIds(book));
           edit({ id, name: freeName(book, "New page"), display: display.key, fields: [] }, true);
         } catch (e) {
           ctx.fail("Making a page", e);
         }
       })();
     });
-    if (here.length === 0) {
-      pick.disabled = true;
+    if (free.length === 0) {
+      pick.disabled = here.length === 0;
       open.setAttribute("disabled", "");
     }
-    if (busy) {
+    if (editingHere) {
       for (const b of [pick, open, make]) b.setAttribute("disabled", "");
     }
     const actions = el("div", { class: "chain-add" }, pick, open, make);
@@ -400,8 +438,8 @@ export function pageSection(device: Device, display: DisplayInfo, ctx: PageConte
     // The field rows compare a field's device with its neighbours', so each
     // is put on this one. The page keeps none; Save page takes it off again.
     for (const f of page.fields) f.device = device.key;
-    book.editing = opened(page, device.key, fresh);
-    book.problems = [];
+    book.editing.set(device.key, opened(page, device.key, fresh));
+    book.problems.delete(device.key);
     redrawAll(book);
     ctx.pageChanged();
   };
@@ -412,15 +450,15 @@ export function pageSection(device: Device, display: DisplayInfo, ctx: PageConte
    * what its cancel would put back is from before the save.
    */
   const saved = (page: Page): void => {
-    book.editing = opened(page, device.key, false);
+    book.editing.set(device.key, opened(page, device.key, false));
     redrawAll(book);
     ctx.pageChanged();
   };
 
   const close = (): void => {
-    book.editing = null;
-    book.problems = [];
-    book.problemViews = [];
+    book.editing.delete(device.key);
+    book.problems.delete(device.key);
+    book.problemViews.delete(device.key);
     redrawAll(book);
     ctx.pageChanged();
   };
@@ -453,22 +491,19 @@ export function pageSection(device: Device, display: DisplayInfo, ctx: PageConte
           : nameTaken(n)
             ? `Another page on ${book.module} is called ${n}.`
             : "";
-      const blocked = clash.textContent !== "" || book.problems.length > 0;
-      if (blocked || !pageUnsaved(book)) save.setAttribute("disabled", "");
+      const found = book.problems.get(device.key) ?? [];
+      const blocked = clash.textContent !== "" || found.length > 0;
+      if (blocked || !unsaved(e)) save.setAttribute("disabled", "");
       else save.removeAttribute("disabled");
-      state.textContent = e.fresh
-        ? "new, not saved yet"
-        : pageUnsaved(book)
-          ? "unsaved changes"
-          : "";
+      state.textContent = e.fresh ? "new, not saved yet" : unsaved(e) ? "unsaved changes" : "";
       problems.replaceChildren();
-      problems.hidden = book.problems.length === 0;
-      if (book.problems.length > 0) {
+      problems.hidden = found.length === 0;
+      if (found.length > 0) {
         problems.append(el("strong", {}, "This page cannot be saved until this is fixed:"));
-        for (const p of book.problems) problems.append(el("div", { class: "problem" }, p));
+        for (const p of found) problems.append(el("div", { class: "problem" }, p));
       }
     };
-    book.problemViews = [refresh];
+    book.problemViews.set(device.key, refresh);
 
     name.addEventListener("input", () => {
       page.name = name.value;
@@ -502,7 +537,7 @@ export function pageSection(device: Device, display: DisplayInfo, ctx: PageConte
     saveAs.addEventListener("click", () => {
       void (async () => {
         try {
-          const id = await newPageId([]);
+          const id = await newPageId(freshIds(book));
           const copy: Page = { ...structuredClone(page), id, name: freeName(book, page.name) };
           update(book, await savePage(ctx.profile, copy, device.key));
           ctx.tell(`Saved as a new page, ${copy.name}. Pick it in a slot to show it.`);
@@ -549,7 +584,7 @@ export function pageSection(device: Device, display: DisplayInfo, ctx: PageConte
     shut.addEventListener("click", () => {
       void (async () => {
         if (
-          pageUnsaved(book) &&
+          unsaved(e) &&
           !(await confirmAction(
             `Close ${page.name} without saving? The changes to it will be lost.`,
             "Close",
@@ -572,7 +607,7 @@ export function pageSection(device: Device, display: DisplayInfo, ctx: PageConte
     // can stick just above it.
     const actions = el("div", { class: "chain-add page-actions" }, save, saveAs, remove, shut);
     new ResizeObserver(() => {
-      document.documentElement.style.setProperty("--page-actions-h", `${actions.offsetHeight}px`);
+      wrap.style.setProperty("--page-actions-h", `${actions.offsetHeight}px`);
     }).observe(actions);
 
     const { table } = fieldTable(
@@ -605,8 +640,20 @@ export function pageSection(device: Device, display: DisplayInfo, ctx: PageConte
   return box;
 }
 
-/** Show the latest check's page problems in the open editor. */
-export function showPageProblems(book: PageBook, problems: string[]): void {
-  book.problems = problems;
-  for (const view of book.problemViews) view();
+/**
+ * Show the latest check's page problems in the open editors. `asked` is the
+ * pages the check was run on, in the order `problems` answers them.
+ */
+export function showPageProblems(
+  book: PageBook,
+  asked: { page: Page; device: string }[],
+  problems: string[][],
+): void {
+  book.problems = new Map(asked.map((w, i) => [w.device, problems[i] ?? []]));
+  for (const view of book.problemViews.values()) view();
+}
+
+/** The ids of pages open here and not saved yet, which a new id must avoid. */
+function freshIds(book: PageBook): string[] {
+  return [...book.editing.values()].filter((e) => e.fresh).map((e) => e.page.id);
 }

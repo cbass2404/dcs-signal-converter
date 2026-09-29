@@ -50,3 +50,8 @@ take the new one.
 - **A reading can be drawn inverse**, on glass that draws inverse such as
   the DED. Before, only typed text had the box. While a piece is inverse its
   highlighting signal is not offered, since there is nothing left to mark.
+- **Each screen can have its own page open at once**, so the DED page can
+  stay open while you build a UFC page beside it. Before, a page open on
+  one screen locked Edit page on every other. A screen with a page open
+  still has to close it before opening another, and one page cannot be
+  open on two screens at once.

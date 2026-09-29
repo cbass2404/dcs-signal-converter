@@ -40,6 +40,11 @@ pub const DEFAULT_SETTLE_QUIET: Duration = Duration::from_millis(250);
 /// a late sweep is better than none, and the incremental path corrects it.
 pub const DEFAULT_SETTLE_MAX: Duration = Duration::from_millis(2500);
 
+/// The shortest time between two repaints the stream causes, about 30 a
+/// second. A burst of datagrams is drawn once, from the latest state, rather
+/// than frame by frame, so the glass never runs behind the cockpit.
+pub const PAINT_EVERY: Duration = Duration::from_millis(33);
+
 /// Identifies one physical LED. `part_id` is carried because a single USB
 /// device can front several parts, so the index alone is ambiguous across them.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -114,6 +119,19 @@ pub struct LedWrite {
     pub value: u8,
 }
 
+/// A number a paint converted for the glass: the signal, the count it arrived
+/// as, and the characters it became.
+///
+/// Handed out so the log can say what the glass was given without working it
+/// out a second time. Only readings that differ from the last paint's are
+/// reported.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Drawn {
+    pub source: String,
+    pub raw: u16,
+    pub text: String,
+}
+
 /// Why the engine emitted a batch. Useful for logging, and for tests that care
 /// about the difference between a sweep and an incremental update.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -139,6 +157,9 @@ pub struct Batch {
     /// is acknowledged.
     #[allow(clippy::struct_field_names)]
     pub lcd: Vec<LcdWrite>,
+    /// Readings this batch's paint converted that changed since the last one.
+    /// Nothing to send; it is for the log.
+    pub drawn: Vec<Drawn>,
 }
 
 impl Batch {
@@ -147,6 +168,7 @@ impl Batch {
             cause,
             writes: Vec::new(),
             lcd: Vec::new(),
+            drawn: Vec::new(),
         }
     }
 
@@ -205,6 +227,64 @@ pub struct Engine {
     moves: HashMap<String, Move>,
     /// Counts movements, so "which moved last" is a comparison of numbers.
     move_clock: u64,
+    /// Addresses the glass reads: every field showing on a driven screen, the
+    /// lamps that light one, and the seat. A datagram touching none of them
+    /// cannot change a screen, so it does not repaint one.
+    paint_reads: HashSet<u16>,
+    /// Something the glass reads has moved and not been drawn yet.
+    dirty: bool,
+    /// When the stream last caused a paint, for [`PAINT_EVERY`].
+    painted_at: Option<Instant>,
+    paint_every: Duration,
+    /// What the last paint drew for each converted signal, so a batch reports
+    /// only the readings that changed.
+    drawn: HashMap<String, (u16, String)>,
+}
+
+/// Whether anything is worked out for a device: it is plugged in and the
+/// profile drives it. A panel that is not there is treated exactly as one
+/// turned off, so its lamps are not resolved and its fields not converted.
+fn runs(connected: &[String], profile: &Profile, device: &str) -> bool {
+    profile.drives(device) && connected.iter().any(|k| k == device)
+}
+
+/// The active profile's bindings by the addresses they read, for the ones on
+/// devices that [`runs`].
+fn binding_index(
+    profile: &Profile,
+    module: &Module,
+    connected: &[String],
+) -> HashMap<u16, Vec<usize>> {
+    let mut index: HashMap<u16, Vec<usize>> = HashMap::new();
+    for (bi, b) in profile.bindings.iter().enumerate() {
+        // A panel this profile does not drive, or that is not plugged in, is
+        // never written, so its bindings are kept out of the index rather
+        // than filtered on every write. The sweep and the paint already leave
+        // it alone; this is the incremental path's half of the same promise.
+        if !runs(connected, profile, &b.device) {
+            continue;
+        }
+        // A binding is re-evaluated when *any* signal it reads moves, so it is
+        // indexed under every address it reads, wherever in the binding that
+        // signal is named. Rows that read nothing appear nowhere: a
+        // placeholder is swept off like any unbound lamp, and an always-on lamp
+        // is written by the sweep and never needs revisiting.
+        for source in profile.sources_of(b) {
+            if let Some(addr) = module
+                .signal(source)
+                .and_then(|s| s.primary())
+                .map(|o| o.address)
+            {
+                let slot = index.entry(addr).or_insert_with(Vec::new);
+                // Two conditions on one address must not queue the binding
+                // twice.
+                if !slot.contains(&bi) {
+                    slot.push(bi);
+                }
+            }
+        }
+    }
+    index
 }
 
 /// Profiles as they run, with every device that follows another given that
@@ -233,6 +313,11 @@ impl Engine {
             settle_max: DEFAULT_SETTLE_MAX,
             moves: HashMap::new(),
             move_clock: 0,
+            paint_reads: HashSet::new(),
+            dirty: false,
+            painted_at: None,
+            paint_every: PAINT_EVERY,
+            drawn: HashMap::new(),
         }
     }
 
@@ -276,6 +361,7 @@ impl Engine {
                 }
             }
         }
+        self.index_paint();
 
         // Still waiting for the post-load flood to settle. That sweep is coming
         // anyway and will use the profiles we just installed.
@@ -284,7 +370,7 @@ impl Engine {
         }
 
         let mut writes = self.sweep();
-        let (lamps, mut lcd) = self.paint();
+        let (lamps, mut lcd, drawn) = self.paint();
         writes.extend(lamps);
         let (released, blanked) = self.release_undriven();
         writes.extend(released);
@@ -293,6 +379,7 @@ impl Engine {
             cause: Cause::ProfileReload,
             writes,
             lcd,
+            drawn,
         }
     }
 
@@ -308,15 +395,20 @@ impl Engine {
         if !self.profiles[i].show_slot(device, slot) {
             return None;
         }
+        // Other fields, so other signals, and every reading on the new page is
+        // news to the log.
+        self.index_paint();
+        self.drawn.clear();
         // The settle sweep still to come paints the new page with the rest.
         if self.pending.is_some() {
             return Some(Batch::empty(Cause::PageSwap));
         }
-        let (writes, lcd) = self.paint();
+        let (writes, lcd, drawn) = self.paint();
         Some(Batch {
             cause: Cause::PageSwap,
             writes,
             lcd,
+            drawn,
         })
     }
 
@@ -347,17 +439,41 @@ impl Engine {
         self.by_address.clear();
         self.moves.clear();
         self.pending = None;
+        self.paint_reads.clear();
+        self.drawn.clear();
+        self.dirty = false;
+        self.painted_at = None;
         batch
     }
 
     /// Declare which devices are present. Call after HID enumeration.
+    ///
+    /// A device missing from the list is treated as one the profile does not
+    /// drive: nothing it would show is read, resolved or converted.
     pub fn set_connected(&mut self, keys: Vec<String>) {
         self.connected = keys;
+        if let Some(i) = self.active {
+            if let Some(module) = self.catalogue.module(&self.profiles[i].module) {
+                self.by_address = binding_index(&self.profiles[i], module, &self.connected);
+            }
+        }
+        self.index_paint();
+    }
+
+    /// The devices declared present, by key.
+    pub fn connected(&self) -> &[String] {
+        &self.connected
     }
 
     pub fn set_settle(&mut self, quiet: Duration, max: Duration) {
         self.settle_quiet = quiet;
         self.settle_max = max;
+    }
+
+    /// The shortest time between two repaints the stream causes. [`PAINT_EVERY`]
+    /// unless a test wants every datagram drawn.
+    pub fn set_paint_every(&mut self, every: Duration) {
+        self.paint_every = every;
     }
 
     pub fn aircraft(&self) -> Option<&str> {
@@ -418,8 +534,9 @@ impl Engine {
             let waited = now.saturating_duration_since(p.since);
             if quiet_for >= self.settle_quiet || waited >= self.settle_max {
                 self.pending = None;
+                self.painted_at = Some(now);
                 let mut writes = self.sweep();
-                let (lamps, mut lcd) = self.paint();
+                let (lamps, mut lcd, drawn) = self.paint();
                 writes.extend(lamps);
                 let (released, blanked) = self.release_undriven();
                 writes.extend(released);
@@ -428,31 +545,46 @@ impl Engine {
                     cause: Cause::ModuleLoad,
                     writes,
                     lcd,
+                    drawn,
                 };
             }
             return Batch::empty(Cause::ModuleLoad);
         }
 
         // The lamps only revisit bindings whose signals moved, but the glass
-        // is repainted whole: a display field is cheap to rebuild and a torn
-        // one is worse than a late one.
+        // is repainted whole: a torn field is worse than a late one. Only when
+        // something it reads moved, though, and no more often than
+        // PAINT_EVERY, because a paint converts every field on every screen.
+        if touched.iter().any(|a| self.paint_reads.contains(a)) {
+            self.dirty = true;
+        }
         let mut writes = self.incremental(&touched);
-        let (lamps, lcd) = self.paint();
+        let (lamps, lcd, drawn) = self.paint_due(now);
         writes.extend(lamps);
         Batch {
             cause: Cause::SignalChange,
             writes,
             lcd,
+            drawn,
         }
     }
 
-    /// Nudge a pending sweep when no datagrams are arriving.
+    /// Nudge a pending sweep, or a paint the frame cap held back, when no
+    /// datagrams are arriving.
     ///
     /// Needed because the settle window is defined by *silence*, and a silent
-    /// stream produces no `ingest` calls in which to notice it.
+    /// stream produces no `ingest` calls in which to notice it. The held paint
+    /// is the same: the datagram that moved the reading may be the last one
+    /// for a while.
     pub fn tick(&mut self, now: Instant) -> Batch {
         if self.pending.is_none() {
-            return Batch::empty(Cause::SignalChange);
+            let (writes, lcd, drawn) = self.paint_due(now);
+            return Batch {
+                cause: Cause::SignalChange,
+                writes,
+                lcd,
+                drawn,
+            };
         }
         self.ingest(&[], now)
     }
@@ -484,6 +616,7 @@ impl Engine {
             cause: Cause::Shutdown,
             writes,
             lcd,
+            drawn: Vec::new(),
         }
     }
 
@@ -512,9 +645,11 @@ impl Engine {
     /// Also returns writes for the lamps that light a display: as bound while
     /// the profile puts fields on it, 0 while it does not. Blanking on the way out
     /// needs nothing extra, because `shutdown` zeroes every lamp we lit.
-    fn paint(&mut self) -> (Vec<LedWrite>, Vec<LcdWrite>) {
+    fn paint(&mut self) -> (Vec<LedWrite>, Vec<LcdWrite>, Vec<Drawn>) {
+        // Whatever caused it, a paint draws the state as it is now.
+        self.dirty = false;
         let Some(profile) = self.active.map(|i| &self.profiles[i]) else {
-            return (Vec::new(), Vec::new());
+            return (Vec::new(), Vec::new(), Vec::new());
         };
 
         // Which crew station the player is in, where the module says. Read once
@@ -535,8 +670,13 @@ impl Engine {
 
         let mut out = Vec::new();
         let mut lamps = Vec::new();
+        // The readings converted, once a signal each: two fields reading one
+        // signal would otherwise report it twice, and differently.
+        let drawn = &self.drawn;
+        let mut fresh: Vec<Drawn> = Vec::new();
+        let mut this_paint: HashSet<&str> = HashSet::new();
         for device in &self.devices.devices {
-            if !self.connected.iter().any(|k| k == &device.key) || !profile.drives(&device.key) {
+            if !runs(&self.connected, profile, &device.key) {
                 continue;
             }
             for (part, key) in device.displays() {
@@ -630,21 +770,39 @@ impl Engine {
                     // label belongs on the glass before the reading beside it.
                     let module = self.catalogue.module(&profile.module);
                     let state = &self.state;
-                    let Some(glyphs) = r.compose(|id| {
-                        let output = module?.signal(id)?.primary()?;
-                        if output.r#type == "string" {
-                            return state
-                                .text(output.address, output.max_length.unwrap_or(0))
-                                .map(dsc_config::Reading::Text);
-                        }
-                        let mask = output.mask.unwrap_or(u16::MAX);
-                        state
-                            .value(output.address, mask, output.shift)
-                            .map(|value| dsc_config::Reading::Number {
-                                value,
-                                max: output.number_max(),
-                            })
-                    }) else {
+                    let Some(glyphs) = r.compose_seen(
+                        |id| {
+                            let output = module?.signal(id)?.primary()?;
+                            if output.r#type == "string" {
+                                return state
+                                    .text(output.address, output.max_length.unwrap_or(0))
+                                    .map(dsc_config::Reading::Text);
+                            }
+                            let mask = output.mask.unwrap_or(u16::MAX);
+                            state
+                                .value(output.address, mask, output.shift)
+                                .map(|value| dsc_config::Reading::Number {
+                                    value,
+                                    max: output.number_max(),
+                                })
+                        },
+                        |source, raw, text| {
+                            if !this_paint.insert(source) {
+                                return;
+                            }
+                            if drawn
+                                .get(source)
+                                .is_some_and(|(r, t)| *r == raw && t == text)
+                            {
+                                return;
+                            }
+                            fresh.push(Drawn {
+                                source: source.to_string(),
+                                raw,
+                                text: text.to_string(),
+                            });
+                        },
+                    ) else {
                         continue;
                     };
                     for (offset, cell) in r.cells.cells().enumerate() {
@@ -675,7 +833,82 @@ impl Engine {
                 self.screens.insert(id, next);
             }
         }
-        (lamps, out)
+        for d in &fresh {
+            self.drawn.insert(d.source.clone(), (d.raw, d.text.clone()));
+        }
+        (lamps, out, fresh)
+    }
+
+    /// Paint when the glass has something new to show and the frame cap
+    /// allows it. Held back, it goes out on a later ingest or tick, drawn from
+    /// the state as it is then: skipped frames are dropped, never queued.
+    fn paint_due(&mut self, now: Instant) -> (Vec<LedWrite>, Vec<LcdWrite>, Vec<Drawn>) {
+        let early = self
+            .painted_at
+            .is_some_and(|t| now.saturating_duration_since(t) < self.paint_every);
+        if !self.dirty || early {
+            return (Vec::new(), Vec::new(), Vec::new());
+        }
+        self.painted_at = Some(now);
+        self.paint()
+    }
+
+    /// Work out which addresses the glass reads, the way [`paint`](Self::paint)
+    /// walks it. Again whenever that can change: a profile taken, a page
+    /// shown, the devices connected.
+    fn index_paint(&mut self) {
+        self.paint_reads.clear();
+        let Some(profile) = self.active.map(|i| &self.profiles[i]) else {
+            return;
+        };
+        let Some(module) = self.catalogue.module(&profile.module) else {
+            return;
+        };
+        let mut reads = HashSet::new();
+        let mut add = |source: &str| {
+            let Some(o) = module.signal(source).and_then(|s| s.primary()) else {
+                return;
+            };
+            // A string is a word per two characters, and any of them arriving
+            // changes what it reads.
+            let words = if o.r#type == "string" {
+                o.max_length.unwrap_or(0).div_ceil(2).max(1)
+            } else {
+                1
+            };
+            for word in 0..words {
+                reads.insert(o.address + word * 2);
+            }
+        };
+        add(SEAT_SIGNAL);
+        for device in &self.devices.devices {
+            if !runs(&self.connected, profile, &device.key) {
+                continue;
+            }
+            for (part, key) in device.displays() {
+                for r in profile
+                    .readouts
+                    .iter()
+                    .filter(|r| r.device == device.key && r.display == key)
+                {
+                    for source in r.sources() {
+                        add(source);
+                    }
+                }
+                for led in part.leds.iter().filter(|l| l.lights_display) {
+                    if let Some(b) = profile
+                        .bindings
+                        .iter()
+                        .find(|b| b.device == device.key && b.led == led.name)
+                    {
+                        for source in profile.sources_of(b) {
+                            add(source);
+                        }
+                    }
+                }
+            }
+        }
+        self.paint_reads = reads;
     }
 
     /// Blank every display we have driven, for shutdown and mission end.
@@ -782,6 +1015,8 @@ impl Engine {
             .iter()
             .position(|p| p.aircraft.iter().any(|a| a == aircraft));
         self.by_address.clear();
+        self.paint_reads.clear();
+        self.drawn.clear();
 
         let Some(i) = self.active else { return };
         // Every screen starts on its start page. The profile kept whichever
@@ -792,41 +1027,16 @@ impl Engine {
             return;
         };
 
-        let mut index: HashMap<u16, Vec<usize>> = HashMap::new();
-        for (bi, b) in profile.bindings.iter().enumerate() {
-            // A panel this profile does not drive is never written, so its
-            // bindings are kept out of the index rather than filtered on every
-            // write. The sweep and the paint already leave it alone; this is
-            // the incremental path's half of the same promise.
-            if !profile.drives(&b.device) {
-                continue;
-            }
-            // A binding is re-evaluated when *any* signal it reads moves, so it
-            // is indexed under every address it reads, wherever in the binding
-            // that signal is named. Rows that read nothing appear nowhere: a
-            // placeholder is swept off like any unbound lamp, and an always-on
-            // lamp is written by the sweep and never needs revisiting.
-            for source in profile.sources_of(b) {
-                if let Some(addr) = module
-                    .signal(source)
-                    .and_then(|s| s.primary())
-                    .map(|o| o.address)
-                {
-                    let slot = index.entry(addr).or_insert_with(Vec::new);
-                    // Two conditions on one address must not queue the binding
-                    // twice.
-                    if !slot.contains(&bi) {
-                        slot.push(bi);
-                    }
-                }
-            }
-        }
-        self.by_address = index;
+        self.by_address = binding_index(profile, module, &self.connected);
 
         // Kept across a profile reload, so saving in the editor does not
         // forget which knob was turned last. Only what is still read is kept.
         let mut old = std::mem::take(&mut self.moves);
-        for b in profile.bindings.iter().filter(|b| b.pick == Pick::Latest) {
+        for b in profile
+            .bindings
+            .iter()
+            .filter(|b| b.pick == Pick::Latest && runs(&self.connected, profile, &b.device))
+        {
             for source in profile.sources_of(b) {
                 if self.moves.contains_key(source) {
                     continue;
@@ -847,6 +1057,7 @@ impl Engine {
                 }
             }
         }
+        self.index_paint();
     }
 
     /// Bring every tracked signal up to date with the words that just moved.
@@ -974,7 +1185,11 @@ impl Engine {
         let Some(module) = self.catalogue.module(&profile.module) else {
             return out;
         };
-        for b in &profile.bindings {
+        for b in profile
+            .bindings
+            .iter()
+            .filter(|b| runs(&self.connected, profile, &b.device))
+        {
             if let Some((id, v)) =
                 resolve(&self.devices, module, &self.state, &self.moves, profile, b)
             {

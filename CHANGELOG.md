@@ -33,6 +33,18 @@ take the new one.
   selective jettison knob and stations are set so that pressing it would
   jettison something. How it lights has not changed.
 
+### Converter
+
+- **Screens are redrawn only when something on them changes**, and at most
+  30 times a second. A burst of updates is drawn once, from the latest
+  values, so a screen never runs behind the cockpit.
+- **A panel that is not plugged in is treated like one turned off.** Its
+  lamps and fields are no longer worked out on every change.
+- **The log follows only what reaches a panel.** A device turned off or not
+  plugged in, and the page a page key has just replaced, no longer have
+  their signals logged. A reading on a screen is logged as it was drawn,
+  rather than converted a second time for the log.
+
 ### Editor
 
 - **A reading can be drawn inverse**, on glass that draws inverse such as

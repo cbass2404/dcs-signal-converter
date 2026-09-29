@@ -2633,6 +2633,18 @@ impl Readout {
     where
         F: Fn(&str) -> Option<Reading>,
     {
+        self.compose_seen(read, |_, _, _| {})
+    }
+
+    /// [`compose`](Self::compose), told each number it converts: the signal,
+    /// the count it arrived as, and the characters it became, before aliases
+    /// and replacements. What the converter logs, so the log says what the
+    /// glass was given rather than working it out a second time.
+    pub fn compose_seen<'a, F, S>(&'a self, read: F, mut seen: S) -> Option<Vec<Glyph>>
+    where
+        F: Fn(&str) -> Option<Reading>,
+        S: FnMut(&'a str, u16, &str),
+    {
         if self.divider {
             return Some(
                 self.divider_cells()
@@ -2691,6 +2703,7 @@ impl Readout {
                     Some(Reading::Text(t)) => t,
                     Some(Reading::Number { value, max }) => {
                         let (text, band) = span.format_reading(value, max);
+                        seen(&span.source, value, &text);
                         banded = band.and_then(|b| b.colour);
                         band_inverse = band.is_some_and(|b| b.inverse);
                         if let Some(stretch) = span.conversion_for(value) {

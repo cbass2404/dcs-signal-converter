@@ -15,6 +15,24 @@ unless this says what moved.
 
 ## 1.0.0-beta.003
 
+### Shipped profile changes
+
+Each change below reaches you on its own if you have not touched that row,
+slot or setting. If you have, it is left as you made it, and Reset is how to
+take the new one.
+
+**F/A-18**, checked lamp by lamp and page by page in the jet.
+
+- **The ViperAce ICP is on**, where before the profile turned it off. Its
+  starting page is a new DED-UFC page: the UFC scratchpad on the top line,
+  the five option windows down the right with their cueing, and COMM 1 and
+  COMM 2 on the bottom line, all drawn inverse.
+- **FAIL follows the master caution** on the MCDU, PFP-3N, PFP-4 and PFP-7.
+- **The MCDU's RDY lamp follows APU READY.**
+- **The PTO2's JETT lamp has a note** saying why it lights: only when the
+  selective jettison knob and stations are set so that pressing it would
+  jettison something. How it lights has not changed.
+
 ### Editor
 
 - **A reading can be drawn inverse**, on glass that draws inverse such as

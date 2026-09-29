@@ -161,9 +161,18 @@ export function learnPanel(opts: PanelOptions): { node: HTMLElement; close: () =
         el("span", { class: "sub" }, `${signal.category} · ${moved}`),
         el("span", { class: "id" }, signal.id),
       );
-      row.addEventListener("click", () => {
+      // The list is rebuilt on every poll, so a row can be replaced between
+      // mousedown and mouseup and the click never fires. The mouse picks on
+      // press; click stays for the keyboard, which has no press to lose.
+      const pick = (): void => {
         opts.onPick(change.id);
         close();
+      };
+      row.addEventListener("mousedown", (e) => {
+        if (e.button === 0) pick();
+      });
+      row.addEventListener("click", (e) => {
+        if (e.detail === 0) pick();
       });
       rows.append(row);
     }

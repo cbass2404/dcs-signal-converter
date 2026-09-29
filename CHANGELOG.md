@@ -77,3 +77,6 @@ take the new one.
   one screen locked Edit page on every other. A screen with a page open
   still has to close it before opening another, and one page cannot be
   open on two screens at once.
+- **A signal in the Learn list can be picked by clicking anywhere on its
+  row.** Before, the list redrawing under the pointer meant a click often
+  missed unless it landed on the text.

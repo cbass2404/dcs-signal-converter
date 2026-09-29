@@ -33,6 +33,28 @@ take the new one.
   selective jettison knob and stations are set so that pressing it would
   jettison something. How it lights has not changed.
 
+**Mosquito FB Mk VI**, checked lamp by lamp and page by page in the aircraft.
+
+- **The ICP's reflector sight page is redrawn**, now called DED Sight
+  Settings: a REFLECTOR SIGHT title, POWER, RANGE and BASE spelled out, and
+  the values under them drawn inverse. BASE now reads the span scale as the
+  sight marks it, 100 down to 30, where before it ran straight from 32 to
+  100.
+- **The UFC has a starting page**, a new UFC Sight Settings page: the
+  reflector sight switch, range and base on one line.
+- **FM on the MCDU and MSG on the PFP-3N, PFP-4 and PFP-7 follow the
+  transmitter Type F light.**
+- **The throttle's A/A lamp follows the gun master switch**, and A/G lights
+  with the rockets master switch or the cine camera changeover switch.
+- **The key backlights on the PFP-3N, PFP-4, PFP-7 and ICP, and the UFC's
+  LCD backlight, are held on.** The UFC's panel backlight follows the MFD C
+  panel backlight.
+- **The MFD L and MFD R follow the MFD C**, and the Co-Pilot and Observer
+  MCDU, PFP-3N, PFP-4 and PFP-7 follow their Captain.
+- **The PTO2's JETT lamp has a note** saying why it lights: when a selected
+  bomb could be released. The profile cannot tell which bombs are on which
+  pylon, so with several selected it can light when nothing would drop.
+
 ### Converter
 
 - **Screens are redrawn only when something on them changes**, and at most

@@ -13,31 +13,25 @@ release shipped it is brought up to the new one for you. A fix to something
 you have touched only reaches you if you reset it, and you cannot decide to
 unless this says what moved.
 
-## 1.0.0-beta.004
+## 1.0.0-beta.005
 
-### Converter
+This release checks each shipped profile in the aircraft and fills in the
+lamps and pages it was missing. Every profile it changes is listed here with
+the rows that moved.
 
-- **The MCDU screen no longer falls behind.** A page that changes
-  constantly, such as the Mosquito's, could lag and then jump to catch up,
-  because the converter stopped everything for 40 ms after each MCDU
-  screen. It now keeps the MCDU's gap without waiting for it: a screen
-  that comes too soon is held and sent, as the latest one, when the MCDU
-  is ready, and the other panels and the stream carry on meanwhile.
-- **Each panel is written from its own thread.** Every write to a panel
-  takes about a millisecond, and the converter used to wait for each one
-  before doing anything else, so a busy screen held up the other panels
-  and the reading of DCS's data. Now no panel waits on another, a panel
-  that falls behind skips straight to the latest lamps and screens, and
-  loading an aircraft no longer pauses everything for the MCDU's font.
-- **Lamps and screens are sent at most 25 times a second**, where before
-  screens went at most 30 and lamps on every change. A change after a quiet
-  spell still goes out at once. Changes that follow within the same
-  twenty-fifth of a second go out together, from the latest values, and a
-  lamp that goes on and off again inside that time is not rewritten at all.
-- **Page keys cost less to read.** The UFC, ICP and MCDU each report their
-  buttons 100 times a second, pressed or not. A report the same as the one
-  before is now passed over instead of read again, which takes about a
-  sixth off the converter's CPU while it waits for DCS.
-- **The log's status line says what each panel was sent**: reports, bytes,
-  the time spent writing to it, and how many screens were replaced by a
-  newer one before they went.
+### Profiles
+
+#### F-16
+
+- **PTO2:** JETT lights when Master Arm is on and the jet is off the
+  ground, and HOOK follows the hook light. CTR, LI, RI, LO and RO show ECM
+  programs 1 to 5 (CTR 1, LI 2, RI 3, LO 4, RO 5), lit while that
+  program's S, A or T lamp is on.
+- **MCDU:** FAIL follows Master Caution, FM1 and FM2 light while COMM 1 or
+  COMM 2 is on, and STATUS follows the ECM light.
+- **PFP-3N, PFP-4 and PFP-7:** FAIL follows Master Caution, MSG lights
+  while either COMM radio is on, and EXEC follows the ECM light.
+- **The Flight page is now CDU Flight.** Fuel reads to 10 lb instead of
+  100, and the trim values round down instead of to the nearest tenth.
+- **New UFC Flight page** for the UFC: fuel, heading, EHSI course and the
+  three trims.

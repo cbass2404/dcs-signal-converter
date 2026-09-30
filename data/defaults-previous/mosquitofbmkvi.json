@@ -29,12 +29,15 @@
     {
       "device": "CarrierAce_UFC",
       "led": "INST_PNL_Backlight",
-      "conditions": []
+      "conditions": [],
+      "same_as": "INST_PNL_Backlight",
+      "same_as_device": "CarrierAce_MFD_C"
     },
     {
       "device": "CarrierAce_UFC",
       "led": "LCDBacklight",
       "conditions": [],
+      "always": true,
       "off": 255,
       "note": "Held at full, because at 0 the screen shows nothing. It lights only while this profile puts fields on the screen, whatever it is bound to, so a screen with nothing on it stays black."
     },
@@ -76,7 +79,14 @@
     {
       "device": "MCDU_Captain",
       "led": "FM",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "TRANS_TYPF_L",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "MCDU_Captain",
@@ -276,17 +286,47 @@
     {
       "device": "Orion_Throttle_Base_II",
       "led": "A/A",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "GUN_MASTER",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "Orion_Throttle_Base_II",
       "led": "A/G",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "CINE_CAM",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "RKT_MASTER_SW",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "PFP3N_Captain",
       "led": "Backlight",
-      "conditions": []
+      "conditions": [],
+      "always": true
     },
     {
       "device": "PFP3N_Captain",
@@ -317,7 +357,14 @@
     {
       "device": "PFP3N_Captain",
       "led": "MSG",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "TRANS_TYPF_L",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "PFP3N_Captain",
@@ -424,7 +471,8 @@
     {
       "device": "PFP4_Captain",
       "led": "Backlight",
-      "conditions": []
+      "conditions": [],
+      "always": true
     },
     {
       "device": "PFP4_Captain",
@@ -455,7 +503,14 @@
     {
       "device": "PFP4_Captain",
       "led": "MSG",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "TRANS_TYPF_L",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "PFP4_Captain",
@@ -562,7 +617,8 @@
     {
       "device": "PFP7_Captain",
       "led": "Backlight",
-      "conditions": []
+      "conditions": [],
+      "always": true
     },
     {
       "device": "PFP7_Captain",
@@ -593,7 +649,14 @@
     {
       "device": "PFP7_Captain",
       "led": "MSG",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "TRANS_TYPF_L",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "PFP7_Captain",
@@ -957,7 +1020,8 @@
             }
           ]
         }
-      ]
+      ],
+      "note": "bomb jettison light illuminated when conditions are met to release a bomb that is selected, no way to track what bombs are on what pylon still so leaving multiple bombs selected could give false positives"
     },
     {
       "device": "TAKEOFF_PLANEL_2",
@@ -1161,7 +1225,8 @@
     {
       "device": "ViperAce_ICP",
       "led": "Backlight",
-      "conditions": []
+      "conditions": [],
+      "always": true
     },
     {
       "device": "ViperAce_ICP",
@@ -1172,15 +1237,30 @@
       "note": "Held at full, because at 0 the screen shows nothing. It lights only while this profile puts fields on the screen, whatever it is bound to, so a screen with nothing on it stays black."
     }
   ],
+  "follows": {
+    "CarrierAce_MFD_L": "CarrierAce_MFD_C",
+    "CarrierAce_MFD_R": "CarrierAce_MFD_C",
+    "MCDU_CoPilot": "MCDU_Captain",
+    "MCDU_Observer": "MCDU_Captain",
+    "PFP3N_CoPilot": "PFP3N_Captain",
+    "PFP3N_Observer": "PFP3N_Captain",
+    "PFP4_CoPilot": "PFP4_Captain",
+    "PFP4_Observer": "PFP4_Captain",
+    "PFP7_CoPilot": "PFP7_Captain",
+    "PFP7_Observer": "PFP7_Captain"
+  },
   "screens": {
     "CarrierAce_UFC": {
       "start": 1,
       "slots": [
         {
+          "page": "blw204",
+          "key": null
+        },
+        {
           "page": null,
           "key": null
         },
-        null,
         null,
         null,
         null,

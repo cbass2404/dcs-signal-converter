@@ -85,11 +85,27 @@ opens only; nothing was written to a panel.
   of 3,785. Whether the MCDU acknowledges a text screen was not captured;
   if it does, only its readiness changes. Flown 2026-09-30 in the
   Mosquito: the MCDU no longer lags and catches up.
-- **Next: a writer thread per panel.** Under live stress the main loop is
-  blocked on USB about two thirds of every second (MCDU 32%, ICP 23%, PTO2
-  10%), 20% at typical. It keeps up, but that is the next limit, and the
-  font upload (about 0.8 s at aircraft load) would move off the loop too.
-- **Not unit tested:** `WctrlPanel`'s holding logic needs a real device.
+- **Built 2026-09-30: a writer thread per panel.** Under live stress
+  922ddac's main loop was blocked on USB about two thirds of every second
+  (MCDU 32%, ICP 23%, PTO2 10%). `panels::Writer` (`panels/writer.rs`)
+  gives each panel a `write <device>` thread and a mailbox holding only
+  the latest of each lamp (by part and index) and screen piece (by part,
+  group and offset); `apply` posts and returns. A screen not ready
+  (`Panel::ready_at`, the MCDU's `TEXT_GRID_GAP`) stays in the mailbox,
+  replaced by newer paints, while the panel's lamps go. A failed write is
+  picked up by `Panels::check` each pass and stops the daemon as before;
+  exit posts the clear and `finish`es each writer within 5 s. The held-paint
+  machinery in the main loop from 067c3c9 is gone. Four tests with a fake
+  panel. Live, quiet, one pass against 922ddac: main loop 0.74 to 0.30%
+  typical and 2.85 to 1.00% stress, writers 0.57 and 1.90%, total 1.25 to
+  1.35% and 3.81 to 3.85%; nothing dropped; the longest pass 771 to 13 ms
+  at typical, since the MCDU font upload is on its own thread. Panels looked
+  right to Cory throughout.
+- **Open: a 94 ms pass once under live stress.** Not USB any more. Probably
+  the sweep at aircraft load, forced at the 2.5 s settle limit because the
+  benchmark stream never goes quiet, with a datagram carrying every output
+  in the same pass; typical's sweep took 13 ms. Recording when the longest
+  pass happened in the status line would confirm it.
 
 **Built and flown 2026-09-26: uneven gauges convert in sections.** `ba201c3` to
 `e649e88`. What users see is in [CHANGELOG.md](../CHANGELOG.md); the rules are

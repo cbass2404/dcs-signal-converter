@@ -32,5 +32,12 @@ unless this says what moved.
   screen. It now keeps the MCDU's gap without waiting for it: a screen
   that comes too soon is held and sent, as the latest one, when the MCDU
   is ready, and the other panels and the stream carry on meanwhile.
+- **Each panel is written from its own thread.** Every write to a panel
+  takes about a millisecond, and the converter used to wait for each one
+  before doing anything else, so a busy screen held up the other panels
+  and the reading of DCS's data. Now no panel waits on another, a panel
+  that falls behind skips straight to the latest lamps and screens, and
+  loading an aircraft no longer pauses everything for the MCDU's font.
 - **The log's status line says what each panel was sent**: reports, bytes,
-  the time spent writing to it, and how many screens waited for it.
+  the time spent writing to it, and how many screens were replaced by a
+  newer one before they went.

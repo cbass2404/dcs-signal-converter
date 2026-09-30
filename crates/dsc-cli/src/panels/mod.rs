@@ -24,6 +24,9 @@ use dsc_config::{DeviceSpec, DisplayCatalogue};
 use dsc_engine::{LcdWrite, LedWrite};
 
 mod wctrl;
+mod writer;
+
+pub use writer::Writer;
 
 /// Every protocol this build can drive.
 ///
@@ -71,10 +74,12 @@ pub trait Protocol {
 pub struct Sent {
     pub reports: u64,
     pub bytes: u64,
-    /// Time the caller was blocked inside the writes.
+    /// Time spent inside the writes, which is time the panel's writer was
+    /// blocked on USB.
     pub writing: Duration,
-    /// Paints held because their screen was not ready for them yet.
-    pub waited: u64,
+    /// Screen pieces replaced by a newer one before they were written,
+    /// because the panel was busy or its screen not ready.
+    pub superseded: u64,
 }
 
 impl std::ops::Sub for Sent {
@@ -84,19 +89,22 @@ impl std::ops::Sub for Sent {
             reports: self.reports - earlier.reports,
             bytes: self.bytes - earlier.bytes,
             writing: self.writing.saturating_sub(earlier.writing),
-            waited: self.waited - earlier.waited,
+            superseded: self.superseded - earlier.superseded,
         }
     }
 }
 
 /// One opened device, for as long as the converter runs.
 ///
-/// Methods that write, two for screens that are not always ready, and one
-/// that says what it has all cost. Anything a brand needs beyond them, such as
-/// uploading a font or remembering which screens are waiting to be shown, is
-/// state the implementation keeps for itself: the caller has no way to know
-/// about it and no reason to.
-pub trait Panel {
+/// Three methods that write, one that says when a screen can take its next
+/// paint, and one that says what it has all cost. Anything a brand needs
+/// beyond them, such as uploading a font or remembering which screens are
+/// waiting to be shown, is state the implementation keeps for itself: the
+/// caller has no way to know about it and no reason to.
+///
+/// Driven from its own thread by a [`Writer`], so it must be `Send`, and a
+/// method that blocks holds up only this panel.
+pub trait Panel: Send {
     /// Set one lamp to one value.
     fn set_lamp(&mut self, w: &LedWrite) -> Result<()>;
 
@@ -110,16 +118,10 @@ pub trait Panel {
     /// protocol whose writes land immediately does nothing here.
     fn flush(&mut self) -> Result<()>;
 
-    /// Send any paint held because its screen was not ready, if it is now.
-    ///
-    /// A screen that needs time between paints is never waited for: its
-    /// paint is held, only the latest kept, and the caller calls this on
-    /// every pass, so that nothing else, another screen or a lamp, waits on it.
-    fn send_ready(&mut self) -> Result<()>;
-
-    /// When the next held paint can go, so the caller can wake for it.
-    /// `None` when nothing is held.
-    fn next_ready(&self) -> Option<Instant>;
+    /// When the screen `w` goes to can take it, if not now. A screen that
+    /// needs time between paints says so here, and its writer leaves the
+    /// paint in the mailbox, where a newer one can replace it, until then.
+    fn ready_at(&self, w: &LcdWrite) -> Option<Instant>;
 
     /// Everything sent so far.
     fn sent(&self) -> Sent;

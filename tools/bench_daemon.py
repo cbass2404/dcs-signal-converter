@@ -248,8 +248,8 @@ def process_cycles(handle):
 class Threads:
     """The daemon's threads, each with its cycle count, named by what it
     does: the one started first is the main loop, a named one keeps its name
-    (the page key readers are "keys <device>"), and the rest are Windows'
-    own, such as the thread pool."""
+    (the page key readers are "keys <device>", the panel writers "write
+    <device>"), and the rest are Windows' own, such as the thread pool."""
 
     def __init__(self, pid):
         self.pid = pid
@@ -401,7 +401,7 @@ STATUS_TALLY = re.compile(
     r"\d+ paint\(s\), longest pass (\d+) ms"
 )
 STATUS_PANEL = re.compile(
-    r"status\s+(\S+)\s+(\d+) report\(s\), (\d+) KB, writing (\d+) ms, (\d+) paint\(s\) waited"
+    r"status\s+(\S+)\s+(\d+) report\(s\), (\d+) KB, writing (\d+) ms, (\d+) superseded"
 )
 
 
@@ -473,35 +473,43 @@ def main():
         print(f"{r['scenario']:<9} {r['fps']:>8.1f} {r['cpu_avg']:>7.2f}% {r['cpu_peak']:>8.2f}% "
               f"{r['ws_avg']:>6.1f}MB {r['ws_peak']:>6.1f}MB {r['private']:>6.1f}MB", flush=True)
 
-    # CPU by thread: the main loop decodes and paints, each "keys" thread
-    # reads one panel's page keys, and "windows" is everything else,
-    # including threads that came and went between samples.
-    keys = sorted({k for r in results for k in r["roles"] if k.startswith("keys ")})
-    print(f"\n{'scenario':<9} {'main':>7} {'keys':>7}  {'windows':>7}  keys by panel")
+    # CPU by thread: the main loop decodes and works out what to send, each
+    # "write" thread writes one panel, each "keys" thread reads one panel's
+    # page keys, and "windows" is everything else, including threads that
+    # came and went between samples.
+    def named(prefix):
+        return sorted({k for r in results for k in r["roles"] if k.startswith(prefix)})
+
+    keys, writes = named("keys "), named("write ")
+    print(f"\n{'scenario':<9} {'main':>7} {'write':>7} {'keys':>7}  {'windows':>7}  "
+          f"keys by panel")
     for r in results:
         main_ = r["roles"].get("main", 0)
+        writers = sum(r["roles"].get(k, 0) for k in writes)
         readers = sum(r["roles"].get(k, 0) for k in keys)
-        rest = max(0.0, r["cpu_avg"] - main_ - readers)
+        rest = max(0.0, r["cpu_avg"] - main_ - writers - readers)
         each = ", ".join(f"{k[5:]} {r['roles'].get(k, 0):.3f}%" for k in keys)
-        print(f"{r['scenario']:<9} {main_:>6.3f}% {readers:>6.3f}% {rest:>7.3f}%  {each}")
+        print(f"{r['scenario']:<9} {main_:>6.3f}% {writers:>6.3f}% {readers:>6.3f}% "
+              f"{rest:>7.3f}%  {each}")
 
     # The stream against what the daemon read, over the whole run. Fewer read
     # than sent means datagrams still queued when it exited, or dropped: the
-    # main loop fell behind the cockpit. Then what each panel cost it, per
-    # second of the run: writing is time the main loop was blocked on USB,
-    # and waited counts paints held for a screen that was not ready yet.
+    # main loop fell behind the cockpit. Then what each panel was sent, per
+    # second of the run: writing is time its writer thread was blocked on
+    # USB, and superseded counts screen pieces replaced by a newer one
+    # before they went, because the panel was busy or its screen not ready.
     print(f"\n{'scenario':<9} {'sent':>6} {'read':>6} {'longest pass':>13}")
     for r in results:
         s = r["status"]
         print(f"{r['scenario']:<9} {r['sent']:>6} {s['read']:>6} {s['longest']:>10} ms")
     if any(r["status"]["panels"] for r in results):
         print(f"\n{'scenario':<9} {'panel':<22} {'reports/s':>9} {'KB/s':>6} "
-              f"{'writing':>10} {'waited/s':>8}")
+              f"{'writing':>10} {'  sup/s':>8}")
         for r in results:
-            for key, (reports, kb, writing, waited) in sorted(r["status"]["panels"].items()):
+            for key, (reports, kb, writing, superseded) in sorted(r["status"]["panels"].items()):
                 per = lambda n: n / r["ran"]
                 print(f"{r['scenario']:<9} {key:<22} {per(reports):>9.1f} {per(kb):>6.1f} "
-                      f"{per(writing):>5.1f} ms/s {per(waited):>8.1f}")
+                      f"{per(writing):>5.1f} ms/s {per(superseded):>8.1f}")
 
     print("\nCPU is percent of one core, from exact cycle counts (QueryProcessCycleTime),")
     print("not the 15.6 ms ticks GetProcessTimes counts in. WS is working set; private")

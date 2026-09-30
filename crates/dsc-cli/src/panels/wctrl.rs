@@ -19,11 +19,10 @@ use wctrl_hid::{Device, GridCell};
 use super::{Found, Panel, Protocol, Sent};
 
 /// Text screens sent back to back can garble; WwDevicesDotnet leaves this
-/// long after each one for the same reason. The gap is kept without waiting
-/// for it: a text screen is not ready again until this long after its last
-/// paint finished, and a paint that comes sooner is held, as the latest
-/// screen, until it is. Nothing else waits: other screens, the lamps and the
-/// stream carry on.
+/// long after each one for the same reason. A text screen is not ready again
+/// until this long after its last paint finished ([`Panel::ready_at`]), and
+/// the panel's writer holds a sooner paint, as the latest screen, until it
+/// is. Nothing else waits: the writer is this panel's own thread.
 ///
 /// The pixel and segment screens are always ready: neither is known to need
 /// a gap. Whether the text grid acknowledges a screen, which would say when
@@ -76,8 +75,6 @@ impl Protocol for Wctrl {
             font: None,
             pending: Vec::new(),
             ready_at: HashMap::new(),
-            held: HashMap::new(),
-            waited: 0,
         }))
     }
 }
@@ -97,11 +94,6 @@ struct WctrlPanel {
     pending: Vec<u32>,
     /// When each text grid, by part, is ready for its next paint.
     ready_at: HashMap<u32, Instant>,
-    /// The latest paint for a text grid that was not ready for it, by part.
-    /// A newer one replaces it: only the latest screen is worth sending.
-    held: HashMap<u32, LcdWrite>,
-    /// Paints that had to wait for their screen, for [`Sent`].
-    waited: u64,
 }
 
 impl WctrlPanel {
@@ -194,44 +186,21 @@ impl Panel for WctrlPanel {
                 }
                 Ok(())
             }
-            // Every text write is the whole screen, so a held one is simply
-            // replaced by the next, and nothing is lost by holding it.
-            Transport::Text => {
-                let ready = self
-                    .ready_at
-                    .get(&w.part_id)
-                    .is_none_or(|t| Instant::now() >= *t);
-                if ready && !self.held.contains_key(&w.part_id) {
-                    return self.paint_text(w);
-                }
-                self.waited += 1;
-                self.held.insert(w.part_id, w.clone());
-                Ok(())
-            }
+            // Every text write is the whole screen. The writer calls this only
+            // once the grid is ready, having held any sooner paint.
+            Transport::Text => self.paint_text(w),
         }
     }
 
-    fn send_ready(&mut self) -> Result<()> {
-        let now = Instant::now();
-        let due: Vec<u32> = self
-            .held
-            .keys()
-            .copied()
-            .filter(|p| self.ready_at.get(p).is_none_or(|t| now >= *t))
-            .collect();
-        for part in due {
-            if let Some(w) = self.held.remove(&part) {
-                self.paint_text(&w)?;
-            }
+    fn ready_at(&self, w: &LcdWrite) -> Option<Instant> {
+        match w.transport {
+            Transport::Text => self
+                .ready_at
+                .get(&w.part_id)
+                .copied()
+                .filter(|t| *t > Instant::now()),
+            Transport::Segment | Transport::Pixel => None,
         }
-        Ok(())
-    }
-
-    fn next_ready(&self) -> Option<Instant> {
-        self.held
-            .keys()
-            .map(|p| self.ready_at.get(p).copied().unwrap_or_else(Instant::now))
-            .min()
     }
 
     fn flush(&mut self) -> Result<()> {
@@ -249,7 +218,8 @@ impl Panel for WctrlPanel {
             reports: t.reports,
             bytes: t.bytes,
             writing: t.writing,
-            waited: self.waited,
+            // Counted by the writer, which does the replacing.
+            superseded: 0,
         }
     }
 }

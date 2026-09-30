@@ -21,6 +21,19 @@ the rows that moved.
 
 ### Profiles
 
+#### F-14 and F-14BU
+
+Both profiles carry the same rows.
+
+- **PTO2:** CTR, LI, LO, RO and RI follow the pilot's steering buttons:
+  TACAN, DEST, VEC, MAN and AWL.
+- **MCDU, PFP-3N, PFP-4 and PFP-7:** the key backlight is held at full
+  instead of following the centre MFD, and FAIL lights on either seat's
+  Master Caution.
+- **New UFC Flight page** for the UFC, now its starting page: the UHF and
+  V/UHF remote channel displays. The V/UHF field shows channels up to 20
+  and is blank above that.
+
 #### F-16
 
 - **PTO2:** JETT lights when Master Arm is on and the jet is off the

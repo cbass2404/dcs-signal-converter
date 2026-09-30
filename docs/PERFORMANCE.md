@@ -1,15 +1,17 @@
 # Performance and install size
 
-The daemon was measured 2026-09-29, at 1.0.0-beta.003 in development
-(255bb80, screens painted only on change and at most 30 times a second), on an
-i9-12900KF with 64 GB, Windows 11, release builds from rustc 1.98.1. The
-editor figures are from 2026-09-18 and the install sizes from the
+The daemon was measured 2026-09-30, at 1.0.0-beta.4 in development (5f78a68,
+with the page key reader threads named so the benchmark can tell them apart),
+on an i9-12900KF with 64 GB, Windows 11, release builds from rustc 1.98.1.
+The editor figures are from 2026-09-18 and the install sizes from the
 1.0.0-beta.002 release.
 
 ## Summary
 
 - The daemon uses about 34 MB of private memory and under 1% of one core in
-  flight. Under a stream far heavier than DCS produces, it stays under 4%.
+  flight. Under a stream far heavier than DCS produces, it stays near 2%. On
+  an i5-12400F, the most common gaming CPU, expect about 1.2 times these
+  figures (estimated, see [Other CPUs](#other-cpus)).
 - The editor uses about 165 MB, almost all of it WebView2. It uses no CPU while
   idle.
 - The installer is 3.5 MB. Installed, the program comes to 16 MB, and the
@@ -18,16 +20,27 @@ editor figures are from 2026-09-18 and the install sizes from the
 ## The daemon
 
 `dcs-signal run --dry-run` with the A-10C profile, against a synthetic
-DCS-BIOS stream. Each scenario was measured for 30 or 60 seconds, after 3
-seconds of warmup that absorb the startup and module-load flood.
+DCS-BIOS stream, with the UFC, ICP and Captain MCDU connected. Each scenario
+was measured for 60 seconds, after 3 seconds of warmup that absorb the
+startup and module-load flood, in three passes. Averages are the range across
+the passes; peaks are the highest.
 
 | Scenario | Frames/s | CPU avg | CPU peak | Working set | Private |
 |---|---|---|---|---|---|
-| idle | 0 | 0.05 to 0.52% | 4.68% | 40.7 MB | 34.2 MB |
-| typical | 30 | 0.10 to 0.96% | 4.69% | 40.7 MB | 34.2 MB |
-| stress | 60 | 0.26 to 3.67% | 6.25% | 40.8 MB | 34.4 MB |
+| idle | 0 | 0.54 to 0.55% | 0.68% | 40.7 to 41.1 MB | 34.2 to 34.6 MB |
+| typical | 30 | 0.75 to 0.83% | 0.95% | 40.7 to 41.1 MB | 34.2 to 34.5 MB |
+| stress | 60 | 1.72 to 1.77% | 2.11% | 40.8 to 40.9 MB | 34.2 to 34.4 MB |
 
-- **idle:** no stream at all, which is the daemon waiting for DCS.
+Where the CPU goes, by thread, same passes:
+
+| Scenario | Main loop | Page key readers | Windows' threads |
+|---|---|---|---|
+| idle | 0.11% | 0.42 to 0.44% | 0% |
+| typical | 0.33 to 0.36% | 0.42 to 0.50% | 0% |
+| stress | 1.27 to 1.29% | 0.43 to 0.48% | 0% |
+
+- **idle:** no stream at all, which is the daemon waiting for DCS. It still
+  reads page keys.
 - **typical:** 30 frames a second. Each frame moves 20 integer outputs and
   one text field, and the whole map is re-exported every 300 ms, the same
   cycle DCS-BIOS uses (see `crates/dsc-bios`).
@@ -35,12 +48,28 @@ seconds of warmup that absorb the startup and module-load flood.
   random value in every frame. Every bound lamp and every display field
   changes every frame, which no real cockpit does.
 
-CPU is a percentage of one core. Peaks are the busiest 1-second sample.
-Each average is the range across three to six runs, because on 2026-09-29
-every scenario varied far more between runs than it did on 2026-09-22. Two
-runs were thrown out: one put typical above stress, and one showed 4% with
-no stream at all. A run with other work open on the machine is not worth
-keeping.
+CPU is a percentage of one core, from exact cycle counts. Peaks are the
+busiest 1-second sample. The three passes agree to within 0.08% in every
+scenario, and no run was thrown out.
+
+**Why these replace the 2026-09-29 figures.** Those came from
+`GetProcessTimes`, which does not time threads: at each 15.6 ms clock tick
+Windows charges the whole tick to whichever thread is running. Each page key
+reader wakes 100 times a second, for every input report its panel sends,
+changed or not, and runs for microseconds. When those wakes happened to line
+up with the tick, a reader was charged whole ticks for them, and when they
+did not, it was charged nothing. That is why idle read anywhere from 0.05 to
+0.52%, peaked at 4.68% (3 ticks in one second) with no stream at all, and
+why the 2026-09-22 runs, before page keys existed, were steady. The tool
+now reads `QueryProcessCycleTime` and `QueryThreadCycleTime`, which count
+every cycle a thread runs.
+
+**The page key readers are most of idle.** The UFC, ICP and MCDU each send
+100 identical input reports a second with nothing pressed, and each reader
+wakes for every one and asks Windows which buttons it holds. That costs
+0.10 to 0.14% of a core for the UFC and the MCDU and 0.20 to 0.23% for the
+ICP, whose reports take longer to parse. The cost is the same in every
+scenario, since the reports come whether DCS is running or not.
 
 **No panel is written.** The benchmark only runs the daemon as a dry run,
 which finds the panels but never opens them. The one live run, on 2026-09-18,
@@ -49,9 +78,10 @@ so the HID writes cost very little next to the decoding. Stress rewrites every
 lamp and screen 60 times a second for minutes, and that is not worth doing to
 real hardware again for a number that does not move.
 
-**The paint cap does not show up here.** The build before it (52f1120) was
-run alternately with this one, same machine, same hour, three pairs of idle
-and stress. Stress came to 2.03, 4.53 and 1.35% before and 1.98, 2.39 and
+**The paint cap does not show up here.** Measured 2026-09-29 with the old
+tick-sampled timing, and not repeated since. The build before it (52f1120)
+was run alternately with 255bb80, same machine, same hour, three pairs of
+idle and stress. Stress came to 2.03, 4.53 and 1.35% before and 1.98, 2.39 and
 1.04% after; idle was under 0.2% for both in all but one run. That is inside
 the noise. What the change saves most is HID traffic: a screen is sent at
 most 30 times a second, and only when something on it moved. A dry run never
@@ -76,8 +106,31 @@ the likeliest owner of most of it. Loading only the active aircraft's module
 was considered and turned down: learn mode and the startup profile checks need
 every module, and they are worth far more than a few megabytes.
 
-**Resolution.** Windows counts process CPU time in steps of about 15.6 ms, so
-the idle and typical figures mean "under about 0.3%", not exact values.
+## Other CPUs
+
+Estimated, not measured: the only machine measured is the i9-12900KF above.
+
+| Scenario | i9-12900KF, measured | i5-12400F, estimated |
+|---|---|---|
+| idle | 0.54 to 0.58% | about 0.7% |
+| typical | 0.75 to 0.83% | about 1.0% |
+| stress | 1.71 to 1.77% | about 2.1% |
+
+- **How.** The daemon's work runs on one core at a time, so what it costs
+  follows how fast that one core is. Both chips have the same P-cores
+  (Golden Cove), and the 12400F boosts to 4.4 GHz against the 12900KF's 5.1,
+  so the same work takes about 1.16 times as long. The estimate is the top
+  of the measured range times 1.2.
+- **Measured on P-cores, which is what the 12400F has.** The 12900KF also
+  has slower E-cores, which the 12400F does not. Pinned to the P-cores
+  (`--affinity 0xff`), one pass matched the unpinned passes: idle 0.58%,
+  typical 0.78%, stress 1.71%, so Windows already runs the daemon on
+  P-cores. Pinned to the E-cores (`--affinity 0xff00`) it came to 0.73,
+  1.01 and 2.64%. That is about the most an older or slower core would add,
+  roughly 1.5 times at stress.
+- **Not counted.** The 12400F has 18 MB of L3 cache against 30 MB, and runs
+  hotter when DCS loads it. Neither should matter much at these loads, but
+  neither has been checked.
 
 ## The editor
 
@@ -126,12 +179,16 @@ python tools/bench_daemon.py                  # all three scenarios, 30 s each
 python tools/bench_daemon.py --seconds 60     # most of the table above
 python tools/bench_daemon.py --scenario stress
 python tools/bench_daemon.py --module F-16C_50 --aircraft F-16C_50
+python tools/bench_daemon.py --affinity 0xff  # P-cores only on a 12900K
 ```
 
 The tool needs only the Python standard library, and DCS does not need to be
 running. It plays the synthetic stream onto 239.255.50.10:5010 from the
 generated catalogue, starts the daemon as a dry run with its output sent to
-NUL, and samples it with `GetProcessTimes` and `GetProcessMemoryInfo`.
+NUL, and samples it with `QueryProcessCycleTime`, `QueryThreadCycleTime` and
+`GetProcessMemoryInfo`. The second table it prints splits the CPU between
+the main loop, each page key reader (the threads named `keys <device>`) and
+Windows' own threads.
 
 - **Plug the panels in.** A dry run never opens them, but it still looks for
   them, and with none connected it has nothing to drive and exits.

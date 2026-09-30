@@ -25,8 +25,14 @@ lamp and screen 60 times a second for minutes, which is not worth risking real
 hardware for, and the one live run measured the same as a dry run. The
 daemon's own output goes to NUL, since printing it would be the thing measured.
 
-CPU is reported as a percentage of one core, from GetProcessTimes deltas, and
-memory from GetProcessMemoryInfo. The first --warmup seconds are dropped so the
+CPU is reported as a percentage of one core, from QueryProcessCycleTime and
+QueryThreadCycleTime deltas, and memory from GetProcessMemoryInfo. Cycle counts
+are exact. GetProcessTimes is not: Windows charges a whole 15.6 ms clock tick
+to whichever thread is running when the tick lands, so the page key readers,
+which wake 100 times a second each for microseconds, read anywhere from zero
+to several percent depending on how their wakes line up with the tick. A
+second table splits the CPU between the main loop, each page key reader and
+Windows' own threads. The first --warmup seconds are dropped so the
 module-load flood and startup do not skew the steady state.
 """
 import argparse
@@ -175,12 +181,112 @@ class PMC(C.Structure):
     ]
 
 
-def cpu_seconds(handle):
-    c, e, k, u = W.FILETIME(), W.FILETIME(), W.FILETIME(), W.FILETIME()
-    if not k32.GetProcessTimes(handle, C.byref(c), C.byref(e), C.byref(k), C.byref(u)):
+class THREADENTRY32(C.Structure):
+    _fields_ = [
+        ("dwSize", W.DWORD),
+        ("cntUsage", W.DWORD),
+        ("th32ThreadID", W.DWORD),
+        ("th32OwnerProcessID", W.DWORD),
+        ("tpBasePri", W.LONG),
+        ("tpDeltaPri", W.LONG),
+        ("dwFlags", W.DWORD),
+    ]
+
+
+k32.GetCurrentThread.restype = W.HANDLE
+k32.OpenThread.restype = W.HANDLE
+k32.CreateToolhelp32Snapshot.restype = W.HANDLE
+k32.QueryProcessCycleTime.argtypes = [W.HANDLE, C.POINTER(C.c_ulonglong)]
+k32.QueryThreadCycleTime.argtypes = [W.HANDLE, C.POINTER(C.c_ulonglong)]
+k32.GetThreadTimes.argtypes = [W.HANDLE] + [C.POINTER(W.FILETIME)] * 4
+k32.GetThreadDescription.argtypes = [W.HANDLE, C.POINTER(C.c_wchar_p)]
+k32.LocalFree.argtypes = [C.c_void_p]
+THREAD_QUERY_LIMITED_INFORMATION = 0x0800
+TH32CS_SNAPTHREAD = 0x4
+
+
+def cycle_rate():
+    """Cycles per second the cycle counters run at. Windows counts them on
+    the time stamp counter, which runs at a fixed rate whatever the core's
+    clock, so this is measured once by spinning. The fastest of three spins
+    wins, since one preempted spin reads low."""
+    here = k32.GetCurrentThread()
+    best = 0
+    for _ in range(3):
+        a, b = C.c_ulonglong(), C.c_ulonglong()
+        k32.QueryThreadCycleTime(here, C.byref(a))
+        t = time.perf_counter()
+        while time.perf_counter() - t < 0.2:
+            pass
+        k32.QueryThreadCycleTime(here, C.byref(b))
+        best = max(best, (b.value - a.value) / (time.perf_counter() - t))
+    return best
+
+
+def process_cycles(handle):
+    """Every cycle the process's threads have run, exited ones included.
+    Exact, unlike GetProcessTimes, which charges a whole 15.6 ms clock tick
+    to whichever thread is running when the tick lands."""
+    n = C.c_ulonglong()
+    if not k32.QueryProcessCycleTime(handle, C.byref(n)):
         raise C.WinError(C.get_last_error())
-    ft = lambda f: (f.dwHighDateTime << 32 | f.dwLowDateTime) / 1e7
-    return ft(k) + ft(u)
+    return n.value
+
+
+class Threads:
+    """The daemon's threads, each with its cycle count, named by what it
+    does: the one started first is the main loop, a named one keeps its name
+    (the page key readers are "keys <device>"), and the rest are Windows'
+    own, such as the thread pool."""
+
+    def __init__(self, pid):
+        self.pid = pid
+        self.handles = {}  # thread id -> (handle, name, created)
+
+    def refresh(self):
+        snap = k32.CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0)
+        e = THREADENTRY32()
+        e.dwSize = C.sizeof(e)
+        ok = k32.Thread32First(snap, C.byref(e))
+        while ok:
+            tid = e.th32ThreadID
+            if e.th32OwnerProcessID == self.pid and tid not in self.handles:
+                h = k32.OpenThread(THREAD_QUERY_LIMITED_INFORMATION, False, tid)
+                if h:
+                    self.handles[tid] = (h, self._description(h), self._created(h))
+            ok = k32.Thread32Next(snap, C.byref(e))
+        k32.CloseHandle(snap)
+
+    @staticmethod
+    def _description(h):
+        p = C.c_wchar_p()
+        if k32.GetThreadDescription(h, C.byref(p)) < 0 or not p.value:
+            return ""
+        name = p.value
+        k32.LocalFree(C.cast(p, C.c_void_p))
+        return name
+
+    @staticmethod
+    def _created(h):
+        c, e, k, u = W.FILETIME(), W.FILETIME(), W.FILETIME(), W.FILETIME()
+        k32.GetThreadTimes(h, C.byref(c), C.byref(e), C.byref(k), C.byref(u))
+        return c.dwHighDateTime << 32 | c.dwLowDateTime
+
+    def cycles(self):
+        """Cycles so far by role: "main", each named thread, and "windows"."""
+        self.refresh()
+        first = min(self.handles.values(), key=lambda v: v[2])[0]
+        out = {}
+        for h, name, _ in self.handles.values():
+            n = C.c_ulonglong()
+            k32.QueryThreadCycleTime(h, C.byref(n))
+            role = "main" if h == first else (name or "windows")
+            out[role] = out.get(role, 0) + n.value
+        return out
+
+    def close(self):
+        for h, _, _ in self.handles.values():
+            k32.CloseHandle(h)
 
 
 def memory(handle):
@@ -198,6 +304,10 @@ def measure(args, scenario):
         cmd, cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
     handle = int(proc._handle)
+    if args.affinity:
+        # Applies to every thread, those already running and those to come.
+        if not k32.SetProcessAffinityMask(W.HANDLE(handle), C.c_size_t(args.affinity)):
+            raise C.WinError(C.get_last_error())
 
     stop = threading.Event()
     stream = None
@@ -206,8 +316,11 @@ def measure(args, scenario):
         t = threading.Thread(target=stream.run, args=(*SCENARIOS[scenario].values(), stop))
         t.start()
 
+    rate = args.rate
+    threads = Threads(proc.pid)
     time.sleep(args.warmup)
-    cpu0, t0 = cpu_seconds(handle), time.perf_counter()
+    by_role0 = threads.cycles()
+    cpu0, t0 = process_cycles(handle), time.perf_counter()
     frames0 = stream.frames if stream else 0
     samples = []
     prev_cpu, prev_t = cpu0, t0
@@ -215,13 +328,20 @@ def measure(args, scenario):
         time.sleep(args.interval)
         if proc.poll() is not None:
             sys.exit(f"dcs-signal exited early with code {proc.returncode}")
-        cpu, now = cpu_seconds(handle), time.perf_counter()
+        cpu, now = process_cycles(handle), time.perf_counter()
         m = memory(handle)
-        samples.append((100 * (cpu - prev_cpu) / (now - prev_t), m.WorkingSetSize, m.PrivateUsage))
+        samples.append(
+            (100 * (cpu - prev_cpu) / rate / (now - prev_t), m.WorkingSetSize, m.PrivateUsage)
+        )
         prev_cpu, prev_t = cpu, now
-    cpu1, t1 = cpu_seconds(handle), time.perf_counter()
+    cpu1, t1 = process_cycles(handle), time.perf_counter()
+    by_role1 = threads.cycles()
+    threads.close()
     m = memory(handle)
     frames = (stream.frames - frames0) if stream else 0
+    # A thread that started inside the window counts from zero.
+    percent = lambda cycles: 100 * cycles / rate / (t1 - t0)
+    roles = {r: percent(n - by_role0.get(r, 0)) for r, n in by_role1.items()}
 
     # Let --seconds run out rather than killing it, so the daemon shuts down
     # the way it does in use.
@@ -236,8 +356,9 @@ def measure(args, scenario):
     return dict(
         scenario=scenario,
         fps=frames / (t1 - t0),
-        cpu_avg=100 * (cpu1 - cpu0) / (t1 - t0),
+        cpu_avg=percent(cpu1 - cpu0),
         cpu_peak=max(s[0] for s in samples),
+        roles=roles,
         ws_avg=sum(s[1] for s in samples) / len(samples) * mb,
         ws_peak=m.PeakWorkingSetSize * mb,
         private=max(s[2] for s in samples) * mb,
@@ -252,6 +373,12 @@ def main():
     ap.add_argument("--seconds", type=float, default=30, help="measured window per scenario")
     ap.add_argument("--warmup", type=float, default=3)
     ap.add_argument("--interval", type=float, default=1, help="sample period for peaks")
+    ap.add_argument(
+        "--affinity",
+        type=lambda s: int(s, 0),
+        default=0,
+        help="cores the daemon may run on, as a mask; 0xff is the P-cores of a 12900K",
+    )
     args = ap.parse_args()
     args.catalogue = os.path.join(ROOT, "data", "catalogue", args.module + ".json")
 
@@ -260,15 +387,34 @@ def main():
     if not os.path.exists(args.catalogue):
         sys.exit(f"{args.catalogue} missing - build it with: cargo run --bin dcs-signal -- catalogue")
 
-    print(f"dcs-signal run (dry run), {args.aircraft}, {args.seconds:g}s per scenario\n")
+    args.rate = cycle_rate()
+    print(f"dcs-signal run (dry run), {args.aircraft}, {args.seconds:g}s per scenario, "
+          f"cycle counter at {args.rate / 1e6:.0f} MHz\n")
     print(f"{'scenario':<9} {'frames/s':>8} {'CPU avg':>8} {'CPU peak':>9} "
           f"{'WS avg':>8} {'WS peak':>8} {'private':>8}")
     names = list(SCENARIOS) if args.scenario == "all" else [args.scenario]
+    results = []
     for name in names:
         r = measure(args, name)
+        results.append(r)
         print(f"{r['scenario']:<9} {r['fps']:>8.1f} {r['cpu_avg']:>7.2f}% {r['cpu_peak']:>8.2f}% "
               f"{r['ws_avg']:>6.1f}MB {r['ws_peak']:>6.1f}MB {r['private']:>6.1f}MB", flush=True)
-    print("\nCPU is percent of one core. WS is working set; private is committed memory.")
+
+    # CPU by thread: the main loop decodes and paints, each "keys" thread
+    # reads one panel's page keys, and "windows" is everything else,
+    # including threads that came and went between samples.
+    keys = sorted({k for r in results for k in r["roles"] if k.startswith("keys ")})
+    print(f"\n{'scenario':<9} {'main':>7} {'keys':>7}  {'windows':>7}  keys by panel")
+    for r in results:
+        main_ = r["roles"].get("main", 0)
+        readers = sum(r["roles"].get(k, 0) for k in keys)
+        rest = max(0.0, r["cpu_avg"] - main_ - readers)
+        each = ", ".join(f"{k[5:]} {r['roles'].get(k, 0):.3f}%" for k in keys)
+        print(f"{r['scenario']:<9} {main_:>6.3f}% {readers:>6.3f}% {rest:>7.3f}%  {each}")
+
+    print("\nCPU is percent of one core, from exact cycle counts (QueryProcessCycleTime),")
+    print("not the 15.6 ms ticks GetProcessTimes counts in. WS is working set; private")
+    print("is committed memory.")
 
 
 if __name__ == "__main__":

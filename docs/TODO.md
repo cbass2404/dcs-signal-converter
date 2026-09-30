@@ -12,6 +12,22 @@ numbers move and the words do not.
 
 ## Next
 
+- [ ] **Decide on skipping unchanged key reports.** The page key readers
+      are about 0.43% of a core, 80% of idle. Skipping the parse when a
+      report's bytes match the last one keeps the "act only on keys going
+      down" rule but not the 100 wakes a second per panel, so it saves part
+      of that at most. Measure it with `bench_daemon.py` before keeping it.
+      [PERFORMANCE.md](PERFORMANCE.md), "The page key readers are most of
+      idle"
+
+- [x] ~~**Pick up the idle CPU in PERFORMANCE.md.**~~ Done 2026-09-30: the
+      spikes were Windows charging whole 15.6 ms ticks to the page key
+      readers, not load. The UFC, ICP and MCDU each send 100 identical
+      reports a second; `bench_daemon.py` now counts exact cycles, splits
+      CPU by thread and pins cores with `--affinity`; PERFORMANCE.md is
+      re-measured with an i5-12400F estimate.
+      [STATUS.md](STATUS.md), "idle CPU in the benchmark was tick sampling"
+
 - [x] ~~**Name the pages, then move the shipped defaults onto them.**~~
       Done 2026-09-23: every shipped profile is version 2, and the six
       aircraft with MCDU content each have one page in slot 1. Checked with a

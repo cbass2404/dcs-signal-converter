@@ -1,6 +1,6 @@
 # Project status
 
-Written 2026-09-16, last updated 2026-09-26. Enough context to resume cold.
+Written 2026-09-16, last updated 2026-09-30. Enough context to resume cold.
 
 ## Resume here
 
@@ -21,6 +21,31 @@ on this machine, and a catalogue from a different DCS-BIOS release reads the
 wrong addresses silently, because addresses are allocated sequentially as
 controls are defined. Nothing needs doing after a clone: every command that
 reads the catalogue builds it first if it is missing or out of date (see below).
+
+**Resolved 2026-09-30: idle CPU in the benchmark was tick sampling.** Why
+PERFORMANCE.md's idle row peaked at 4.68% with no stream, and why the
+2026-09-29 runs varied so much. Measured with dry runs and read-only HID
+opens only; nothing was written to a panel.
+
+- **What the panels send.** Counted by opening each page key collection
+  read-only for 20 to 30 s: the UFC, ICP and Captain MCDU each send exactly
+  100 input reports a second at rest, every one identical. No bursts. The
+  ICP sends no more than the others.
+- **Why one reader looked busy.** `GetProcessTimes` and `GetThreadTimes`
+  charge a whole 15.6 ms tick to whichever thread is running when the tick
+  lands. Three readers wake 100 times a second each for microseconds, so
+  whichever one lines up with the tick is billed whole ticks until the
+  clocks drift apart. Exact cycles (`QueryThreadCycleTime`) over three 30 s
+  dry runs: the process came to 0.55, 0.57 and 0.58%, while the tick-billed
+  figure for the same runs read 0.31, 0.36 and 0.73%.
+- **What is real.** The readers cost about 0.43% of a core together, 80% of
+  idle: 0.10 to 0.14% each for the UFC and MCDU, 0.20 to 0.23% for the ICP.
+  The main loop is 0.11% at idle and 1.3% at stress.
+- **What changed.** `bench_daemon.py` counts cycles, prints CPU by thread
+  and takes `--affinity`; the page key readers are named `keys <device>` so
+  it can find them. PERFORMANCE.md re-measured, with an i5-12400F estimate
+  from P-core and E-core pinned runs.
+- **Open.** Skipping the parse of an unchanged report, in TODO.md.
 
 **Built and flown 2026-09-26: uneven gauges convert in sections.** `ba201c3` to
 `e649e88`. What users see is in [CHANGELOG.md](../CHANGELOG.md); the rules are

@@ -17,11 +17,16 @@
 //! they call [`wctrl_hid`] directly and a second brand gets its own commands
 //! rather than a shared vocabulary that fits neither.
 
+use std::time::{Duration, Instant};
+
 use anyhow::Result;
 use dsc_config::{DeviceSpec, DisplayCatalogue};
 use dsc_engine::{LcdWrite, LedWrite};
 
 mod wctrl;
+mod writer;
+
+pub use writer::Writer;
 
 /// Every protocol this build can drive.
 ///
@@ -63,13 +68,43 @@ pub trait Protocol {
     fn open(&self, spec: &DeviceSpec, displays: &DisplayCatalogue) -> Result<Box<dyn Panel>>;
 }
 
+/// What a panel has been sent since it was opened, for the status line and
+/// the benchmark. Subtract an earlier reading for a window.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct Sent {
+    pub reports: u64,
+    pub bytes: u64,
+    /// Time spent inside the writes, which is time the panel's writer was
+    /// blocked on USB.
+    pub writing: Duration,
+    /// Screen pieces replaced by a newer one before they were written,
+    /// because the panel was busy or its screen not ready.
+    pub superseded: u64,
+}
+
+impl std::ops::Sub for Sent {
+    type Output = Sent;
+    fn sub(self, earlier: Sent) -> Sent {
+        Sent {
+            reports: self.reports - earlier.reports,
+            bytes: self.bytes - earlier.bytes,
+            writing: self.writing.saturating_sub(earlier.writing),
+            superseded: self.superseded - earlier.superseded,
+        }
+    }
+}
+
 /// One opened device, for as long as the converter runs.
 ///
-/// Three methods on purpose. Anything a brand needs beyond them, such as
-/// uploading a font or remembering which screens are waiting to be shown, is
-/// state the implementation keeps for itself: the caller has no way to know
-/// about it and no reason to.
-pub trait Panel {
+/// Three methods that write, one that says when a screen can take its next
+/// paint, and one that says what it has all cost. Anything a brand needs
+/// beyond them, such as uploading a font or remembering which screens are
+/// waiting to be shown, is state the implementation keeps for itself: the
+/// caller has no way to know about it and no reason to.
+///
+/// Driven from its own thread by a [`Writer`], so it must be `Send`, and a
+/// method that blocks holds up only this panel.
+pub trait Panel: Send {
     /// Set one lamp to one value.
     fn set_lamp(&mut self, w: &LedWrite) -> Result<()>;
 
@@ -82,6 +117,14 @@ pub trait Panel {
     /// Called once per batch on every panel that was written to, and a
     /// protocol whose writes land immediately does nothing here.
     fn flush(&mut self) -> Result<()>;
+
+    /// When the screen `w` goes to can take it, if not now. A screen that
+    /// needs time between paints says so here, and its writer leaves the
+    /// paint in the mailbox, where a newer one can replace it, until then.
+    fn ready_at(&self, w: &LcdWrite) -> Option<Instant>;
+
+    /// Everything sent so far.
+    fn sent(&self) -> Sent;
 }
 
 #[cfg(test)]

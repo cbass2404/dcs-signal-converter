@@ -3,10 +3,11 @@
 //! Everything peculiar to these panels is here: that a lamp is addressed by
 //! part and index, that a pixel screen shows nothing until it is committed,
 //! that a text grid has to be declared and given a font before it draws, and
-//! that two screens sent back to back garble unless there is a pause between
+//! that two screens sent back to back garble unless there is a gap between
 //! them.
 
-use std::time::Duration;
+use std::collections::HashMap;
+use std::time::{Duration, Instant};
 
 use anyhow::{Context, Result};
 use dsc_config::mcdu_font::{font_upload, McduFont, PacketMap, UploadStep};
@@ -15,11 +16,18 @@ use dsc_engine::{LcdWrite, LedWrite};
 use hidapi::HidApi;
 use wctrl_hid::{Device, GridCell};
 
-use super::{Found, Panel, Protocol};
+use super::{Found, Panel, Protocol, Sent};
 
-/// Screens sent back to back can garble; WwDevicesDotnet pauses this long
-/// after each one for the same reason.
-const AFTER_A_SCREEN: Duration = Duration::from_millis(40);
+/// Text screens sent back to back can garble; WwDevicesDotnet leaves this
+/// long after each one for the same reason. A text screen is not ready again
+/// until this long after its last paint finished ([`Panel::ready_at`]), and
+/// the panel's writer holds a sooner paint, as the latest screen, until it
+/// is. Nothing else waits: the writer is this panel's own thread.
+///
+/// The pixel and segment screens are always ready: neither is known to need
+/// a gap. Whether the text grid acknowledges a screen, which would say when
+/// it is ready instead of this, has not been captured.
+const TEXT_GRID_GAP: Duration = Duration::from_millis(40);
 
 pub struct Wctrl {
     /// Held rather than rebuilt per call: it caches the device list that
@@ -66,6 +74,7 @@ impl Protocol for Wctrl {
             displays: displays.clone(),
             font: None,
             pending: Vec::new(),
+            ready_at: HashMap::new(),
         }))
     }
 }
@@ -83,6 +92,8 @@ struct WctrlPanel {
     font: Option<Option<String>>,
     /// Parts written to since the last flush, each to be committed once.
     pending: Vec<u32>,
+    /// When each text grid, by part, is ready for its next paint.
+    ready_at: HashMap<u32, Instant>,
 }
 
 impl WctrlPanel {
@@ -128,6 +139,28 @@ impl WctrlPanel {
         self.font = Some(upload.or_else(|| self.font.clone().flatten()));
         Ok(())
     }
+
+    /// Paint a whole text screen now, and note when the grid is ready again.
+    fn paint_text(&mut self, w: &LcdWrite) -> Result<()> {
+        let mut result = self.prepare_text_grid(w);
+        if result.is_ok() {
+            let cells: Vec<GridCell> = dsc_config::text_cells(&w.bytes)
+                .into_iter()
+                .map(|c| GridCell {
+                    ch: c.ch,
+                    fg: c.fg,
+                    bg: c.bg,
+                    small: c.small,
+                })
+                .collect();
+            result = self.dev.paint_grid(&cells).map_err(Into::into);
+        }
+        // The gap follows even a failed paint: the next one is the
+        // correction, and sending it at once is what garbles.
+        self.ready_at
+            .insert(w.part_id, Instant::now() + TEXT_GRID_GAP);
+        result.with_context(|| format!("writing {} text screen", w.device))
+    }
 }
 
 impl Panel for WctrlPanel {
@@ -153,25 +186,20 @@ impl Panel for WctrlPanel {
                 }
                 Ok(())
             }
-            Transport::Text => {
-                let mut result = self.prepare_text_grid(w);
-                if result.is_ok() {
-                    let cells: Vec<GridCell> = dsc_config::text_cells(&w.bytes)
-                        .into_iter()
-                        .map(|c| GridCell {
-                            ch: c.ch,
-                            fg: c.fg,
-                            bg: c.bg,
-                            small: c.small,
-                        })
-                        .collect();
-                    result = self.dev.paint_grid(&cells).map_err(Into::into);
-                }
-                // The pause happens even after a failed paint: the next one is
-                // the correction, and sending it immediately is what garbles.
-                std::thread::sleep(AFTER_A_SCREEN);
-                result.with_context(|| format!("writing {} text screen", w.device))
-            }
+            // Every text write is the whole screen. The writer calls this only
+            // once the grid is ready, having held any sooner paint.
+            Transport::Text => self.paint_text(w),
+        }
+    }
+
+    fn ready_at(&self, w: &LcdWrite) -> Option<Instant> {
+        match w.transport {
+            Transport::Text => self
+                .ready_at
+                .get(&w.part_id)
+                .copied()
+                .filter(|t| *t > Instant::now()),
+            Transport::Segment | Transport::Pixel => None,
         }
     }
 
@@ -182,5 +210,16 @@ impl Panel for WctrlPanel {
                 .with_context(|| format!("committing {} screen", self.key))?;
         }
         Ok(())
+    }
+
+    fn sent(&self) -> Sent {
+        let t = self.dev.traffic();
+        Sent {
+            reports: t.reports,
+            bytes: t.bytes,
+            writing: t.writing,
+            // Counted by the writer, which does the replacing.
+            superseded: 0,
+        }
     }
 }

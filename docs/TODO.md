@@ -12,6 +12,22 @@ numbers move and the words do not.
 
 ## Next
 
+- [x] ~~**Decide on skipping unchanged key reports.**~~ Kept 2026-09-30:
+      the readers went from 0.42 to 0.50% of a core to 0.28 to 0.37%, the
+      daemon at idle from 0.54 to 0.41 to 0.49%. Small, but it costs nothing
+      and adds up on a machine DCS already loads. What is left is the 100
+      wakes a second per panel; batching them was left undone.
+      [PERFORMANCE.md](PERFORMANCE.md), "The page key readers are most of
+      idle"
+
+- [x] ~~**Pick up the idle CPU in PERFORMANCE.md.**~~ Done 2026-09-30: the
+      spikes were Windows charging whole 15.6 ms ticks to the page key
+      readers, not load. The UFC, ICP and MCDU each send 100 identical
+      reports a second; `bench_daemon.py` now counts exact cycles, splits
+      CPU by thread and pins cores with `--affinity`; PERFORMANCE.md is
+      re-measured with an i5-12400F estimate.
+      [STATUS.md](STATUS.md), "the performance pass"
+
 - [x] ~~**Name the pages, then move the shipped defaults onto them.**~~
       Done 2026-09-23: every shipped profile is version 2, and the six
       aircraft with MCDU content each have one page in slot 1. Checked with a
@@ -235,7 +251,7 @@ numbers move and the words do not.
       [STATUS.md](STATUS.md), "Open threads"
 - [ ] **A perceptual response curve for dimmers.** Linear PWM feels wrong at
       the bottom. [STATUS.md](STATUS.md), "Open threads"
-- [ ] **The 175 ms pass at mission start.** Loading a profile and painting
-      every screen is one pass of the main loop, and nothing else runs during
-      it. Watch only: worth a look if the panels ever feel behind at mission
-      start. [STATUS.md](STATUS.md), "longest pass 175 ms"
+- [x] ~~**The 175 ms pass at mission start.**~~ Gone 2026-09-30: it was
+      the screens being written from the main loop. Each panel now has its
+      own writer thread, and the longest pass in the minute the Mosquito
+      loaded was 2 ms. [STATUS.md](STATUS.md), "longest pass 175 ms"

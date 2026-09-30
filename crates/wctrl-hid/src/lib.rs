@@ -16,7 +16,7 @@
 //! Panels with a pixel screen add a second channel, report `0xf0`, carrying a
 //! longer frame split across 64-byte reports. See [`pixel_write_frame`].
 
-use std::sync::atomic::{AtomicU8, Ordering};
+use std::sync::atomic::{AtomicU64, AtomicU8, Ordering};
 use std::time::{Duration, Instant};
 
 use hidapi::{HidApi, HidDevice};
@@ -393,6 +393,27 @@ fn declares_output(desc: &[u8]) -> bool {
     false
 }
 
+/// What has been sent to a device since it was opened: every report on every
+/// channel, and the time spent inside the writes, which is time the caller's
+/// thread was blocked on USB.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct Traffic {
+    pub reports: u64,
+    pub bytes: u64,
+    pub writing: Duration,
+}
+
+impl std::ops::Sub for Traffic {
+    type Output = Traffic;
+    fn sub(self, earlier: Traffic) -> Traffic {
+        Traffic {
+            reports: self.reports - earlier.reports,
+            bytes: self.bytes - earlier.bytes,
+            writing: self.writing.saturating_sub(earlier.writing),
+        }
+    }
+}
+
 pub struct Device {
     handle: HidDevice,
     pub info: DeviceInfo,
@@ -400,6 +421,10 @@ pub struct Device {
     seq: AtomicU8,
     /// Zero point of the pixel channel's millisecond clock.
     opened: Instant,
+    /// For [`Traffic`], counted in [`write_report`](Self::write_report).
+    reports: AtomicU64,
+    bytes: AtomicU64,
+    writing_ns: AtomicU64,
 }
 
 impl Device {
@@ -450,13 +475,36 @@ impl Device {
             info,
             seq: AtomicU8::new(0),
             opened: Instant::now(),
+            reports: AtomicU64::new(0),
+            bytes: AtomicU64::new(0),
+            writing_ns: AtomicU64::new(0),
         }
+    }
+
+    /// Everything sent so far. Subtract an earlier reading for a window.
+    pub fn traffic(&self) -> Traffic {
+        Traffic {
+            reports: self.reports.load(Ordering::Relaxed),
+            bytes: self.bytes.load(Ordering::Relaxed),
+            writing: Duration::from_nanos(self.writing_ns.load(Ordering::Relaxed)),
+        }
+    }
+
+    /// The one place a report leaves, so [`Traffic`] misses nothing.
+    fn write_report(&self, report: &[u8]) -> Result<()> {
+        let start = Instant::now();
+        let result = self.handle.write(report);
+        let took = start.elapsed().as_nanos() as u64;
+        self.writing_ns.fetch_add(took, Ordering::Relaxed);
+        self.reports.fetch_add(1, Ordering::Relaxed);
+        self.bytes.fetch_add(report.len() as u64, Ordering::Relaxed);
+        result?;
+        Ok(())
     }
 
     fn send(&self, part_id: u32, data: &[u8]) -> Result<()> {
         let frame = build_frame(part_id, data)?;
-        self.handle.write(&frame)?;
-        Ok(())
+        self.write_report(&frame)
     }
 
     /// Set one LED. `value` is 0..=255; lamps that are not dimmable treat any
@@ -520,8 +568,7 @@ impl Device {
     pub fn paint_grid(&self, cells: &[GridCell]) -> Result<()> {
         grid_reports(cells)
             .iter()
-            .try_for_each(|report| self.handle.write(report).map(|_| ()))?;
-        Ok(())
+            .try_for_each(|report| self.write_report(report))
     }
 
     /// Send reports built elsewhere, such as a font upload. Only the two screen
@@ -531,7 +578,7 @@ impl Device {
         for report in reports {
             match report.first() {
                 Some(&PIXEL_REPORT_ID | &GRID_REPORT_ID) => {
-                    self.handle.write(report)?;
+                    self.write_report(report)?;
                 }
                 Some(&id) => return Err(Error::NotAScreenReport(id)),
                 None => {}
@@ -548,9 +595,9 @@ impl Device {
         let mut seq = self.seq.load(Ordering::Relaxed);
         let result = pixel_reports(frame, &mut seq)
             .iter()
-            .try_for_each(|report| self.handle.write(report).map(|_| ()));
+            .try_for_each(|report| self.write_report(report));
         self.seq.store(seq, Ordering::Relaxed);
-        Ok(result?)
+        result
     }
 
     /// Collect vendor-channel replies until `window` elapses with nothing new.

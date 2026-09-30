@@ -776,7 +776,11 @@ panel say otherwise) followed by the character in UTF-8. The stream runs on
 across 64-byte reports after the `f2` report id, and the last is zero padded.
 A cell cannot be written alone: every write is the whole screen. A 24x14
 screen of plain characters is 16 reports. Sent too fast, screens can garble,
-so 40 ms follows each one.
+so a screen is not sent until 40 ms after the last one finished
+(WwDevicesDotnet's gap). The gap is kept by the panel's writer thread
+holding the latest screen until then, not by pausing the converter. Whether
+the panel acknowledges a screen, which would say when it is ready, has not
+been captured.
 
 **The font is not the panel's.** Glyphs live in RAM and are lost on a power
 cycle, and until a font is sent the grid draws nothing. The upload is

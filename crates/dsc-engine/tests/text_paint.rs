@@ -68,7 +68,7 @@ fn engine(p: Profile) -> Engine {
     // The loads here paint five seconds into a clock of their own, so the
     // frame cap would read that paint as a moment ago. These are about what
     // is drawn; the cap is tested in ded_paint.
-    e.set_paint_every(Duration::ZERO);
+    e.set_frame_every(Duration::ZERO);
     e
 }
 

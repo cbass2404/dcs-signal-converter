@@ -89,41 +89,61 @@ pub fn start(
         ));
         let tx = tx.clone();
         let device = spec.key.clone();
-        std::thread::spawn(move || {
-            let mut buf = Vec::new();
-            let mut last: Vec<u16> = Vec::new();
-            loop {
-                if let Err(e) = collection.read(&mut buf) {
-                    let _ = tx.send(KeyEvent::Lost {
-                        device,
-                        why: e.to_string(),
-                    });
-                    return;
-                }
-                // A report with no buttons in it leaves them as they were.
-                // Acting only on keys going down, never on the report
-                // changing, is what keeps the MCDU's restless bytes 17 to 24
-                // from reading as presses.
-                let Some(down) = collection.pressed(&buf) else {
-                    continue;
-                };
-                let new: Vec<u16> = down.iter().copied().filter(|b| !last.contains(b)).collect();
-                if !new.is_empty() {
-                    let held = keyboard::held_now();
-                    for number in new {
-                        let event = KeyEvent::Down {
-                            device: device.clone(),
-                            number,
-                            held: held.clone(),
-                        };
-                        if tx.send(event).is_err() {
-                            return;
+        // Named so a profiler, or tools/bench_daemon.py, can tell the
+        // readers' cost from the main loop's.
+        let spawned = std::thread::Builder::new()
+            .name(format!("keys {device}"))
+            .spawn(move || {
+                let mut buf = Vec::new();
+                let mut report: Vec<u8> = Vec::new();
+                let mut last: Vec<u16> = Vec::new();
+                loop {
+                    if let Err(e) = collection.read(&mut buf) {
+                        let _ = tx.send(KeyEvent::Lost {
+                            device,
+                            why: e.to_string(),
+                        });
+                        return;
+                    }
+                    // The panels send 100 reports a second whether or not
+                    // anything moved. One the same as the last holds the same
+                    // keys, so it can put none down and is not parsed.
+                    if buf == report {
+                        continue;
+                    }
+                    report.clear();
+                    report.extend_from_slice(&buf);
+                    // A report with no buttons in it leaves them as they were.
+                    // Acting only on keys going down, never on the report
+                    // changing, is what keeps the MCDU's restless bytes 17 to 24
+                    // from reading as presses.
+                    let Some(down) = collection.pressed(&buf) else {
+                        continue;
+                    };
+                    let new: Vec<u16> =
+                        down.iter().copied().filter(|b| !last.contains(b)).collect();
+                    if !new.is_empty() {
+                        let held = keyboard::held_now();
+                        for number in new {
+                            let event = KeyEvent::Down {
+                                device: device.clone(),
+                                number,
+                                held: held.clone(),
+                            };
+                            if tx.send(event).is_err() {
+                                return;
+                            }
                         }
                     }
+                    last = down;
                 }
-                last = down;
-            }
-        });
+            });
+        if let Err(e) = spawned {
+            lines.push(format!(
+                "keys     {}: could not start its reader: {e}",
+                spec.key
+            ));
+        }
     }
     (rx, lines)
 }

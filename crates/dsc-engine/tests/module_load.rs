@@ -10,7 +10,7 @@ use std::time::{Duration, Instant};
 
 use dsc_bios::Write;
 use dsc_config::{Catalogue, DeviceInventory, DisplayCatalogue, Module, Profile};
-use dsc_engine::{Cause, Engine, LedId, ACFT_NAME_LEN};
+use dsc_engine::{Cause, Engine, LedId, ACFT_NAME_LEN, FRAME_EVERY};
 
 const PTO2: &str = "TAKEOFF_PLANEL_2";
 
@@ -300,13 +300,13 @@ fn after_the_sweep_only_changed_leds_are_written() {
         )
         .is_empty());
 
-    // And going off writes once more.
+    // And going off writes once more, a frame later.
     let batch = e.ingest(
         &[Write {
             address: CAUTION_ADDR,
             value: 0,
         }],
-        t1,
+        t1 + FRAME_EVERY,
     );
     assert_eq!(value_of(&batch, 4), Some(0));
 }
@@ -333,9 +333,66 @@ fn a_continuous_source_scales_across_its_range() {
             address: DIMMER_ADDR,
             value: 65535,
         }],
-        t1,
+        t1 + FRAME_EVERY,
     );
     assert_eq!(value_of(&full, 0), Some(255));
+}
+
+/// A stream far busier than any cockpit, such as the benchmark's stress
+/// scenario, must not rewrite a lamp on every datagram. The first change
+/// after a quiet spell goes out at once; the rest of that frame is held and
+/// sent once, from the latest state.
+#[test]
+fn lamps_are_sent_at_most_once_a_frame_with_the_latest_value() {
+    let mut e = engine_with(vec![profile()]);
+    let t0 = Instant::now();
+    e.ingest(&acft_name("FA-18C_hornet"), t0);
+    e.tick(t0 + Duration::from_secs(1));
+    let t1 = t0 + Duration::from_secs(2);
+    let ms = Duration::from_millis;
+    let dimmer = |value| {
+        [Write {
+            address: DIMMER_ADDR,
+            value,
+        }]
+    };
+
+    assert_eq!(value_of(&e.ingest(&dimmer(16383), t1), 0), Some(63));
+    assert!(e.ingest(&dimmer(32767), t1 + ms(1)).is_empty());
+    assert!(e.ingest(&dimmer(65535), t1 + ms(2)).is_empty());
+    // Nothing is due until the frame is up, with or without datagrams.
+    assert!(e.tick(t1 + FRAME_EVERY - ms(1)).is_empty());
+    let batch = e.tick(t1 + FRAME_EVERY);
+    assert_eq!(batch.writes.len(), 1);
+    assert_eq!(value_of(&batch, 0), Some(255));
+}
+
+#[test]
+fn a_lamp_on_and_off_again_inside_one_frame_is_not_written() {
+    let mut e = engine_with(vec![profile()]);
+    let t0 = Instant::now();
+    e.ingest(&acft_name("FA-18C_hornet"), t0);
+    e.tick(t0 + Duration::from_secs(1));
+    let t1 = t0 + Duration::from_secs(2);
+    let ms = Duration::from_millis;
+    let caution = |value| {
+        [Write {
+            address: CAUTION_ADDR,
+            value,
+        }]
+    };
+
+    // Something else opens the frame.
+    e.ingest(
+        &[Write {
+            address: DIMMER_ADDR,
+            value: 65535,
+        }],
+        t1,
+    );
+    assert!(e.ingest(&caution(0x1000), t1 + ms(1)).is_empty());
+    assert!(e.ingest(&caution(0), t1 + ms(2)).is_empty());
+    assert!(e.tick(t1 + FRAME_EVERY).is_empty());
 }
 
 #[test]

@@ -35,7 +35,7 @@ fn engine() -> (Engine, DisplayCatalogue) {
     // `load` starts its own clock and paints five seconds into it, so the
     // frame cap would read that paint as a moment ago. The cap has its own
     // test below.
-    e.set_paint_every(Duration::ZERO);
+    e.set_frame_every(Duration::ZERO);
     (e, displays)
 }
 

@@ -3009,18 +3009,26 @@ fn run(
     let mut settings_seen = file_stamp(settings_path);
     kept!("keys     page modifier {}", settings.page_modifier.name());
 
+    let mut writers = HashMap::new();
+    for (key, panel) in handles {
+        let writer = panels::Writer::start(&key, panel)
+            .with_context(|| format!("starting the writer for {key}"))?;
+        writers.insert(key, writer);
+    }
     let mut panels = Panels {
-        handles,
+        writers,
+        finished: HashMap::new(),
         displays: displays.clone(),
+        reported: HashMap::new(),
     };
     let mut engine = Engine::new(inventory, cat, profiles).with_displays(displays.clone());
     engine.set_connected(connected);
 
     let mut listener = Listener::bind(Ipv4Addr::UNSPECIFIED)
         .context("joining the DCS-BIOS multicast group on 239.255.50.10:5010")?;
-    // One frame, so a paint the frame cap held back goes out on time even
-    // when no datagram follows the one that moved it.
-    listener.set_read_timeout(Some(dsc_engine::PAINT_EVERY))?;
+    // One frame, so lamps or a paint the frame cap held back go out on time
+    // even when no datagram follows the one that moved them.
+    listener.set_read_timeout(Some(dsc_engine::FRAME_EVERY))?;
 
     // The panels latch. Ctrl-C must reach the clearing code rather than killing
     // the process, or the lamps stay lit until something else writes them.
@@ -3370,11 +3378,17 @@ fn run(
         // The log's own housekeeping, last, because everything above may have
         // added to it. The status line goes out even on a pass that did
         // nothing: a quiet minute and a wedged daemon read alike otherwise.
+        // A write that failed on a panel's own thread stops the converter,
+        // as it did when the main loop wrote.
+        panels.check()?;
         trace.flush(now);
         trace.tally.pass(now.elapsed());
         if now >= next_status {
             next_status = now + STATUS_EVERY;
             note!("{}", trace.tally.report());
+            for line in panels.report() {
+                note!("{line}");
+            }
         }
     }
 
@@ -3383,22 +3397,104 @@ fn run(
     let cleared = batch.writes.len();
     let elapsed = started.elapsed().as_millis();
     apply(&batch, &mut panels, dry_run, &mut trace, elapsed)?;
+    panels.finish()?;
     // Past the throttle's window, so the last second of a flight is written
     // rather than held back by a daemon that is about to exit.
     trace.flush(Instant::now() + dlog::THROTTLE);
     note!("{}", trace.tally.report());
+    for line in panels.report() {
+        note!("{line}");
+    }
     say!("Stopped. Cleared {cleared} LED(s).");
     Ok(())
 }
 
-/// The open panels.
+/// The open panels, each written from its own thread.
 ///
 /// The displays are kept for the trace, which reads a text screen back as the
 /// lines it shows. Everything about how a panel is actually driven, including
 /// which font its grid is holding, belongs to the backend behind [`Panel`].
 struct Panels {
-    handles: HashMap<String, Box<dyn Panel>>,
+    writers: HashMap<String, panels::Writer>,
+    /// What each writer had sent in all when it finished, for the last
+    /// status line.
+    finished: HashMap<String, panels::Sent>,
     displays: DisplayCatalogue,
+    /// What each panel had been sent at the last status line.
+    reported: HashMap<String, panels::Sent>,
+}
+
+/// How long the exit waits for a panel to take its clearing writes. Far more
+/// than a clear takes; a panel still busy after it has stopped answering.
+const FINISH_WITHIN: Duration = Duration::from_secs(5);
+
+impl Panels {
+    /// Leave a batch's writes with each panel's writer.
+    fn post(&self, batch: &Batch) {
+        for (key, writer) in &self.writers {
+            let lamps = batch.writes.iter().filter(|w| &w.id.device == key);
+            let screens = batch.lcd.iter().filter(|w| &w.device == key);
+            writer.post(lamps, screens);
+        }
+    }
+
+    /// Fail if any panel's writes have.
+    fn check(&self) -> Result<()> {
+        for (key, writer) in &self.writers {
+            if let Some(why) = writer.failed() {
+                anyhow::bail!("writing to {key}: {why}");
+            }
+        }
+        Ok(())
+    }
+
+    /// Let every writer finish what it has, the clear included, and stop.
+    fn finish(&mut self) -> Result<()> {
+        let mut first_error = None;
+        for (key, writer) in self.writers.drain() {
+            match writer.finish(FINISH_WITHIN) {
+                Ok(sent) => {
+                    self.finished.insert(key, sent);
+                }
+                Err(e) => {
+                    first_error.get_or_insert(e.context(format!("finishing {key}")));
+                }
+            }
+        }
+        match first_error {
+            Some(e) => Err(e),
+            None => Ok(()),
+        }
+    }
+
+    /// A status line per panel written to since the last one: what it was
+    /// sent, how long its writer was blocked on USB, and how many screen
+    /// pieces were replaced by a newer one before they went.
+    fn report(&mut self) -> Vec<String> {
+        let mut now: Vec<(String, panels::Sent)> = self
+            .writers
+            .iter()
+            .map(|(k, w)| (k.clone(), w.sent()))
+            .chain(self.finished.iter().map(|(k, s)| (k.clone(), *s)))
+            .collect();
+        now.sort_by(|a, b| a.0.cmp(&b.0));
+        let mut lines = Vec::new();
+        for (key, sent) in now {
+            let then = self.reported.get(&key).copied().unwrap_or_default();
+            let d = sent - then;
+            if d.reports > 0 {
+                lines.push(format!(
+                    "status   {key:<22} {} report(s), {} KB, writing {} ms, {} superseded",
+                    d.reports,
+                    d.bytes.div_ceil(1024),
+                    d.writing.as_millis(),
+                    d.superseded
+                ));
+            }
+            self.reported.insert(key, sent);
+        }
+        lines
+    }
 }
 
 /// A text grid's buffer as the lines it shows, for the trace.
@@ -3448,12 +3544,6 @@ fn apply(
         }
         trace.log(&format!("led:{lamp}"), now, line);
         trace.tally.leds += 1;
-        if dry_run {
-            continue;
-        }
-        if let Some(panel) = panels.handles.get_mut(&w.id.device) {
-            panel.set_lamp(w)?;
-        }
     }
 
     // Displays. A write is a piece of a device-side bitmap, segments or pixels,
@@ -3511,28 +3601,13 @@ fn apply(
             format!("{elapsed:>8} ms  {verb:<7} {what:<28} = {logged}"),
         );
         trace.tally.paints += 1;
-        if dry_run {
-            continue;
-        }
-        if let Some(panel) = panels.handles.get_mut(&w.device) {
-            panel.write_display(w)?;
-        }
     }
 
-    // Some screens show nothing until the batch is finished, so every panel
-    // written to in it is flushed once. What that costs, or whether it costs
-    // anything at all, is the protocol's business.
+    // Each panel's writer takes it from here, on its own thread, lamps before
+    // screens and flushed once, as this loop used to. Nothing here waits for
+    // it; a write that fails is picked up by `Panels::check`.
     if !dry_run {
-        let mut flushed: Vec<&str> = Vec::new();
-        for w in &batch.lcd {
-            if flushed.contains(&w.device.as_str()) {
-                continue;
-            }
-            flushed.push(w.device.as_str());
-            if let Some(panel) = panels.handles.get_mut(&w.device) {
-                panel.flush()?;
-            }
-        }
+        panels.post(batch);
     }
     Ok(())
 }

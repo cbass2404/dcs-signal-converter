@@ -291,12 +291,38 @@
     {
       "device": "Orion_Throttle_Base_II",
       "led": "A/A",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "PLT_R60_FUSE",
+          "on_when": {
+            "equals": 1
+          }
+        },
+        {
+          "source": "PLT_R60_WORK_L",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "Orion_Throttle_Base_II",
       "led": "A/G",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "PLT_R60_FUSE",
+          "on_when": {
+            "equals": 0
+          }
+        },
+        {
+          "source": "PLT_R60_WORK_L",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "PFP3N_Captain",
@@ -749,7 +775,76 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "Landing_gear_lights",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "PLT_GEAR_L_DN_L",
+              "on_when": {
+                "equals": 0
+              }
+            },
+            {
+              "source": "PLT_GEAR_L_UP_L",
+              "on_when": {
+                "equals": 0
+              }
+            },
+            {
+              "source": "EXT_WOW_LEFT",
+              "on_when": {
+                "equals": 0
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "PLT_GEAR_N_DN_L",
+              "on_when": {
+                "equals": 0
+              }
+            },
+            {
+              "source": "PLT_GEAR_N_UP_L",
+              "on_when": {
+                "equals": 0
+              }
+            },
+            {
+              "source": "EXT_WOW_NOSE",
+              "on_when": {
+                "equals": 0
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "PLT_GEAR_R_DN_L",
+              "on_when": {
+                "equals": 0
+              }
+            },
+            {
+              "source": "PLT_GEAR_R_UP_L",
+              "on_when": {
+                "equals": 0
+              }
+            },
+            {
+              "source": "EXT_WOW_RIGHT",
+              "on_when": {
+                "equals": 0
+              }
+            }
+          ]
+        }
+      ],
+      "note": "Landing gear lamp should illuminate only when landing gear is NOT fully down and NOT fully up"
     },
     {
       "device": "TAKEOFF_PLANEL_2",
@@ -777,7 +872,20 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "JETT",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "PLT_PUVL_JETT_PYLONS_CV",
+          "on_when": {
+            "equals": 1
+          }
+        },
+        {
+          "source": "PLT_PUVL_EXPL_ARM_L",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
@@ -812,7 +920,14 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "NOSE",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "EXT_WOW_NOSE",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
@@ -822,12 +937,26 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "RIGHT",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "EXT_WOW_RIGHT",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "LEFT",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "EXT_WOW_LEFT",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
@@ -837,7 +966,14 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "HOOK",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "PLT_ICING_L",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "ViperAce_ICP",
@@ -889,10 +1025,13 @@
       "start": 1,
       "slots": [
         {
+          "page": "ezd5a9",
+          "key": null
+        },
+        {
           "page": null,
           "key": null
         },
-        null,
         null,
         null,
         null,
@@ -903,10 +1042,13 @@
       "start": 1,
       "slots": [
         {
+          "page": "ezd5a9",
+          "key": null
+        },
+        {
           "page": null,
           "key": null
         },
-        null,
         null,
         null,
         null,
@@ -917,10 +1059,13 @@
       "start": 1,
       "slots": [
         {
+          "page": "ezd5a9",
+          "key": null
+        },
+        {
           "page": null,
           "key": null
         },
-        null,
         null,
         null,
         null,
@@ -931,10 +1076,13 @@
       "start": 1,
       "slots": [
         {
+          "page": "ezd5a9",
+          "key": null
+        },
+        {
           "page": null,
           "key": null
         },
-        null,
         null,
         null,
         null,
@@ -945,10 +1093,13 @@
       "start": 1,
       "slots": [
         {
+          "page": "o9t38s",
+          "key": null
+        },
+        {
           "page": null,
           "key": null
         },
-        null,
         null,
         null,
         null,

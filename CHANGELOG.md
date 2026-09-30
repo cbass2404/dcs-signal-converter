@@ -55,6 +55,31 @@ take the new one.
   bomb could be released. The profile cannot tell which bombs are on which
   pylon, so with several selected it can light when nothing would drop.
 
+**Mi-24P**
+
+- **The UFC's Flight page is renamed UFC Flight and filled out.** Beside the
+  radio altimeter and radio channels it had, it now shows airspeed and the
+  selected weapon, and for the pilot the sight range mode, burst length and
+  cannon rate; for the operator the missile station, missile ready and the
+  sight shutter.
+- **The ICP has a starting page**, a new DED Flight page: airspeed, weapon
+  and radio altitude, with the same seat's sight or missile settings
+  spelled out below.
+- **The MCDU, PFP-3N, PFP-4 and PFP-7 have a starting page**, a new CDU
+  Radios page: the SPU-8 intercom source and volumes and the ARC-15
+  channel, mode and both frequencies, each from the seat you are in, and
+  the R-828, R-863 and Jadro channels and frequencies. A radio that is
+  switched off shows its name in red.
+- **The throttle's A/A and A/G lamps follow the R-60 working lamp**, split
+  between them by the R-60 fuse selector.
+- **The PTO2's gear lights come on while any leg is moving**: showing
+  neither up nor down, with no weight on it. They go out once every leg
+  shows up or down, and stay dark on the ground with the power off. NOSE,
+  LEFT and RIGHT light while that wheel has weight on it.
+- **The PTO2's JETT lamp lights when the jettison pylons cover is up and
+  explosion on jettison is armed.**
+- **The PTO2's HOOK lamp follows the icing lamp.**
+
 ### Converter
 
 - **Screens are redrawn only when something on them changes**, and at most

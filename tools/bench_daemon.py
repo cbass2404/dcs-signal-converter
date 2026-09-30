@@ -4,7 +4,7 @@
   python tools/bench_daemon.py                          # A-10C, all scenarios
   python tools/bench_daemon.py --aircraft F-16C_50 --module F-16C_50
   python tools/bench_daemon.py --scenario stress --seconds 60
-  python tools/bench_daemon.py --live                   # idle and typical, panels driven
+  python tools/bench_daemon.py --live                   # all scenarios, panels driven
 
 No DCS needed. The tool plays a synthetic DCS-BIOS export stream onto the
 multicast group (239.255.50.10:5010), shaped like the real one: a frame every
@@ -24,10 +24,11 @@ panels but never opens or writes to them, so they must be plugged in, or it
 exits with nothing to drive. --live drives them for real, to check now and
 then that the HID writes cost what the dry runs assume: the lamps and screens
 show random values for the length of the run and are cleared at the end.
-With --live, "all" means idle and typical only. Stress rewrites lamps and
-screens up to 30 times a second for minutes, far beyond any cockpit, and runs
-live only when asked for by name. A live run needs the panels to itself, so
-stop any daemon the editor started first.
+A live run covers stress along with typical, so a regression under load is
+seen: the frame cap holds lamps and screens to 25 sends a second however fast
+the stream runs, so stress costs the panels no more writes than typical. A
+live run needs the panels to itself, so stop any daemon the editor started
+first.
 
 The daemon's own output goes to NUL, since printing it would be the thing
 measured, and its log to a temporary folder, so a run never rotates the log
@@ -49,6 +50,7 @@ import ctypes.wintypes as W
 import json
 import os
 import random
+import re
 import shutil
 import socket
 import struct
@@ -313,6 +315,7 @@ def measure(args, scenario):
     cmd = [exe, "run", "--seconds", str(int(args.seconds + args.warmup) + 2), "--log-dir", logs]
     if not args.live:
         cmd.append("--dry-run")
+    launched = time.perf_counter()
     proc = subprocess.Popen(
         cmd, cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
@@ -373,6 +376,8 @@ def measure(args, scenario):
     except subprocess.TimeoutExpired:
         proc.terminate()
         proc.wait()
+    ran = time.perf_counter() - launched
+    status = read_status(logs)
     shutil.rmtree(logs, ignore_errors=True)
 
     mb = 1 / (1024 * 1024)
@@ -385,7 +390,37 @@ def measure(args, scenario):
         ws_avg=sum(s[1] for s in samples) / len(samples) * mb,
         ws_peak=m.PeakWorkingSetSize * mb,
         private=max(s[2] for s in samples) * mb,
+        ran=ran,
+        sent=stream.datagrams if stream else 0,
+        status=status,
     )
+
+
+STATUS_TALLY = re.compile(
+    r"status\s+(\d+) frame\(s\), \d+ word\(s\) in, \d+ lamp write\(s\), "
+    r"\d+ paint\(s\), longest pass (\d+) ms"
+)
+STATUS_PANEL = re.compile(
+    r"status\s+(\S+)\s+(\d+) report\(s\), (\d+) KB, writing (\d+) ms, (\d+) paint\(s\) waited"
+)
+
+
+def read_status(logs):
+    """The daemon's status lines over the whole run, summed: datagrams read,
+    the longest pass of its main loop, and what each panel was sent. Lines
+    go out once a minute and at exit, so together they cover the run."""
+    out = dict(read=0, longest=0, panels={})
+    for name in os.listdir(logs):
+        with open(os.path.join(logs, name), encoding="utf-8", errors="replace") as f:
+            for line in f:
+                if m := STATUS_TALLY.search(line):
+                    out["read"] += int(m[1])
+                    out["longest"] = max(out["longest"], int(m[2]))
+                elif m := STATUS_PANEL.search(line):
+                    p = out["panels"].setdefault(m[1], [0, 0, 0, 0])
+                    for i in range(4):
+                        p[i] += int(m[i + 2])
+    return out
 
 
 def main():
@@ -405,7 +440,7 @@ def main():
     ap.add_argument(
         "--live",
         action="store_true",
-        help="drive the panels for real; 'all' then means idle and typical",
+        help="drive the panels for real",
     )
     ap.add_argument(
         "--exe",
@@ -421,8 +456,6 @@ def main():
         sys.exit(f"{args.catalogue} missing - build it with: cargo run --bin dcs-signal -- catalogue")
 
     names = list(SCENARIOS) if args.scenario == "all" else [args.scenario]
-    if args.live and args.scenario == "all":
-        names.remove("stress")
     if args.live:
         print("LIVE: the panels are driven for real. Lamps and screens show random")
         print("values for the length of each run and are cleared at the end.\n")
@@ -451,6 +484,24 @@ def main():
         rest = max(0.0, r["cpu_avg"] - main_ - readers)
         each = ", ".join(f"{k[5:]} {r['roles'].get(k, 0):.3f}%" for k in keys)
         print(f"{r['scenario']:<9} {main_:>6.3f}% {readers:>6.3f}% {rest:>7.3f}%  {each}")
+
+    # The stream against what the daemon read, over the whole run. Fewer read
+    # than sent means datagrams still queued when it exited, or dropped: the
+    # main loop fell behind the cockpit. Then what each panel cost it, per
+    # second of the run: writing is time the main loop was blocked on USB,
+    # and waited counts paints held for a screen that was not ready yet.
+    print(f"\n{'scenario':<9} {'sent':>6} {'read':>6} {'longest pass':>13}")
+    for r in results:
+        s = r["status"]
+        print(f"{r['scenario']:<9} {r['sent']:>6} {s['read']:>6} {s['longest']:>10} ms")
+    if any(r["status"]["panels"] for r in results):
+        print(f"\n{'scenario':<9} {'panel':<22} {'reports/s':>9} {'KB/s':>6} "
+              f"{'writing':>10} {'waited/s':>8}")
+        for r in results:
+            for key, (reports, kb, writing, waited) in sorted(r["status"]["panels"].items()):
+                per = lambda n: n / r["ran"]
+                print(f"{r['scenario']:<9} {key:<22} {per(reports):>9.1f} {per(kb):>6.1f} "
+                      f"{per(writing):>5.1f} ms/s {per(waited):>8.1f}")
 
     print("\nCPU is percent of one core, from exact cycle counts (QueryProcessCycleTime),")
     print("not the 15.6 ms ticks GetProcessTimes counts in. WS is working set; private")

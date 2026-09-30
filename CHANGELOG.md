@@ -21,8 +21,16 @@ unless this says what moved.
   buttons 100 times a second, pressed or not. A report the same as the one
   before is now passed over instead of read again, which takes about a
   sixth off the converter's CPU while it waits for DCS.
-- **Lamps are sent at most 30 times a second, as the screens already are.**
-  A lamp change after a quiet spell still goes out at once. Changes that
-  follow within the same thirtieth of a second go out together, from the
-  latest values, and a lamp that goes on and off again inside that time is
-  not rewritten at all.
+- **Lamps and screens are sent at most 25 times a second**, where before
+  screens went at most 30 and lamps on every change. A change after a quiet
+  spell still goes out at once. Changes that follow within the same
+  twenty-fifth of a second go out together, from the latest values, and a
+  lamp that goes on and off again inside that time is not rewritten at all.
+- **The MCDU screen no longer falls behind.** A page that changes
+  constantly, such as the Mosquito's, could lag and then jump to catch up,
+  because the converter stopped everything for 40 ms after each MCDU
+  screen. It now keeps the MCDU's gap without waiting for it: a screen
+  that comes too soon is held and sent, as the latest one, when the MCDU
+  is ready, and the other panels and the stream carry on meanwhile.
+- **The log's status line says what each panel was sent**: reports, bytes,
+  the time spent writing to it, and how many screens waited for it.

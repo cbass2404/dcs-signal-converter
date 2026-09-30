@@ -17,6 +17,8 @@
 //! they call [`wctrl_hid`] directly and a second brand gets its own commands
 //! rather than a shared vocabulary that fits neither.
 
+use std::time::{Duration, Instant};
+
 use anyhow::Result;
 use dsc_config::{DeviceSpec, DisplayCatalogue};
 use dsc_engine::{LcdWrite, LedWrite};
@@ -63,9 +65,34 @@ pub trait Protocol {
     fn open(&self, spec: &DeviceSpec, displays: &DisplayCatalogue) -> Result<Box<dyn Panel>>;
 }
 
+/// What a panel has been sent since it was opened, for the status line and
+/// the benchmark. Subtract an earlier reading for a window.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct Sent {
+    pub reports: u64,
+    pub bytes: u64,
+    /// Time the caller was blocked inside the writes.
+    pub writing: Duration,
+    /// Paints held because their screen was not ready for them yet.
+    pub waited: u64,
+}
+
+impl std::ops::Sub for Sent {
+    type Output = Sent;
+    fn sub(self, earlier: Sent) -> Sent {
+        Sent {
+            reports: self.reports - earlier.reports,
+            bytes: self.bytes - earlier.bytes,
+            writing: self.writing.saturating_sub(earlier.writing),
+            waited: self.waited - earlier.waited,
+        }
+    }
+}
+
 /// One opened device, for as long as the converter runs.
 ///
-/// Three methods on purpose. Anything a brand needs beyond them, such as
+/// Methods that write, two for screens that are not always ready, and one
+/// that says what it has all cost. Anything a brand needs beyond them, such as
 /// uploading a font or remembering which screens are waiting to be shown, is
 /// state the implementation keeps for itself: the caller has no way to know
 /// about it and no reason to.
@@ -82,6 +109,20 @@ pub trait Panel {
     /// Called once per batch on every panel that was written to, and a
     /// protocol whose writes land immediately does nothing here.
     fn flush(&mut self) -> Result<()>;
+
+    /// Send any paint held because its screen was not ready, if it is now.
+    ///
+    /// A screen that needs time between paints is never waited for: its
+    /// paint is held, only the latest kept, and the caller calls this on
+    /// every pass, so that nothing else, another screen or a lamp, waits on it.
+    fn send_ready(&mut self) -> Result<()>;
+
+    /// When the next held paint can go, so the caller can wake for it.
+    /// `None` when nothing is held.
+    fn next_ready(&self) -> Option<Instant>;
+
+    /// Everything sent so far.
+    fn sent(&self) -> Sent;
 }
 
 #[cfg(test)]

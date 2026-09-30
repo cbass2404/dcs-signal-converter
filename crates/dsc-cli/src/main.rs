@@ -3012,6 +3012,7 @@ fn run(
     let mut panels = Panels {
         handles,
         displays: displays.clone(),
+        reported: HashMap::new(),
     };
     let mut engine = Engine::new(inventory, cat, profiles).with_displays(displays.clone());
     engine.set_connected(connected);
@@ -3019,8 +3020,10 @@ fn run(
     let mut listener = Listener::bind(Ipv4Addr::UNSPECIFIED)
         .context("joining the DCS-BIOS multicast group on 239.255.50.10:5010")?;
     // One frame, so lamps or a paint the frame cap held back go out on time
-    // even when no datagram follows the one that moved them.
-    listener.set_read_timeout(Some(dsc_engine::FRAME_EVERY))?;
+    // even when no datagram follows the one that moved them. Shorter while a
+    // screen that was not ready holds a paint, to send it when it is.
+    let mut read_timeout = dsc_engine::FRAME_EVERY;
+    listener.set_read_timeout(Some(read_timeout))?;
 
     // The panels latch. Ctrl-C must reach the clearing code rather than killing
     // the process, or the lamps stay lit until something else writes them.
@@ -3370,11 +3373,24 @@ fn run(
         // The log's own housekeeping, last, because everything above may have
         // added to it. The status line goes out even on a pass that did
         // nothing: a quiet minute and a wedged daemon read alike otherwise.
+        panels.send_ready()?;
+        // Wake for the next held paint rather than a whole frame later.
+        let wait = panels.next_ready().map_or(dsc_engine::FRAME_EVERY, |t| {
+            t.saturating_duration_since(Instant::now())
+                .clamp(Duration::from_millis(1), dsc_engine::FRAME_EVERY)
+        });
+        if wait != read_timeout {
+            listener.set_read_timeout(Some(wait))?;
+            read_timeout = wait;
+        }
         trace.flush(now);
         trace.tally.pass(now.elapsed());
         if now >= next_status {
             next_status = now + STATUS_EVERY;
             note!("{}", trace.tally.report());
+            for line in panels.report() {
+                note!("{line}");
+            }
         }
     }
 
@@ -3383,10 +3399,14 @@ fn run(
     let cleared = batch.writes.len();
     let elapsed = started.elapsed().as_millis();
     apply(&batch, &mut panels, dry_run, &mut trace, elapsed)?;
+    panels.send_all()?;
     // Past the throttle's window, so the last second of a flight is written
     // rather than held back by a daemon that is about to exit.
     trace.flush(Instant::now() + dlog::THROTTLE);
     note!("{}", trace.tally.report());
+    for line in panels.report() {
+        note!("{line}");
+    }
     say!("Stopped. Cleared {cleared} LED(s).");
     Ok(())
 }
@@ -3399,6 +3419,60 @@ fn run(
 struct Panels {
     handles: HashMap<String, Box<dyn Panel>>,
     displays: DisplayCatalogue,
+    /// What each panel had been sent at the last status line.
+    reported: HashMap<String, panels::Sent>,
+}
+
+impl Panels {
+    /// Send every held paint whose screen is ready now.
+    fn send_ready(&mut self) -> Result<()> {
+        for panel in self.handles.values_mut() {
+            panel.send_ready()?;
+        }
+        Ok(())
+    }
+
+    /// When the soonest held paint can go.
+    fn next_ready(&self) -> Option<Instant> {
+        self.handles.values().filter_map(|p| p.next_ready()).min()
+    }
+
+    /// Send every held paint, waiting for each screen to be ready. Only on
+    /// the way out, where the last paint is the blank screen and must not be
+    /// left behind.
+    fn send_all(&mut self) -> Result<()> {
+        while let Some(t) = self.next_ready() {
+            std::thread::sleep(t.saturating_duration_since(Instant::now()));
+            self.send_ready()?;
+        }
+        Ok(())
+    }
+
+    /// A status line per panel written to since the last one: what it was
+    /// sent, how long the main loop was blocked writing to it, and how many
+    /// paints waited for a screen that was not ready. Time blocked is time
+    /// nothing else was sent and no datagram was read.
+    fn report(&mut self) -> Vec<String> {
+        let mut keys: Vec<&String> = self.handles.keys().collect();
+        keys.sort();
+        let mut lines = Vec::new();
+        for key in keys {
+            let now = self.handles[key].sent();
+            let then = self.reported.get(key).copied().unwrap_or_default();
+            let d = now - then;
+            if d.reports > 0 {
+                lines.push(format!(
+                    "status   {key:<22} {} report(s), {} KB, writing {} ms, {} paint(s) waited",
+                    d.reports,
+                    d.bytes.div_ceil(1024),
+                    d.writing.as_millis(),
+                    d.waited
+                ));
+            }
+            self.reported.insert(key.clone(), now);
+        }
+        lines
+    }
 }
 
 /// A text grid's buffer as the lines it shows, for the trace.

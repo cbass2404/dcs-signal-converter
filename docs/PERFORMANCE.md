@@ -1,15 +1,19 @@
 # Performance and install size
 
-The daemon was measured 2026-09-30, at 1.0.0-beta.4 in development (babd51e,
-with lamps sent at most once a frame as well), on an i9-12900KF with 64 GB,
-Windows 11, release builds from rustc 1.98.1, with nothing else open: no
-browser, no chat. The editor figures are from 2026-09-18 and the install
-sizes from the 1.0.0-beta.002 release.
+The daemon was measured 2026-09-30, at 1.0.0-beta.4 in development, on an
+i9-12900KF with 64 GB, Windows 11, release builds from rustc 1.98.1, with
+nothing else open: no browser, no chat. The live figures are from the build
+that sends at most 25 times a second and paces the MCDU without pausing the
+converter; the dry figures are from the build before it, 51b5f6b, which sent
+at most 30 times a second. The editor figures are from 2026-09-18 and the
+install sizes from the 1.0.0-beta.002 release.
 
 ## Summary
 
-- The daemon uses about 34 MB of private memory and under 1% of one core in
-  flight. Under a stream far heavier than DCS produces, it stays under 1.5%. On
+- The daemon uses about 35 MB of private memory and about 1.25% of one core
+  in flight with the panels driven, a little over a third of it writing to
+  them. Waiting for DCS it uses about 0.5%. Under a stream far heavier than
+  DCS produces, every lamp and screen changing every frame, it uses 3.8%. On
   an i5-12400F, the most common gaming CPU, expect about 1.2 times these
   figures (estimated, see [Other CPUs](#other-cpus)).
 - The editor uses about 165 MB, almost all of it WebView2. It uses no CPU while
@@ -88,8 +92,10 @@ reports come whether DCS is running or not.
 **Lamps are sent at most once a frame, like the screens.** Before, a lamp
 was resolved and written on every datagram that moved it, so under stress
 a flickering lamp was rewritten 60 times a second. Now lamps and screens
-share one 33 ms frame: the first change after a quiet spell goes out at
-once, and the rest of that frame goes out together, from the latest state.
+share one frame, 33 ms when this was measured and 40 ms since (see
+[Driving the panels](#driving-the-panels)): the first change after a quiet
+spell goes out at once, and the rest of that frame goes out together, from
+the latest state.
 The build before it (babd51e), measured quiet with the same script, came
 to 0.43 to 0.48% idle, 0.66 to 0.69% typical and 1.53 to 1.61% at stress,
 with the main loop at 1.17 to 1.23%. So stress is about 0.1% lower and
@@ -97,15 +103,66 @@ nothing else moved, which is all a dry run can show: what the cap saves
 most is lamp writes to the panels, half of them under stress, and a dry
 run writes none.
 
-**No panel is written, except with `--live`.** The benchmark runs the
-daemon as a dry run, which finds the panels but never opens them. The one
-live run, on 2026-09-18, measured within a few hundredths of a percent of a
-dry run, but with the old tick-sampled timing, whose noise was ten times
-that, so it did not show that HID writes are cheap, only that they were
-lost in the noise. `--live` drives the panels for idle and typical, to
-check that now and then; stress runs live only when named, since it
-rewrites lamps and screens 30 times a second for minutes, which no cockpit
-does.
+### Driving the panels
+
+The tables above are dry runs, which find the panels but never open them.
+`--live` drives them, in every scenario, so that a regression under load is
+seen. One pass each, quiet: this build against 51b5f6b, the build before it,
+in which the MCDU paused the whole converter for 40 ms after every screen.
+
+| Live | This build | 51b5f6b |
+|---|---|---|
+| idle | 0.49% | 0.51% |
+| typical | 1.25% (peak 2.74%) | 1.29% (peak 2.69%) |
+| stress | 3.81% (peak 3.99%) | 2.53% (peak 3.03%) |
+| typical, datagrams read of 1,892 sent | 1,889 | 1,889 |
+| stress, datagrams read of 3,785 sent | 3,779 | 843 |
+
+- **The build before fell behind under stress.** It read 843 of 3,785
+  datagrams. Each MCDU screen held the whole converter for 40 ms, the
+  stream queued up behind it and most of it was dropped, and on the panel
+  the screen changed, froze and jumped. The same stall is what made a
+  constantly changing MCDU page, the Mosquito's, lag and then catch up in
+  flight. This build reads them all; its CPU under stress is higher
+  because it does the work the other one threw away.
+- **Typical kept up on both**, so the stall needs a screen that changes on
+  nearly every frame.
+- **Writing costs about 0.4% of a core at typical**, on the main loop: 0.74%
+  live against 0.31 to 0.36% dry. A live run on 2026-09-18 had measured the
+  same as a dry run, but with the old tick-sampled timing, whose noise hid a
+  difference this size.
+- **Stress costs more than typical because every send carries
+  everything.** The frame holds sends to 25 a second however fast the
+  stream runs, but under stress every lamp and screen changes every frame,
+  so each send carries all of them: 99 reports a second to the PTO2
+  against 4 at typical. No cockpit changes everything at once.
+
+What each panel was sent, per second, on this build:
+
+| Panel | Typical | Main loop blocked | Stress | Main loop blocked |
+|---|---|---|---|---|
+| MCDU Captain | 180 reports | 18% | 317 reports | 32% |
+| ViperAce ICP | 17 reports | 2% | 235 reports | 23% |
+| PTO2 | 4 reports | 0.4% | 99 reports | 10% |
+| Orion Throttle | 1 report | 0.1% | 17 reports | 1.7% |
+| CarrierAce UFC | 0.4 reports | 0% | 0.4 reports | 0% |
+
+- **Each report holds the main loop for about 1 ms**, USB's polling
+  interval: the time spent writing matches the reports sent almost exactly.
+  The MCDU costs most because a text screen is always sent whole, 16
+  reports. Under stress the loop spends two thirds of every second waiting
+  on USB and still keeps up, but that is the next limit. A writer thread per
+  panel would take the waiting off the main loop.
+- **Paints that waited for the MCDU:** 1.8 a second at typical, 19 under
+  stress. A paint that comes before the MCDU is ready, 40 ms after its last
+  screen finished, is held as the latest screen and sent when it is, and
+  nothing else waits for it.
+- **The longest pass, about 0.8 s, is the MCDU's font**, about 600 reports
+  sent when the aircraft loads, once per aircraft.
+- **Key readers climb while their panel is written to**, since its input
+  reports then change and a repeat can no longer be passed over: the
+  MCDU's to about 0.23%, and the ICP's to 0.60% under stress.
+- **Private memory is about 1 MB higher live**, for the open panels.
 
 **The paint cap does not show up here.** Measured 2026-09-29 with the old
 tick-sampled timing, and not repeated since. The build before it (52f1120)
@@ -113,9 +170,10 @@ was run alternately with 255bb80, same machine, same hour, three pairs of
 idle and stress. Stress came to 2.03, 4.53 and 1.35% before and 1.98, 2.39 and
 1.04% after; idle was under 0.2% for both in all but one run. That is inside
 the noise. What the change saves most is HID traffic: a screen is sent at
-most 30 times a second, and only when something on it moved. A dry run never
-sends anything, so a dry run cannot measure it (see above). The 33 ms main loop, down from
-100 ms, costs nothing measurable at idle.
+most once a frame, and only when something on it moved. A dry run never
+sends anything, so a dry run cannot measure it (see above). The main loop
+waking once a frame, down from every 100 ms, costs nothing measurable at
+idle.
 
 **Memory is up about 11 MB since 2026-09-22.** Nearly all of it came before
 the paint change: the build before it used 33.1 MB private, this one 34.2 MB.
@@ -140,9 +198,11 @@ Estimated, not measured: the only machine measured is the i9-12900KF above.
 
 | Scenario | i9-12900KF, measured | i5-12400F, estimated |
 |---|---|---|
-| idle | 0.35 to 0.47% | about 0.6% |
-| typical | 0.66 to 0.72% | about 0.9% |
-| stress | 1.43 to 1.46% | about 1.8% |
+| idle | 0.35 to 0.49% | about 0.6% |
+| typical, panels driven | 1.25% | about 1.5% |
+| stress, panels driven | 3.81% | about 4.6% |
+| typical, dry run | 0.66 to 0.72% | about 0.9% |
+| stress, dry run | 1.43 to 1.46% | about 1.8% |
 
 - **How.** The daemon's work runs on one core at a time, so what it costs
   follows how fast that one core is. Both chips have the same P-cores
@@ -209,7 +269,7 @@ python tools/bench_daemon.py --seconds 60     # the tables above, three times
 python tools/bench_daemon.py --scenario stress
 python tools/bench_daemon.py --module F-16C_50 --aircraft F-16C_50
 python tools/bench_daemon.py --affinity 0xff  # P-cores only on a 12900K
-python tools/bench_daemon.py --live           # idle and typical, panels driven
+python tools/bench_daemon.py --live           # every scenario, panels driven
 python tools/bench_daemon.py --exe ..\dsc-baseline\target\release\dcs-signal.exe
 ```
 
@@ -220,10 +280,13 @@ there, so the two are measured by the same script.
 The tool needs only the Python standard library, and DCS does not need to be
 running. It plays the synthetic stream onto 239.255.50.10:5010 from the
 generated catalogue, starts the daemon (a dry run unless `--live`) with its
-output sent to NUL and its log to a temporary folder, and samples it with `QueryProcessCycleTime`, `QueryThreadCycleTime` and
-`GetProcessMemoryInfo`. The second table it prints splits the CPU between
-the main loop, each page key reader (the threads named `keys <device>`) and
-Windows' own threads.
+output sent to NUL and its log to a temporary folder, and samples it with
+`QueryProcessCycleTime`, `QueryThreadCycleTime` and `GetProcessMemoryInfo`.
+The second table it prints splits the CPU between the main loop, each page
+key reader (the threads named `keys <device>`) and Windows' own threads. The
+third compares the datagrams it sent with those the daemon read, and on a
+live run a fourth says what each panel was sent, read from the daemon's
+status lines before its log is deleted.
 
 - **Plug the panels in.** A dry run never opens them, but it still looks for
   them, and with none connected it has nothing to drive and exits.

@@ -60,7 +60,35 @@ opens only; nothing was written to a panel.
   is lamp writes, which a dry run cannot see.
 - **`bench_daemon.py --live`** drives the panels for idle and typical;
   stress only by name. `--exe` measures another build, such as one in a
-  worktree. Not yet run live.
+  worktree. First live run 2026-09-30, quiet, one pass each on this build
+  and babd51e: idle 0.49% as dry, typical 1.27 to 1.29% against 0.66 to
+  0.72% dry, so writing to the panels is about 0.45% of a core at typical,
+  on the main loop. The MCDU's key reader doubles to 0.23% while written
+  to (restless bytes defeat the repeat skip). The lamp cap cannot show at
+  typical, which is already one frame per 33 ms; stress live not run.
+- **Turned down: starting the key readers only with a page key aircraft.**
+  It would save about 0.35% of a core at idle, but nearly every setup has
+  one of the supported screens, so the readers would run anyway, and the
+  switch is complexity for a negligible cost.
+- **What writing is made of, and the MCDU stall fixed.** Each panel now
+  counts reports, bytes and time blocked in `wctrl_hid::Device::write_report`
+  (the one place a report leaves), reported per panel in the status line
+  and read back by `bench_daemon.py`. Every report holds the main loop
+  about 1 ms (USB polling). The MCDU slept 40 ms after each screen
+  (`AFTER_A_SCREEN`), stalling everything: under live stress 51b5f6b read
+  843 of 3,785 datagrams, and Cory saw the screen change, freeze and jump,
+  as the Mosquito's MCDU did in flight. Now `FRAME_EVERY` is 40 ms (25 a
+  second, Cory: nobody reads text faster) and the MCDU is paced without
+  sleeping: `TEXT_GRID_GAP` after a paint finishes, a sooner paint held as
+  the latest and sent by `send_ready` when due, the loop's read timeout
+  shortened to wake for it, `send_all` on exit. Live stress now reads 3,779
+  of 3,785. Whether the MCDU acknowledges a text screen was not captured;
+  if it does, only its readiness changes.
+- **Next: a writer thread per panel.** Under live stress the main loop is
+  blocked on USB about two thirds of every second (MCDU 32%, ICP 23%, PTO2
+  10%), 20% at typical. It keeps up, but that is the next limit, and the
+  font upload (about 0.8 s at aircraft load) would move off the loop too.
+- **Not unit tested:** `WctrlPanel`'s holding logic needs a real device.
 
 **Built and flown 2026-09-26: uneven gauges convert in sections.** `ba201c3` to
 `e649e88`. What users see is in [CHANGELOG.md](../CHANGELOG.md); the rules are

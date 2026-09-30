@@ -41,11 +41,12 @@ pub const DEFAULT_SETTLE_QUIET: Duration = Duration::from_millis(250);
 pub const DEFAULT_SETTLE_MAX: Duration = Duration::from_millis(2500);
 
 /// The shortest time between two sends the stream causes, lamps and screens
-/// together, about 30 a second. A burst of datagrams is sent once, from the
-/// latest state, rather than frame by frame, so neither the lamps nor the
-/// glass ever run behind the cockpit. The first change after a quiet spell
-/// goes out at once.
-pub const FRAME_EVERY: Duration = Duration::from_millis(33);
+/// together, 25 a second: faster than anyone reads text, and the pace the
+/// slowest screen, the MCDU's text grid, can take. A burst of datagrams is
+/// sent once, from the latest state, rather than frame by frame, so neither
+/// the lamps nor the glass ever run behind the cockpit. The first change
+/// after a quiet spell goes out at once.
+pub const FRAME_EVERY: Duration = Duration::from_millis(40);
 
 /// Identifies one physical LED. `part_id` is carried because a single USB
 /// device can front several parts, so the index alone is ambiguous across them.

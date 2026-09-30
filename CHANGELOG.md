@@ -54,3 +54,6 @@ Both profiles carry the same rows.
 - The converter no longer stops with "Overlapped I/O operation is in
   progress (os error 997)". Windows sometimes reports a quiet moment on
   the export stream that way, and it is now treated as the pause it is.
+- Deleting a page now warns when the page is in a slot. The slots using
+  it are listed in red, with a note that a screen showing it moves to the
+  next set slot and how to page back.

@@ -83,7 +83,8 @@ opens only; nothing was written to a panel.
   the latest and sent by `send_ready` when due, the loop's read timeout
   shortened to wake for it, `send_all` on exit. Live stress now reads 3,779
   of 3,785. Whether the MCDU acknowledges a text screen was not captured;
-  if it does, only its readiness changes.
+  if it does, only its readiness changes. Flown 2026-09-30 in the
+  Mosquito: the MCDU no longer lags and catches up.
 - **Next: a writer thread per panel.** Under live stress the main loop is
   blocked on USB about two thirds of every second (MCDU 32%, ICP 23%, PTO2
   10%), 20% at typical. It keeps up, but that is the next limit, and the

@@ -3018,9 +3018,9 @@ fn run(
 
     let mut listener = Listener::bind(Ipv4Addr::UNSPECIFIED)
         .context("joining the DCS-BIOS multicast group on 239.255.50.10:5010")?;
-    // One frame, so a paint the frame cap held back goes out on time even
-    // when no datagram follows the one that moved it.
-    listener.set_read_timeout(Some(dsc_engine::PAINT_EVERY))?;
+    // One frame, so lamps or a paint the frame cap held back go out on time
+    // even when no datagram follows the one that moved them.
+    listener.set_read_timeout(Some(dsc_engine::FRAME_EVERY))?;
 
     // The panels latch. Ctrl-C must reach the clearing code rather than killing
     // the process, or the lamps stay lit until something else writes them.

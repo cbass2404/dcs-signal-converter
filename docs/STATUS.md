@@ -52,6 +52,15 @@ opens only; nothing was written to a panel.
   The rest is Windows waking each reader 100 times a second. Reading
   buffered reports in batches 30 times a second would cut that for up to
   33 ms of page key delay; not done, worth perhaps 0.2%.
+- **Lamps capped like the screens.** `FRAME_EVERY` (was `PAINT_EVERY`)
+  now covers both: moved addresses collect in `owed` and `send_due`
+  resolves them with the paint, at most once per 33 ms, the first change
+  after a quiet spell at once. Quiet A/B against babd51e: stress 1.53 to
+  1.61% down to 1.43 to 1.46%, idle and typical unchanged. The real saving
+  is lamp writes, which a dry run cannot see.
+- **`bench_daemon.py --live`** drives the panels for idle and typical;
+  stress only by name. `--exe` measures another build, such as one in a
+  worktree. Not yet run live.
 
 **Built and flown 2026-09-26: uneven gauges convert in sections.** `ba201c3` to
 `e649e88`. What users see is in [CHANGELOG.md](../CHANGELOG.md); the rules are

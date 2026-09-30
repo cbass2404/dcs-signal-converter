@@ -40,10 +40,12 @@ pub const DEFAULT_SETTLE_QUIET: Duration = Duration::from_millis(250);
 /// a late sweep is better than none, and the incremental path corrects it.
 pub const DEFAULT_SETTLE_MAX: Duration = Duration::from_millis(2500);
 
-/// The shortest time between two repaints the stream causes, about 30 a
-/// second. A burst of datagrams is drawn once, from the latest state, rather
-/// than frame by frame, so the glass never runs behind the cockpit.
-pub const PAINT_EVERY: Duration = Duration::from_millis(33);
+/// The shortest time between two sends the stream causes, lamps and screens
+/// together, about 30 a second. A burst of datagrams is sent once, from the
+/// latest state, rather than frame by frame, so neither the lamps nor the
+/// glass ever run behind the cockpit. The first change after a quiet spell
+/// goes out at once.
+pub const FRAME_EVERY: Duration = Duration::from_millis(33);
 
 /// Identifies one physical LED. `part_id` is carried because a single USB
 /// device can front several parts, so the index alone is ambiguous across them.
@@ -233,9 +235,12 @@ pub struct Engine {
     paint_reads: HashSet<u16>,
     /// Something the glass reads has moved and not been drawn yet.
     dirty: bool,
-    /// When the stream last caused a paint, for [`PAINT_EVERY`].
-    painted_at: Option<Instant>,
-    paint_every: Duration,
+    /// Addresses a lamp reads that have moved since the last send, so a
+    /// burst resolves each lamp once, from the latest state.
+    owed: HashSet<u16>,
+    /// When the stream last caused a send, for [`FRAME_EVERY`].
+    sent_at: Option<Instant>,
+    frame_every: Duration,
     /// What the last paint drew for each converted signal, so a batch reports
     /// only the readings that changed.
     drawn: HashMap<String, (u16, String)>,
@@ -315,8 +320,9 @@ impl Engine {
             move_clock: 0,
             paint_reads: HashSet::new(),
             dirty: false,
-            painted_at: None,
-            paint_every: PAINT_EVERY,
+            owed: HashSet::new(),
+            sent_at: None,
+            frame_every: FRAME_EVERY,
             drawn: HashMap::new(),
         }
     }
@@ -442,7 +448,8 @@ impl Engine {
         self.paint_reads.clear();
         self.drawn.clear();
         self.dirty = false;
-        self.painted_at = None;
+        self.owed.clear();
+        self.sent_at = None;
         batch
     }
 
@@ -470,10 +477,10 @@ impl Engine {
         self.settle_max = max;
     }
 
-    /// The shortest time between two repaints the stream causes. [`PAINT_EVERY`]
-    /// unless a test wants every datagram drawn.
-    pub fn set_paint_every(&mut self, every: Duration) {
-        self.paint_every = every;
+    /// The shortest time between two sends the stream causes. [`FRAME_EVERY`]
+    /// unless a test wants every datagram sent.
+    pub fn set_frame_every(&mut self, every: Duration) {
+        self.frame_every = every;
     }
 
     pub fn aircraft(&self) -> Option<&str> {
@@ -534,7 +541,7 @@ impl Engine {
             let waited = now.saturating_duration_since(p.since);
             if quiet_for >= self.settle_quiet || waited >= self.settle_max {
                 self.pending = None;
-                self.painted_at = Some(now);
+                self.sent_at = Some(now);
                 let mut writes = self.sweep();
                 let (lamps, mut lcd, drawn) = self.paint();
                 writes.extend(lamps);
@@ -553,14 +560,19 @@ impl Engine {
 
         // The lamps only revisit bindings whose signals moved, but the glass
         // is repainted whole: a torn field is worse than a late one. Only when
-        // something it reads moved, though, and no more often than
-        // PAINT_EVERY, because a paint converts every field on every screen.
+        // something it reads moved, though, and both no more often than
+        // FRAME_EVERY, because a stream far busier than any cockpit would
+        // otherwise rewrite a flickering lamp on every datagram.
         if touched.iter().any(|a| self.paint_reads.contains(a)) {
             self.dirty = true;
         }
-        let mut writes = self.incremental(&touched);
-        let (lamps, lcd, drawn) = self.paint_due(now);
-        writes.extend(lamps);
+        self.owed.extend(
+            touched
+                .iter()
+                .filter(|a| self.by_address.contains_key(a))
+                .copied(),
+        );
+        let (writes, lcd, drawn) = self.send_due(now);
         Batch {
             cause: Cause::SignalChange,
             writes,
@@ -569,16 +581,16 @@ impl Engine {
         }
     }
 
-    /// Nudge a pending sweep, or a paint the frame cap held back, when no
-    /// datagrams are arriving.
+    /// Nudge a pending sweep, or lamps and a paint the frame cap held back,
+    /// when no datagrams are arriving.
     ///
     /// Needed because the settle window is defined by *silence*, and a silent
-    /// stream produces no `ingest` calls in which to notice it. The held paint
-    /// is the same: the datagram that moved the reading may be the last one
-    /// for a while.
+    /// stream produces no `ingest` calls in which to notice it. What was held
+    /// is the same: the datagram that moved it may be the last one for a
+    /// while.
     pub fn tick(&mut self, now: Instant) -> Batch {
         if self.pending.is_none() {
-            let (writes, lcd, drawn) = self.paint_due(now);
+            let (writes, lcd, drawn) = self.send_due(now);
             return Batch {
                 cause: Cause::SignalChange,
                 writes,
@@ -839,18 +851,29 @@ impl Engine {
         (lamps, out, fresh)
     }
 
-    /// Paint when the glass has something new to show and the frame cap
-    /// allows it. Held back, it goes out on a later ingest or tick, drawn from
-    /// the state as it is then: skipped frames are dropped, never queued.
-    fn paint_due(&mut self, now: Instant) -> (Vec<LedWrite>, Vec<LcdWrite>, Vec<Drawn>) {
+    /// Send the lamps whose signals moved, and paint when the glass has
+    /// something new to show, if the frame cap allows it. Held back, both go
+    /// out on a later ingest or tick, resolved from the state as it is then:
+    /// skipped frames are dropped, never queued, and a lamp that went on and
+    /// off again inside one frame is not written at all.
+    fn send_due(&mut self, now: Instant) -> (Vec<LedWrite>, Vec<LcdWrite>, Vec<Drawn>) {
         let early = self
-            .painted_at
-            .is_some_and(|t| now.saturating_duration_since(t) < self.paint_every);
-        if !self.dirty || early {
+            .sent_at
+            .is_some_and(|t| now.saturating_duration_since(t) < self.frame_every);
+        if (!self.dirty && self.owed.is_empty()) || early {
             return (Vec::new(), Vec::new(), Vec::new());
         }
-        self.painted_at = Some(now);
-        self.paint()
+        self.sent_at = Some(now);
+        // In address order, so the same burst always writes in the same order.
+        let mut owed: Vec<u16> = self.owed.drain().collect();
+        owed.sort_unstable();
+        let mut writes = self.incremental(&owed);
+        if !self.dirty {
+            return (writes, Vec::new(), Vec::new());
+        }
+        let (lamps, lcd, drawn) = self.paint();
+        writes.extend(lamps);
+        (writes, lcd, drawn)
     }
 
     /// Work out which addresses the glass reads, the way [`paint`](Self::paint)

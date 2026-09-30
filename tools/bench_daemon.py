@@ -4,6 +4,7 @@
   python tools/bench_daemon.py                          # A-10C, all scenarios
   python tools/bench_daemon.py --aircraft F-16C_50 --module F-16C_50
   python tools/bench_daemon.py --scenario stress --seconds 60
+  python tools/bench_daemon.py --live                   # idle and typical, panels driven
 
 No DCS needed. The tool plays a synthetic DCS-BIOS export stream onto the
 multicast group (239.255.50.10:5010), shaped like the real one: a frame every
@@ -18,12 +19,19 @@ Scenarios:
     typical  30 Hz, 20 integer outputs and 1 text field moving per frame
     stress   60 Hz, every output in the module rewritten every frame
 
-The daemon always runs with --dry-run. It finds the panels but never opens or
-writes to them, so they must be plugged in, or it exits with nothing to drive.
-There is deliberately no way to drive them: the stress scenario rewrites every
-lamp and screen 60 times a second for minutes, which is not worth risking real
-hardware for, and the one live run measured the same as a dry run. The
-daemon's own output goes to NUL, since printing it would be the thing measured.
+The daemon runs with --dry-run unless --live is given. A dry run finds the
+panels but never opens or writes to them, so they must be plugged in, or it
+exits with nothing to drive. --live drives them for real, to check now and
+then that the HID writes cost what the dry runs assume: the lamps and screens
+show random values for the length of the run and are cleared at the end.
+With --live, "all" means idle and typical only. Stress rewrites lamps and
+screens up to 30 times a second for minutes, far beyond any cockpit, and runs
+live only when asked for by name. A live run needs the panels to itself, so
+stop any daemon the editor started first.
+
+The daemon's own output goes to NUL, since printing it would be the thing
+measured, and its log to a temporary folder, so a run never rotates the log
+of the last flight.
 
 CPU is reported as a percentage of one core, from QueryProcessCycleTime and
 QueryThreadCycleTime deltas, and memory from GetProcessMemoryInfo. Cycle counts
@@ -41,10 +49,12 @@ import ctypes.wintypes as W
 import json
 import os
 import random
+import shutil
 import socket
 import struct
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 
@@ -298,8 +308,11 @@ def memory(handle):
 
 
 def measure(args, scenario):
-    exe = os.path.join(ROOT, "target", "release", "dcs-signal.exe")
-    cmd = [exe, "run", "--dry-run", "--seconds", str(int(args.seconds + args.warmup) + 2)]
+    exe = args.exe
+    logs = tempfile.mkdtemp(prefix="dcs-signal-bench-")
+    cmd = [exe, "run", "--seconds", str(int(args.seconds + args.warmup) + 2), "--log-dir", logs]
+    if not args.live:
+        cmd.append("--dry-run")
     proc = subprocess.Popen(
         cmd, cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
@@ -316,9 +329,18 @@ def measure(args, scenario):
         t = threading.Thread(target=stream.run, args=(*SCENARIOS[scenario].values(), stop))
         t.start()
 
+    def exited_early():
+        stop.set()
+        hint = ""
+        if args.live:
+            hint = "; another daemon may have the panels, stop it first"
+        sys.exit(f"dcs-signal exited early with code {proc.returncode}{hint}")
+
     rate = args.rate
     threads = Threads(proc.pid)
     time.sleep(args.warmup)
+    if proc.poll() is not None:
+        exited_early()
     by_role0 = threads.cycles()
     cpu0, t0 = process_cycles(handle), time.perf_counter()
     frames0 = stream.frames if stream else 0
@@ -327,7 +349,7 @@ def measure(args, scenario):
     while time.perf_counter() - t0 < args.seconds:
         time.sleep(args.interval)
         if proc.poll() is not None:
-            sys.exit(f"dcs-signal exited early with code {proc.returncode}")
+            exited_early()
         cpu, now = process_cycles(handle), time.perf_counter()
         m = memory(handle)
         samples.append(
@@ -351,6 +373,7 @@ def measure(args, scenario):
     except subprocess.TimeoutExpired:
         proc.terminate()
         proc.wait()
+    shutil.rmtree(logs, ignore_errors=True)
 
     mb = 1 / (1024 * 1024)
     return dict(
@@ -379,20 +402,37 @@ def main():
         default=0,
         help="cores the daemon may run on, as a mask; 0xff is the P-cores of a 12900K",
     )
+    ap.add_argument(
+        "--live",
+        action="store_true",
+        help="drive the panels for real; 'all' then means idle and typical",
+    )
+    ap.add_argument(
+        "--exe",
+        default=os.path.join(ROOT, "target", "release", "dcs-signal.exe"),
+        help="daemon to measure, such as an older build from a worktree",
+    )
     args = ap.parse_args()
     args.catalogue = os.path.join(ROOT, "data", "catalogue", args.module + ".json")
 
-    if not os.path.exists(os.path.join(ROOT, "target", "release", "dcs-signal.exe")):
-        sys.exit("build it first: cargo build --release --bin dcs-signal")
+    if not os.path.exists(args.exe):
+        sys.exit(f"{args.exe} missing - build it first: cargo build --release --bin dcs-signal")
     if not os.path.exists(args.catalogue):
         sys.exit(f"{args.catalogue} missing - build it with: cargo run --bin dcs-signal -- catalogue")
 
+    names = list(SCENARIOS) if args.scenario == "all" else [args.scenario]
+    if args.live and args.scenario == "all":
+        names.remove("stress")
+    if args.live:
+        print("LIVE: the panels are driven for real. Lamps and screens show random")
+        print("values for the length of each run and are cleared at the end.\n")
+
     args.rate = cycle_rate()
-    print(f"dcs-signal run (dry run), {args.aircraft}, {args.seconds:g}s per scenario, "
+    mode = "live" if args.live else "dry run"
+    print(f"dcs-signal run ({mode}), {args.aircraft}, {args.seconds:g}s per scenario, "
           f"cycle counter at {args.rate / 1e6:.0f} MHz\n")
     print(f"{'scenario':<9} {'frames/s':>8} {'CPU avg':>8} {'CPU peak':>9} "
           f"{'WS avg':>8} {'WS peak':>8} {'private':>8}")
-    names = list(SCENARIOS) if args.scenario == "all" else [args.scenario]
     results = []
     for name in names:
         r = measure(args, name)

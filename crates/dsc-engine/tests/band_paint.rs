@@ -60,7 +60,7 @@ fn engine(p: Profile) -> Engine {
     e.set_connected(vec![MCDU.into()]);
     // Every flight here starts its own clock, so the frame cap would read one
     // flight's paint as a moment ago. These are about what is drawn.
-    e.set_paint_every(Duration::ZERO);
+    e.set_frame_every(Duration::ZERO);
     e
 }
 

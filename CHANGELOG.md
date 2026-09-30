@@ -21,3 +21,8 @@ unless this says what moved.
   buttons 100 times a second, pressed or not. A report the same as the one
   before is now passed over instead of read again, which takes about a
   sixth off the converter's CPU while it waits for DCS.
+- **Lamps are sent at most 30 times a second, as the screens already are.**
+  A lamp change after a quiet spell still goes out at once. Changes that
+  follow within the same thirtieth of a second go out together, from the
+  latest values, and a lamp that goes on and off again inside that time is
+  not rewritten at all.

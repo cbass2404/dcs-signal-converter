@@ -48,3 +48,9 @@ Both profiles carry the same rows.
   100, and the trim values round down instead of to the nearest tenth.
 - **New UFC Flight page** for the UFC: fuel, heading, EHSI course and the
   three trims.
+
+### Fixes
+
+- The converter no longer stops with "Overlapped I/O operation is in
+  progress (os error 997)". Windows sometimes reports a quiet moment on
+  the export stream that way, and it is now treated as the pause it is.

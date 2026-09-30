@@ -1,31 +1,31 @@
 # Performance and install size
 
-The daemon was measured 2026-09-22, at 1.0.0-alpha.007 in development, on an
-i9-12900KF with 64 GB, Windows 11, release builds from rustc 1.98.1. Six
-panels were connected: PTO2, Orion Throttle Base II, CarrierAce UFC + HUD,
-ViperAce ICP, Orion Combat Rudder Pedals, MCDU Captain. The editor figures are
-from 2026-09-18 and the install sizes from the 1.0.0-alpha.006 release.
+The daemon was measured 2026-09-29, at 1.0.0-beta.003 in development
+(255bb80, screens painted only on change and at most 30 times a second), on an
+i9-12900KF with 64 GB, Windows 11, release builds from rustc 1.98.1. The
+editor figures are from 2026-09-18 and the install sizes from the
+1.0.0-beta.002 release.
 
 ## Summary
 
-- The daemon uses about 23 MB of private memory and under 0.5% of one core in
+- The daemon uses about 34 MB of private memory and under 1% of one core in
   flight. Under a stream far heavier than DCS produces, it stays under 4%.
 - The editor uses about 165 MB, almost all of it WebView2. It uses no CPU while
   idle.
-- The installer is 3.2 MB. Installed, the program comes to 17 MB, and the
-  catalogue it builds on first run adds about 10 MB.
+- The installer is 3.5 MB. Installed, the program comes to 16 MB, and the
+  catalogue it builds on first run adds about 11 MB.
 
 ## The daemon
 
 `dcs-signal run --dry-run` with the A-10C profile, against a synthetic
-DCS-BIOS stream. Each scenario was measured for 60 seconds, after 3 seconds of
-warmup that absorb the startup and module-load flood.
+DCS-BIOS stream. Each scenario was measured for 30 or 60 seconds, after 3
+seconds of warmup that absorb the startup and module-load flood.
 
 | Scenario | Frames/s | CPU avg | CPU peak | Working set | Private |
 |---|---|---|---|---|---|
-| idle | 0 | 0.00% | 0.00% | 29.0 MB | 22.6 MB |
-| typical | 30 | 0.31% | 1.56% | 29.1 MB | 22.6 MB |
-| stress | 60 | 2.2 to 3.7% | 6.25% | 29.2 MB | 22.7 MB |
+| idle | 0 | 0.05 to 0.52% | 4.68% | 40.7 MB | 34.2 MB |
+| typical | 30 | 0.10 to 0.96% | 4.69% | 40.7 MB | 34.2 MB |
+| stress | 60 | 0.26 to 3.67% | 6.25% | 40.8 MB | 34.4 MB |
 
 - **idle:** no stream at all, which is the daemon waiting for DCS.
 - **typical:** 30 frames a second. Each frame moves 20 integer outputs and
@@ -36,9 +36,11 @@ warmup that absorb the startup and module-load flood.
   changes every frame, which no real cockpit does.
 
 CPU is a percentage of one core. Peaks are the busiest 1-second sample.
-Stress is given as the range of three runs, because it varied more than the
-other two. A run with other work open on the machine is not worth keeping:
-one put typical above stress.
+Each average is the range across three to six runs, because on 2026-09-29
+every scenario varied far more between runs than it did on 2026-09-22. Two
+runs were thrown out: one put typical above stress, and one showed 4% with
+no stream at all. A run with other work open on the machine is not worth
+keeping.
 
 **No panel is written.** The benchmark only runs the daemon as a dry run,
 which finds the panels but never opens them. The one live run, on 2026-09-18,
@@ -47,13 +49,20 @@ so the HID writes cost very little next to the decoding. Stress rewrites every
 lamp and screen 60 times a second for minutes, and that is not worth doing to
 real hardware again for a number that does not move.
 
-**Stress costs more than it did on 2026-09-18**, when it measured 1.09%. The
-A-10C default now puts far more on its screens, three MCDU rows of radios and
-a countermeasures page on the DED, and each field has more to decide before it
-paints: conversions, aliases, bands, formats. Under stress all of it is redone
-every frame. Not profiled, and not worth profiling: under 4% of one core for
-every screen repainted 60 times a second is still very little, and typical,
-which is what flying looks like, barely moved.
+**The paint cap does not show up here.** The build before it (52f1120) was
+run alternately with this one, same machine, same hour, three pairs of idle
+and stress. Stress came to 2.03, 4.53 and 1.35% before and 1.98, 2.39 and
+1.04% after; idle was under 0.2% for both in all but one run. That is inside
+the noise. What the change saves most is HID traffic: a screen is sent at
+most 30 times a second, and only when something on it moved. A dry run never
+sends anything, so this benchmark cannot measure it, and a live stress run
+is not worth doing to the panels (see above). The 33 ms main loop, down from
+100 ms, costs nothing measurable at idle.
+
+**Memory is up about 11 MB since 2026-09-22.** Nearly all of it came before
+the paint change: the build before it used 33.1 MB private, this one 34.2 MB.
+The catalogue has not grown (still 51 files, 11 MB), so it is the profiles,
+pages and screens added since then. Not profiled.
 
 **What the numbers show.** CPU follows how much actually changes, not how many
 frames arrive. That matches the engine's design: `BiosState::apply` reports
@@ -90,16 +99,16 @@ does not depend on what the editor does.
 
 ## Install size
 
-From the 1.0.0-alpha.006 release, installed per user.
+From the 1.0.0-beta.002 release, installed per user.
 
 | Part | Size |
 |---|---|
-| The installer, `DCS-Signal-Converter-1.0.0-alpha.006-setup.exe` | 3.2 MB |
-| `DCS Signal Converter.exe`, the editor with its frontend embedded | 11.8 MB |
-| `dcs-signal.exe`, the daemon | 2.8 MB |
-| `data`: devices, displays, MCDU fonts, defaults and their snapshot | 1.3 MB |
-| **Installed, `%LOCALAPPDATA%\DCS Signal Converter`** | **about 17 MB** |
-| The catalogue, built on first run in `Saved Games\DCS Signal Converter` | about 10 MB |
+| The installer, `DCS-Signal-Converter-1.0.0-beta.002-setup.exe` | 3.5 MB |
+| `DCS Signal Converter.exe`, the editor with its frontend embedded | 12.6 MB |
+| `dcs-signal.exe`, the daemon | 3.4 MB |
+| `data`: devices, displays, MCDU fonts, defaults and their snapshot | 2.0 MB |
+| **Installed, `%LOCALAPPDATA%\DCS Signal Converter`** | **about 16 MB** |
+| The catalogue, built on first run in `Saved Games\DCS Signal Converter` | about 11 MB |
 
 - **The catalogue is not shipped.** It is generated from the DCS-BIOS
   installed on each machine, because one from another DCS-BIOS release reads
@@ -114,7 +123,7 @@ From the 1.0.0-alpha.006 release, installed per user.
 ```powershell
 cargo build --release --bin dcs-signal
 python tools/bench_daemon.py                  # all three scenarios, 30 s each
-python tools/bench_daemon.py --seconds 60     # what the table above used
+python tools/bench_daemon.py --seconds 60     # most of the table above
 python tools/bench_daemon.py --scenario stress
 python tools/bench_daemon.py --module F-16C_50 --aircraft F-16C_50
 ```

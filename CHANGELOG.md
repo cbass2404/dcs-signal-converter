@@ -17,15 +17,6 @@ unless this says what moved.
 
 ### Converter
 
-- **Page keys cost less to read.** The UFC, ICP and MCDU each report their
-  buttons 100 times a second, pressed or not. A report the same as the one
-  before is now passed over instead of read again, which takes about a
-  sixth off the converter's CPU while it waits for DCS.
-- **Lamps and screens are sent at most 25 times a second**, where before
-  screens went at most 30 and lamps on every change. A change after a quiet
-  spell still goes out at once. Changes that follow within the same
-  twenty-fifth of a second go out together, from the latest values, and a
-  lamp that goes on and off again inside that time is not rewritten at all.
 - **The MCDU screen no longer falls behind.** A page that changes
   constantly, such as the Mosquito's, could lag and then jump to catch up,
   because the converter stopped everything for 40 ms after each MCDU
@@ -38,6 +29,15 @@ unless this says what moved.
   and the reading of DCS's data. Now no panel waits on another, a panel
   that falls behind skips straight to the latest lamps and screens, and
   loading an aircraft no longer pauses everything for the MCDU's font.
+- **Lamps and screens are sent at most 25 times a second**, where before
+  screens went at most 30 and lamps on every change. A change after a quiet
+  spell still goes out at once. Changes that follow within the same
+  twenty-fifth of a second go out together, from the latest values, and a
+  lamp that goes on and off again inside that time is not rewritten at all.
+- **Page keys cost less to read.** The UFC, ICP and MCDU each report their
+  buttons 100 times a second, pressed or not. A report the same as the one
+  before is now passed over instead of read again, which takes about a
+  sixth off the converter's CPU while it waits for DCS.
 - **The log's status line says what each panel was sent**: reports, bytes,
   the time spent writing to it, and how many screens were replaced by a
   newer one before they went.

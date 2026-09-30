@@ -26,7 +26,7 @@ numbers move and the words do not.
       reports a second; `bench_daemon.py` now counts exact cycles, splits
       CPU by thread and pins cores with `--affinity`; PERFORMANCE.md is
       re-measured with an i5-12400F estimate.
-      [STATUS.md](STATUS.md), "idle CPU in the benchmark was tick sampling"
+      [STATUS.md](STATUS.md), "the performance pass"
 
 - [x] ~~**Name the pages, then move the shipped defaults onto them.**~~
       Done 2026-09-23: every shipped profile is version 2, and the six
@@ -251,7 +251,7 @@ numbers move and the words do not.
       [STATUS.md](STATUS.md), "Open threads"
 - [ ] **A perceptual response curve for dimmers.** Linear PWM feels wrong at
       the bottom. [STATUS.md](STATUS.md), "Open threads"
-- [ ] **The 175 ms pass at mission start.** Loading a profile and painting
-      every screen is one pass of the main loop, and nothing else runs during
-      it. Watch only: worth a look if the panels ever feel behind at mission
-      start. [STATUS.md](STATUS.md), "longest pass 175 ms"
+- [x] ~~**The 175 ms pass at mission start.**~~ Gone 2026-09-30: it was
+      the screens being written from the main loop. Each panel now has its
+      own writer thread, and the longest pass in the minute the Mosquito
+      loaded was 2 ms. [STATUS.md](STATUS.md), "longest pass 175 ms"

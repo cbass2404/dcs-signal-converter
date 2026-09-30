@@ -11,7 +11,7 @@ checklist, for when that is all that is wanted.
 **Verify nothing has rotted** (30 seconds, no hardware, no DCS):
 
 ```powershell
-cargo test --workspace            # expect 505 passing
+cargo test --workspace            # expect 516 passing
 cargo run --bin dcs-signal -- devices
 cargo run --bin dcs-signal -- catalogue --aircraft F-4E-45MC --find hook
 ```
@@ -22,11 +22,20 @@ wrong addresses silently, because addresses are allocated sequentially as
 controls are defined. Nothing needs doing after a clone: every command that
 reads the catalogue builds it first if it is missing or out of date (see below).
 
-**Resolved 2026-09-30: idle CPU in the benchmark was tick sampling.** Why
-PERFORMANCE.md's idle row peaked at 4.68% with no stream, and why the
-2026-09-29 runs varied so much. Measured with dry runs and read-only HID
-opens only; nothing was written to a panel.
+**Built and flown 2026-09-30: the performance pass, cb08032 to a416010.**
+It began as "idle CPU in the benchmark" and ended with each panel written
+from its own thread. Where it stands now: the benchmark counts exact cycles
+and can drive the panels (`--live`, every scenario); lamps and screens go
+at most 25 times a second (`FRAME_EVERY`, 40 ms); each panel has a writer
+thread with a latest-only mailbox, which also keeps the MCDU's 40 ms gap
+without pausing anything else; page key readers skip repeated reports. The
+bullets below are in the order things were found, so an earlier one can
+describe something a later one replaced, and says so where it does.
 
+- **Idle CPU in the benchmark was tick sampling.** Why PERFORMANCE.md's
+  idle row peaked at 4.68% with no stream, and why the 2026-09-29 runs
+  varied so much. This part was measured with dry runs and read-only HID
+  opens only.
 - **What the panels send.** Counted by opening each page key collection
   read-only for 20 to 30 s: the UFC, ICP and Captain MCDU each send exactly
   100 input reports a second at rest, every one identical. No bursts. The
@@ -54,18 +63,19 @@ opens only; nothing was written to a panel.
   33 ms of page key delay; not done, worth perhaps 0.2%.
 - **Lamps capped like the screens.** `FRAME_EVERY` (was `PAINT_EVERY`)
   now covers both: moved addresses collect in `owed` and `send_due`
-  resolves them with the paint, at most once per 33 ms, the first change
-  after a quiet spell at once. Quiet A/B against babd51e: stress 1.53 to
+  resolves them with the paint, at most once a frame (33 ms then, 40 ms
+  since), the first change after a quiet spell at once. Quiet A/B against babd51e: stress 1.53 to
   1.61% down to 1.43 to 1.46%, idle and typical unchanged. The real saving
   is lamp writes, which a dry run cannot see.
-- **`bench_daemon.py --live`** drives the panels for idle and typical;
-  stress only by name. `--exe` measures another build, such as one in a
-  worktree. First live run 2026-09-30, quiet, one pass each on this build
-  and babd51e: idle 0.49% as dry, typical 1.27 to 1.29% against 0.66 to
-  0.72% dry, so writing to the panels is about 0.45% of a core at typical,
+- **`bench_daemon.py --live`** drives the panels, in every scenario (at
+  first idle and typical only; Cory: always run stress with typical, to
+  catch a regression). `--exe` measures another build, such as one in a
+  worktree. First live run 2026-09-30, quiet, one pass each on 51b5f6b and
+  babd51e: idle 0.49% as dry, typical 1.27 to 1.29% against 0.66 to 0.72%
+  dry, so writing to the panels was about 0.45% of a core at typical, then
   on the main loop. The MCDU's key reader doubles to 0.23% while written
   to (restless bytes defeat the repeat skip). The lamp cap cannot show at
-  typical, which is already one frame per 33 ms; stress live not run.
+  typical, which is already about one frame a send.
 - **Turned down: starting the key readers only with a page key aircraft.**
   It would save about 0.35% of a core at idle, but nearly every setup has
   one of the supported screens, so the readers would run anyway, and the
@@ -73,16 +83,17 @@ opens only; nothing was written to a panel.
 - **What writing is made of, and the MCDU stall fixed.** Each panel now
   counts reports, bytes and time blocked in `wctrl_hid::Device::write_report`
   (the one place a report leaves), reported per panel in the status line
-  and read back by `bench_daemon.py`. Every report holds the main loop
-  about 1 ms (USB polling). The MCDU slept 40 ms after each screen
+  and read back by `bench_daemon.py`. Every report blocks its writer for
+  about 1 ms (USB polling), which was the main loop then. The MCDU slept
+  40 ms after each screen
   (`AFTER_A_SCREEN`), stalling everything: under live stress 51b5f6b read
   843 of 3,785 datagrams, and Cory saw the screen change, freeze and jump,
   as the Mosquito's MCDU did in flight. Now `FRAME_EVERY` is 40 ms (25 a
   second, Cory: nobody reads text faster) and the MCDU is paced without
   sleeping: `TEXT_GRID_GAP` after a paint finishes, a sooner paint held as
-  the latest and sent by `send_ready` when due, the loop's read timeout
-  shortened to wake for it, `send_all` on exit. Live stress now reads 3,779
-  of 3,785. Whether the MCDU acknowledges a text screen was not captured;
+  the latest and sent when due (in 067c3c9 by the main loop; since a416010
+  by the panel's writer, next bullet). Live stress now reads 3,779 of
+  3,785. Whether the MCDU acknowledges a text screen was not captured;
   if it does, only its readiness changes. Flown 2026-09-30 in the
   Mosquito: the MCDU no longer lags and catches up.
 - **Built 2026-09-30: a writer thread per panel.** Under live stress
@@ -791,6 +802,11 @@ profile and painting 26 screens happens in one pass of the main loop, and
 nothing else, including the stop check, happens during it. Every later minute
 sat at 1 to 3 ms. Worth a look if panels ever feel behind at mission start, not
 worth doing anything about yet.
+
+Gone 2026-09-30: the pass was long because the screens were written from the
+main loop, about a millisecond a report. Each panel now has its own writer
+thread, and the Mosquito's log that day shows a longest pass of 2 ms in the
+minute the aircraft loaded (see "a writer thread per panel" above).
 
 Also proven against a synthetic export stream (rollover keeping its header),
 and against the real panels started hidden through `run-hidden.vbs`, where it

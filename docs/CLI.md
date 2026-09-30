@@ -206,7 +206,22 @@ a screen of hex a second.
 **A status line every minute**, whether or not anything happened. An idle
 daemon and a wedged one look alike otherwise, and which of the two it was is
 usually the whole question. `longest pass` is the slowest trip round the main
-loop in that minute, which is the number to watch if the panels feel behind.
+loop in that minute: the loop reads the stream and decides what to send, so a
+long pass means the converter itself was slow to react.
+
+Under it comes a line for each panel written to in that minute:
+
+```text
+2026-09-30 12:00:46.414  INFO   status   MCDU_Captain           11082 report(s), 692 KB, writing 11097 ms, 123 superseded
+```
+
+Each panel is written from its own thread, so these say how one panel is
+doing without the others. `writing` is how long that panel's thread spent
+waiting on USB, about a millisecond a report. `superseded` counts screens
+replaced by a newer one before they were sent, which is a panel skipping
+ahead to the latest rather than falling behind. If one panel feels behind,
+its line is the one to read: `writing` close to the whole minute means it is
+being sent more than it can take.
 
 At ten megabytes it rolls over, keeping one behind exactly as a restart does,
 and repeats the startup lines at the top of the new file so it still says what

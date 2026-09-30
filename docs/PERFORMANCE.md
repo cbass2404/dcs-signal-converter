@@ -222,8 +222,9 @@ Estimated, not measured: the only machine measured is the i9-12900KF above.
 | typical, dry run | 0.66 to 0.72% | about 0.9% |
 | stress, dry run | 1.43 to 1.46% | about 1.8% |
 
-- **How.** The daemon's work runs on one core at a time, so what it costs
-  follows how fast that one core is. Both chips have the same P-cores
+- **How.** The daemon's threads each do a little, on whichever core is
+  free, and none comes near filling one, so what it costs follows how fast a
+  single core is, not how many there are. Both chips have the same P-cores
   (Golden Cove), and the 12400F boosts to 4.4 GHz against the 12900KF's 5.1,
   so the same work takes about 1.16 times as long. The estimate is the top
   of the measured range times 1.2.

@@ -1,8 +1,7 @@
 # Performance and install size
 
-The daemon was measured 2026-09-30, at 1.0.0-beta.4 in development (5f78a68,
-with the page key reader threads named so the benchmark can tell them apart),
-on an i9-12900KF with 64 GB, Windows 11, release builds from rustc 1.98.1.
+The daemon was measured 2026-09-30, at 1.0.0-beta.4 in development (cb08032,
+with page key readers passing over a report the same as the last), on an i9-12900KF with 64 GB, Windows 11, release builds from rustc 1.98.1.
 The editor figures are from 2026-09-18 and the install sizes from the
 1.0.0-beta.002 release.
 
@@ -27,17 +26,17 @@ the passes; peaks are the highest.
 
 | Scenario | Frames/s | CPU avg | CPU peak | Working set | Private |
 |---|---|---|---|---|---|
-| idle | 0 | 0.54 to 0.55% | 0.68% | 40.7 to 41.1 MB | 34.2 to 34.6 MB |
-| typical | 30 | 0.75 to 0.83% | 0.95% | 40.7 to 41.1 MB | 34.2 to 34.5 MB |
-| stress | 60 | 1.72 to 1.77% | 2.11% | 40.8 to 40.9 MB | 34.2 to 34.4 MB |
+| idle | 0 | 0.41 to 0.49% | 0.56% | 40.8 to 40.9 MB | 34.4 MB |
+| typical | 30 | 0.60 to 0.72% | 0.84% | 40.7 to 41.0 MB | 34.3 to 34.4 MB |
+| stress | 60 | 1.56 to 1.57% | 1.94% | 40.8 to 40.9 MB | 34.3 MB |
 
 Where the CPU goes, by thread, same passes:
 
 | Scenario | Main loop | Page key readers | Windows' threads |
 |---|---|---|---|
-| idle | 0.11% | 0.42 to 0.44% | 0% |
-| typical | 0.33 to 0.36% | 0.42 to 0.50% | 0% |
-| stress | 1.27 to 1.29% | 0.43 to 0.48% | 0% |
+| idle | 0.11% | 0.30 to 0.37% | 0% |
+| typical | 0.33 to 0.37% | 0.28 to 0.35% | 0% |
+| stress | 1.24 to 1.26% | 0.32 to 0.33% | 0% |
 
 - **idle:** no stream at all, which is the daemon waiting for DCS. It still
   reads page keys.
@@ -49,7 +48,7 @@ Where the CPU goes, by thread, same passes:
   changes every frame, which no real cockpit does.
 
 CPU is a percentage of one core, from exact cycle counts. Peaks are the
-busiest 1-second sample. The three passes agree to within 0.08% in every
+busiest 1-second sample. The three passes agree to within 0.12% in every
 scenario, and no run was thrown out.
 
 **Why these replace the 2026-09-29 figures.** Those came from
@@ -66,10 +65,20 @@ every cycle a thread runs.
 
 **The page key readers are most of idle.** The UFC, ICP and MCDU each send
 100 identical input reports a second with nothing pressed, and each reader
-wakes for every one and asks Windows which buttons it holds. That costs
-0.10 to 0.14% of a core for the UFC and the MCDU and 0.20 to 0.23% for the
-ICP, whose reports take longer to parse. The cost is the same in every
-scenario, since the reports come whether DCS is running or not.
+wakes for every one. The cost is the same in every scenario, since the
+reports come whether DCS is running or not.
+
+- **Passing over repeats saves about 0.1%.** A reader used to ask Windows
+  which buttons every report held. Now it compares the report with the last
+  one and asks only when they differ. Measured the same way, the build
+  before this took 0.42 to 0.50% for the readers, 0.54 to 0.55% for the
+  whole daemon at idle, and 1.72 to 1.77% at stress. The main loop did not
+  change.
+- **What is left is waking up.** 0.04 to 0.11% of a core each for the UFC
+  and MCDU, 0.16 to 0.18% for the ICP. Windows buffers reports, so a
+  reader could wake 30 times a second and take several at once, for up to
+  33 ms more before a page key acts. Not done: it would save perhaps
+  another 0.2%.
 
 **No panel is written.** The benchmark only runs the daemon as a dry run,
 which finds the panels but never opens them. The one live run, on 2026-09-18,
@@ -112,9 +121,9 @@ Estimated, not measured: the only machine measured is the i9-12900KF above.
 
 | Scenario | i9-12900KF, measured | i5-12400F, estimated |
 |---|---|---|
-| idle | 0.54 to 0.58% | about 0.7% |
-| typical | 0.75 to 0.83% | about 1.0% |
-| stress | 1.71 to 1.77% | about 2.1% |
+| idle | 0.41 to 0.49% | about 0.6% |
+| typical | 0.60 to 0.72% | about 0.9% |
+| stress | 1.56 to 1.57% | about 1.9% |
 
 - **How.** The daemon's work runs on one core at a time, so what it costs
   follows how fast that one core is. Both chips have the same P-cores
@@ -122,8 +131,9 @@ Estimated, not measured: the only machine measured is the i9-12900KF above.
   so the same work takes about 1.16 times as long. The estimate is the top
   of the measured range times 1.2.
 - **Measured on P-cores, which is what the 12400F has.** The 12900KF also
-  has slower E-cores, which the 12400F does not. Pinned to the P-cores
-  (`--affinity 0xff`), one pass matched the unpinned passes: idle 0.58%,
+  has slower E-cores, which the 12400F does not. On the build before
+  repeats were passed over, pinned to the P-cores (`--affinity 0xff`), one
+  pass matched the unpinned passes: idle 0.58%,
   typical 0.78%, stress 1.71%, so Windows already runs the daemon on
   P-cores. Pinned to the E-cores (`--affinity 0xff00`) it came to 0.73,
   1.01 and 2.64%. That is about the most an older or slower core would add,

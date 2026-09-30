@@ -12,11 +12,11 @@ numbers move and the words do not.
 
 ## Next
 
-- [ ] **Decide on skipping unchanged key reports.** The page key readers
-      are about 0.43% of a core, 80% of idle. Skipping the parse when a
-      report's bytes match the last one keeps the "act only on keys going
-      down" rule but not the 100 wakes a second per panel, so it saves part
-      of that at most. Measure it with `bench_daemon.py` before keeping it.
+- [x] ~~**Decide on skipping unchanged key reports.**~~ Kept 2026-09-30:
+      the readers went from 0.42 to 0.50% of a core to 0.28 to 0.37%, the
+      daemon at idle from 0.54 to 0.41 to 0.49%. Small, but it costs nothing
+      and adds up on a machine DCS already loads. What is left is the 100
+      wakes a second per panel; batching them was left undone.
       [PERFORMANCE.md](PERFORMANCE.md), "The page key readers are most of
       idle"
 

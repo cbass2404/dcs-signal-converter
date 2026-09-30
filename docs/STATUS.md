@@ -45,7 +45,13 @@ opens only; nothing was written to a panel.
   and takes `--affinity`; the page key readers are named `keys <device>` so
   it can find them. PERFORMANCE.md re-measured, with an i5-12400F estimate
   from P-core and E-core pinned runs.
-- **Open.** Skipping the parse of an unchanged report, in TODO.md.
+- **Repeats passed over, kept.** A reader now compares each report with
+  the last and parses only when they differ, which cannot lose a press:
+  the same bytes hold the same keys. Readers 0.42 to 0.50% down to 0.28 to
+  0.37%, the idle daemon 0.54 to 0.41 to 0.49%, the main loop unchanged.
+  The rest is Windows waking each reader 100 times a second. Reading
+  buffered reports in batches 30 times a second would cut that for up to
+  33 ms of page key delay; not done, worth perhaps 0.2%.
 
 **Built and flown 2026-09-26: uneven gauges convert in sections.** `ba201c3` to
 `e649e88`. What users see is in [CHANGELOG.md](../CHANGELOG.md); the rules are

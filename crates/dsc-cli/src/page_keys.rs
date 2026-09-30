@@ -95,6 +95,7 @@ pub fn start(
             .name(format!("keys {device}"))
             .spawn(move || {
                 let mut buf = Vec::new();
+                let mut report: Vec<u8> = Vec::new();
                 let mut last: Vec<u16> = Vec::new();
                 loop {
                     if let Err(e) = collection.read(&mut buf) {
@@ -104,6 +105,14 @@ pub fn start(
                         });
                         return;
                     }
+                    // The panels send 100 reports a second whether or not
+                    // anything moved. One the same as the last holds the same
+                    // keys, so it can put none down and is not parsed.
+                    if buf == report {
+                        continue;
+                    }
+                    report.clear();
+                    report.extend_from_slice(&buf);
                     // A report with no buttons in it leaves them as they were.
                     // Acting only on keys going down, never on the report
                     // changing, is what keeps the MCDU's restless bytes 17 to 24

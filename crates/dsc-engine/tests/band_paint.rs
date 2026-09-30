@@ -58,6 +58,9 @@ fn engine(p: Profile) -> Engine {
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).expect("displays");
     let mut e = Engine::new(devices, cat, vec![p]).with_displays(displays);
     e.set_connected(vec![MCDU.into()]);
+    // Every flight here starts its own clock, so the frame cap would read one
+    // flight's paint as a moment ago. These are about what is drawn.
+    e.set_paint_every(Duration::ZERO);
     e
 }
 
@@ -169,6 +172,24 @@ fn a_band_draws_its_word_and_abs_drops_the_sign() {
     let batch = trim(&mut e, -1.5, -3.0, -0.8);
     let w = screen(&batch);
     assert_eq!(row(w, 2), " 1.5ND      LWD     -0.8");
+}
+
+#[test]
+fn a_paint_reports_each_reading_it_converted_once() {
+    let mut e = engine(profile());
+    let batch = trim(&mut e, 1.5, 3.0, 1.5);
+    let mut sources: Vec<&str> = batch.drawn.iter().map(|d| d.source.as_str()).collect();
+    sources.sort_unstable();
+    // Pitch is read by two pieces, the magnitude and its word, and reported
+    // once: what the log needs is the reading, not every piece of it.
+    assert_eq!(sources, ["PITCHTRIMIND", "ROLLTRIMIND", "YAW_TRIM"]);
+    let yaw = batch.drawn.iter().find(|d| d.source == "YAW_TRIM").unwrap();
+    assert_eq!(yaw.raw, raw(PITCH, 1.5));
+    assert_eq!(yaw.text, "1.5", "the characters the glass was given");
+
+    // Nothing moved, so nothing is news.
+    let again = trim(&mut e, 1.5, 3.0, 1.5);
+    assert!(again.drawn.is_empty(), "{:?}", again.drawn);
 }
 
 #[test]

@@ -84,7 +84,14 @@
     {
       "device": "MCDU_Captain",
       "led": "Fail",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "MASTER_CAUTION_LT",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "MCDU_Captain",
@@ -114,7 +121,14 @@
     {
       "device": "MCDU_Captain",
       "led": "RDY",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "APU_READY_LT",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "MCDU_Captain",
@@ -353,7 +367,14 @@
     {
       "device": "PFP3N_Captain",
       "led": "FAIL",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "MASTER_CAUTION_LT",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "PFP3N_Captain",
@@ -502,7 +523,14 @@
     {
       "device": "PFP4_Captain",
       "led": "FAIL",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "MASTER_CAUTION_LT",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "PFP4_Captain",
@@ -651,7 +679,14 @@
     {
       "device": "PFP7_Captain",
       "led": "FAIL",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "MASTER_CAUTION_LT",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "PFP7_Captain",
@@ -931,7 +966,8 @@
             }
           ]
         }
-      ]
+      ],
+      "note": "light set to illuminate only when settings are correct to trigger a jettison"
     },
     {
       "device": "TAKEOFF_PLANEL_2",
@@ -1104,9 +1140,6 @@
       "off": 255,
       "note": "Held at full, because at 0 the screen shows nothing. It lights only while this profile puts fields on the screen, whatever it is bound to, so a screen with nothing on it stays black."
     }
-  ],
-  "disabled_devices": [
-    "ViperAce_ICP"
   ],
   "follows": {
     "CarrierAce_MFD_L": "CarrierAce_MFD_C",
@@ -1322,10 +1355,13 @@
       "start": 1,
       "slots": [
         {
+          "page": "s0vsky",
+          "key": null
+        },
+        {
           "page": null,
           "key": null
         },
-        null,
         null,
         null,
         null,

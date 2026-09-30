@@ -65,6 +65,10 @@ fn engine(p: Profile) -> Engine {
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).expect("displays");
     let mut e = Engine::new(devices, cat, vec![p]).with_displays(displays);
     e.set_connected(vec![MCDU.into()]);
+    // The loads here paint five seconds into a clock of their own, so the
+    // frame cap would read that paint as a moment ago. These are about what
+    // is drawn; the cap is tested in ded_paint.
+    e.set_paint_every(Duration::ZERO);
     e
 }
 

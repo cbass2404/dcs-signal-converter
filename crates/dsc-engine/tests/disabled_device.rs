@@ -30,6 +30,10 @@ fn text_at(address: u16, s: &str) -> Vec<BiosWrite> {
 }
 
 fn engine(drive_ufc: bool) -> Engine {
+    engine_with(drive_ufc, true)
+}
+
+fn engine_with(drive_ufc: bool, plugged_in: bool) -> Engine {
     let devices = DeviceInventory::load(&r("data/devices.json")).expect("devices");
     let cat = Catalogue::load_dir(&r("data/catalogue")).expect("catalogue");
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).expect("displays");
@@ -39,7 +43,11 @@ fn engine(drive_ufc: bool) -> Engine {
         profile.disabled_devices.push(UFC.into());
     }
     let mut e = Engine::new(devices, cat, vec![profile]).with_displays(displays);
-    e.set_connected(vec!["TAKEOFF_PLANEL_2".into(), UFC.into()]);
+    let mut connected = vec!["TAKEOFF_PLANEL_2".to_string()];
+    if plugged_in {
+        connected.push(UFC.into());
+    }
+    e.set_connected(connected);
     e
 }
 
@@ -89,6 +97,17 @@ fn a_driven_ufc_follows_the_dimmer() {
     assert!(
         batches[2].writes.iter().any(|w| w.id.device == UFC),
         "turning the dimmer mid-flight rewrites the UFC backlight"
+    );
+}
+
+#[test]
+fn a_ufc_not_plugged_in_is_never_resolved() {
+    // Driven by the profile but not there. Before, its lamps were still
+    // worked out on every change and handed over as writes with nowhere to go.
+    let batches = fly(&mut engine_with(true, false));
+    assert!(
+        !touches_ufc(&batches),
+        "nothing is worked out for a panel that is not plugged in: {batches:?}"
     );
 }
 

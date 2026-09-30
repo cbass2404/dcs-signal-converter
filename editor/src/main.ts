@@ -37,7 +37,14 @@ import { confirmAction } from "./confirm";
 import { manageConverter } from "./converter";
 import { loadTheme, showSettings } from "./settings";
 import { showFieldCautions, showFlags } from "./flags";
-import { pageBook, pagesChecked, pageSection, pageUnsaved, showPageProblems } from "./pages";
+import {
+  pageBook,
+  pagesChecked,
+  pageSection,
+  pagesOpen,
+  pageUnsaved,
+  showPageProblems,
+} from "./pages";
 import type { PageBook } from "./pages";
 import { setLearnContext, stopLearning } from "./learn";
 import { infoIcon } from "./typeahead";
@@ -1741,10 +1748,10 @@ async function showProfile(file: string): Promise<void> {
         // Snapshotted before the call: the user keeps typing while it is in
         // flight, and a late answer about an older profile must not be shown
         // as though it were about this one.
-        const snapshot = (): string => JSON.stringify([session.profile, book.editing]);
+        const working = pagesOpen(book);
+        const snapshot = (): string => JSON.stringify([session.profile, pagesOpen(book)]);
         const asked = snapshot();
-        const working = book.editing;
-        void checkProfile(session.profile, working?.page ?? null, working?.device ?? null)
+        void checkProfile(session.profile, working)
           .then((found) => {
             if (snapshot() !== asked) return;
             problems = found.problems;
@@ -1752,7 +1759,7 @@ async function showProfile(file: string): Promise<void> {
             drawProblems();
             showFlags(session.profile, pagesChecked(book), found.flags);
             showFieldCautions(session.profile, pagesChecked(book), found.field_cautions);
-            showPageProblems(book, found.page_problems);
+            showPageProblems(book, working, found.page_problems);
             drawNotice(found.notice);
             refreshSave();
           })
@@ -1766,7 +1773,7 @@ async function showProfile(file: string): Promise<void> {
             drawProblems();
             showFlags(session.profile, pagesChecked(book), []);
             showFieldCautions(session.profile, pagesChecked(book), []);
-            showPageProblems(book, []);
+            showPageProblems(book, working, []);
             drawNotice(null);
             refreshSave();
           });

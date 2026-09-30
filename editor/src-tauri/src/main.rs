@@ -386,9 +386,17 @@ struct Findings {
     /// One line for the top of the page, only when a flagged row reads
     /// something the DCS-BIOS nightly has.
     notice: Option<String>,
-    /// Why the page being edited could not be saved. Kept apart from
-    /// `problems`, since the profile saves whatever state the page is in.
-    page_problems: Vec<String>,
+    /// Why each page being edited could not be saved, in the order `working`
+    /// named them. Kept apart from `problems`, since the profile saves
+    /// whatever state the pages are in.
+    page_problems: Vec<Vec<String>>,
+}
+
+/// A page open for editing, and the screen whose section shows it.
+#[derive(serde::Deserialize)]
+struct Working {
+    page: Page,
+    device: String,
 }
 
 /// Every reason the daemon would refuse this profile, for the window to show,
@@ -399,26 +407,24 @@ struct Findings {
 /// because it skips the whole profile and every lamp in it stays dark.
 ///
 /// The profile is checked against the pages as saved, which is what it will
-/// show. `working` is the page open for editing on `device`, if one is: its
-/// fields are flagged and cautioned where they sit, and why it could not be
-/// saved is said apart. A slot's notes, such as a page gone from the
+/// show. `working` is the pages open for editing, one at most per screen:
+/// their fields are flagged and cautioned where they sit, and why each could
+/// not be saved is said apart. A slot's notes, such as a page gone from the
 /// library, are listed with the cautions.
 #[tauri::command]
 fn check_profile(
     profile: Profile,
-    working: Option<Page>,
-    device: Option<String>,
+    working: Vec<Working>,
     cache: tauri::State<check::Cache>,
 ) -> Reply<Findings> {
     let paths = Paths::resolve();
     let saved = paths.pages.library();
-    let (shown, page_problems) = match (&working, &device) {
-        (Some(page), Some(device)) => (
-            pages::library_with(&paths, &profile.module, page),
-            cache.page_problems(&paths, &saved, &profile, page, device),
-        ),
-        _ => (saved.clone(), Vec::new()),
-    };
+    let open: Vec<Page> = working.iter().map(|w| w.page.clone()).collect();
+    let shown = pages::library_with(&paths, &profile.module, &open);
+    let page_problems = working
+        .iter()
+        .map(|w| cache.page_problems(&paths, &saved, &profile, &w.page, &w.device))
+        .collect();
     let (flags, notice) = cache.flags(&paths, &profile, &shown);
     let mut cautions = cache.cautions(&paths, &profile);
     cautions.extend(profile.slot_notes(&saved).into_iter().map(|n| n.text));

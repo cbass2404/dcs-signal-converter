@@ -31,6 +31,15 @@ fn profile() -> Profile {
 }
 
 fn engine() -> (Engine, DisplayCatalogue) {
+    let (mut e, displays) = capped();
+    // `load` starts its own clock and paints five seconds into it, so the
+    // frame cap would read that paint as a moment ago. The cap has its own
+    // test below.
+    e.set_paint_every(Duration::ZERO);
+    (e, displays)
+}
+
+fn capped() -> (Engine, DisplayCatalogue) {
     let devices = DeviceInventory::load(&r("data/devices.json")).expect("devices");
     let cat = Catalogue::load_dir(&r("data/catalogue")).expect("catalogue");
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).expect("displays");
@@ -168,6 +177,50 @@ fn the_ded_backlight_is_a_lamp_a_profile_can_bind() {
             .collect::<Vec<_>>(),
         [1]
     );
+}
+
+#[test]
+fn a_burst_inside_one_frame_is_drawn_once_from_the_latest() {
+    let (mut e, displays) = capped();
+    let mut fb = vec![0u8; SCREEN_BYTES];
+    let t0 = Instant::now();
+    let page = uhf_page(e.catalogue());
+    e.ingest(&page, t0);
+    let loaded = t0 + Duration::from_secs(5);
+    replay(&mut fb, &e.tick(loaded).lcd);
+
+    // Two tunings inside one frame of the load's paint. Neither is drawn
+    // as it arrives: the glass would otherwise take every datagram.
+    let ms = |n| loaded + Duration::from_millis(n);
+    let first = line(e.catalogue(), 2, "  305.10                ", BLANK);
+    let second = line(e.catalogue(), 2, "  305.20                ", BLANK);
+    assert!(
+        e.ingest(&first, ms(10)).lcd.is_empty(),
+        "held for the frame"
+    );
+    assert!(e.ingest(&second, ms(20)).lcd.is_empty(), "still held");
+
+    // Once the frame is up the screen is drawn from the state as it is then,
+    // so the tuning in between never reaches the glass at all.
+    let batch = e.tick(ms(40));
+    assert!(!batch.lcd.is_empty(), "the held paint goes out on a tick");
+    replay(&mut fb, &batch.lcd);
+    assert_eq!(
+        fb,
+        expected(
+            &displays,
+            [
+                ("     UHF     BOTH       ", BLANK),
+                ("  305.20                ", BLANK),
+                ("             *305.00*   ", "             i      i   "),
+                ("  PRE   1 a      TOD    ", BLANK),
+                ("     305.00       NB    ", BLANK),
+            ]
+        )
+    );
+
+    // Drawn once. Nothing new has arrived, so a later tick sends nothing.
+    assert!(e.tick(ms(80)).is_empty());
 }
 
 #[test]

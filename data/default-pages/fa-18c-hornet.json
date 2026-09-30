@@ -411,6 +411,142 @@
           "source": "UFC_COMM2_DISPLAY"
         }
       ]
+    },
+    {
+      "id": "s0vsky",
+      "name": "DED-UFC",
+      "display": "DED",
+      "fields": [
+        {
+          "cells": "0-23",
+          "content": [
+            {
+              "source": "UFC_SCRATCHPAD_STRING_1_DISPLAY",
+              "inverse": true
+            },
+            {
+              "source": "UFC_SCRATCHPAD_STRING_2_DISPLAY",
+              "inverse": true
+            },
+            {
+              "source": "UFC_SCRATCHPAD_NUMBER_DISPLAY",
+              "inverse": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "OPT1"
+            },
+            {
+              "source": "UFC_OPTION_CUEING_1",
+              "inverse": true
+            },
+            {
+              "source": "UFC_OPTION_DISPLAY_1",
+              "inverse": true
+            }
+          ]
+        },
+        {
+          "cells": "24-47",
+          "content": [
+            {
+              "gap": true
+            },
+            {
+              "text": "OPT2"
+            },
+            {
+              "source": "UFC_OPTION_CUEING_2",
+              "inverse": true
+            },
+            {
+              "source": "UFC_OPTION_DISPLAY_2",
+              "inverse": true
+            }
+          ]
+        },
+        {
+          "cells": "48-71",
+          "content": [
+            {
+              "gap": true
+            },
+            {
+              "text": "OPT3"
+            },
+            {
+              "source": "UFC_OPTION_CUEING_3",
+              "inverse": true
+            },
+            {
+              "source": "UFC_OPTION_DISPLAY_3",
+              "inverse": true
+            }
+          ]
+        },
+        {
+          "cells": "72-95",
+          "content": [
+            {
+              "text": "C1"
+            },
+            {
+              "gap": true,
+              "width": 8
+            },
+            {
+              "text": "C2"
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "OPT4"
+            },
+            {
+              "source": "UFC_OPTION_CUEING_4",
+              "inverse": true
+            },
+            {
+              "source": "UFC_OPTION_DISPLAY_4",
+              "inverse": true
+            }
+          ]
+        },
+        {
+          "cells": "96-119",
+          "content": [
+            {
+              "source": "UFC_COMM1_DISPLAY",
+              "inverse": true
+            },
+            {
+              "gap": true,
+              "width": 8
+            },
+            {
+              "source": "UFC_COMM2_DISPLAY",
+              "inverse": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "OPT5"
+            },
+            {
+              "source": "UFC_OPTION_CUEING_5",
+              "inverse": true
+            },
+            {
+              "source": "UFC_OPTION_DISPLAY_5",
+              "inverse": true
+            }
+          ]
+        }
+      ]
     }
   ]
 }

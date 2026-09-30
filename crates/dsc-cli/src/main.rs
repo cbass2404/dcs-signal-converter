@@ -3,7 +3,7 @@
 //! Exists ahead of the UI so every layer can be exercised on real hardware and a
 //! real DCS-BIOS stream before any of it is wrapped in Tauri.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::net::{Ipv4Addr, UdpSocket};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -20,10 +20,10 @@ use dsc_config::nightly_only::{Change, NightlyOnly};
 use dsc_config::paths::{Layout, Paths};
 use dsc_config::{
     file_stem, profile_name_for, Catalogue, DeviceInventory, DisplayCatalogue, PageLibrary, Pages,
-    Profile, Profiles, Readout, Span, Transport,
+    Profile, Profiles, Readout, Transport,
 };
 use dsc_config::{Flag, Place, Unsound};
-use dsc_engine::{Batch, Cause, Engine, Watcher};
+use dsc_engine::{Batch, Cause, Drawn, Engine, Watcher};
 use wctrl_hid::Device;
 
 #[cfg(windows)]
@@ -1697,17 +1697,17 @@ struct Trace {
     /// anything in it moves, so without this a shared address logs its
     /// neighbours too, and a string logs once per word of it that arrives.
     last: HashMap<String, String>,
-    /// Display fields that convert a position into a reading, by signal name.
+    /// Signals a display field converts into a reading, by name.
     ///
     /// The raw number is what the stream carries and the converted one is what
     /// reaches the glass, and neither alone answers "is this right". A log
     /// showing 8738 cannot be checked against a cockpit gauge, and one showing
     /// only 100 cannot be checked against the stream.
     ///
-    /// The readout itself is kept rather than its numbers copied out, so the
-    /// line and the glass cannot drift apart: both go through
-    /// `Readout::format_number`.
-    converts: HashMap<String, (Span, u16)>,
+    /// These are logged from the engine's paint, as [`Drawn`], rather than
+    /// converted again here: the line is what the glass was given, and the
+    /// work is done once.
+    converts: HashSet<String>,
 }
 
 /// One signal the active profile reads, and how to read it.
@@ -1804,7 +1804,7 @@ impl Trace {
 
     /// Index the signals the active profile reads. Called on every aircraft
     /// change, since a different profile reads different signals.
-    fn follow(&mut self, profile: &Profile, cat: &Catalogue) {
+    fn follow(&mut self, profile: &Profile, cat: &Catalogue, connected: &[String]) {
         self.sources.clear();
         self.last.clear();
         self.converts.clear();
@@ -1814,14 +1814,25 @@ impl Trace {
         let Some(module) = cat.module(&profile.module) else {
             return;
         };
+        // Only what reaches a panel. A disabled device, or one not plugged in,
+        // is never written, so following its rows logged readings nobody
+        // would see. The engine's rule, so the log and the panels agree.
+        let runs = |device: &str| profile.drives(device) && connected.iter().any(|k| k == device);
         let sources = profile
             .bindings
             .iter()
+            .filter(|b| runs(&b.device))
             .flat_map(|b| b.conditions.iter().map(|c| c.source.as_str()))
             // A display field reads the stream exactly as a lamp condition
             // does. Leaving it out meant a paint line appeared with nothing
             // above it saying what had moved.
-            .chain(profile.readouts.iter().flat_map(Readout::sources));
+            .chain(
+                profile
+                    .readouts
+                    .iter()
+                    .filter(|r| runs(&r.device))
+                    .flat_map(Readout::sources),
+            );
 
         for source in sources {
             let Some(o) = module.signal(source).and_then(|s| s.primary()) else {
@@ -1850,21 +1861,19 @@ impl Trace {
                 // with. Held by name rather than folded into the entry, so a
                 // signal that is both a lamp condition and a display field
                 // still registers once and still logs once.
-                if let Some(span) =
-                    profile
-                        .readouts
-                        .iter()
-                        .flat_map(|r| r.content.iter())
-                        .find(|s| {
-                            s.source == source
-                                && (s.reads.is_some()
-                                    || !s.conversions.is_empty()
-                                    || !s.value_aliases.is_empty())
-                        })
+                if profile
+                    .readouts
+                    .iter()
+                    .filter(|r| runs(&r.device))
+                    .flat_map(|r| r.content.iter())
+                    .any(|s| {
+                        s.source == source
+                            && (s.reads.is_some()
+                                || !s.conversions.is_empty()
+                                || !s.value_aliases.is_empty())
+                    })
                 {
-                    let max = o.number_max();
-                    self.converts
-                        .insert(source.to_string(), (span.clone(), max));
+                    self.converts.insert(source.to_string());
                 }
                 let entry = Followed::Number {
                     name: source.to_string(),
@@ -1899,16 +1908,14 @@ impl Trace {
             for followed in signals {
                 let shown = match followed {
                     Followed::Number { name, mask, shift } => {
-                        let raw = (w.value & mask).checked_shr(u32::from(*shift)).unwrap_or(0);
-                        // Both numbers, because the raw one is checkable
-                        // against the stream and the converted one against the
-                        // gauge in the cockpit.
-                        match self.converts.get(name) {
-                            Some((span, max)) => {
-                                format!("{raw} -> {}", span.format_number(raw, *max))
-                            }
-                            None => raw.to_string(),
+                        // Logged when it is drawn, with what it was drawn as.
+                        if self.converts.contains(name) {
+                            continue;
                         }
+                        (w.value & mask)
+                            .checked_shr(u32::from(*shift))
+                            .unwrap_or(0)
+                            .to_string()
                     }
                     // Quoted, because on a display field the padding is the
                     // layout: a right aligned scratchpad would otherwise read
@@ -1933,6 +1940,34 @@ impl Trace {
                 }
                 self.last.insert(name.to_string(), shown);
             }
+        }
+    }
+}
+
+impl Trace {
+    /// Log the readings a paint converted, as the glass was given them.
+    ///
+    /// Both numbers, because the raw one is checkable against the stream and
+    /// the converted one against the gauge in the cockpit. Under the same key
+    /// and in the same shape as a stream line, so a reading reads the same in
+    /// the log whichever path wrote it.
+    fn drawn(&mut self, drawn: &[Drawn], elapsed: u128) {
+        let now = Instant::now();
+        for d in drawn {
+            if !self.converts.contains(&d.source) {
+                continue;
+            }
+            let shown = format!("{} -> {}", d.raw, d.text);
+            if self.last.get(&d.source) == Some(&shown) {
+                continue;
+            }
+            let name = &d.source;
+            let line = format!("{elapsed:>8} ms  signal  {name:<28} = {shown}");
+            if self.verbose {
+                println!("{line}");
+            }
+            self.log(&format!("sig:{name}"), now, line);
+            self.last.insert(name.clone(), shown);
         }
     }
 }
@@ -1989,7 +2024,7 @@ fn process_listed(stdout: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{dlog, process_listed, Followed, Trace};
+    use super::{dlog, process_listed, Drawn, Followed, Trace};
     use dsc_bios::{BiosState, Write as BiosWrite};
     use dsc_config::{Catalogue, Module, Profile};
     use std::time::Instant;
@@ -2044,11 +2079,28 @@ mod tests {
         (Catalogue::from_modules(vec![module]), profile)
     }
 
+    /// Both of the fixture's devices, plugged in.
+    fn both() -> Vec<String> {
+        vec!["PTO2".into(), "CarrierAce_UFC".into()]
+    }
+
+    #[test]
+    fn a_device_not_plugged_in_is_not_followed() {
+        let (cat, profile) = fixture();
+        let mut trace = Trace::default();
+        trace.follow(&profile, &cat, &["PTO2".to_string()]);
+        assert!(trace.sources.contains_key(&100), "the PTO2 is there");
+        assert!(
+            !trace.sources.contains_key(&200),
+            "the UFC is not, so its field is treated as turned off"
+        );
+    }
+
     #[test]
     fn a_display_field_is_followed_the_same_as_a_lamp_condition() {
         let (cat, profile) = fixture();
         let mut trace = Trace::default();
-        trace.follow(&profile, &cat);
+        trace.follow(&profile, &cat, &both());
 
         assert!(
             trace.sources.contains_key(&100),
@@ -2083,6 +2135,28 @@ mod tests {
     }
 
     #[test]
+    fn a_disabled_device_is_not_followed() {
+        let (cat, mut profile) = fixture();
+        profile.disabled_devices.push("CarrierAce_UFC".into());
+        let mut trace = Trace::default();
+        trace.follow(&profile, &cat, &both());
+
+        assert!(
+            trace.sources.contains_key(&100),
+            "a lamp on a driven device is still followed"
+        );
+        assert!(
+            !trace.sources.contains_key(&200),
+            "a field on a disabled device reaches no panel, so it is not logged"
+        );
+
+        profile.disabled_devices = vec!["PTO2".into()];
+        trace.follow(&profile, &cat, &both());
+        assert!(!trace.sources.contains_key(&100), "nor is a lamp on one");
+        assert!(trace.sources.contains_key(&200));
+    }
+
+    #[test]
     fn a_gauge_logs_the_position_and_what_it_converts_to() {
         let module: Module = serde_json::from_str(
             r#"{
@@ -2110,12 +2184,14 @@ mod tests {
         .unwrap();
 
         let mut trace = Trace::default();
-        trace.follow(&profile, &Catalogue::from_modules(vec![module]));
+        trace.follow(
+            &profile,
+            &Catalogue::from_modules(vec![module]),
+            &["CarrierAce_UFC".to_string()],
+        );
 
-        // 8738 of 65535 on a face marked 0 to 750 is 100 metres. Neither number
-        // alone is checkable: the position can be compared with the stream and
-        // the reading with the gauge in the cockpit, and a fault shows up as
-        // the two disagreeing.
+        // The stream's copy is not converted here: the engine does that once,
+        // for the glass.
         let mut state = BiosState::new();
         let writes = vec![BiosWrite {
             address: 300,
@@ -2125,6 +2201,18 @@ mod tests {
             state.apply(*w);
         }
         trace.signals(&writes, &state, 0);
+        assert_eq!(trace.last.get("PLT_RV5_ALT"), None);
+
+        // 8738 of 65535 on a face marked 0 to 750 is 100 metres. Neither number
+        // alone is checkable: the position can be compared with the stream and
+        // the reading with the gauge in the cockpit, and a fault shows up as
+        // the two disagreeing.
+        let drawn = Drawn {
+            source: "PLT_RV5_ALT".into(),
+            raw: 8738,
+            text: "100".into(),
+        };
+        trace.drawn(std::slice::from_ref(&drawn), 0);
         assert_eq!(
             trace.last.get("PLT_RV5_ALT").map(String::as_str),
             Some("8738 -> 100")
@@ -2137,7 +2225,7 @@ mod tests {
         // not, so nothing is invented for it.
         let (cat, profile) = fixture();
         let mut trace = Trace::default();
-        trace.follow(&profile, &cat);
+        trace.follow(&profile, &cat, &both());
 
         let mut state = BiosState::new();
         let writes = vec![BiosWrite {
@@ -2158,7 +2246,7 @@ mod tests {
     fn a_string_is_logged_once_it_is_whole_and_not_once_per_word() {
         let (cat, profile) = fixture();
         let mut trace = Trace::default();
-        trace.follow(&profile, &cat);
+        trace.follow(&profile, &cat, &both());
 
         // " 264.000" packed two characters to a word, low byte first.
         let mut state = BiosState::new();
@@ -2209,7 +2297,7 @@ mod tests {
 
         let mut trace = Trace::default();
         assert!(!trace.verbose, "nothing here reaches a console");
-        trace.follow(&profile, &cat);
+        trace.follow(&profile, &cat, &both());
 
         let mut state = BiosState::new();
         let writes = vec![BiosWrite {
@@ -2930,7 +3018,9 @@ fn run(
 
     let mut listener = Listener::bind(Ipv4Addr::UNSPECIFIED)
         .context("joining the DCS-BIOS multicast group on 239.255.50.10:5010")?;
-    listener.set_read_timeout(Some(Duration::from_millis(100)))?;
+    // One frame, so a paint the frame cap held back goes out on time even
+    // when no datagram follows the one that moved it.
+    listener.set_read_timeout(Some(dsc_engine::PAINT_EVERY))?;
 
     // The panels latch. Ctrl-C must reach the clearing code rather than killing
     // the process, or the lamps stay lit until something else writes them.
@@ -3094,7 +3184,7 @@ fn run(
                     if let Some(name) = engine.aircraft() {
                         if let Some(p) = engine.active_profile() {
                             let p = p.clone();
-                            trace.follow(&p, engine.catalogue());
+                            trace.follow(&p, engine.catalogue(), engine.connected());
                             let line = format!("aircraft {name}  ->  profile {}", p.name);
                             println!("{line}");
                             dlog::context(&line);
@@ -3141,6 +3231,15 @@ fn run(
                                 });
                             kept!("page     {device} {key}  ->  slot {}{what}", slot + 1);
                             apply(&batch, &mut panels, dry_run, &mut trace, elapsed)?;
+                            // The fields on the glass changed, so the signals
+                            // worth logging did too. Without this a blank slot
+                            // went on logging the page it replaced. Flushed
+                            // first, so the old page's last lines are not lost.
+                            if let Some(p) = engine.active_profile() {
+                                let p = p.clone();
+                                trace.flush(now + dlog::THROTTLE);
+                                trace.follow(&p, engine.catalogue(), engine.connected());
+                            }
                         }
                         None => note!(
                             "page     {device} {key}  ->  slot {} changes nothing",
@@ -3177,7 +3276,7 @@ fn run(
                         // Followed whether or not a console is watching: which
                         // signals this profile reads is most of what the log is
                         // for, and the console only ever saw it with --verbose.
-                        trace.follow(p, engine.catalogue());
+                        trace.follow(p, engine.catalogue(), engine.connected());
                         note!(
                             "profile  following {} signal address(es) for {}",
                             trace.sources.len(),
@@ -3251,7 +3350,7 @@ fn run(
                         apply(&batch, &mut panels, dry_run, &mut trace, elapsed)?;
                         if let Some(p) = engine.active_profile() {
                             let p = p.clone();
-                            trace.follow(&p, engine.catalogue());
+                            trace.follow(&p, engine.catalogue(), engine.connected());
                         }
                     } else {
                         // DCS runs a release that is not installed, which is an
@@ -3321,6 +3420,8 @@ fn apply(
     trace: &mut Trace,
     elapsed: u128,
 ) -> Result<()> {
+    // Before the early return: a reading can move without a cell changing.
+    trace.drawn(&batch.drawn, elapsed);
     if batch.is_empty() {
         return Ok(());
     }

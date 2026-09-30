@@ -428,8 +428,8 @@ export interface Findings {
   cautions: string[];
   /** About what one display field will draw, shown on that field. */
   field_cautions: FieldCaution[];
-  /** Why the page open for editing could not be saved. Never the profile's. */
-  page_problems: string[];
+  /** Why each page open for editing could not be saved, in the order asked. Never the profile's. */
+  page_problems: string[][];
   flags: FlagView[];
   /** One line for the page, only when a flagged row needs the DCS-BIOS nightly. */
   notice: string | null;

@@ -101,11 +101,21 @@ opens only; nothing was written to a panel.
   1.35% and 3.81 to 3.85%; nothing dropped; the longest pass 771 to 13 ms
   at typical, since the MCDU font upload is on its own thread. Panels looked
   right to Cory throughout.
-- **Open: a 94 ms pass once under live stress.** Not USB any more. Probably
-  the sweep at aircraft load, forced at the 2.5 s settle limit because the
-  benchmark stream never goes quiet, with a datagram carrying every output
-  in the same pass; typical's sweep took 13 ms. Recording when the longest
-  pass happened in the status line would confirm it.
+- **Flown 2026-09-30 in the Mosquito on a416010**, from
+  `data/logs/dcs-signal.log`: page keys with the repeat skip in place, ten
+  swaps across the MCDU (Cruise, War, blank), ICP and UFC, each logged
+  once, none missed; Cory saw faster, smoother swaps. No errors or
+  warnings. Two minutes of status lines: the MCDU took 185 to 207 reports
+  a second (about 12 screens), its writer busy 18 to 21%, about 2 screens
+  a second superseded, and the longest main loop pass was 2 ms, aircraft
+  load included. The benchmark's typical scenario (181 reports a second)
+  matches real flight.
+- **A 94 ms pass once under live stress, not seen in flight.** Not USB any
+  more. Probably the sweep at aircraft load, forced at the 2.5 s settle
+  limit because the benchmark stream never goes quiet, with a datagram
+  carrying every output in the same pass; typical's sweep took 13 ms and
+  real flight's 2 ms. Recording when the longest pass happened in the
+  status line would confirm it. Not worth chasing unless it shows in use.
 
 **Built and flown 2026-09-26: uneven gauges convert in sections.** `ba201c3` to
 `e649e88`. What users see is in [CHANGELOG.md](../CHANGELOG.md); the rules are

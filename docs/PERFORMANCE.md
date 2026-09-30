@@ -176,6 +176,12 @@ anything else:
   MCDU's to about 0.22 to 0.31%, and the ICP's to about 0.56% under stress.
 - **Private memory is about 1 MB higher live**, for the open panels.
 
+**Real flight matches typical.** Two minutes in the Mosquito on this build,
+from the log's status lines: the MCDU took 185 to 207 reports a second,
+about 12 screens, against typical's 181, with its writer busy 18 to 21% of
+each second. The longest main loop pass was 2 ms, aircraft load included,
+so the 94 ms pass under stress belongs to that scenario and not to flying.
+
 **The paint cap does not show up here.** Measured 2026-09-29 with the old
 tick-sampled timing, and not repeated since. The build before it (52f1120)
 was run alternately with 255bb80, same machine, same hour, three pairs of

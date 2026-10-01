@@ -7,20 +7,23 @@
 // it is saved on its own and every profile on the module shares it. The
 // profile's Save writes none of this.
 //
-// A signal is a short chain of parts, each one DCS-BIOS signal shaped exactly
-// the way a reading is, laid side by side: the F-16's three fuel drums, each
-// rounded down and wrapped at 10, read as one number. How it is drawn, its
-// words and colours, is the piece's that draws it.
+// A signal is one of two kinds. A number is a short chain of parts, each one
+// DCS-BIOS signal shaped exactly the way a reading is, laid side by side: the
+// F-16's three fuel drums, each rounded down and wrapped at 10, read as one
+// number. How it is drawn, its words and colours, is the piece's that draws
+// it. Lamp conditions are tests written as a lamp's are, for every lamp that
+// repeats one cockpit lamp; each lamp keeps its own brightness.
 
 import { deleteSignal, newPageId, saveSignal } from "./api";
-import { iconButton } from "./binding";
+import { bindingEditor, iconButton } from "./binding";
 import { confirmAction } from "./confirm";
 import { noteEditor } from "./note";
 import { signalsChanged } from "./pages";
 import type { PageBook } from "./pages";
 import { termControls } from "./readout";
+import { isLampSignal } from "./stored";
 import { infoIcon } from "./typeahead";
-import type { Page, SignalView, Span, StoredSignal } from "./types";
+import type { Binding, Led, Page, Profile, SignalView, Span, StoredSignal } from "./types";
 
 function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -44,6 +47,8 @@ export interface SignalContext {
   fail: (where: string, e: unknown) => void;
   /** The library changed, so the profile's pages want checking again. */
   changed: () => void;
+  /** The profile open here, whose lamps may light by a signal. */
+  profile: () => Profile;
 }
 
 /** One signal as the window holds it while it is being edited. */
@@ -53,6 +58,27 @@ interface Working {
   baseline: string;
   /** Made here and never saved. */
   fresh: boolean;
+  /** Lamp conditions rather than a number. Fixed when it is made. */
+  lamp: boolean;
+}
+
+/**
+ * The lamp a signal's conditions are written against while they are edited:
+ * one that only turns on and off, so a test picked for a signal is a
+ * threshold. A scale can still be chosen, for a dimmer.
+ */
+function standIn(name: string): Led {
+  return {
+    name,
+    label: name,
+    kind: "indicator",
+    max: 1,
+    on_value: 1,
+    dimmable: false,
+    verified: true,
+    note: "",
+    governs: [],
+  } as unknown as Led;
 }
 
 const sameName = (a: string, b: string): boolean =>
@@ -77,10 +103,11 @@ export function signalSection(ctx: SignalContext): {
   const opened = new Set<string>();
   const list = el("div", {});
   const lead = el("p", { class: "meta" });
-  const add = el("button", { class: "add small" }, "+ a stored signal");
+  const add = el("button", { class: "add small" }, "+ a stored number");
+  const addLamp = el("button", { class: "add small" }, "+ stored lamp conditions");
 
-  const hold = (signal: StoredSignal, fresh: boolean): Working => {
-    const w = { signal: structuredClone(signal), baseline: JSON.stringify(signal), fresh };
+  const hold = (signal: StoredSignal, fresh: boolean, lamp = isLampSignal(signal)): Working => {
+    const w = { signal: structuredClone(signal), baseline: JSON.stringify(signal), fresh, lamp };
     working.set(signal.id, w);
     return w;
   };
@@ -106,15 +133,33 @@ export function signalSection(ctx: SignalContext): {
    * changes not yet saved.
    */
   const card = (w: Working): HTMLElement => {
+    // Where it is used: pages for a number, this profile's lamps for lamp
+    // conditions. Lamps in other profiles are the converter's to refuse.
     const usedBy = (): string[] =>
-      book.saved.filter((p) => draws(p, w.signal.id)).map((p) => p.name);
+      w.lamp
+        ? ctx
+            .profile()
+            .bindings.filter((b) => b.signal === w.signal.id)
+            .map((b) => b.led)
+        : book.saved.filter((p) => draws(p, w.signal.id)).map((p) => p.name);
     const drawnOn = (): string => {
       const users = usedBy();
+      if (w.lamp) return users.length ? `lights ${users.join(", ")}` : "lights no lamp here";
       return users.length ? `drawn on ${users.join(", ")}` : "not drawn on any page";
     };
 
     if (!opened.has(w.signal.id) && !unsaved(w)) {
-      const sources = w.signal.terms.map((t) => t.source || "a part with no signal yet");
+      const tested = [
+        ...new Set(
+          [...w.signal.conditions, ...(w.signal.any_of ?? []).flatMap((b) => b.conditions)].map(
+            (c) => c.source || "a condition with no signal yet",
+          ),
+        ),
+      ];
+      const sources = w.lamp
+        ? tested
+        : w.signal.terms.map((t) => t.source || "a part with no signal yet");
+      const reads = w.lamp ? `tests ${sources.join(", ")}` : `reads ${sources.join(", then ")}`;
       const edit = iconButton("pencil", "\u270E", "Edit this signal", () => {
         opened.add(w.signal.id);
         redraw();
@@ -129,7 +174,7 @@ export function signalSection(ctx: SignalContext): {
             "div",
             { class: "grow" },
             el("strong", {}, w.signal.name),
-            el("div", { class: "meta" }, `reads ${sources.join(", then ")} · ${drawnOn()}`),
+            el("div", { class: "meta" }, `${reads} · ${drawnOn()}`),
             w.signal.note ? el("div", { class: "meta" }, w.signal.note) : "",
           ),
           edit,
@@ -160,18 +205,43 @@ export function signalSection(ctx: SignalContext): {
           { class: "display-head" },
           el("label", { class: "meta" }, "Name ", name),
           state,
-          infoIcon(
-            "About stored signals",
-            "A number made once, for any page on this aircraft to draw: pick " +
-              '"a stored signal" as a piece of a field. Each part reads one ' +
-              "signal and shapes it the way a reading does, and the parts are " +
-              "laid side by side, so three fuel drums, each rounded down and " +
-              "wrapped at 10, read as one number. Rounding each drum on its own " +
-              "is what stops a drum that is rolling counting twice. Words and " +
-              "colours belong to the piece that draws it.",
-          ),
+          w.lamp
+            ? infoIcon(
+                "About stored lamp conditions",
+                "Conditions written once, for every lamp that repeats one cockpit " +
+                  'lamp: choose "Use a stored signal" on each lamp. Each test ' +
+                  "lights the lamp or leaves it off, and a scale dims it. Every " +
+                  "lamp keeps its own brightness, so one can be full and another " +
+                  "dimmer from the same conditions.",
+              )
+            : infoIcon(
+                "About stored signals",
+                "A number made once, for any page on this aircraft to draw: pick " +
+                  '"a stored signal" as a piece of a field. Each part reads one ' +
+                  "signal and shapes it the way a reading does, and the parts are " +
+                  "laid side by side, so three fuel drums, each rounded down and " +
+                  "wrapped at 10, read as one number. Rounding each drum on its own " +
+                  "is what stops a drum that is rolling counting twice. Words and " +
+                  "colours belong to the piece that draws it.",
+              ),
         ),
       );
+
+      if (w.lamp) {
+        body.append(
+          bindingEditor({
+            binding: w.signal as unknown as Binding,
+            led: standIn(w.signal.name),
+            signals: ctx.signals,
+            targets: () => [],
+            deviceName: (key) => key,
+            conditionsOnly: true,
+            onChange: edited,
+            onCommit: edited,
+          }),
+          noteEditor(w.signal, "signal", edited, true),
+        );
+      }
 
       const chain = el("div", { class: "chain" });
       w.signal.terms.forEach((term, i) => {
@@ -221,11 +291,13 @@ export function signalSection(ctx: SignalContext): {
         draw();
       });
       // Last, after the parts, so it reads as the summary of what they make.
-      body.append(
-        chain,
-        el("div", { class: "chain-add" }, more),
-        noteEditor(w.signal, "signal", edited, true),
-      );
+      if (!w.lamp) {
+        body.append(
+          chain,
+          el("div", { class: "chain-add" }, more),
+          noteEditor(w.signal, "signal", edited, true),
+        );
+      }
 
       const save = el("button", { class: "primary" }, "Save signal");
       save.disabled = book.broken !== null;
@@ -256,11 +328,12 @@ export function signalSection(ctx: SignalContext): {
         // cannot be undone. While a page draws it there is only Close, since
         // every piece drawing it would be left drawing nothing.
         const places = usedBy().map((p) => `- ${p}`);
+        const where = w.lamp ? "These lamps light by it" : "These pages draw it";
         void confirmAction(
           `Delete the stored signal ${w.signal.name}?` +
             (places.length > 0
-              ? `\n\nThese pages draw it:\n${places.join("\n")}` +
-                "\n\nTake it off those pages before it can be deleted."
+              ? `\n\n${where}:\n${places.join("\n")}` +
+                `\n\nTake it off those ${w.lamp ? "lamps" : "pages"} before it can be deleted.`
               : `\n\nEvery profile on ${module} loses it.`) +
             "\n\nDeletion cannot be undone.",
           "Delete",
@@ -292,10 +365,11 @@ export function signalSection(ctx: SignalContext): {
       ? `The page file for ${module} would not load, so its stored signals cannot be edited until it is fixed: ${book.broken}`
       : `Numbers made once and named, for any page on ${module} to draw. Each is saved on its own, and every profile on ${module} shares it.`;
     add.disabled = book.broken !== null;
+    addLamp.disabled = book.broken !== null;
     list.replaceChildren(...shown().map(card));
   };
 
-  add.addEventListener("click", () => {
+  const start = (lamp: boolean): void => {
     // Avoiding the pages not saved yet as well, since a page and a signal
     // never share an id.
     const avoid = [
@@ -304,13 +378,16 @@ export function signalSection(ctx: SignalContext): {
     ];
     void newPageId(avoid).then(
       (id) => {
-        hold({ id, name: freeName("New signal", id), terms: [{ source: "" }] }, true);
+        const name = freeName(lamp ? "New lamp conditions" : "New signal", id);
+        hold({ id, name, terms: lamp ? [] : [{ source: "" }], conditions: [] }, true, lamp);
         opened.add(id);
         redraw();
       },
       (e: unknown) => ctx.fail("Adding a signal", e),
     );
-  });
+  };
+  add.addEventListener("click", () => start(false));
+  addLamp.addEventListener("click", () => start(true));
 
   redraw();
   return {
@@ -320,7 +397,7 @@ export function signalSection(ctx: SignalContext): {
       el("h2", {}, "Stored Signals"),
       lead,
       list,
-      el("div", { class: "chain-add" }, add),
+      el("div", { class: "chain-add" }, add, addLamp),
     ),
     unsaved: () => [...working.values()].some(unsaved),
   };

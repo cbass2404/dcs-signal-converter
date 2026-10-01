@@ -54,6 +54,8 @@ export interface Binding {
    * follows one of two seats' knobs with nothing saying which seat is taken.
    */
   pick?: "brightest" | "latest";
+  /** A stored signal of lamp conditions this lamp lights by, in place of its own. */
+  signal?: string;
   /**
    * Mirror another lamp on the same device, by name. A link rather than a copy,
    * so changing what the other lamp reads moves this one with it.
@@ -173,6 +175,8 @@ export interface Span {
    * number; the piece only says how it looks.
    */
   signal?: string;
+  /** A stored number deciding a switch's cases, in place of `switch`. */
+  switch_signal?: string;
   /**
    * Draw nothing, and take whatever cells the rest of the chain leaves.
    *
@@ -419,6 +423,8 @@ export type FlagView = { text: string } & (
   | { at: "branch"; binding: number; branch: number; index: number }
   /** A field on a page carries the page's id, and its index is into the page's fields. */
   | { at: "field"; readout: number; page?: string }
+  /** A lamp, through the stored signal it lights by. */
+  | { at: "signal"; binding: number }
 );
 
 /**
@@ -500,7 +506,15 @@ export interface StoredSignal {
   /** What the window shows. Unique on its module. */
   name: string;
   note?: string;
+  /** A number's parts. Empty on lamp conditions. */
   terms: Term[];
+  /**
+   * Lamp conditions, written as a lamp's are, for every lamp that lights by
+   * this signal. Empty on a number.
+   */
+  conditions: Condition[];
+  any_of?: Branch[];
+  pick?: "brightest" | "latest";
 }
 
 /** One module's pages, as the editor opens them with a profile. */

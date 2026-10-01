@@ -57,3 +57,13 @@ unless this says what moved.
   words and colours there. Each has a note, is saved on its own, is shared
   by every profile on the aircraft, and travels with an exported page.
 - **A reading can round up** as well as down or to the nearest.
+- **Stored lamp conditions.** Write a lamp's logic once, seat choice and
+  all, and point any number of lamps at it, on any panel: the CH-47's
+  master caution on every CDU and the PTO2 from one set of conditions.
+  Each lamp keeps its own brightness.
+- **A switch can be decided by a stored signal**, in its units: a FUEL
+  label red at or below 999 and green from 1000.
+- **Switch cases read like lamp tests**: is exactly, is one of, is
+  between, is at least, is at most, or is anything else. At least and at
+  most work in alias bands too.
+- **A stored number is worked out only when one of its parts moves.**

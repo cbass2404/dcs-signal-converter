@@ -1822,7 +1822,7 @@ impl Trace {
             .bindings
             .iter()
             .filter(|b| runs(&b.device))
-            .flat_map(|b| b.conditions.iter().map(|c| c.source.as_str()))
+            .flat_map(|b| b.sources())
             // A display field reads the stream exactly as a lamp condition
             // does. Leaving it out meant a paint line appeared with nothing
             // above it saying what had moved.
@@ -2690,7 +2690,9 @@ fn flag_lines(
             group.1.push(&f.source);
         }
         group.2[match f.place {
-            Place::Condition { .. } => 0,
+            // A stored signal's chain goes the way a lamp's own does; counted
+            // with the lamps, since that is what it costs most often.
+            Place::Condition { .. } | Place::Signal { .. } => 0,
             Place::Branch { .. } => 1,
             Place::Field { .. } => 2,
         }] += 1;

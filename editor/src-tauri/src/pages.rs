@@ -319,6 +319,23 @@ pub fn delete_signal(module: String, id: String) -> Reply<PagesView> {
             drawing.join(", ")
         ));
     }
+    // Lamps light by one from their profiles, which this window may not have
+    // open: every saved profile on the module is asked.
+    let lighting: Vec<String> = profiles_on(&paths, &module)
+        .iter()
+        .flat_map(|(_, p)| {
+            p.bindings
+                .iter()
+                .filter(|b| b.signal.as_deref() == Some(id.as_str()))
+                .map(move |b| format!("{} in {}", b.led, p.name))
+        })
+        .collect();
+    if !lighting.is_empty() {
+        return Err(format!(
+            "It was not deleted, because these lamps light by it: {}. Take it off them first.",
+            lighting.join(", ")
+        ));
+    }
     if let Some(file) = lib.files.get_mut(&module) {
         file.signals.retain(|s| s.id != id);
     }

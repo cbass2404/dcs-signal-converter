@@ -1796,6 +1796,7 @@ async function showProfile(file: string): Promise<void> {
     tell: showBanner,
     fail: showError,
     changed: () => session.recheck(),
+    profile: () => session.profile,
   });
   // A page or a stored signal open with changes is unsaved work too, though
   // Save does not write either.

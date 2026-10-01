@@ -38,7 +38,7 @@ import type { SpanKind } from "./content";
 import { cautionSlot, flagSlot } from "./flags";
 import { gaugeTable, gaugeTables, matchingTable, tableRows } from "./gauges";
 import { noteEditor } from "./note";
-import { storedSignal, storedSignals } from "./stored";
+import { isLampSignal, storedSignal, storedSignals } from "./stored";
 import { infoIcon, signalPicker } from "./typeahead";
 import {
   aliasColour,
@@ -1011,10 +1011,13 @@ function bandTrouble(band: string): string {
     const at = s.indexOf(split);
     const lo = s.slice(0, at);
     const hi = s.slice(at + split.length);
-    if (!number(lo) || !number(hi)) {
-      return 'A band is two readings, as in "-1.5..-0.1".';
+    // One end may be left open: at least, or at most.
+    const open = (part: string): boolean => part.trim() === "";
+    if ((!number(lo) && !open(lo)) || (!number(hi) && !open(hi)) || (open(lo) && open(hi))) {
+      return 'A band is two readings, as in "-1.5..-0.1", or one and an open end, as in "1000..".';
     }
-    if (Number(hi) < Number(lo)) return "This band ends before it starts.";
+    if (!open(lo) && !open(hi) && Number(hi) < Number(lo))
+      return "This band ends before it starts.";
     return "";
   }
   if (s.includes(",")) {
@@ -2321,6 +2324,7 @@ function spanEditor(
     } else if (next === "signal" && was === "switch") {
       const reading: Span = { ...span, source: span.source ?? "" };
       delete reading.switch;
+      delete reading.switch_signal;
       delete reading.switch_reads;
       delete reading.cases;
       spans[index] = reading;
@@ -2629,6 +2633,43 @@ function switchEditor(
       rebuild();
     },
   });
+  // A signal as DCS-BIOS sends it, or a stored number, already shaped, so a
+  // label can colour by the fuel drums' total.
+  const numbers = storedSignals().filter((s) => !isLampSignal(s));
+  const byStored = span.switch_signal !== undefined;
+  const from = el("select", { class: "test" });
+  from.append(el("option", { value: "signal" }, "a signal"));
+  if (numbers.length > 0 || byStored) {
+    from.append(el("option", { value: "stored" }, "a stored signal"));
+  }
+  from.value = byStored ? "stored" : "signal";
+  from.addEventListener("change", () => {
+    if (from.value === "stored") {
+      delete span.switch;
+      delete span.switch_reads;
+      span.switch_signal = numbers[0]?.id ?? "";
+    } else {
+      delete span.switch_signal;
+      span.switch = "";
+    }
+    rebuild();
+  });
+  let decider: HTMLElement = selector;
+  if (byStored) {
+    const pick = el("select", { class: "test" });
+    for (const s of numbers) pick.append(el("option", { value: s.id }, s.name));
+    if (span.switch_signal && !numbers.some((s) => s.id === span.switch_signal)) {
+      pick.append(
+        el("option", { value: span.switch_signal }, `${span.switch_signal} (not on this module)`),
+      );
+    }
+    pick.value = span.switch_signal ?? "";
+    pick.addEventListener("change", () => {
+      span.switch_signal = pick.value;
+      rebuild();
+    });
+    decider = pick;
+  }
   wrap.append(
     explained(
       el("span", { class: "meta" }, "decided by"),
@@ -2636,9 +2677,12 @@ function switchEditor(
       "The signal whose position decides how this piece draws, such as a " +
         "band switch deciding what a frequency needle reads. Each case below " +
         "draws while the switch is in the positions it names. A position no " +
-        "case names draws nothing, unless there is an else case.",
+        "case names draws nothing, unless there is an else case. A stored " +
+        "signal is read as the number it makes, already shaped, so cases " +
+        "are written in its units.",
     ),
-    selector,
+    from,
+    decider,
   );
   if (span.switch) wrap.append(selectorReading(span, signals, edited, rebuild));
 
@@ -2661,13 +2705,15 @@ function switchEditor(
   // The next position nothing claims yet, and else once every one is taken.
   // In the units the cases are written in, which a converted selector makes
   // the dial's.
-  const max = signals.find((s) => s.id === span.switch)?.max_value ?? 0;
-  const [from, to] = span.switch_reads
+  // A stored number can read anything, so its next case is just the next
+  // whole number nothing claims.
+  const max = byStored ? 100000 : (signals.find((s) => s.id === span.switch)?.max_value ?? 0);
+  const [lowest, highest] = span.switch_reads
     ? [Math.round(Math.min(...span.switch_reads)), Math.round(Math.max(...span.switch_reads))]
     : [0, max];
   const keys = caseKeys(span);
   let next: string | undefined;
-  for (let v = from; v <= Math.min(to, from + 100000) && next === undefined; v += 1) {
+  for (let v = lowest; v <= Math.min(highest, lowest + 100000) && next === undefined; v += 1) {
     if (!keys.some((k) => keyClaims(k, v))) next = String(v);
   }
   if (next === undefined && !keys.includes("else")) next = "else";
@@ -2737,6 +2783,95 @@ function selectorReading(
   return row;
 }
 
+/** The tests a case can make, in the words a lamp's tests use. */
+const CASE_TESTS = {
+  equals: "is exactly",
+  in: "is one of",
+  between: "is between",
+  gte: "is at least",
+  lte: "is at most",
+  else: "is anything else",
+} as const;
+
+type CaseTest = keyof typeof CASE_TESTS;
+
+/**
+ * A case key as a test and its numbers, and back. The key stays the file's
+ * spelling ("3", "0,2", "1..3", "1000..", "..999", "else"); this is only how
+ * the window asks for it.
+ */
+function caseTest(
+  key: string,
+  onKey: (key: string) => void,
+): { node: HTMLElement; select: HTMLSelectElement; boxes: HTMLInputElement[] } {
+  const s = key.trim();
+  const split = s.includes("..") ? ".." : s.includes(" to ") ? " to " : "";
+  let kind: CaseTest;
+  let a = "";
+  let b = "";
+  if (s === "else") kind = "else";
+  else if (split) {
+    const at = s.indexOf(split);
+    const lo = s.slice(0, at).trim();
+    const hi = s.slice(at + split.length).trim();
+    if (lo === "") [kind, a] = ["lte", hi];
+    else if (hi === "") [kind, a] = ["gte", lo];
+    else [kind, a, b] = ["between", lo, hi];
+  } else if (s.includes(",")) [kind, a] = ["in", s];
+  else [kind, a] = ["equals", s];
+
+  const select = el("select", { class: "test" });
+  for (const k of Object.keys(CASE_TESTS) as CaseTest[]) {
+    select.append(el("option", { value: k }, CASE_TESTS[k]));
+  }
+  select.value = kind;
+  const first = el("input", {
+    type: "text",
+    class: "value",
+    value: a,
+    placeholder: kind === "in" ? "0,2" : "0",
+  });
+  const second = el("input", { type: "text", class: "value", value: b, placeholder: "1" });
+  const keyOf = (): string => {
+    const x = first.value.trim();
+    const y = second.value.trim();
+    switch (select.value as CaseTest) {
+      case "else":
+        return "else";
+      case "between":
+        return `${x}..${y}`;
+      case "gte":
+        return `${x}..`;
+      case "lte":
+        return `..${x}`;
+      default:
+        return x;
+    }
+  };
+  first.addEventListener("change", () => onKey(keyOf()));
+  second.addEventListener("change", () => onKey(keyOf()));
+  // A new kind of test keeps the first number, so "is exactly 1000" made
+  // "is at least" reads 1000 and up at once.
+  select.addEventListener("change", () => {
+    if (select.value !== "else" && first.value.trim() === "") first.value = "0";
+    if (select.value === "between" && second.value.trim() === "") {
+      second.value = first.value;
+    }
+    onKey(keyOf());
+  });
+  const node = el("span", { class: "phrase" }, select);
+  const boxes: HTMLInputElement[] = [];
+  if (kind !== "else") {
+    node.append(first);
+    boxes.push(first);
+  }
+  if (kind === "between") {
+    node.append(el("span", { class: "meta" }, " and "), second);
+    boxes.push(second);
+  }
+  return { node, select, boxes };
+}
+
 /**
  * One case of a switch: the positions it claims, and the pieces it draws.
  *
@@ -2787,10 +2922,11 @@ function caseEditor(
   };
 
   // --- which positions -------------------------------------------------------
-  const keyBox = el("input", { type: "text", class: "value", value: key, placeholder: "0" });
   const trouble = el("div", { class: "meta" });
-  keyBox.addEventListener("change", () => {
-    const next = keyBox.value.trim();
+  const test = caseTest(key, (next) => rename(next));
+  const keyBox = test.boxes[0] ?? test.select;
+  const rename = (wanted: string): void => {
+    const next = wanted.trim();
     const problem =
       next === "else"
         ? ""
@@ -2799,6 +2935,7 @@ function caseEditor(
           : next !== key && span.cases?.[next] !== undefined
             ? `There is already a case for ${next}.`
             : bandTrouble(next);
+    for (const box of test.boxes) box.classList.toggle("bad", problem !== "");
     keyBox.classList.toggle("bad", problem !== "");
     trouble.classList.toggle("bad", problem !== "");
     trouble.textContent = problem;
@@ -2811,7 +2948,7 @@ function caseEditor(
     saveAll();
     redraw();
     onChange();
-  });
+  };
   const showing = previewedCase(span) === key;
   const show = el(
     "button",
@@ -2839,11 +2976,12 @@ function caseEditor(
       "div",
       { class: "case-head" },
       explained(
-        el("label", { class: "meta" }, "when at ", keyBox),
+        el("label", { class: "meta" }, "when it ", test.node),
         "About a case's positions",
-        'One position, as in "1", a list, as in "0,2", or a run, as in ' +
-          '"1..3". "else" draws for every position no other case names. ' +
-          "Two cases naming one position is allowed, and the lower draws it.",
+        "The same tests a lamp has: exactly one reading, one of a list such " +
+          'as "0,2", between two, at least or at most one. Anything else ' +
+          "draws for every reading no other case claims. Two cases claiming " +
+          "one reading is allowed, and the lower draws it.",
       ),
       el("span", { class: "spacer" }),
       show,
@@ -2945,7 +3083,8 @@ function storedControls(
   rebuild: () => void,
 ): HTMLElement[] {
   const { display, profile } = opts;
-  const all = storedSignals();
+  // Lamp conditions have no number to draw.
+  const all = storedSignals().filter((s) => !isLampSignal(s));
   const pick = el("select", { class: "test" });
   pick.dataset.opt = "signal";
   pick.append(el("option", { value: "" }, all.length ? "choose one" : "none on this module yet"));
@@ -3552,8 +3691,11 @@ function describeField(readout: Readout, display: DisplayInfo): string {
     if (kindOf(s) === "switch") {
       const n = caseKeys(s).length;
       const read = s.switch_reads ? ` read as ${s.switch_reads[0]} to ${s.switch_reads[1]}` : "";
-      return s.switch
-        ? `a switch on ${s.switch}${read} with ${n} case${n === 1 ? "" : "s"}`
+      const on = s.switch_signal
+        ? (storedSignal(s.switch_signal)?.name ?? s.switch_signal)
+        : s.switch;
+      return on
+        ? `a switch on ${on}${read} with ${n} case${n === 1 ? "" : "s"}`
         : "a switch nobody has pointed at a selector yet";
     }
     if (kindOf(s) === "stored") {

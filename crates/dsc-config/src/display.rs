@@ -1215,7 +1215,17 @@ impl std::fmt::Display for ValueBand {
                 let written: Vec<String> = vs.iter().map(|v| v.to_string()).collect();
                 write!(f, "{}", written.join(","))
             }
-            ValueBand::Range { lo, hi } => write!(f, "{lo}..{hi}"),
+            ValueBand::Range { lo, hi } => {
+                // An open end is written as nothing, the way it is read.
+                let side = |v: &f64| {
+                    if v.is_finite() {
+                        v.to_string()
+                    } else {
+                        String::new()
+                    }
+                };
+                write!(f, "{}..{}", side(lo), side(hi))
+            }
         }
     }
 }
@@ -1226,7 +1236,7 @@ impl std::str::FromStr for ValueBand {
     fn from_str(s: &str) -> std::result::Result<Self, String> {
         let bad = || {
             format!(
-                "expected a reading like \"3\", a list like \"0,1,2\" or a band like \"-1.5..-0.1\", got {s:?}"
+                "expected a reading like \"3\", a list like \"0,1,2\", a band like \"-1.5..-0.1\", or an open band like \"1000..\" or \"..999\", got {s:?}"
             )
         };
         let one = |part: &str| -> std::result::Result<f64, String> {
@@ -1237,7 +1247,19 @@ impl std::str::FromStr for ValueBand {
         };
         let s = s.trim();
         if let Some((a, b)) = s.split_once("..").or_else(|| s.split_once(" to ")) {
-            let (lo, hi) = (one(a)?, one(b)?);
+            // An open end is at least or at most: `"1000.."` claims every
+            // reading from 1000 up, `"..999"` every one up to 999.
+            let end = |part: &str, open: f64| -> std::result::Result<f64, String> {
+                if part.trim().is_empty() {
+                    Ok(open)
+                } else {
+                    one(part)
+                }
+            };
+            if a.trim().is_empty() && b.trim().is_empty() {
+                return Err(bad());
+            }
+            let (lo, hi) = (end(a, f64::NEG_INFINITY)?, end(b, f64::INFINITY)?);
             if hi < lo {
                 return Err(format!("band {s:?} ends before it starts"));
             }
@@ -1635,6 +1657,15 @@ pub struct Span {
     /// what is its own.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub switch: String,
+    /// A stored signal's id, deciding the cases in place of `switch`, so a
+    /// label can colour by the fuel drums' total. Its number is already
+    /// shaped, so cases are written in its units and nothing converts it.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub switch_signal: String,
+    /// The stored signal `switch_signal` names, attached when the page file
+    /// loads. Never written.
+    #[serde(skip)]
+    pub switch_stored: Option<Arc<StoredSignal>>,
     /// What the selector reads at each end of its travel, so cases can be
     /// written in the units a gauge is marked with rather than in counts.
     ///
@@ -2012,6 +2043,8 @@ impl SpanPatch {
             signal: self.signal.clone(),
             stored: None,
             switch: self.switch.clone(),
+            switch_signal: String::new(),
+            switch_stored: None,
             switch_reads: None,
             gap: self.gap,
             rule: self.rule,
@@ -2196,7 +2229,17 @@ impl Span {
 
     /// Whether this piece picks what it draws by a selector's position.
     pub fn is_switch(&self) -> bool {
-        !self.switch.is_empty()
+        !self.switch.is_empty() || !self.switch_signal.is_empty()
+    }
+
+    /// What decides a switch, as the checks name it: the stored signal's
+    /// name, or the DCS-BIOS signal.
+    pub fn switch_name(&self) -> String {
+        match &self.switch_stored {
+            Some(s) => s.name.clone(),
+            None if !self.switch_signal.is_empty() => self.switch_signal.clone(),
+            None => self.switch.clone(),
+        }
     }
 
     /// Fill in each case's pieces from what it wrote and what the switch
@@ -2257,6 +2300,34 @@ impl Span {
     where
         F: Fn(&str) -> Option<Reading>,
     {
+        self.pick_cached(read, &StoredCache::default(), &mut |_, _, _| {})
+    }
+
+    /// [`pick`](Self::pick), taking a stored signal that decides it from
+    /// `cache`. Its number is matched as it is, already shaped; characters
+    /// that are not a number leave only `else` to claim them.
+    pub fn pick_cached<'a, F, S>(
+        &'a self,
+        read: &F,
+        cache: &StoredCache,
+        seen: &mut S,
+    ) -> Picked<'a>
+    where
+        F: Fn(&str) -> Option<Reading>,
+        S: FnMut(&'a str, u16, &str),
+    {
+        if !self.switch_signal.is_empty() {
+            let Some(stored) = &self.switch_stored else {
+                return Picked::Case(None);
+            };
+            return match cache.get(stored, read, seen) {
+                None => Picked::Waiting,
+                Some(v) => Picked::Case(match v.number {
+                    Some(n) => self.case_for(n),
+                    None => self.cases.0.iter().find(|c| c.when == CaseKey::Else),
+                }),
+            };
+        }
         match read(&self.switch) {
             None => Picked::Waiting,
             Some(Reading::Number { value, max }) => {
@@ -2775,7 +2846,7 @@ impl Glyph {
 ///
 /// The engine looks it up; everything done with it afterwards is policy and
 /// belongs here, so a field composes the same way in a test as on the glass.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Reading {
     Text(String),
     Number { value: u16, max: u16 },
@@ -3122,8 +3193,11 @@ impl Readout {
     pub fn sources(&self) -> Vec<&str> {
         let mut out = Vec::new();
         for span in &self.content {
-            if span.is_switch() {
+            if !span.switch.is_empty() {
                 out.push(span.switch.as_str());
+            }
+            if let Some(stored) = &span.switch_stored {
+                out.extend(stored.sources());
             }
         }
         for span in self.pieces() {
@@ -3337,7 +3411,7 @@ impl Readout {
                 chain.push(span);
                 continue;
             }
-            match span.pick(&read) {
+            match span.pick_cached(&read, cache, &mut seen) {
                 Picked::Waiting => waiting = true,
                 Picked::Case(Some(case)) => chain.extend(&case.pieces),
                 Picked::Case(None) => {}

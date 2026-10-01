@@ -196,6 +196,11 @@ impl Cache {
         pages: &PageLibrary,
     ) -> (Vec<FlagView>, Option<String>) {
         let devices = DeviceInventory::load(&paths.devices).ok();
+        // A lamp lit by a stored signal is flagged through the signal, which
+        // is attached only when a profile runs with its pages.
+        let mut profile = profile.clone();
+        profile.attach_signals(pages);
+        let profile = &profile;
         let Ok(flags) = self.with_module(paths, &profile.module, |m| {
             let mut all: Vec<(Option<String>, Flag)> =
                 profile.flags(m).into_iter().map(|f| (None, f)).collect();
@@ -411,6 +416,9 @@ impl FlagView {
             Place::Condition { .. } => "The lamp stays off.",
             Place::Branch { .. } => "This alternative is left out; the others still work.",
             Place::Field { .. } => "The field stays blank.",
+            Place::Signal { .. } => {
+                "In the stored signal it lights by: its tests that read this are left out, an alternative at a time where it has them."
+            }
         };
         FlagView {
             place: f.place,

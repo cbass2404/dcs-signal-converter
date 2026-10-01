@@ -41,6 +41,9 @@ function locate(profile: Profile, pages: Page[], f: FlagView): object | undefine
       return profile.bindings[f.binding]?.any_of?.[f.branch]?.conditions[f.index];
     case "field":
       return fieldAt(profile, pages, f.page, f.readout);
+    case "signal":
+      // Through the stored signal it lights by: the mark goes on the lamp.
+      return profile.bindings[f.binding];
   }
 }
 

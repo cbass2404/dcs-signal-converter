@@ -272,6 +272,28 @@ pub enum Error {
     StoredTermUnfinished(String),
     #[error("the stored signal {0:?} gives a conversion a colour or size; how it draws belongs to the field drawing it, as a band")]
     StoredTermStyled(String),
+    #[error("the stored signal {0:?} has both parts and lamp conditions; it is one or the other")]
+    StoredTwoKinds(String),
+    #[error("the stored signal {0:?} carries both conditions and any_of; put every alternative in any_of")]
+    StoredConditionsWithAnyOf(String),
+    #[error("the stored signal {0:?} has an alternative with no conditions in it")]
+    StoredEmptyBranch(String),
+    #[error("the stored signal {0:?} picks between alternatives but has none; pick applies only to any_of")]
+    StoredPickWithoutAlternatives(String),
+    #[error("the stored signal {0:?} has a condition with no signal chosen yet; pick one or delete the condition")]
+    StoredUnfinishedCondition(String),
+    #[error(
+        "{0:?} is lamp conditions, so it has no number for a screen to draw or a switch to read"
+    )]
+    StoredNotANumber(String),
+    #[error("LED {0:?} lights by the stored signal {1:?}, which is a number made of parts, not lamp conditions")]
+    LampSignalNotConditions(String, String),
+    #[error("LED {0:?} lights by the stored signal {1:?}, which is not among this module's stored signals; pick another or take it off")]
+    UnknownLampSignal(String, String),
+    #[error("LED {0:?} lights by a stored signal and also carries its own conditions, always on or a lamp to match; it can have one")]
+    LampSignalWithConditions(String),
+    #[error("the switch on {1} of display {0:?} is decided by both a signal and a stored signal; it can have one")]
+    SwitchTwoDeciders(String, String),
 }
 
 impl Error {
@@ -962,6 +984,17 @@ pub struct Binding {
     /// follows, since its own rows are not in use.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub same_as_device: Option<String>,
+    /// A stored signal of lamp conditions this lamp lights by, in place of
+    /// conditions of its own. Its tests are read exactly as if they were
+    /// written here, against this lamp's own `on` and `off`, so one set of
+    /// conditions can drive every lamp that repeats a cockpit lamp, each as
+    /// bright as it should be.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub signal: Option<String>,
+    /// The stored signal `signal` names, attached when the profile is run
+    /// with its pages. Never written.
+    #[serde(skip)]
+    pub stored: Option<std::sync::Arc<StoredSignal>>,
     /// Omitted means "fully on for this lamp", resolved from the LED itself.
     ///
     /// Skipped when absent, and `off` when zero, so a profile the editor saves
@@ -1048,6 +1081,9 @@ pub enum Place {
     /// `readouts[readout]`, through its text, format or colours: the field is
     /// left blank.
     Field { readout: usize },
+    /// `bindings[binding]`, through the stored signal it lights by: as for
+    /// the lamp's own conditions, the chain holding the source is off.
+    Signal { binding: usize },
 }
 
 /// One condition or display field that reads something the installed
@@ -1296,6 +1332,8 @@ impl Binding {
             pick: Pick::default(),
             same_as: None,
             same_as_device: None,
+            signal: None,
+            stored: None,
             on: None,
             off: if held { led.max_value() } else { 0 },
             note: note.to_string(),
@@ -1311,6 +1349,18 @@ impl Binding {
             && self.any_of.is_empty()
             && !self.always
             && self.same_as.is_none()
+            && self.signal.is_none()
+    }
+
+    /// The conditions, alternatives and pick this lamp lights by: a stored
+    /// signal's where it names one, and its own otherwise. Everything that
+    /// reads or resolves a lamp asks this, so a signal is followed everywhere
+    /// a lamp's own conditions would be.
+    pub fn logic(&self) -> (&[Condition], &[Branch], Pick) {
+        match (&self.signal, &self.stored) {
+            (Some(_), Some(s)) => (&s.conditions, &s.any_of, s.pick),
+            _ => (&self.conditions, &self.any_of, self.pick),
+        }
     }
 
     /// Every signal this binding reads, across all forms.
@@ -1320,9 +1370,10 @@ impl Binding {
     /// this read" keeps that index correct as new forms are added: when
     /// `any_of` arrived, the index needed no knowledge of it.
     pub fn sources(&self) -> impl Iterator<Item = &str> {
-        self.conditions
+        let (conditions, any_of, _) = self.logic();
+        conditions
             .iter()
-            .chain(self.any_of.iter().flat_map(|b| b.conditions.iter()))
+            .chain(any_of.iter().flat_map(|b| b.conditions.iter()))
             .map(|c| c.source.as_str())
     }
 
@@ -1357,6 +1408,7 @@ impl Binding {
     {
         let on = self.on.unwrap_or_else(|| led.on_value());
         let led_max = led.max_value();
+        let (conditions, any_of, pick) = self.logic();
 
         // Reads nothing, so it resolves the same on the module-load sweep as it
         // would at any other moment, and no later write ever revisits it.
@@ -1372,16 +1424,16 @@ impl Binding {
         // supplies the value instead, dark or not: the knob just turned down is
         // the one the player means. A branch's time is the latest of any
         // signal it reads.
-        if !self.any_of.is_empty() {
+        if !any_of.is_empty() {
             let mut best = 0u8;
             let mut latest: Option<(u64, u8)> = None;
-            for branch in &self.any_of {
+            for branch in any_of {
                 if branch.conditions.is_empty() {
                     continue;
                 }
                 let value = all_of(&branch.conditions, on, led_max, &mut read)?;
                 best = best.max(value);
-                if self.pick == Pick::Latest {
+                if pick == Pick::Latest {
                     let at = branch
                         .conditions
                         .iter()
@@ -1398,10 +1450,10 @@ impl Binding {
             return Some(if value == 0 { self.off } else { value });
         }
 
-        if self.conditions.is_empty() {
+        if conditions.is_empty() {
             return None;
         }
-        let value = all_of(&self.conditions, on, led_max, &mut read)?;
+        let value = all_of(conditions, on, led_max, &mut read)?;
         Some(if value == 0 { self.off } else { value })
     }
 }
@@ -1772,6 +1824,8 @@ impl Profile {
             return vec![Error::NewerSchema(self.schema_version)];
         }
         let mut out = Vec::new();
+        // Each stored signal a lamp lights by, checked once however many do.
+        let mut checked_signals: BTreeSet<&str> = BTreeSet::new();
         // One owner for a screen, and it is the pages. A field resolved
         // from a page carries its id, so a profile checked after
         // `with_pages` is not refused for its own start page.
@@ -1819,6 +1873,30 @@ impl Profile {
             }
             if b.always && !(b.conditions.is_empty() && b.any_of.is_empty()) {
                 out.push(Error::AlwaysWithConditions(b.led.clone()));
+            }
+            // A lamp lit by a stored signal takes all its logic from there.
+            // Looked up in the library rather than read off the binding, since
+            // the daemon checks a profile before it attaches its pages.
+            if let Some(id) = &b.signal {
+                if b.always
+                    || b.same_as.is_some()
+                    || !b.conditions.is_empty()
+                    || !b.any_of.is_empty()
+                {
+                    out.push(Error::LampSignalWithConditions(b.led.clone()));
+                }
+                match pages.signals_on(&self.module).iter().find(|s| &s.id == id) {
+                    None => out.push(Error::UnknownLampSignal(b.led.clone(), id.clone())),
+                    Some(s) if !s.is_lamp() => out.push(Error::LampSignalNotConditions(
+                        b.led.clone(),
+                        s.name.clone(),
+                    )),
+                    Some(s) => {
+                        if checked_signals.insert(s.id.as_str()) {
+                            out.extend(s.problems(module));
+                        }
+                    }
+                }
             }
             if !b.conditions.is_empty() && !b.any_of.is_empty() {
                 out.push(Error::ConditionsWithAnyOf(b.led.clone()));
@@ -1954,6 +2032,17 @@ impl Profile {
                     }
                 }
             }
+            if let (Some(_), Some(s)) = (&b.signal, &b.stored) {
+                let all = s
+                    .conditions
+                    .iter()
+                    .chain(s.any_of.iter().flat_map(|br| br.conditions.iter()));
+                for c in all {
+                    if let Some(why) = unsound(module, c) {
+                        out.push(flag(Place::Signal { binding: bi }, c, why));
+                    }
+                }
+            }
         }
         for (ri, r) in self.readouts.iter().enumerate() {
             for source in missing_in_field(module, r) {
@@ -1994,6 +2083,23 @@ impl Profile {
                 if b.any_of.is_empty() {
                     // Nothing left to pick between.
                     b.pick = Pick::Brightest;
+                }
+            }
+            // The same rule for a stored signal, on this lamp's copy of it,
+            // since another lamp may share the original.
+            if let Some(s) = &b.stored {
+                if bad(&s.conditions) || s.any_of.iter().any(|br| bad(&br.conditions)) {
+                    let mut own = (**s).clone();
+                    if bad(&own.conditions) {
+                        own.conditions.clear();
+                    }
+                    if !own.any_of.is_empty() {
+                        own.any_of.retain(|branch| !bad(&branch.conditions));
+                        if own.any_of.is_empty() {
+                            own.pick = Pick::Brightest;
+                        }
+                    }
+                    b.stored = Some(std::sync::Arc::new(own));
                 }
             }
         }
@@ -2474,6 +2580,10 @@ impl Profile {
                     ));
                     continue;
                 };
+                if stored.is_lamp() {
+                    out.push(Error::StoredNotANumber(stored.name.clone()));
+                    continue;
+                }
                 if span.shapes_a_number() {
                     out.push(Error::ShapingOnStored(
                         r.display.clone(),
@@ -2638,7 +2748,7 @@ impl Profile {
                 out.push(Error::SwitchWithoutCases(
                     r.display.clone(),
                     r.cells.to_string(),
-                    span.switch.clone(),
+                    span.switch_name(),
                 ));
                 broken = true;
                 continue;
@@ -2653,6 +2763,45 @@ impl Profile {
                     broken = true;
                 }
             }
+            // A stored signal deciding it has its own number, already
+            // shaped, and no positions to walk: only overlapping cases can be
+            // said about it.
+            if !span.switch_signal.is_empty() {
+                if !span.switch.is_empty() {
+                    out.push(Error::SwitchTwoDeciders(
+                        r.display.clone(),
+                        r.cells.to_string(),
+                    ));
+                    broken = true;
+                    continue;
+                }
+                match &span.switch_stored {
+                    None => {
+                        out.push(Error::UnknownStoredSignal(
+                            r.display.clone(),
+                            r.cells.to_string(),
+                            span.switch_signal.clone(),
+                        ));
+                        broken = true;
+                        continue;
+                    }
+                    Some(s) if s.is_lamp() => {
+                        out.push(Error::StoredNotANumber(s.name.clone()));
+                        broken = true;
+                        continue;
+                    }
+                    Some(_) => {}
+                }
+                if span.switch_reads.is_some() {
+                    out.push(Error::ShapingOnStored(
+                        r.display.clone(),
+                        r.cells.to_string(),
+                        span.switch_name(),
+                    ));
+                }
+                case_overlaps(span, out);
+                continue;
+            }
             // A selector this DCS-BIOS lacks is flagged as a missing signal,
             // like any other source, and has no positions to check against.
             let Some(output) = module.signal(&span.switch).and_then(|s| s.primary()) else {
@@ -2663,26 +2812,7 @@ impl Profile {
                 continue;
             }
             let (lo, hi) = span.switch_span(output.number_max());
-            let bands: Vec<&ValueBand> = span
-                .cases
-                .0
-                .iter()
-                .filter_map(|c| match &c.when {
-                    CaseKey::Band(b) => Some(b),
-                    CaseKey::Else => None,
-                })
-                .collect();
-            for (i, a) in bands.iter().enumerate() {
-                for b in &bands[i + 1..] {
-                    if a.overlaps(b, 0.0) {
-                        out.push(Error::SwitchCasesOverlap(
-                            a.to_string(),
-                            b.to_string(),
-                            span.switch.clone(),
-                        ));
-                    }
-                }
-            }
+            let bands = case_overlaps(span, out);
             for band in &bands {
                 if band.highest() < lo || band.lowest() > hi {
                     out.push(Error::SwitchCaseUnreachable(
@@ -2941,6 +3071,13 @@ impl StoredSignal {
         if name.is_empty() {
             out.push(Error::StoredUnnamed);
         }
+        if self.is_lamp() {
+            if !self.terms.is_empty() {
+                out.push(Error::StoredTwoKinds(name.clone()));
+            }
+            self.condition_problems(&name, &mut out);
+            return out;
+        }
         if self.terms.is_empty() {
             out.push(Error::StoredWithoutTerms(name.clone()));
         }
@@ -2977,6 +3114,23 @@ impl StoredSignal {
         out
     }
 
+    /// What lamp conditions can be wrong about, the checks a lamp's own get.
+    /// A signal this DCS-BIOS lacks is flagged on each lamp it drives.
+    fn condition_problems(&self, name: &str, out: &mut Vec<Error>) {
+        if !self.conditions.is_empty() && !self.any_of.is_empty() {
+            out.push(Error::StoredConditionsWithAnyOf(name.to_string()));
+        }
+        if self.any_of.iter().any(|b| b.conditions.is_empty()) {
+            out.push(Error::StoredEmptyBranch(name.to_string()));
+        }
+        if self.pick != Pick::Brightest && self.any_of.is_empty() {
+            out.push(Error::StoredPickWithoutAlternatives(name.to_string()));
+        }
+        if self.sources().any(str::is_empty) {
+            out.push(Error::StoredUnfinishedCondition(name.to_string()));
+        }
+    }
+
     /// The widest this can ever read, in characters, or None where a term
     /// reads characters with no length DCS-BIOS declares.
     pub fn widest(&self, module: &Module) -> Option<usize> {
@@ -3003,6 +3157,32 @@ impl StoredSignal {
         let places = self.terms.last().map_or(0, |t| t.0.decimals);
         10f64.powi(-i32::from(places)) / 2.0
     }
+}
+
+/// Two cases of a switch claiming one reading, which settles on the lower.
+/// Returns the cases' bands, `else` left out, for the checks that follow.
+fn case_overlaps<'a>(span: &'a Span, out: &mut Vec<Error>) -> Vec<&'a ValueBand> {
+    let bands: Vec<&ValueBand> = span
+        .cases
+        .0
+        .iter()
+        .filter_map(|c| match &c.when {
+            CaseKey::Band(b) => Some(b),
+            CaseKey::Else => None,
+        })
+        .collect();
+    for (i, a) in bands.iter().enumerate() {
+        for b in &bands[i + 1..] {
+            if a.overlaps(b, 0.0) {
+                out.push(Error::SwitchCasesOverlap(
+                    a.to_string(),
+                    b.to_string(),
+                    span.switch_name(),
+                ));
+            }
+        }
+    }
+    bands
 }
 
 fn conversion_problems(span: &Span, max: u16, out: &mut Vec<Error>) {
@@ -4153,6 +4333,8 @@ mod tests {
             pick: Pick::default(),
             same_as: None,
             same_as_device: None,
+            signal: None,
+            stored: None,
             on,
             off: 0,
             note: String::new(),
@@ -4211,6 +4393,8 @@ mod tests {
             pick: Pick::default(),
             same_as: None,
             same_as_device: None,
+            signal: None,
+            stored: None,
             any_of: vec![
                 Branch {
                     conditions: vec![
@@ -4326,6 +4510,8 @@ mod tests {
             pick,
             same_as: None,
             same_as_device: None,
+            signal: None,
+            stored: None,
             any_of: vec![
                 Branch {
                     conditions: vec![cond("PLT_KNOB", OnWhen::Scale([0, 8]))],
@@ -4435,6 +4621,8 @@ mod tests {
                     pick: Pick::default(),
                     same_as: None,
                     same_as_device: None,
+                    signal: None,
+                    stored: None,
                     on: None,
                     off: 0,
                     note: String::new(),
@@ -4448,6 +4636,8 @@ mod tests {
                     pick: Pick::default(),
                     same_as: same_as.map(str::to_string),
                     same_as_device: None,
+                    signal: None,
+                    stored: None,
                     on: None,
                     off: 255,
                     note: String::new(),

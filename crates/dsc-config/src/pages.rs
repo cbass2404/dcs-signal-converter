@@ -995,6 +995,7 @@ impl Profile {
     /// load is empty; see [`slot_notes`](Self::slot_notes) for what to say.
     pub fn with_pages(&self, lib: &PageLibrary) -> Profile {
         let mut p = self.clone();
+        p.attach_signals(lib);
         p.screens.clear();
         for (device, slots) in &self.screens {
             if self.follows.contains_key(device) {
@@ -1050,6 +1051,22 @@ impl Profile {
     ///
     /// Only fields a page put on the device are taken off, so nothing a
     /// profile holds of its own is touched.
+    /// Give every lamp lit by a stored signal its definition from the
+    /// module's page file, so it is read and resolved without looking it up.
+    /// A lamp naming one the file lacks is left without, which the checks
+    /// refuse and which lights nothing.
+    pub fn attach_signals(&mut self, lib: &PageLibrary) {
+        let signals = lib.signals_on(&self.module);
+        for b in &mut self.bindings {
+            b.stored = b.signal.as_ref().and_then(|id| {
+                signals
+                    .iter()
+                    .find(|s| &s.id == id)
+                    .map(|s| Arc::new(s.clone()))
+            });
+        }
+    }
+
     pub fn show_slot(&mut self, device: &str, slot: usize) -> bool {
         let Some(run) = self.page_runs.get_mut(device) else {
             return false;

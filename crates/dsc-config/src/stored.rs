@@ -25,7 +25,7 @@ use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 
 use crate::display::{is_left, is_nearest, is_zero_u8, is_zero_usize};
-use crate::{Align, Conversion, Reading, Round, Span};
+use crate::{Align, Branch, Condition, Conversion, Pick, Reading, Round, Span};
 
 /// A named number on one module, made from one or more DCS-BIOS signals.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -39,9 +39,24 @@ pub struct StoredSignal {
     /// What it is for, in the user's words.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub note: String,
-    /// What it reads, in the order the characters are laid down.
-    #[serde(default)]
+    /// What it reads, in the order the characters are laid down. A number
+    /// for a screen. Empty on a signal of lamp conditions.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub terms: Vec<Term>,
+    /// Tests that must all hold, written as a lamp's are, for a signal a
+    /// lamp draws: one set of conditions, many lamps. Each test lights the
+    /// lamp at its own `on` or leaves it at its `off`, so the answer is on or
+    /// off, except a scale, which is a dimmer.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub conditions: Vec<Condition>,
+    /// Alternatives, each a set of tests, as a lamp's `any_of` is: the CH-47's
+    /// master caution is the pilot's lamp in the pilot's seat and the
+    /// copilot's in the copilot's.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub any_of: Vec<Branch>,
+    /// How the alternatives are picked between, as on a lamp.
+    #[serde(default, skip_serializing_if = "Pick::is_brightest")]
+    pub pick: Pick,
 }
 
 /// One DCS-BIOS signal in a stored signal, and how it is shaped.
@@ -144,17 +159,36 @@ impl StoredValue {
 }
 
 impl StoredSignal {
-    /// Every DCS-BIOS signal this reads, in term order.
-    pub fn sources(&self) -> impl Iterator<Item = &str> {
-        self.terms.iter().map(|t| t.0.source.as_str())
+    /// Whether this is lamp conditions rather than a number made of parts.
+    pub fn is_lamp(&self) -> bool {
+        !self.conditions.is_empty() || !self.any_of.is_empty()
     }
 
-    /// What this reads given how signals read right now, or None until every
-    /// term has arrived.
+    /// Every DCS-BIOS signal this reads: its parts, or its conditions.
+    pub fn sources(&self) -> impl Iterator<Item = &str> {
+        self.terms.iter().map(|t| t.0.source.as_str()).chain(
+            self.conditions
+                .iter()
+                .chain(self.any_of.iter().flat_map(|b| b.conditions.iter()))
+                .map(|c| c.source.as_str()),
+        )
+    }
+
+    /// What each term's signal reads right now, in term order, or None until
+    /// every one has arrived.
     ///
     /// All of them rather than what there is, because a number missing a
     /// digit is a different number: `23` where the drums say `123`. A field
     /// beside it can still draw its label.
+    fn inputs<F>(&self, read: &F) -> Option<Vec<Reading>>
+    where
+        F: Fn(&str) -> Option<Reading>,
+    {
+        self.terms.iter().map(|t| read(&t.0.source)).collect()
+    }
+
+    /// What this reads given how signals read right now, or None until every
+    /// term has arrived.
     ///
     /// `seen` is told each number a term converts, as a reading tells it.
     pub fn evaluate<'a, F, S>(&'a self, read: &F, seen: &mut S) -> Option<StoredValue>
@@ -162,33 +196,47 @@ impl StoredSignal {
         F: Fn(&str) -> Option<Reading>,
         S: FnMut(&'a str, u16, &str),
     {
+        Some(self.evaluate_from(&self.inputs(read)?, seen))
+    }
+
+    /// What this reads from `inputs`, one reading per term.
+    fn evaluate_from<'a, S>(&'a self, inputs: &[Reading], seen: &mut S) -> StoredValue
+    where
+        S: FnMut(&'a str, u16, &str),
+    {
         let mut text = String::new();
-        for term in &self.terms {
+        for (term, input) in self.terms.iter().zip(inputs) {
             let span = &term.0;
-            let drawn = match read(&span.source)? {
-                Reading::Text(t) => t,
+            let drawn = match input {
+                Reading::Text(t) => t.clone(),
                 Reading::Number { value, max } => {
-                    let drawn = span.format_number(value, max);
-                    seen(&span.source, value, &drawn);
+                    let drawn = span.format_number(*value, *max);
+                    seen(&span.source, *value, &drawn);
                     drawn
                 }
             };
             text.push_str(&span.fit_text(&drawn));
         }
-        Some(StoredValue::new(text))
+        StoredValue::new(text)
     }
 }
 
-/// Stored signals worked out once a paint, however many fields draw them.
+/// Stored signals worked out only when what they read has moved.
 ///
-/// Every signal reads the state as it is for the whole paint, so the second
-/// field drawing one is handed the first one's answer. A fresh cache is a
-/// fresh paint.
+/// Each signal's last inputs are kept with what they made, so a signal whose
+/// terms all read what they read last time is handed its last answer: the
+/// second field drawing one in a paint, and every paint after while its
+/// drums stand still. Asking costs a lookup of each term's signal, which the
+/// paint does anyway; the shaping is what is saved.
+///
+/// The engine keeps one across paints and starts a fresh one whenever it
+/// takes a profile, since a signal edited in the editor keeps its id and an
+/// answer worked out from its old terms would be wrong.
 #[derive(Debug, Default)]
-pub struct StoredCache(RefCell<HashMap<String, Option<StoredValue>>>);
+pub struct StoredCache(RefCell<HashMap<String, (Vec<Reading>, StoredValue)>>);
 
 impl StoredCache {
-    /// The value of `signal`, worked out on the first ask this paint.
+    /// The value of `signal`, worked out again only if a term has moved.
     pub(crate) fn get<'a, F, S>(
         &self,
         signal: &'a StoredSignal,
@@ -199,12 +247,17 @@ impl StoredCache {
         F: Fn(&str) -> Option<Reading>,
         S: FnMut(&'a str, u16, &str),
     {
-        if let Some(known) = self.0.borrow().get(&signal.id) {
-            return known.clone();
+        let inputs = signal.inputs(read)?;
+        if let Some((was, value)) = self.0.borrow().get(&signal.id) {
+            if *was == inputs {
+                return Some(value.clone());
+            }
         }
-        let value = signal.evaluate(read, seen);
-        self.0.borrow_mut().insert(signal.id.clone(), value.clone());
-        value
+        let value = signal.evaluate_from(&inputs, seen);
+        self.0
+            .borrow_mut()
+            .insert(signal.id.clone(), (inputs, value.clone()));
+        Some(value)
     }
 }
 
@@ -224,6 +277,11 @@ pub(crate) fn attach(fields: &mut [crate::Readout], signals: &BTreeMap<String, A
     for field in fields {
         for span in &mut field.content {
             find(span);
+            span.switch_stored = if span.switch_signal.is_empty() {
+                None
+            } else {
+                signals.get(&span.switch_signal).cloned()
+            };
             for case in &mut span.cases.0 {
                 case.pieces.iter_mut().for_each(&find);
             }

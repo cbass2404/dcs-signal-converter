@@ -9,6 +9,7 @@
 import { confirmAction } from "./confirm";
 import { flagSlot } from "./flags";
 import { noteEditor } from "./note";
+import { isLampSignal, storedSignal, storedSignals } from "./stored";
 import { hintFor, infoIcon, signalPicker } from "./typeahead";
 import type { Binding, Branch, Condition, Led, OnWhen, SignalView } from "./types";
 
@@ -233,6 +234,12 @@ export interface BindingEditorOptions {
   saved?: () => Binding | undefined;
   /** Hands over the editor's redraw, for a change made outside it: a save, or the lamp's output. */
   onRedraw?: (redraw: () => void) => void;
+  /**
+   * Conditions and alternatives only, for a stored signal of lamp conditions:
+   * no always on, no matching another lamp, no lamp of its own to reset, and
+   * its note is the signal's, shown by the signal.
+   */
+  conditionsOnly?: boolean;
   /** Called whenever the binding changes, so the window can mark itself dirty. */
   onChange: () => void;
   /**
@@ -259,6 +266,7 @@ function meaningfulPart(b: Binding): string {
     always: b.always ?? false,
     same_as: b.same_as ?? null,
     same_as_device: b.same_as_device ?? null,
+    signal: b.signal ?? null,
     on: b.on ?? null,
     off: b.off,
     note: b.note ?? "",
@@ -328,7 +336,9 @@ function describeBinding(
       ? `${c.source} ${describeTest(c.on_when, byId.get(c.source))}`
       : "an unfinished condition";
   if (b.always) lines.push("Always on, reading no signal");
-  else if (b.same_as) {
+  else if (b.signal) {
+    lines.push(`Lights by the stored signal ${storedSignal(b.signal)?.name ?? b.signal}`);
+  } else if (b.same_as) {
     const elsewhere = b.same_as_device && b.same_as_device !== b.device;
     lines.push(`Matches ${b.same_as}${elsewhere ? ` on ${deviceName(b.same_as_device!)}` : ""}`);
   } else if (groups.length === 0) lines.push("Unassigned, so driven off");
@@ -616,6 +626,52 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
     return row;
   }
 
+  /**
+   * This lamp lights by a stored signal of lamp conditions.
+   *
+   * A row of its own, like a mirror: the conditions are the signal's, edited
+   * in Stored Signals at the top of the profile, and this lamp brings only
+   * its own brightness.
+   */
+  function signalRow(id: string): HTMLElement {
+    const lamps = storedSignals().filter(isLampSignal);
+    const chosen = lamps.find((s) => s.id === id);
+    const text = el("div", { class: "grow" });
+    if (chosen) {
+      text.append(
+        el("span", { class: "desc" }, `Lights by ${chosen.name}`),
+        el(
+          "span",
+          { class: "sub" },
+          el("span", { class: "test" }, chosen.note || "a stored signal of lamp conditions"),
+        ),
+      );
+    } else {
+      text.append(
+        el("span", { class: "bad" }, `${id} is not a stored signal of lamp conditions here`),
+      );
+    }
+    text.append(flagSlot(binding));
+    const row = el("div", { class: "condition-view always" }, text);
+    if (lamps.length > 1) {
+      const pick = el("select", { class: "test" });
+      for (const s of lamps) pick.append(el("option", { value: s.id }, s.name));
+      pick.value = id;
+      pick.addEventListener("change", () => {
+        binding.signal = pick.value;
+        committed();
+      });
+      row.append(pick);
+    }
+    row.append(
+      iconButton("cancel", "\u2715", "Stop lighting by the stored signal", () => {
+        delete binding.signal;
+        committed();
+      }),
+    );
+    return row;
+  }
+
   /** The device is written only when it is another one, as the file has it. */
   function pointAt(t: MirrorTarget): void {
     binding.same_as = t.led.name;
@@ -692,15 +748,30 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
       return;
     }
 
+    if (binding.signal) {
+      host.append(signalRow(binding.signal));
+      appendFooter();
+      return;
+    }
+
     const groups = groupsOf(binding);
     const alternatives = groups.length > 1;
 
     if (groups.every((g) => g.conditions.length === 0)) {
       // An undecided lamp gets the two ways to start. Always-on is not offered
       // on a configured lamp, where choosing it would discard existing work.
-      const assign = el("button", { class: "add", type: "button" }, "Assign a signal");
+      const assign = el(
+        "button",
+        { class: "add", type: "button" },
+        opts.conditionsOnly ? "+ Add condition" : "Assign a signal",
+      );
       const first = groups[0] ?? { conditions: binding.conditions };
       assign.addEventListener("click", () => addCondition(first));
+      // A stored signal's conditions have nothing but conditions to offer.
+      if (opts.conditionsOnly) {
+        host.append(el("div", { class: "choices" }, assign));
+        return;
+      }
       const on = el("button", { class: "add", type: "button" }, "Always on");
       on.title = "Light this lamp whenever the aircraft is loaded, with no signal behind it.";
       on.addEventListener("click", () => {
@@ -722,6 +793,19 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
           committed();
         });
         choices.append(match);
+      }
+
+      // One set of conditions for every lamp repeating a cockpit lamp,
+      // offered where the module has any.
+      const lamps = storedSignals().filter(isLampSignal);
+      if (lamps.length > 0) {
+        const use = el("button", { class: "add", type: "button" }, "Use a stored signal");
+        use.title = "Light by a stored signal of lamp conditions, made once in Stored Signals.";
+        use.addEventListener("click", () => {
+          binding.signal = lamps[0]?.id;
+          committed();
+        });
+        choices.append(use);
       }
 
       host.append(choices);
@@ -784,6 +868,7 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
    * most questions about.
    */
   function appendFooter(): void {
+    if (opts.conditionsOnly) return;
     // The note on the left, Reset alone in the corner. Reset is the only
     // control in this cell that throws work away, and it was sitting at the
     // bottom of the same stack as the buttons that add things, one slip from
@@ -840,6 +925,8 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
     if (to.pick) binding.pick = to.pick;
     else delete binding.pick;
     binding.always = to.always ?? false;
+    if (to.signal) binding.signal = to.signal;
+    else delete binding.signal;
     binding.same_as = to.same_as ?? null;
     if (to.same_as_device) binding.same_as_device = to.same_as_device;
     else delete binding.same_as_device;

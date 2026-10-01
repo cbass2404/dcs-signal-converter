@@ -245,6 +245,9 @@ pub struct Engine {
     /// What the last paint drew for each converted signal, so a batch reports
     /// only the readings that changed.
     drawn: HashMap<String, (u16, String)>,
+    /// Each stored signal's last inputs and what they made, so one is worked
+    /// out again only when a term moves. Fresh with every profile taken.
+    stored: dsc_config::StoredCache,
 }
 
 /// Whether anything is worked out for a device: it is plugged in and the
@@ -325,6 +328,7 @@ impl Engine {
             sent_at: None,
             frame_every: FRAME_EVERY,
             drawn: HashMap::new(),
+            stored: dsc_config::StoredCache::default(),
         }
     }
 
@@ -688,9 +692,9 @@ impl Engine {
         let drawn = &self.drawn;
         let mut fresh: Vec<Drawn> = Vec::new();
         let mut this_paint: HashSet<&str> = HashSet::new();
-        // Stored signals the same way: worked out by the first field to draw
-        // one, and handed to every other field drawing it this paint.
-        let stored = dsc_config::StoredCache::default();
+        // Stored signals the same way: worked out again only when a term has
+        // moved, and handed to every field drawing one.
+        let stored = &self.stored;
         for device in &self.devices.devices {
             if !runs(&self.connected, profile, &device.key) {
                 continue;
@@ -802,7 +806,7 @@ impl Engine {
                                     max: output.number_max(),
                                 })
                         },
-                        &stored,
+                        stored,
                         |source, raw, text| {
                             if !this_paint.insert(source) {
                                 return;
@@ -1038,6 +1042,9 @@ impl Engine {
     }
 
     fn select_profile(&mut self, aircraft: &str) {
+        // A signal edited in the editor keeps its id, so what was worked out
+        // from its old terms has to go with the profile it came from.
+        self.stored = dsc_config::StoredCache::default();
         self.active = self
             .profiles
             .iter()
@@ -1063,7 +1070,7 @@ impl Engine {
         for b in profile
             .bindings
             .iter()
-            .filter(|b| b.pick == Pick::Latest && runs(&self.connected, profile, &b.device))
+            .filter(|b| b.logic().2 == Pick::Latest && runs(&self.connected, profile, &b.device))
         {
             for source in profile.sources_of(b) {
                 if self.moves.contains_key(source) {

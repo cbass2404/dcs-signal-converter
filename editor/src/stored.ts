@@ -18,6 +18,11 @@ export function setStoredSignals(signals: StoredSignal[]): void {
   current = signals;
 }
 
+/** Whether a stored signal is lamp conditions rather than a number. */
+export function isLampSignal(s: StoredSignal): boolean {
+  return (s.conditions?.length ?? 0) > 0 || (s.any_of?.length ?? 0) > 0;
+}
+
 /** One stored signal by id, where the module has it. */
 export function storedSignal(id: string): StoredSignal | undefined {
   return current.find((s) => s.id === id);

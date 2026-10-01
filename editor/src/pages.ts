@@ -194,8 +194,15 @@ function update(book: PageBook, view: PagesView): void {
 
 /** The module's stored signals, handed on to every piece that draws one. */
 function takeSignals(view: PagesView): StoredSignal[] {
-  setStoredSignals(view.signals);
-  return view.signals;
+  // The file leaves out the half a signal does not use, and the window wants
+  // both lists there to edit.
+  const signals = view.signals.map((s) => ({
+    ...s,
+    terms: s.terms ?? [],
+    conditions: s.conditions ?? [],
+  }));
+  setStoredSignals(signals);
+  return signals;
 }
 
 function redrawAll(book: PageBook): void {

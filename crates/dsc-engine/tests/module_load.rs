@@ -513,6 +513,8 @@ fn an_unassigned_lamp_is_swept_off_and_never_driven() {
         pick: dsc_config::Pick::default(),
         same_as: None,
         same_as_device: None,
+        signal: None,
+        stored: None,
         on: None,
         off: 0,
         note: "not decided yet".to_string(),

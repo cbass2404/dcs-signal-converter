@@ -1989,10 +1989,79 @@
                 </div>
               </div>
             </div>
+            <div class="prose">
+              <p>
+                A switch can be <span class="ed">decided by</span> a stored signal too. Its number
+                is already shaped, so the cases are written in its units: a FUEL label that reads
+                <code>..999</code> in red and <code>1000..</code> in green. Each case is a test, in
+                the words a lamp uses: is exactly, is one of, is between,
+                <span class="ed">is at least</span>, <span class="ed">is at most</span>, or is
+                anything else.
+              </p>
+              <p>
+                <span class="ed">Stored lamp conditions</span> are the other kind of stored signal:
+                tests written once, the way a lamp's are, for every lamp that repeats one cockpit
+                lamp. The CH-47's master caution shows on every CDU and on the PTO2, and which
+                cockpit lamp it follows depends on your seat. Write that once, then choose
+                <span class="ed">Use a stored signal</span> on each lamp. Each test lights the lamp
+                or leaves it off, and a scale dims it, so the answer is on or off unless it is a
+                dimmer. Every lamp keeps its own brightness.
+              </p>
+            </div>
+
+            <div class="demo" id="demo-stored-lamps">
+              <div class="demo-head">
+                <span class="t">One set of conditions, three lamps</span
+                ><span class="try">Try it</span>
+              </div>
+              <div class="demo-body">
+                <div class="controls">
+                  <div class="row">
+                    <span class="lbl">You sit</span>
+                    <div class="seg" id="sl-seat">
+                      <button type="button" data-v="0" aria-pressed="true">Pilot</button>
+                      <button type="button" data-v="1" aria-pressed="false">Copilot</button>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <span class="lbl">Pilot's</span
+                    ><button type="button" class="chip" id="sl-plt" aria-pressed="true">
+                      MASTER CAUTION
+                    </button>
+                  </div>
+                  <div class="row">
+                    <span class="lbl">Copilot's</span
+                    ><button type="button" class="chip" id="sl-cplt" aria-pressed="false">
+                      MASTER CAUTION
+                    </button>
+                  </div>
+                </div>
+                <div class="out">
+                  <div class="lamps">
+                    <div class="lamp">
+                      <div class="lens" id="sl-a">M.CAUT</div>
+                      <span class="val" id="sl-av"></span>
+                    </div>
+                    <div class="lamp">
+                      <div class="lens" id="sl-b">M.CAUT</div>
+                      <span class="val" id="sl-bv"></span>
+                    </div>
+                    <div class="lamp">
+                      <div class="lens" id="sl-c">GEAR</div>
+                      <span class="val" id="sl-cv"></span>
+                    </div>
+                  </div>
+                  <p class="say" id="sl-say"></p>
+                  <pre id="sl-json"></pre>
+                </div>
+              </div>
+            </div>
             <p class="note">
               A piece drawing a stored signal can't also shape the number: decimals or a range on it
               are refused, since the signal already says. A stored signal the aircraft doesn't have
-              is refused too, and so is a part with no signal chosen.
+              is refused too, and so is a part with no signal chosen. A lamp can't light by a
+              number, and a screen can't draw lamp conditions. A stored signal a page or a lamp uses
+              can't be deleted until it is taken off.
             </p>
           </div>
         </section>
@@ -3599,6 +3668,46 @@
         draw();
       })();
 
+      /* -------------------------------------------- stored lamp conditions */
+      (() => {
+        const seat = seg("sl-seat", draw);
+        const plt = toggle($("sl-plt"), draw);
+        const cplt = toggle($("sl-cplt"), draw);
+        // Each lamp's own on, from the same conditions: an indicator, a dimmer
+        // at full, and the landing gear light held at 60.
+        const lamps = [
+          ["sl-a", "sl-av", 1, "CDU, an indicator"],
+          ["sl-b", "sl-bv", 255, "PTO2, full"],
+          ["sl-c", "sl-cv", 60, "gear light, on at 60"],
+        ];
+        function draw() {
+          const s = Number(seat.get());
+          const lit = (s === 0 && plt()) || (s === 1 && cplt());
+          for (const [lens, val, on, what] of lamps) {
+            const out = lit ? on : 0;
+            glow($(lens), out, on === 1 ? 1 : 255);
+            $(val).textContent = `${what}: ${out}`;
+          }
+          $("sl-say").innerHTML = lit
+            ? "The caution for your seat is on, so <b>every lamp lights</b>, each at its own <code>on</code>."
+            : "The caution for your seat is off, so every lamp is at its <code>off</code>.";
+          $("sl-json").textContent =
+            `"signals": [\n` +
+            `  { "id": "mc4k2p", "name": "Master caution",\n` +
+            `    "any_of": [\n` +
+            `      { "conditions": [ { "source": "SEAT_POSITION", "on_when": { "equals": 0 } },\n` +
+            `                        { "source": "PLT_MASTER_CAUTION", "on_when": { "equals": 1 } } ] },\n` +
+            `      { "conditions": [ { "source": "SEAT_POSITION", "on_when": { "equals": 1 } },\n` +
+            `                        { "source": "CPLT_MASTER_CAUTION", "on_when": { "equals": 1 } } ] }\n` +
+            `    ] }\n]\n\n` +
+            `"bindings": [\n` +
+            `  { "device": "MCDU_Captain", "led": "MASTER_CAUTION", "signal": "mc4k2p" },\n` +
+            `  { "device": "PTO2", "led": "MASTER_CAUTION", "signal": "mc4k2p" },\n` +
+            `  { "device": "TAKEOFF_PLANEL_2", "led": "Landing_gear_lights", "signal": "mc4k2p", "on": 60 }\n]`;
+        }
+        draw();
+      })();
+
       /* ------------------------------------------------------------ pages */
       (() => {
         const panels = {
@@ -3772,6 +3881,34 @@
             "signal",
             "Piece",
             "Draw a stored signal, by its id. The piece says how it looks, its words, colour and small text, and nothing about the number.",
+            "stored",
+          ],
+          [
+            "Stored lamp conditions",
+            "conditions, any_of",
+            "Stored signal",
+            "Tests written once, as a lamp's are, for every lamp that repeats one cockpit lamp. On or off, or a level for a dimmer; each lamp keeps its own brightness.",
+            "stored",
+          ],
+          [
+            "A stored signal, on a lamp",
+            "signal",
+            "Lamp",
+            "Light by stored lamp conditions in place of conditions of the lamp's own. The lamp keeps its on and off.",
+            "stored",
+          ],
+          [
+            "Decided by a stored signal",
+            "switch_signal",
+            "Switch",
+            "A stored number decides the cases, already shaped, so cases are written in its units.",
+            "stored",
+          ],
+          [
+            "At least, at most",
+            '"1000..", "..999"',
+            "Case, alias",
+            "A band open at one end: every reading from 1000 up, or every one up to 999.",
             "stored",
           ],
           [

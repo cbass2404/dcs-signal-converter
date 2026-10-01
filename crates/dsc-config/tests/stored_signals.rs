@@ -239,9 +239,7 @@ fn a_paint_works_each_signal_out_once() {
         &[fuel()],
     );
     let both = fields(&file);
-    let reads = Cell::new(0);
     let read = |id: &str| {
-        reads.set(reads.get() + 1);
         ["D10K", "D1K", "D100"]
             .contains(&id)
             .then_some(Reading::Number {
@@ -249,11 +247,16 @@ fn a_paint_works_each_signal_out_once() {
                 max: 65535,
             })
     };
+    // Each field looks the drums up to see whether they moved; the drums are
+    // shaped, and told to `seen`, once.
+    let shaped = Cell::new(0);
     let cache = StoredCache::default();
     for field in &both {
-        field.compose_cached(read, &cache, |_, _, _| {}).unwrap();
+        field
+            .compose_cached(read, &cache, |_, _, _| shaped.set(shaped.get() + 1))
+            .unwrap();
     }
-    assert_eq!(reads.get(), 3, "three drums, read once for both fields");
+    assert_eq!(shaped.get(), 3, "three drums, shaped once for both fields");
 }
 
 #[test]

@@ -130,7 +130,7 @@ export type SpanKind = "text" | "signal" | "stored" | "gap" | "rule" | "switch";
  * cases share rather than one it reads.
  */
 export function kindOf(span: Span): SpanKind {
-  if ("switch" in span) return "switch";
+  if ("switch" in span || "switch_signal" in span) return "switch";
   if (span.rule) return "rule";
   if (span.gap) return "gap";
   if ("signal" in span) return "stored";
@@ -356,7 +356,10 @@ export function keyClaims(key: string, position: number): boolean {
   if (s === "else") return false;
   const split = s.includes("..") ? ".." : s.includes(" to ") ? " to " : "";
   if (split) {
-    const [lo, hi] = s.split(split).map((part) => Number(part.trim()));
+    // An open end is at least or at most: "1000.." or "..999".
+    const [lo, hi] = s
+      .split(split)
+      .map((part, i) => (part.trim() === "" ? (i === 0 ? -Infinity : Infinity) : Number(part)));
     return lo !== undefined && hi !== undefined && position >= lo && position <= hi;
   }
   return s.split(",").some((part) => Number(part.trim()) === position);
@@ -370,6 +373,8 @@ export function patchesOf(written: SpanPatch | SpanPatch[]): SpanPatch[] {
 /** The lowest reading a case key names, for putting cases in matching order. */
 function keyStart(key: string): number {
   if (key.trim() === "else") return Number.POSITIVE_INFINITY;
+  // "At most" claims everything below it, so it comes first.
+  if (key.trim().startsWith("..")) return Number.NEGATIVE_INFINITY;
   const first = key.split(/\.\.|,| to /)[0] ?? "";
   const n = Number(first.trim());
   return Number.isFinite(n) ? n : Number.POSITIVE_INFINITY;

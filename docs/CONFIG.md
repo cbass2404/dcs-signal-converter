@@ -1755,6 +1755,61 @@ module to draw. Kept in the module's page file beside its pages:
   downstream (`with_pages`, the checks, a frame) reads a field exactly as it
   always has. A file without `signals` is as it was, and an older release
   ignores the key, though a piece drawing one reads to it as unfinished.
+- **Worked out again only when a part moves.** The engine keeps each number's
+  last inputs and result between paints, and hands back the result while the
+  parts read what they read last time. It starts afresh whenever it takes a
+  profile, since an edited signal keeps its id.
+- **A switch can be decided by one**, with `switch_signal` in place of
+  `switch`. The number is already shaped, so cases are written in its units and
+  `switch_reads` is refused beside it. Only overlapping cases are checked: a
+  stored number has no positions to walk.
+
+**Cases and bands can be open at one end.** `"1000.."` claims every reading
+from 1000 up and `"..999"` every one up to 999, for a case or an alias band
+alike. The editor asks for a case as a test, in a lamp's words: is exactly, is
+one of, is between, is at least, is at most, or is anything else (`else`).
+
+#### Lamp conditions
+
+The second kind of stored signal is a lamp's whole logic, written once:
+`conditions`, or `any_of` and `pick`, exactly as a lamp row has them, in place
+of `terms`. A lamp row points at it with `signal` and keeps only its own `on`
+and `off`:
+
+```jsonc
+// in the page file's "signals"
+{
+  "id": "mc4k2p",
+  "name": "Master caution",
+  "note": "Whichever seat you are in",
+  "any_of": [
+    { "conditions": [ { "source": "SEAT_POSITION", "on_when": { "equals": 0 } },
+                      { "source": "PLT_MASTER_CAUTION", "on_when": { "equals": 1 } } ] },
+    { "conditions": [ { "source": "SEAT_POSITION", "on_when": { "equals": 1 } },
+                      { "source": "CPLT_MASTER_CAUTION", "on_when": { "equals": 1 } } ] },
+  ],
+}
+// in a profile's "bindings"
+{ "device": "TAKEOFF_PLANEL_2", "led": "Landing_gear_lights", "signal": "mc4k2p", "on": 60 }
+```
+
+- **The lamp lights exactly as if the logic were its own**, against its own
+  `on` and `off`: a test lights it or leaves it off, and a scale dims it. So
+  every lamp repeating one cockpit lamp, on any device, behaves identically
+  and each is as bright as it should be.
+- **Signals never contain signals.** A signal's conditions name DCS-BIOS
+  signals only, so there is nothing to loop.
+- **A lamp lit by a signal has nothing else**: conditions of its own, always
+  on or a lamp to match beside `signal` are refused. A number signal on a lamp
+  and lamp conditions on a screen are refused too.
+- **Checked against the library, not the attachment.** The daemon validates a
+  profile before it runs it with its pages, so a lamp's signal is looked up in
+  the page file; the run attaches it. The engine indexes the lamp under every
+  address the signal reads, so it is re-checked when one moves, as its own
+  conditions would be. A signal reading something this DCS-BIOS lacks is
+  flagged on each lamp it lights, and that lamp's copy drops the chain holding
+  it, by the same rule as a lamp's own.
+- **Deleting one** is refused while any saved profile's lamp lights by it.
 
 ### Updates: pages and profiles apart
 

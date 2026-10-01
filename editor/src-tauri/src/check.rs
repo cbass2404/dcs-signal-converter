@@ -121,6 +121,14 @@ impl Cache {
                 )]
             }
         };
+        // The page arrives from the window without the module's stored
+        // signals attached, which would read every piece drawing one as
+        // drawing a signal that is not there.
+        let mut page = page.clone();
+        if let Some(file) = lib.files.get(&profile.module) {
+            file.attach_to(&mut page);
+        }
+        let page = &page;
         self.with_module(paths, &profile.module, |m| {
             let mut out: Vec<String> = lib
                 .page_problems(page, m, &devices, &displays)

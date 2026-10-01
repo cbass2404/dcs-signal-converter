@@ -2881,6 +2881,7 @@ function caseEditor(
   };
   add.append(
     addOne({}, "+ a reading"),
+    addOne({ signal: "" }, "+ a stored signal"),
     addOne({ text: "" }, "+ text"),
     addOne({ gap: true }, "+ a gap"),
   );
@@ -3311,6 +3312,7 @@ function chainEditor(opts: RowOptions, refreshPreview: () => void): HTMLElement 
     };
     add.append(
       addOne("signal", "+ a reading"),
+      addOne("stored", "+ a stored signal"),
       addOne("switch", "+ a switch"),
       addOne("text", "+ text"),
       addOne("gap", "+ a gap"),
@@ -3775,6 +3777,7 @@ export function fieldTable(
       "div",
       { class: "chain-add" },
       add("signal", "+ a reading"),
+      add("stored", "+ a stored signal"),
       add("text", "+ text"),
       add("gap", "+ a gap"),
     );

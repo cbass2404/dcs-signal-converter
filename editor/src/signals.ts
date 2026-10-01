@@ -13,6 +13,7 @@
 // words and colours, is the piece's that draws it.
 
 import { deleteSignal, newPageId, saveSignal } from "./api";
+import { iconButton } from "./binding";
 import { confirmAction } from "./confirm";
 import { noteEditor } from "./note";
 import { signalsChanged } from "./pages";
@@ -99,29 +100,50 @@ export function signalSection(ctx: SignalContext): {
     for (let k = 2; ; k += 1) if (!taken(`${name} ${k}`)) return `${name} ${k}`;
   };
 
-  const card = (w: Working): HTMLDetailsElement => {
-    const box = el("details", { class: "device" }) as HTMLDetailsElement;
-    box.open = opened.has(w.signal.id);
-    box.addEventListener("toggle", () => {
-      if (box.open) opened.add(w.signal.id);
-      else opened.delete(w.signal.id);
-    });
-    const count = el("span", { class: "meta" });
-    const summary = el("summary", {}, el("span", { class: "name" }), count);
-    const body = el("div", { class: "display pages" });
-    box.append(summary, body);
-
+  /**
+   * One signal: a line saying what it reads until its pencil is clicked, the
+   * way a field reads as a sentence, and its editor while it is open or holds
+   * changes not yet saved.
+   */
+  const card = (w: Working): HTMLElement => {
     const usedBy = (): string[] =>
       book.saved.filter((p) => draws(p, w.signal.id)).map((p) => p.name);
-    const refreshHead = (): void => {
-      const name = summary.querySelector(".name");
-      if (name) name.textContent = w.signal.name || "unnamed";
-      const parts = w.signal.terms.length;
+    const drawnOn = (): string => {
       const users = usedBy();
-      count.textContent =
-        `${parts} part${parts === 1 ? "" : "s"}` +
-        (users.length ? ` · drawn on ${users.join(", ")}` : " · not drawn on any page") +
-        (unsaved(w) ? " · not saved" : "");
+      return users.length ? `drawn on ${users.join(", ")}` : "not drawn on any page";
+    };
+
+    if (!opened.has(w.signal.id) && !unsaved(w)) {
+      const sources = w.signal.terms.map((t) => t.source || "a part with no signal yet");
+      const edit = iconButton("pencil", "\u270E", "Edit this signal", () => {
+        opened.add(w.signal.id);
+        redraw();
+      });
+      return el(
+        "div",
+        { class: "display" },
+        el(
+          "div",
+          { class: "condition-view" },
+          el(
+            "div",
+            { class: "grow" },
+            el("strong", {}, w.signal.name),
+            el("div", { class: "meta" }, `reads ${sources.join(", then ")} · ${drawnOn()}`),
+            w.signal.note ? el("div", { class: "meta" }, w.signal.note) : "",
+          ),
+          edit,
+        ),
+      );
+    }
+
+    const body = el("div", { class: "display" });
+    const state = el("span", { class: "meta" });
+    // Undo with changes to undo, Close without, Discard for one never saved.
+    const undo = el("button", {});
+    const refreshHead = (): void => {
+      state.textContent = drawnOn() + (unsaved(w) ? " · not saved" : "");
+      undo.textContent = w.fresh ? "Discard" : unsaved(w) ? "Undo changes" : "Close";
     };
     const edited = (): void => refreshHead();
 
@@ -137,6 +159,7 @@ export function signalSection(ctx: SignalContext): {
           "div",
           { class: "display-head" },
           el("label", { class: "meta" }, "Name ", name),
+          state,
           infoIcon(
             "About stored signals",
             "A number made once, for any page on this aircraft to draw: pick " +
@@ -148,7 +171,6 @@ export function signalSection(ctx: SignalContext): {
               "colours belong to the piece that draws it.",
           ),
         ),
-        noteEditor(w.signal, "signal", edited),
       );
 
       const chain = el("div", { class: "chain" });
@@ -198,7 +220,12 @@ export function signalSection(ctx: SignalContext): {
         w.signal.terms.push({ source: "" });
         draw();
       });
-      body.append(chain, el("div", { class: "chain-add" }, more));
+      // Last, after the parts, so it reads as the summary of what they make.
+      body.append(
+        chain,
+        el("div", { class: "chain-add" }, more),
+        noteEditor(w.signal, "signal", edited, true),
+      );
 
       const save = el("button", { class: "primary" }, "Save signal");
       save.disabled = book.broken !== null;
@@ -207,6 +234,7 @@ export function signalSection(ctx: SignalContext): {
           (view) => {
             w.baseline = JSON.stringify(w.signal);
             w.fresh = false;
+            opened.delete(w.signal.id);
             signalsChanged(book, view);
             redraw();
             ctx.changed();
@@ -215,26 +243,29 @@ export function signalSection(ctx: SignalContext): {
           (e: unknown) => ctx.fail("Saving the signal", e),
         );
       });
-      const undo = el("button", {}, w.fresh ? "Discard" : "Undo changes");
-      undo.addEventListener("click", () => {
+      undo.onclick = (): void => {
         if (w.fresh) working.delete(w.signal.id);
         else w.signal = JSON.parse(w.baseline) as StoredSignal;
+        opened.delete(w.signal.id);
         redraw();
-      });
+      };
       const remove = el("button", { class: "danger" }, "Delete");
       remove.hidden = w.fresh;
       remove.addEventListener("click", () => {
-        const users = usedBy();
-        if (users.length) {
-          ctx.fail(
-            "Deleting the signal",
-            `${w.signal.name} is drawn on ${users.join(", ")}. Take it off those pages first.`,
-          );
-          return;
-        }
+        // Laid out like deleting a page: what uses it, flagged, then that it
+        // cannot be undone. While a page draws it there is only Close, since
+        // every piece drawing it would be left drawing nothing.
+        const places = usedBy().map((p) => `- ${p}`);
         void confirmAction(
-          `Delete ${w.signal.name}?\n\nNo page draws it, and every profile on ${module} loses it.`,
+          `Delete the stored signal ${w.signal.name}?` +
+            (places.length > 0
+              ? `\n\nThese pages draw it:\n${places.join("\n")}` +
+                "\n\nTake it off those pages before it can be deleted."
+              : `\n\nEvery profile on ${module} loses it.`) +
+            "\n\nDeletion cannot be undone.",
           "Delete",
+          places,
+          places.length > 0,
         ).then((ok) => {
           if (!ok) return;
           void deleteSignal(module, w.signal.id).then(
@@ -253,7 +284,7 @@ export function signalSection(ctx: SignalContext): {
       refreshHead();
     };
     draw();
-    return box;
+    return body;
   };
 
   const redraw = (): void => {

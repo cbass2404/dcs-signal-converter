@@ -91,7 +91,6 @@ starter profile the first time you fly it, ready to fill in with the
 | Mi-24P         | Mi-24P                                                                             |
 | MosquitoFBMkVI | Mosquito FB Mk VI                                                                  |
 | FC3            | The Flaming Cliffs aircraft, and the mods and modules with no profile of their own |
-| No aircraft    | Spectator and free camera                                                          |
 
 The A-10C, AH-64D, CH-47F and F-14B (Upgrade) also put their own CDU on the MCDU
 screen, and on a PFP's, which is the same screen. The F-16, F/A-18, Mi-24P and

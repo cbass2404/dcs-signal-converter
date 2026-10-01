@@ -585,7 +585,11 @@ async function showLibrary(): Promise<void> {
   const list = el("ul", { class: "profiles" });
   const none = el("p", { class: "empty" }, "No profiles match.");
   const shown: [ProfileSummary, HTMLElement][] = [];
-  for (const row of rows) {
+  // By name, with FC3's catch-all last; No aircraft has nothing to edit.
+  const listed = rows
+    .filter((r) => !noAircraft(r))
+    .sort((a, b) => Number(a.module === "FC3") - Number(b.module === "FC3"));
+  for (const row of listed) {
     const aircraft = aircraftSummary(row.aircraft);
     const meta = row.error
       ? el("span", { class: "bad" }, row.error)
@@ -1004,7 +1008,17 @@ async function showImport(): Promise<void> {
 
 /** Profiles `row` could take lights and page slots from: any other on its module. */
 function mergeSources(row: ProfileSummary, rows: ProfileSummary[]): ProfileSummary[] {
-  return rows.filter((r) => r.file !== row.file && !r.error && r.module === row.module);
+  return rows.filter(
+    (r) => r.file !== row.file && !r.error && r.module === row.module && !noAircraft(r),
+  );
+}
+
+/**
+ * The profile flown outside any aircraft. It is kept and flown, but has
+ * nothing to edit, so the window does not offer it.
+ */
+function noAircraft(row: ProfileSummary): boolean {
+  return row.aircraft.length === 1 && row.aircraft[0] === "NONE";
 }
 
 /**

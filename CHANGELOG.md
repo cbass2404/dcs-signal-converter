@@ -96,3 +96,6 @@ unless this says what moved.
 - **The check's banners close with an ×.** The problems, the cautions and
   the DCS-BIOS nightly note at the top of a profile each have one. A closed
   banner comes back if the check later finds something different.
+- **FC3 is last in the profile list,** after the aircraft with their own
+  module, and "No aircraft" is no longer listed: it has nothing to edit,
+  and still lights the panels when you are in no aircraft.

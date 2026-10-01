@@ -90,3 +90,9 @@ unless this says what moved.
   to them, each keeping its own brightness; save the profile to keep the
   change. Closed with its ×, or gone once they are made one.
 - **A shared result is worked out only when one of its parts moves.**
+
+### Editor
+
+- **The check's banners close with an ×.** The problems, the cautions and
+  the DCS-BIOS nightly note at the top of a profile each have one. A closed
+  banner comes back if the check later finds something different.

@@ -1659,9 +1659,29 @@ async function showProfile(file: string): Promise<void> {
   // One line, only when a row reads something the DCS-BIOS nightly has and
   // the installed one lacks. The rows themselves carry the detail.
   const notice = el("div", { class: "cautions", hidden: "" });
+  // What each banner said when its × put it away. It stays away until a check
+  // says something else, so a new problem is never hidden by an old ×.
+  const away = { notice: "", cautions: "", problems: "" };
+  /** A banner's heading with the × that puts it away until `said` changes. */
+  const banner = (head: HTMLElement, key: keyof typeof away, said: string, redraw: () => void) =>
+    el(
+      "div",
+      { class: "condition-view" },
+      el("div", { class: "grow" }, head),
+      iconButton("cancel", "✕", "Put this away", () => {
+        away[key] = said;
+        redraw();
+      }),
+    );
+  let noticeText: string | null = null;
   const drawNotice = (text: string | null): void => {
-    notice.hidden = !text;
-    notice.textContent = text ?? "";
+    noticeText = text;
+    notice.hidden = !text || away.notice === text;
+    notice.replaceChildren();
+    if (!notice.hidden)
+      notice.append(
+        banner(el("span", {}, text ?? ""), "notice", text ?? "", () => drawNotice(noticeText)),
+      );
   };
 
   /**
@@ -1692,16 +1712,22 @@ async function showProfile(file: string): Promise<void> {
    * never many: the window prevents most of them from being made at all.
    */
   const drawProblems = (): void => {
+    const saidCautions = JSON.stringify(cautions);
     cautionList.replaceChildren();
-    cautionList.hidden = cautions.length === 0;
-    if (cautions.length > 0) {
+    cautionList.hidden = cautions.length === 0 || away.cautions === saidCautions;
+    if (!cautionList.hidden) {
       cautionList.append(
-        el(
-          "strong",
-          {},
-          cautions.length === 1
-            ? "This will load, but check it:"
-            : "These will load, but check them:",
+        banner(
+          el(
+            "strong",
+            {},
+            cautions.length === 1
+              ? "This will load, but check it:"
+              : "These will load, but check them:",
+          ),
+          "cautions",
+          saidCautions,
+          drawProblems,
         ),
       );
       for (const caution of cautions) {
@@ -1709,19 +1735,25 @@ async function showProfile(file: string): Promise<void> {
       }
     }
 
+    const saidProblems = JSON.stringify(problems);
     problemList.replaceChildren();
-    if (problems.length === 0) {
+    if (problems.length === 0 || away.problems === saidProblems) {
       problemList.hidden = true;
       return;
     }
     problemList.hidden = false;
     problemList.append(
-      el(
-        "strong",
-        {},
-        problems.length === 1
-          ? "This profile will not load until this is fixed:"
-          : `This profile will not load until these ${problems.length} are fixed:`,
+      banner(
+        el(
+          "strong",
+          {},
+          problems.length === 1
+            ? "This profile will not load until this is fixed:"
+            : `This profile will not load until these ${problems.length} are fixed:`,
+        ),
+        "problems",
+        saidProblems,
+        drawProblems,
       ),
     );
     for (const problem of problems) {

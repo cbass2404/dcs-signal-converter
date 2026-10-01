@@ -2291,7 +2291,7 @@ function spanEditor(
 
   const kind = el("select", { class: "span-kind" });
   kind.append(el("option", { value: "signal" }, "a reading"));
-  kind.append(el("option", { value: "stored" }, "a stored signal"));
+  kind.append(el("option", { value: "stored" }, "a shared signal"));
   kind.append(el("option", { value: "text" }, "text"));
   kind.append(el("option", { value: "gap" }, "a gap"));
   // Only a text grid draws a rule, the same as a whole field's divider. Kept
@@ -2640,7 +2640,7 @@ function switchEditor(
   const from = el("select", { class: "test" });
   from.append(el("option", { value: "signal" }, "a signal"));
   if (numbers.length > 0 || byStored) {
-    from.append(el("option", { value: "stored" }, "a stored signal"));
+    from.append(el("option", { value: "stored" }, "a shared signal"));
   }
   from.value = byStored ? "stored" : "signal";
   from.addEventListener("change", () => {
@@ -3019,7 +3019,7 @@ function caseEditor(
   };
   add.append(
     addOne({}, "+ a reading"),
-    addOne({ signal: "" }, "+ a stored signal"),
+    addOne({ signal: "" }, "+ a shared signal"),
     addOne({ text: "" }, "+ text"),
     addOne({ gap: true }, "+ a gap"),
   );
@@ -3106,8 +3106,8 @@ function storedControls(
       { class: "test-row" },
       pick,
       infoIcon(
-        "About stored signals",
-        "A number made once in Stored Signals at the top of the profile and " +
+        "About shared signals",
+        "A number made once in Shared Signals at the top of the profile and " +
           "drawn by any page on the module. Change it there and every piece " +
           "drawing it changes. Here you say only how it looks: words for its " +
           "readings, a colour or the small font.",
@@ -3451,7 +3451,7 @@ function chainEditor(opts: RowOptions, refreshPreview: () => void): HTMLElement 
     };
     add.append(
       addOne("signal", "+ a reading"),
-      addOne("stored", "+ a stored signal"),
+      addOne("stored", "+ a shared signal"),
       addOne("switch", "+ a switch"),
       addOne("text", "+ text"),
       addOne("gap", "+ a gap"),
@@ -3700,7 +3700,7 @@ function describeField(readout: Readout, display: DisplayInfo): string {
     }
     if (kindOf(s) === "stored") {
       const named = storedSignal(s.signal ?? "")?.name;
-      return `${named ? `the stored signal ${named}` : "a stored signal nobody has chosen yet"}${held}`;
+      return `${named ? `the stored signal ${named}` : "a shared signal nobody has chosen yet"}${held}`;
     }
     if (kindOf(s) === "signal") {
       // How it draws the number, so a reset that only changes that says so
@@ -3919,7 +3919,7 @@ export function fieldTable(
       "div",
       { class: "chain-add" },
       add("signal", "+ a reading"),
-      add("stored", "+ a stored signal"),
+      add("stored", "+ a shared signal"),
       add("text", "+ text"),
       add("gap", "+ a gap"),
     );

@@ -1789,7 +1789,7 @@ async function showProfile(file: string): Promise<void> {
     },
   };
   save.setAttribute("disabled", "");
-  // The module's stored signals, saved on their own like its pages.
+  // The module's shared signals, saved on their own like its pages.
   const stored = signalSection({
     book,
     signals,
@@ -1797,6 +1797,7 @@ async function showProfile(file: string): Promise<void> {
     fail: showError,
     changed: () => session.recheck(),
     profile: () => session.profile,
+    deviceFor: (display) => devices.find((d) => d.displays.some((x) => x.key === display))?.key,
   });
   // A page or a stored signal open with changes is unsaved work too, though
   // Save does not write either.

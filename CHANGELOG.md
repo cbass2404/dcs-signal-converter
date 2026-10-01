@@ -48,30 +48,36 @@ unless this says what moved.
   picking one copies its rows into the field. Choosing a gauge that has a
   table starts it converted by that table. The rows stay hidden while
   they are the table's, and choosing custom opens them to change.
-- **Stored signals: a number made once, drawn on any page.** A new
+- **Shared signals: a number made once, drawn on any page.** A new
   section at the top of the profile, above the panels, holds the
-  aircraft's stored signals. Each reads one or more signals, shaped the
+  aircraft's shared signals. Each reads one or more signals, shaped the
   way a reading is, laid side by side: three fuel drums, each rounded down
   on its own, read as one number without a rolling drum counting twice.
-  Pick "a stored signal" as a piece of a field to draw one, and give it
+  Pick "a shared signal" as a piece of a field to draw one, and give it
   words and colours there. Each has a note, is saved on its own, is shared
   by every profile on the aircraft, and travels with an exported page.
 - **A reading can round up** as well as down or to the nearest.
-- **Stored lamp conditions.** Write a lamp's logic once, seat choice and
+- **Shared lamp conditions.** Write a lamp's logic once, seat choice and
   all, and point any number of lamps at it, on any panel: the CH-47's
   master caution on every CDU and the PTO2 from one set of conditions.
   Each lamp keeps its own brightness.
-- **A switch can be decided by a stored signal**, in its units: a FUEL
+- **A switch can be decided by a shared signal**, in its units: a FUEL
   label red at or below 999 and green from 1000.
 - **Switch cases read like lamp tests**: is exactly, is one of, is
   between, is at least, is at most, or is anything else. At least and at
   most work in alias bands too.
 - **Lamps can flash.** Each group of conditions ends with a choice of
   steady, flashing slowly (twice a second) or flashing fast (three times a
-  second), on a lamp's own conditions, on each alternative, and on stored
+  second), on a lamp's own conditions, on each alternative, and on shared
   lamp conditions, where it applies to every lamp lit by them. Every lamp
   at one rate flashes in step, lit and dark for equal halves. A steady
   alternative that also holds keeps the lamp lit. Flash only a lamp DCS
   keeps steady: where the cockpit lamp flashes, the panel already follows
   it. Nothing changes until you set one.
-- **A stored number is worked out only when one of its parts moves.**
+- **Readings shaped the same way twice are offered as one shared signal.**
+  When one signal is shaped the same way in two or more readings on the
+  aircraft's pages, a banner at the top of Shared Signals offers to make it
+  one shared signal and point every one of them at it. Each reading keeps
+  its own words, colour and box. The banner goes once they are made one,
+  or when you close it with its ×.
+- **A shared number is worked out only when one of its parts moves.**

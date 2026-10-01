@@ -248,8 +248,10 @@ pub enum Error {
     SwitchOnText(String),
     #[error("cases {0} and {1} of the switch on {2:?} both claim the same position; the lower one draws it")]
     SwitchCasesOverlap(String, String, String),
-    #[error("case {0} of the switch on {1:?} is outside the positions it sends, 0 to {2}, so nothing would ever draw it")]
-    SwitchCaseUnreachable(String, String, u16),
+    #[error("case {0} of the switch on {1:?} is outside what it reads, {2}, so nothing would ever draw it")]
+    SwitchCaseUnreachable(String, String, String),
+    #[error("a piece on {1} of display {0:?} converts a switch's selector but is not a switch; pick the signal that decides")]
+    SwitchReadsWithoutSwitch(String, String),
     #[error("positions {1} of {0:?} have no case and the switch has no else")]
     SwitchUncovered(String, String),
 }
@@ -2317,6 +2319,12 @@ impl Profile {
                     r.cells.to_string(),
                 ));
             }
+            if span.switch_reads.is_some() && !span.is_switch() {
+                out.push(Error::SwitchReadsWithoutSwitch(
+                    r.display.clone(),
+                    r.cells.to_string(),
+                ));
+            }
             // A box wider than the run it sits in cannot be drawn: the
             // field crops what will not fit, so the piece would take the
             // whole run and whatever shares it would be the part that
@@ -2571,7 +2579,7 @@ impl Profile {
                 out.push(Error::SwitchOnText(span.switch.clone()));
                 continue;
             }
-            let max = output.number_max();
+            let (lo, hi) = span.switch_span(output.number_max());
             let bands: Vec<&ValueBand> = span
                 .cases
                 .0
@@ -2593,11 +2601,11 @@ impl Profile {
                 }
             }
             for band in &bands {
-                if band.highest() < 0.0 || band.lowest() > f64::from(max) {
+                if band.highest() < lo || band.lowest() > hi {
                     out.push(Error::SwitchCaseUnreachable(
                         band.to_string(),
                         span.switch.clone(),
-                        max,
+                        format!("{lo} to {hi}"),
                     ));
                 }
             }
@@ -2606,9 +2614,16 @@ impl Profile {
             }
             // Walked position by position, which a selector's handful makes
             // cheap and a continuous signal's 65536 still does not make slow.
-            let mut runs: Vec<(u16, u16)> = Vec::new();
-            for position in 0..=max {
-                if span.case_for(f64::from(position)).is_some() {
+            // A converted face is walked in whole units, the steps it is
+            // rounded to. One converted to millions of units is past what is
+            // worth walking, and goes unchecked rather than stalling the
+            // editor.
+            if hi - lo > 1_000_000.0 {
+                continue;
+            }
+            let mut runs: Vec<(i64, i64)> = Vec::new();
+            for position in (lo as i64)..=(hi as i64) {
+                if span.case_for(position as f64).is_some() {
                     continue;
                 }
                 match runs.last_mut() {

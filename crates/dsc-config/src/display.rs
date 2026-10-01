@@ -1616,6 +1616,17 @@ pub struct Span {
     /// what is its own.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub switch: String,
+    /// What the selector reads at each end of its travel, so cases can be
+    /// written in the units a gauge is marked with rather than in counts.
+    ///
+    /// A switch is usually a knob, whose positions are the numbers its cases
+    /// name. Read off a gauge instead, it turns a label red below 1000 lb of
+    /// fuel, and `"0..999"` says that where `"0..5957"` would not. Converted
+    /// in a straight line like `reads`, then rounded to a whole number, so
+    /// `"0..999"` and `"1000..2999"` leave nothing between them. None matches
+    /// the position as sent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub switch_reads: Option<[f64; 2]>,
     /// Draw nothing, and take whatever cells the rest of the chain leaves.
     ///
     /// How content reaches both ends of a line. A CDU page puts a label at the
@@ -1976,6 +1987,7 @@ impl SpanPatch {
             text: self.text.clone(),
             source: self.source.pick(reading, &shared.source),
             switch: self.switch.clone(),
+            switch_reads: None,
             gap: self.gap,
             rule: self.rule,
             label: self.label.clone(),
@@ -2175,6 +2187,28 @@ impl Span {
             .or_else(|| self.cases.0.iter().find(|c| c.when == CaseKey::Else))
     }
 
+    /// Where a selector sending `value` of `max` is, in the units its cases
+    /// are written in: as sent, or converted by `switch_reads` and rounded
+    /// to a whole number.
+    pub fn switch_position(&self, value: u16, max: u16) -> f64 {
+        let Some([low, high]) = self.switch_reads else {
+            return f64::from(value);
+        };
+        if max == 0 {
+            return low.round();
+        }
+        (low + f64::from(value) / f64::from(max) * (high - low)).round()
+    }
+
+    /// The whole positions a selector can be at, lowest first: 0 to its
+    /// maximum as sent, or every whole number `switch_reads` runs between.
+    pub fn switch_span(&self, max: u16) -> (f64, f64) {
+        match self.switch_reads {
+            None => (0.0, f64::from(max)),
+            Some([a, b]) => (a.min(b).round(), a.max(b).round()),
+        }
+    }
+
     /// What this switch draws given how signals read right now.
     pub fn pick<F>(&self, read: &F) -> Picked<'_>
     where
@@ -2182,7 +2216,9 @@ impl Span {
     {
         match read(&self.switch) {
             None => Picked::Waiting,
-            Some(Reading::Number { value, .. }) => Picked::Case(self.case_for(f64::from(value))),
+            Some(Reading::Number { value, max }) => {
+                Picked::Case(self.case_for(self.switch_position(value, max)))
+            }
             // A selector that reports characters has no position to match,
             // and `problems` says so. Only `else` can claim it.
             Some(Reading::Text(_)) => {

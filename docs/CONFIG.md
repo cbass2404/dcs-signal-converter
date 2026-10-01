@@ -1282,6 +1282,28 @@ own. Only the case the selector is in draws, and its pieces take the switch's
 place in the line, so a gap in a case shares the line with the pieces around
 the switch.
 
+**`switch_reads` reads the selector off a gauge.** A knob's positions are
+what its cases name, but a selector can be any number, and a gauge sends
+counts. With `switch_reads` the selector is converted the way `reads`
+converts a reading, then rounded to a whole number, and cases are written in
+the dial's units. That is how typed text changes colour by a reading's range:
+
+```jsonc
+{
+  "switch": "FUEL_TOTAL",
+  "switch_reads": [0, 11000], // pounds, as the gauge is marked
+  "cases": {
+    "0..999": { "text": "FUEL", "colour": "red" },
+    "1000..2999": { "text": "FUEL", "colour": "amber" },
+    "else": { "text": "FUEL", "colour": "green" },
+  },
+}
+```
+
+Rounding is what lets `"0..999"` and `"1000..2999"` meet: 999.6 lb is 1000,
+and nothing falls between them. The position checks below are made in the
+same units. `switch_reads` on a piece that is not a switch is refused.
+
 **Everything else on the switch is shared by its cases.** A case piece that
 leaves an option unset takes the switch's, so the source, the decimals and the
 colour are written once and each case says only what is its own. A case

@@ -268,6 +268,13 @@ export interface Span {
    */
   switch?: string;
   /**
+   * What the selector reads at each end of its travel, so cases are written
+   * in a gauge's units: `"0..999"` lb of fuel rather than counts. Converted
+   * in a straight line and rounded to a whole number. Absent matches the
+   * position as sent, which is what a knob wants.
+   */
+  switch_reads?: [number, number];
+  /**
    * What a switch draws at each position of its selector, keyed the way a
    * value alias is (`"0"`, `"0,1"`, `"1..3"`) or `"else"`. A case is one piece
    * or a chain of them, each written as only what differs from the switch.

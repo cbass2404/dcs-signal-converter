@@ -29,6 +29,10 @@ unless this says what moved.
   shows what it takes from the switch in grey. Emptying a setting takes the
   switch's back, and a shared wrap, padding or set of words can be turned
   off for one case.
+- **A switch can be decided by a gauge as well as a knob.** Read the
+  signal that decides as converted, and cases are written in the gauge's
+  units, so typed text can change colour by a reading's range: FUEL in
+  amber below 3000 lb and in red below 1000.
 - **Positions with no case draw nothing,** unless the switch has an else
   case. Two cases naming one position, a case the selector never reaches,
   and positions with no case are cautions on the field, not refusals.

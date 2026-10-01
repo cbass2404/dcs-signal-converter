@@ -353,7 +353,7 @@ fn positions_are_cautioned_not_refused() {
     );
     assert!(
         said.iter()
-            .any(|c| c.contains("outside the positions it sends, 0 to 2")),
+            .any(|c| c.contains("outside what it reads, 0 to 2")),
         "{said:?}"
     );
     assert!(
@@ -382,4 +382,83 @@ fn a_selector_that_reports_characters_is_cautioned() {
     assert!(cautions(&p)
         .iter()
         .any(|c| c.contains("no position for a switch")));
+}
+
+/// A label coloured by how much fuel is left: NEEDLE read as 0 to 11000 lb.
+const FUEL: &str = r#"{"switch": "NEEDLE", "switch_reads": [0, 11000],
+    "cases": {
+      "0..999": {"text": "FUEL", "colour": "red"},
+      "1000..2999": {"text": "FUEL", "colour": "amber"},
+      "else": {"text": "FUEL", "colour": "green"}
+    }}"#;
+
+/// The colour the first cell draws in with the needle at `raw`.
+fn colour_at(r: &Readout, raw: u16) -> Option<Colour> {
+    r.compose(|_| {
+        Some(Reading::Number {
+            value: raw,
+            max: 65535,
+        })
+    })
+    .expect("draws")[0]
+        .colour
+}
+
+#[test]
+fn a_converted_selector_matches_cases_in_dial_units() {
+    let r = field(FUEL);
+    assert_eq!(colour_at(&r, 0), Some(Colour::Red));
+    // 2000 lb of 11000 is 11915 counts.
+    assert_eq!(colour_at(&r, 11915), Some(Colour::Amber));
+    assert_eq!(colour_at(&r, 65535), Some(Colour::Green));
+}
+
+#[test]
+fn rounding_leaves_no_gap_between_whole_number_cases() {
+    // 999.6 lb rounds to 1000 and is amber rather than falling between
+    // "0..999" and "1000..2999".
+    let r = field(FUEL);
+    let raw = (999.6_f64 / 11000.0 * 65535.0).round() as u16;
+    assert_eq!(colour_at(&r, raw), Some(Colour::Amber));
+}
+
+#[test]
+fn a_converted_selector_is_checked_in_dial_units() {
+    let p = profile(
+        r#"{"device": "MCDU_Captain", "display": "MCDU", "cells": "0-9",
+            "content": [{"switch": "NEEDLE", "switch_reads": [0, 11000],
+              "cases": {"0..999": {"text": "LOW"}, "20000": {"text": "X"}}}]}"#,
+    );
+    assert!(refusals(&p).is_empty(), "{:?}", refusals(&p));
+    let said = cautions(&p);
+    assert!(
+        said.iter()
+            .any(|c| c.contains("outside what it reads, 0 to 11000")),
+        "{said:?}"
+    );
+    assert!(
+        said.iter()
+            .any(|c| c.contains("positions 1000 to 11000 of \"NEEDLE\"")),
+        "{said:?}"
+    );
+}
+
+#[test]
+fn a_saved_selector_conversion_comes_back_as_written() {
+    let written = r#"{"device":"MCDU_Captain","display":"MCDU","cells":"0-9","content":[{"switch":"NEEDLE","switch_reads":[0.0,11000.0],"cases":{"0..999":{"text":"LOW"}}}]}"#;
+    let r: Readout = serde_json::from_str(written).expect("parses");
+    assert_eq!(serde_json::to_string(&r).expect("writes"), written);
+}
+
+#[test]
+fn a_selector_conversion_on_a_plain_reading_is_refused() {
+    let p = profile(
+        r#"{"device": "MCDU_Captain", "display": "MCDU", "cells": "0-9",
+            "source": "NEEDLE", "content": [{"source": "NEEDLE", "switch_reads": [0, 10]}]}"#,
+    );
+    assert!(
+        refusals(&p).iter().any(|e| e.contains("is not a switch")),
+        "{:?}",
+        refusals(&p)
+    );
 }

@@ -1835,6 +1835,14 @@
                 <span class="ed">else</span> case, which draws for every position the others leave.
                 The field is as wide as its widest case, which is what the fit warning measures.
               </p>
+              <p>
+                The signal that decides doesn't have to be a knob. Set it to
+                <span class="ed">converted to</span> and it is read the way a reading is, from one
+                end of the dial to the other, rounded to a whole number. Cases are then written in
+                the dial's units, which is how a label turns amber below 3000 lb of fuel and red
+                below 1000: <code>"0..999"</code>, <code>"1000..2999"</code> and
+                <code>else</code>, each a piece of text in its own colour.
+              </p>
             </div>
 
             <div class="demo" id="demo-switch">
@@ -1867,6 +1875,31 @@
                   <div class="glass"><div class="cells" id="s-cells" style="--n: 10"></div></div>
                   <p class="say" id="s-say"></p>
                   <pre id="s-json"></pre>
+                </div>
+              </div>
+            </div>
+            <div class="demo" id="demo-fuel">
+              <div class="demo-head">
+                <span class="t">A label coloured by what is left</span
+                ><span class="try">Try it</span>
+              </div>
+              <div class="demo-body">
+                <div class="controls">
+                  <div class="row">
+                    <span class="lbl">DCS sends</span
+                    ><input type="range" id="f-raw" min="0" max="65535" value="9000" /><span
+                      class="mono"
+                      id="f-rawtext"
+                    ></span>
+                  </div>
+                  <div class="row">
+                    <span class="lbl">read as</span><span class="note">converted to 0 to 11000</span>
+                  </div>
+                </div>
+                <div class="out">
+                  <div class="glass"><div class="cells" id="f-cells" style="--n: 10"></div></div>
+                  <p class="say" id="f-say"></p>
+                  <pre id="f-json"></pre>
                 </div>
               </div>
             </div>
@@ -3391,6 +3424,35 @@
         draw();
       })();
 
+      /* ------------------------------------------------------- fuel label */
+      (() => {
+        const cases = [
+          ["0..999", 0, 999, "red"],
+          ["1000..2999", 1000, 2999, "amber"],
+          ["else", null, null, "green"],
+        ];
+        $("f-raw").addEventListener("input", draw);
+        function draw() {
+          const raw = Number($("f-raw").value);
+          $("f-rawtext").textContent = raw;
+          const lb = Math.round((raw / 65535) * 11000);
+          const hit =
+            cases.find(([, lo, hi]) => lo !== null && lb >= lo && lb <= hi) ||
+            cases[cases.length - 1];
+          const glyphs = [..."FUEL"].map((ch) => ({ ch, colour: hit[3] }));
+          paint($("f-cells"), fitTo(glyphs, 10, "left"), 10);
+          $("f-say").innerHTML =
+            `${raw} of 65535 reads <b>${lb}</b> lb, rounded, so case ` +
+            `<b>${hit[0]}</b> draws FUEL in ${hit[3]}.`;
+          $("f-json").textContent =
+            `{ "switch": "FUEL_TOTAL", "switch_reads": [0, 11000],\n` +
+            `  "cases": {\n` +
+            cases.map(([k, , , c]) => `    "${k}": { "text": "FUEL", "colour": "${c}" }`).join(",\n") +
+            `\n  } }`;
+        }
+        draw();
+      })();
+
       /* ------------------------------------------------------------ pages */
       (() => {
         const panels = {
@@ -3544,6 +3606,13 @@
             "Alias",
             "Draw the number itself while the reading is in this band, in the band's colour, small text or inverse, rather than a word. Needs one of those.",
             "readings",
+          ],
+          [
+            "Read as, for a switch",
+            "switch_reads",
+            "Switch",
+            "Convert the signal that decides, from one end of its dial to the other, so cases are written in its units: 0..999 lb of fuel. Rounded to a whole number. Without it, cases name the positions as sent.",
+            "switches",
           ],
           [
             "Switch",

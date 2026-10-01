@@ -2234,6 +2234,7 @@ function spanEditor(
     } else if (next === "signal" && was === "switch") {
       const reading: Span = { ...span, source: span.source ?? "" };
       delete reading.switch;
+      delete reading.switch_reads;
       delete reading.cases;
       spans[index] = reading;
     } else if (next === "switch") {
@@ -2503,14 +2504,21 @@ function switchEditor(
     value: span.switch ?? "",
     onPick: (id) => {
       span.switch = id;
+      const signal = signals.find((s) => s.id === id);
+      // A full word is a gauge, whose counts mean nothing until they are
+      // converted to what the dial is marked with, the same start a reading
+      // gets. A knob's positions are what its cases name.
+      if (signal && !signal.text && signal.max_value >= 65535) {
+        span.switch_reads ??= [0, 100];
+      } else {
+        delete span.switch_reads;
+      }
       // A case for each position the catalogue names, each taking everything
       // from the switch, so choosing the selector is usually the only step
       // before saying what differs in each.
-      if (Object.keys(span.cases ?? {}).length === 0) {
+      if (Object.keys(span.cases ?? {}).length === 0 && !span.switch_reads) {
         const cases: Record<string, SpanPatch> = {};
-        for (const v of signals.find((s) => s.id === id)?.values ?? []) {
-          cases[String(v.value)] = {};
-        }
+        for (const v of signal?.values ?? []) cases[String(v.value)] = {};
         span.cases = cases;
       }
       rebuild();
@@ -2527,6 +2535,7 @@ function switchEditor(
     ),
     selector,
   );
+  if (span.switch) wrap.append(selectorReading(span, signals, edited, rebuild));
 
   wrap.append(
     explained(
@@ -2545,10 +2554,15 @@ function switchEditor(
   }
 
   // The next position nothing claims yet, and else once every one is taken.
+  // In the units the cases are written in, which a converted selector makes
+  // the dial's.
   const max = signals.find((s) => s.id === span.switch)?.max_value ?? 0;
+  const [from, to] = span.switch_reads
+    ? [Math.round(Math.min(...span.switch_reads)), Math.round(Math.max(...span.switch_reads))]
+    : [0, max];
   const keys = caseKeys(span);
   let next: string | undefined;
-  for (let v = 0; v <= Math.min(max, 1000) && next === undefined; v += 1) {
+  for (let v = from; v <= Math.min(to, from + 100000) && next === undefined; v += 1) {
     if (!keys.some((k) => keyClaims(k, v))) next = String(v);
   }
   if (next === undefined && !keys.includes("else")) next = "else";
@@ -2562,6 +2576,60 @@ function switchEditor(
   });
   wrap.append(el("div", { class: "chain-add" }, add));
   return wrap;
+}
+
+/**
+ * How a switch's selector is read before its cases are matched: as the
+ * position it sends, or converted to what a gauge is marked with.
+ *
+ * Laid out like a reading's own as sent and converted, which is the same
+ * choice. Converted is what lets a label turn red below 1000 lb of fuel with
+ * a case written `0..999` rather than in the counts DCS-BIOS sends.
+ */
+function selectorReading(
+  span: Span,
+  signals: SignalView[],
+  edited: () => void,
+  rebuild: () => void,
+): HTMLElement {
+  const max = signals.find((s) => s.id === span.switch)?.max_value ?? 65535;
+  const select = el("select", { class: "test" });
+  select.append(
+    el("option", { value: "sent" }, "positions as sent"),
+    el("option", { value: "converted" }, "converted to"),
+  );
+  select.value = span.switch_reads ? "converted" : "sent";
+  select.addEventListener("change", () => {
+    // Starting from the signal's own range, which matches exactly what as
+    // sent did, so the choice moves no case until a number is changed.
+    if (select.value === "converted") span.switch_reads = [0, max];
+    else delete span.switch_reads;
+    rebuild();
+  });
+  const row = el("div", { class: "test-row" }, select);
+  if (span.switch_reads) {
+    const [lo, hi] = span.switch_reads;
+    const low = el("input", { type: "number", class: "value", value: String(lo) });
+    const high = el("input", { type: "number", class: "value", value: String(hi) });
+    const sync = (): void => {
+      span.switch_reads = [Number(low.value) || 0, Number(high.value) || 0];
+      edited();
+    };
+    low.addEventListener("input", sync);
+    high.addEventListener("input", sync);
+    row.append(low, el("span", { class: "meta" }, "to"), high);
+  }
+  row.append(
+    infoIcon(
+      "About reading the switch",
+      `As sent matches each case against the position DCS-BIOS sends, 0 to ${max}, ` +
+        "which suits a knob. Converted reads a gauge the way a reading does, " +
+        "from one end of the dial to the other, rounded to a whole number, so " +
+        "cases can be written in its units: 0..999 and 1000..2999 for pounds " +
+        "of fuel, with nothing between them.",
+    ),
+  );
+  return row;
 }
 
 /**
@@ -3257,8 +3325,9 @@ function describeField(readout: Readout, display: DisplayInfo): string {
     if (s.gap) return `a gap${held}`;
     if (kindOf(s) === "switch") {
       const n = caseKeys(s).length;
+      const read = s.switch_reads ? ` read as ${s.switch_reads[0]} to ${s.switch_reads[1]}` : "";
       return s.switch
-        ? `a switch on ${s.switch} with ${n} case${n === 1 ? "" : "s"}`
+        ? `a switch on ${s.switch}${read} with ${n} case${n === 1 ? "" : "s"}`
         : "a switch nobody has pointed at a selector yet";
     }
     if (kindOf(s) === "signal") {

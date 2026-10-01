@@ -3096,6 +3096,12 @@ fn run(
             break;
         }
 
+        // A flashing lamp turns between frames, so the wait ends when it does.
+        let wait = engine
+            .next_beat(Instant::now())
+            .map_or(dsc_engine::FRAME_EVERY, |d| d.min(dsc_engine::FRAME_EVERY))
+            .max(Duration::from_millis(1));
+        listener.set_read_timeout(Some(wait))?;
         writes.clear();
         match listener.recv(&mut writes) {
             Ok(_) => {

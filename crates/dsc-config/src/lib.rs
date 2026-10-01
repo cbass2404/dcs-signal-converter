@@ -955,6 +955,10 @@ pub struct Binding {
     /// How the alternatives in `any_of` combine. See [`Pick`].
     #[serde(default, skip_serializing_if = "Pick::is_brightest")]
     pub pick: Pick,
+    /// Whether the lamp's own `conditions` flash while they hold. Each
+    /// alternative in `any_of` carries its own instead. See [`Blink`].
+    #[serde(default, skip_serializing_if = "Blink::is_steady")]
+    pub blink: Blink,
     /// Mirror another lamp, by name, on this device unless
     /// [`same_as_device`](Self::same_as_device) names another.
     ///
@@ -1290,11 +1294,101 @@ impl Pick {
     }
 }
 
+/// How a block of conditions shows while it holds: steady, or flashing at
+/// one of two rates.
+///
+/// For a lamp DCS does not flash itself. Where the module's own argument
+/// oscillates, following it already flashes the lamp, and a blink on top
+/// beats against it. See docs/CONFIG.md "Blink".
+///
+/// Set per block, the lamp's own conditions or each alternative, so one lamp
+/// can be steady for one reason and flash for another. While a steady
+/// alternative and a flashing one both hold, the steady one wins, because
+/// the brightest alternative does and a flash is dark half the time.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Blink {
+    #[default]
+    Steady,
+    /// Twice a second.
+    Slow,
+    /// Three times a second.
+    Fast,
+}
+
+impl Blink {
+    /// Flashes a second at each rate, each lit for exactly half its time and
+    /// dark for the other half, so the flash looks even from start to end.
+    pub const SLOW_PER_SECOND: u128 = 2;
+    pub const FAST_PER_SECOND: u128 = 3;
+
+    pub fn is_steady(&self) -> bool {
+        *self == Blink::Steady
+    }
+
+    /// Whether a block flashing this way is in its lit half at `beat`.
+    pub fn lit(self, beat: Beat) -> bool {
+        match self {
+            Blink::Steady => true,
+            Blink::Slow => beat.slow,
+            Blink::Fast => beat.fast,
+        }
+    }
+}
+
+/// Where both flash rates are in their cycle: whether each is in its lit
+/// half. One clock for every lamp, so two lamps flashing at one rate flash
+/// together, as a cockpit lamp and its repeater on another panel should.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Beat {
+    pub slow: bool,
+    pub fast: bool,
+}
+
+impl Beat {
+    /// Both rates lit. How a flashing lamp is read where no clock runs, by a
+    /// check asking whether it lights at all.
+    pub const LIT: Beat = Beat {
+        slow: true,
+        fast: true,
+    };
+
+    /// The beat `elapsed` after the clock started.
+    pub fn at(elapsed: std::time::Duration) -> Beat {
+        let ns = elapsed.as_nanos();
+        Beat {
+            slow: half(ns, Blink::SLOW_PER_SECOND) % 2 == 0,
+            fast: half(ns, Blink::FAST_PER_SECOND) % 2 == 0,
+        }
+    }
+
+    /// How long after `elapsed` either rate next turns lit or dark. Worked
+    /// from the clock's start rather than added up turn by turn, so a third
+    /// of a second never drifts.
+    pub fn next_turn(elapsed: std::time::Duration) -> std::time::Duration {
+        let ns = elapsed.as_nanos();
+        let turn = |per_second: u128| {
+            let next = half(ns, per_second) + 1;
+            (next * 1_000_000_000).div_ceil(2 * per_second)
+        };
+        let at = turn(Blink::SLOW_PER_SECOND).min(turn(Blink::FAST_PER_SECOND));
+        std::time::Duration::from_nanos((at - ns) as u64)
+    }
+}
+
+/// Which half flash, lit or dark, `ns` falls in at `per_second` flashes.
+fn half(ns: u128, per_second: u128) -> u128 {
+    ns * 2 * per_second / 1_000_000_000
+}
+
 /// One alternative within `any_of`: conditions that must all hold together.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Branch {
     #[serde(default)]
     pub conditions: Vec<Condition>,
+    /// Whether this alternative flashes while it holds.
+    #[serde(default, skip_serializing_if = "Blink::is_steady")]
+    pub blink: Blink,
 }
 
 /// One signal and the test applied to it.
@@ -1330,6 +1424,7 @@ impl Binding {
             always: held,
             any_of: Vec::new(),
             pick: Pick::default(),
+            blink: Blink::Steady,
             same_as: None,
             same_as_device: None,
             signal: None,
@@ -1360,6 +1455,29 @@ impl Binding {
         match (&self.signal, &self.stored) {
             (Some(_), Some(s)) => (&s.conditions, &s.any_of, s.pick),
             _ => (&self.conditions, &self.any_of, self.pick),
+        }
+    }
+
+    /// How the conditions [`logic`](Self::logic) gives flash, where there
+    /// are no alternatives: a stored signal's way where it names one.
+    fn own_blink(&self) -> Blink {
+        match (&self.signal, &self.stored) {
+            (Some(_), Some(s)) => s.blink,
+            _ => self.blink,
+        }
+    }
+
+    /// Whether any block this lamp lights by flashes, so its value can change
+    /// with no signal moving and has to be worked out again on the beat.
+    pub fn blinks(&self) -> bool {
+        if self.always {
+            return false;
+        }
+        let (conditions, any_of, _) = self.logic();
+        if any_of.is_empty() {
+            !conditions.is_empty() && !self.own_blink().is_steady()
+        } else {
+            any_of.iter().any(|b| !b.blink.is_steady())
         }
     }
 
@@ -1401,7 +1519,18 @@ impl Binding {
     /// `moved` answers with any number that grows with time, or `None` for a
     /// signal that has not changed since it was first seen. Only
     /// [`Pick::Latest`] asks it anything.
-    pub fn resolve_with_moves<F, M>(&self, led: &Led, mut read: F, mut moved: M) -> Option<u8>
+    pub fn resolve_with_moves<F, M>(&self, led: &Led, read: F, moved: M) -> Option<u8>
+    where
+        F: FnMut(&str) -> Option<u32>,
+        M: FnMut(&str) -> Option<u64>,
+    {
+        self.resolve_at(led, read, moved, Beat::LIT)
+    }
+
+    /// [`Binding::resolve_with_moves`] at one point in the flash cycle. A
+    /// flashing block in its dark half counts as not holding, so the lamp
+    /// falls to its `off`, or to another alternative that does hold.
+    pub fn resolve_at<F, M>(&self, led: &Led, mut read: F, mut moved: M, beat: Beat) -> Option<u8>
     where
         F: FnMut(&str) -> Option<u32>,
         M: FnMut(&str) -> Option<u64>,
@@ -1432,6 +1561,7 @@ impl Binding {
                     continue;
                 }
                 let value = all_of(&branch.conditions, on, led_max, &mut read)?;
+                let value = if branch.blink.lit(beat) { value } else { 0 };
                 best = best.max(value);
                 if pick == Pick::Latest {
                     let at = branch
@@ -1454,6 +1584,7 @@ impl Binding {
             return None;
         }
         let value = all_of(conditions, on, led_max, &mut read)?;
+        let value = if self.own_blink().lit(beat) { value } else { 0 };
         Some(if value == 0 { self.off } else { value })
     }
 }
@@ -1719,6 +1850,12 @@ impl Profile {
         }
     }
 
+    /// Whether a lamp flashes, through the lamp it mirrors where it mirrors
+    /// one. See [`Binding::blinks`].
+    pub fn blinks(&self, b: &Binding) -> bool {
+        self.mirrored(b).unwrap_or(b).blinks()
+    }
+
     /// Every signal this profile names, once each: in lamp conditions, and in
     /// display fields as the text, its format and its colours. Unfinished
     /// conditions and fields, which name nothing yet, are left out.
@@ -1756,12 +1893,29 @@ impl Profile {
         F: FnMut(&str) -> Option<u32>,
         M: FnMut(&str) -> Option<u64>,
     {
+        self.resolve_binding_at(b, led, read, moved, Beat::LIT)
+    }
+
+    /// [`Profile::resolve_binding_with_moves`] at one point in the flash
+    /// cycle. See [`Binding::resolve_at`].
+    pub fn resolve_binding_at<F, M>(
+        &self,
+        b: &Binding,
+        led: &Led,
+        read: F,
+        moved: M,
+        beat: Beat,
+    ) -> Option<u8>
+    where
+        F: FnMut(&str) -> Option<u32>,
+        M: FnMut(&str) -> Option<u64>,
+    {
         let Some(target) = self.mirrored(b) else {
-            return b.resolve_with_moves(led, read, moved);
+            return b.resolve_at(led, read, moved, beat);
         };
         // Resolved against the target's own lamp range, then brought into this
         // one. `validate` rejects chains, so this never recurses further.
-        let value = target.resolve_with_moves(led, read, moved)?;
+        let value = target.resolve_at(led, read, moved, beat)?;
         Some(if value == 0 {
             b.off
         } else {
@@ -4331,6 +4485,7 @@ mod tests {
             always: true,
             any_of: Vec::new(),
             pick: Pick::default(),
+            blink: Blink::Steady,
             same_as: None,
             same_as_device: None,
             signal: None,
@@ -4391,6 +4546,7 @@ mod tests {
             conditions: Vec::new(),
             always: false,
             pick: Pick::default(),
+            blink: Blink::Steady,
             same_as: None,
             same_as_device: None,
             signal: None,
@@ -4401,12 +4557,14 @@ mod tests {
                         cond("STATION", OnWhen::Equals(1)),
                         cond("CPG_BRIGHT", OnWhen::Scale([0, 65535])),
                     ],
+                    blink: Blink::Steady,
                 },
                 Branch {
                     conditions: vec![
                         cond("STATION", OnWhen::Equals(0)),
                         cond("PLT_BRIGHT", OnWhen::Scale([0, 65535])),
                     ],
+                    blink: Blink::Steady,
                 },
             ],
             on: None,
@@ -4508,6 +4666,7 @@ mod tests {
             conditions: Vec::new(),
             always: false,
             pick,
+            blink: Blink::Steady,
             same_as: None,
             same_as_device: None,
             signal: None,
@@ -4515,9 +4674,11 @@ mod tests {
             any_of: vec![
                 Branch {
                     conditions: vec![cond("PLT_KNOB", OnWhen::Scale([0, 8]))],
+                    blink: Blink::Steady,
                 },
                 Branch {
                     conditions: vec![cond("RIO_KNOB", OnWhen::Scale([0, 8]))],
+                    blink: Blink::Steady,
                 },
             ],
             on: None,
@@ -4619,6 +4780,7 @@ mod tests {
                     always: false,
                     any_of: Vec::new(),
                     pick: Pick::default(),
+                    blink: Blink::Steady,
                     same_as: None,
                     same_as_device: None,
                     signal: None,
@@ -4634,6 +4796,7 @@ mod tests {
                     always: false,
                     any_of: Vec::new(),
                     pick: Pick::default(),
+                    blink: Blink::Steady,
                     same_as: same_as.map(str::to_string),
                     same_as_device: None,
                     signal: None,

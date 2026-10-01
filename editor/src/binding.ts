@@ -11,7 +11,7 @@ import { flagSlot } from "./flags";
 import { noteEditor } from "./note";
 import { isLampSignal, storedSignal, storedSignals } from "./stored";
 import { hintFor, infoIcon, signalPicker } from "./typeahead";
-import type { Binding, Branch, Condition, Led, OnWhen, SignalView } from "./types";
+import type { Binding, BlinkRate, Branch, Condition, Led, OnWhen, SignalView } from "./types";
 
 type TestKind = "equals" | "in" | "gte" | "lte" | "between" | "scale";
 
@@ -263,6 +263,7 @@ function meaningfulPart(b: Binding): string {
     conditions: b.conditions,
     any_of: b.any_of ?? [],
     pick: b.pick ?? "brightest",
+    blink: b.blink ?? "steady",
     always: b.always ?? false,
     same_as: b.same_as ?? null,
     same_as_device: b.same_as_device ?? null,
@@ -320,6 +321,19 @@ function groupsOf(binding: Binding): Branch[] {
 }
 
 /**
+ * Where a block's flash is kept: on the alternative, or for a lamp's own
+ * conditions, which are not a branch, on the lamp.
+ */
+function flashOf(binding: Binding, group: Branch): { blink?: BlinkRate } {
+  return binding.any_of && binding.any_of.length > 0 ? group : binding;
+}
+
+const FLASH_WORDS: Record<BlinkRate, string> = {
+  slow: "flashing slowly",
+  fast: "flashing fast",
+};
+
+/**
  * A whole lamp in words, a line per condition, for a question that has to say
  * what a change will do before it is made rather than leave the user to find
  * out after.
@@ -342,11 +356,16 @@ function describeBinding(
     const elsewhere = b.same_as_device && b.same_as_device !== b.device;
     lines.push(`Matches ${b.same_as}${elsewhere ? ` on ${deviceName(b.same_as_device!)}` : ""}`);
   } else if (groups.length === 0) lines.push("Unassigned, so driven off");
-  else if (groups.length === 1) lines.push(groups[0]!.conditions.map(condition).join("\nand "));
-  else {
+  else if (groups.length === 1) {
+    lines.push(groups[0]!.conditions.map(condition).join("\nand "));
+    if (b.blink) lines.push(`Lit ${FLASH_WORDS[b.blink]}`);
+  } else {
     const how = b.pick === "latest" ? "the one that changed last wins" : "the brightest wins";
     lines.push(`Any of these, ${how}:`);
-    for (const g of groups) lines.push(`- ${g.conditions.map(condition).join(" and ")}`);
+    for (const g of groups) {
+      const flash = g.blink ? `, ${FLASH_WORDS[g.blink]}` : "";
+      lines.push(`- ${g.conditions.map(condition).join(" and ")}${flash}`);
+    }
   }
   if (b.on !== null) lines.push(`Lit at ${b.on}`);
   if (b.off !== 0) lines.push(`Off at ${b.off}`);
@@ -403,6 +422,10 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
     }
     if (branches.length === 1) {
       binding.conditions = branches[0]?.conditions ?? [];
+      // The survivor's flash goes with its conditions.
+      const blink = branches[0]?.blink;
+      if (blink) binding.blink = blink;
+      else delete binding.blink;
       binding.any_of = [];
     }
     // Choosing between alternatives means nothing without two of them, and
@@ -695,8 +718,12 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
   function addAlternative(): void {
     const fresh: Condition = { source: "", on_when: defaultTest(undefined, led) };
     if (!binding.any_of || binding.any_of.length === 0) {
-      binding.any_of = [{ conditions: binding.conditions }, { conditions: [fresh] }];
+      // The lamp's flash goes with its conditions into the first alternative.
+      const first: Branch = { conditions: binding.conditions };
+      if (binding.blink) first.blink = binding.blink;
+      binding.any_of = [first, { conditions: [fresh] }];
       binding.conditions = [];
+      delete binding.blink;
     } else {
       binding.any_of.push({ conditions: [fresh] });
     }
@@ -720,7 +747,39 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
     add.title = "Another test that must also hold for this alternative to light the lamp.";
     add.addEventListener("click", () => addCondition(group));
     block.append(add);
+    if (group.conditions.length > 0) block.append(flashRow(flashOf(binding, group)));
     return block;
+  }
+
+  /**
+   * Steady or flashing, at the end of a block of conditions. On a stored
+   * signal's blocks it is the flash of every lamp lit by the signal.
+   */
+  function flashRow(holder: { blink?: BlinkRate }): HTMLElement {
+    const pick = el("select", { class: "test" });
+    pick.append(
+      el("option", { value: "" }, "steady"),
+      el("option", { value: "slow" }, "flashing slowly, twice a second"),
+      el("option", { value: "fast" }, "flashing fast, three times a second"),
+    );
+    pick.value = holder.blink ?? "";
+    pick.addEventListener("change", () => {
+      if (pick.value === "slow" || pick.value === "fast") holder.blink = pick.value;
+      else delete holder.blink;
+      committed();
+    });
+    return el(
+      "div",
+      { class: "meta with-info" },
+      "While this holds, the lamp is ",
+      pick,
+      infoIcon(
+        "About flashing",
+        "For a lamp DCS does not flash itself. Where the cockpit lamp flashes, its signal " +
+          "flashes too and the lamp already follows it; a flash set here on top beats " +
+          "against it and looks broken. Every lamp flashing at one rate flashes in step.",
+      ),
+    );
   }
 
   function render(): void {
@@ -924,6 +983,8 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
     binding.any_of = structuredClone(to.any_of ?? []);
     if (to.pick) binding.pick = to.pick;
     else delete binding.pick;
+    if (to.blink) binding.blink = to.blink;
+    else delete binding.blink;
     binding.always = to.always ?? false;
     if (to.signal) binding.signal = to.signal;
     else delete binding.signal;

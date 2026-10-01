@@ -28,7 +28,12 @@ export interface Condition {
 /** One alternative within `any_of`: conditions that must all hold together. */
 export interface Branch {
   conditions: Condition[];
+  /** Flashes while it holds. Absent is steady. */
+  blink?: BlinkRate;
 }
+
+/** How fast a block of conditions flashes: twice or three times a second. */
+export type BlinkRate = "slow" | "fast";
 
 export interface Binding {
   device: string;
@@ -54,6 +59,11 @@ export interface Binding {
    * follows one of two seats' knobs with nothing saying which seat is taken.
    */
   pick?: "brightest" | "latest";
+  /**
+   * Whether `conditions` flash while they hold. Absent is steady. Each
+   * alternative in `any_of` carries its own instead.
+   */
+  blink?: BlinkRate;
   /** A stored signal of lamp conditions this lamp lights by, in place of its own. */
   signal?: string;
   /**
@@ -515,6 +525,11 @@ export interface StoredSignal {
   conditions: Condition[];
   any_of?: Branch[];
   pick?: "brightest" | "latest";
+  /**
+   * Whether `conditions` flash while they hold, for every lamp lit by this
+   * signal. Each alternative carries its own.
+   */
+  blink?: BlinkRate;
 }
 
 /** One module's pages, as the editor opens them with a profile. */

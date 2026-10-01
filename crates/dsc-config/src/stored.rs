@@ -25,7 +25,7 @@ use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 
 use crate::display::{is_left, is_nearest, is_zero_u8, is_zero_usize};
-use crate::{Align, Branch, Condition, Conversion, Pick, Reading, Round, Span};
+use crate::{Align, Blink, Branch, Condition, Conversion, Pick, Reading, Round, Span};
 
 /// A named number on one module, made from one or more DCS-BIOS signals.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -57,6 +57,11 @@ pub struct StoredSignal {
     /// How the alternatives are picked between, as on a lamp.
     #[serde(default, skip_serializing_if = "Pick::is_brightest")]
     pub pick: Pick,
+    /// Whether `conditions` flash while they hold, as on a lamp. The signal is
+    /// the one source of truth for every lamp lit by it, so the flash is
+    /// here, not on each lamp. Each alternative carries its own.
+    #[serde(default, skip_serializing_if = "Blink::is_steady")]
+    pub blink: Blink,
 }
 
 /// One DCS-BIOS signal in a stored signal, and how it is shaped.

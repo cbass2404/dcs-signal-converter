@@ -511,6 +511,7 @@ fn an_unassigned_lamp_is_swept_off_and_never_driven() {
         always: false,
         any_of: Vec::new(),
         pick: dsc_config::Pick::default(),
+        blink: dsc_config::Blink::Steady,
         same_as: None,
         same_as_device: None,
         signal: None,

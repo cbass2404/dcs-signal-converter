@@ -66,4 +66,12 @@ unless this says what moved.
 - **Switch cases read like lamp tests**: is exactly, is one of, is
   between, is at least, is at most, or is anything else. At least and at
   most work in alias bands too.
+- **Lamps can flash.** Each group of conditions ends with a choice of
+  steady, flashing slowly (twice a second) or flashing fast (three times a
+  second), on a lamp's own conditions, on each alternative, and on stored
+  lamp conditions, where it applies to every lamp lit by them. Every lamp
+  at one rate flashes in step, lit and dark for equal halves. A steady
+  alternative that also holds keeps the lamp lit. Flash only a lamp DCS
+  keeps steady: where the cockpit lamp flashes, the panel already follows
+  it. Nothing changes until you set one.
 - **A stored number is worked out only when one of its parts moves.**

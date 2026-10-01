@@ -1177,6 +1177,16 @@
                 <strong>Between alternatives, the brightest group wins.</strong> For on and off
                 lamps that means any one group is enough.
               </p>
+              <p>
+                Each group ends with <span class="ed">While this holds, the lamp is</span>: steady,
+                <span class="ed">flashing slowly</span> (twice a second) or
+                <span class="ed">flashing fast</span> (three times a second). Every flash is lit for
+                exactly half its time, and every lamp flashing at one rate flashes in step. A
+                flashing group in its dark half counts as not holding, so a steady group that also
+                holds keeps the lamp lit. Flash only a lamp DCS keeps steady: where the cockpit lamp
+                already flashes, its signal does too and the lamp follows it, and a flash on top
+                beats against it.
+              </p>
             </div>
 
             <div class="demo" id="demo-and">
@@ -1330,6 +1340,50 @@
               positions that arrive when the aircraft loads don't count as turning. Which knob moved
               last is forgotten when you change aircraft.
             </p>
+
+            <div class="demo" id="demo-flash">
+              <div class="demo-head">
+                <span class="t">Flashing: steady for one reason, flashing for another</span
+                ><span class="try">Try it</span>
+              </div>
+              <div class="demo-body">
+                <div class="controls">
+                  <p class="say">
+                    A hook lamp held steady by the lamp test, and flashing while a warning holds.
+                    Both lit, the steady group wins.
+                  </p>
+                  <div class="row">
+                    <span class="lbl">Warning flashes</span>
+                    <div class="seg" id="f-rate">
+                      <button type="button" data-v="" aria-pressed="false">steady</button>
+                      <button type="button" data-v="slow" aria-pressed="false">slowly</button>
+                      <button type="button" data-v="fast" aria-pressed="true">fast</button>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <span class="lbl">Warning</span
+                    ><button type="button" class="chip" id="f-warn" aria-pressed="true">
+                      HOOK WARN
+                    </button>
+                  </div>
+                  <div class="row">
+                    <span class="lbl">Lamp test</span
+                    ><button type="button" class="chip" id="f-test" aria-pressed="false">
+                      LAMP TEST
+                    </button>
+                  </div>
+                </div>
+                <div class="out">
+                  <div class="lamps">
+                    <div class="lamp">
+                      <div class="lens" id="f-lens">HOOK</div>
+                      <span class="val" id="f-out"></span>
+                    </div>
+                  </div>
+                  <pre id="f-json"></pre>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -2719,6 +2773,37 @@
         draw();
       })();
 
+      // ---- flashing
+      (() => {
+        const rate = seg("f-rate", draw);
+        const warn = toggle($("f-warn"), draw);
+        const lampTest = toggle($("f-test"), draw);
+        // The converter's clock: lit for the first half of each flash.
+        const perSecond = { slow: 2, fast: 3 };
+        const start = performance.now();
+        const lit = (r) =>
+          !r || Math.floor(((performance.now() - start) * 2 * perSecond[r]) / 1000) % 2 === 0;
+        function draw() {
+          const r = rate.get();
+          const steady = lampTest() ? 1 : 0;
+          const flashing = warn() && lit(r) ? 1 : 0;
+          const out = Math.max(steady, flashing);
+          glow($("f-lens"), out, 1);
+          $("f-out").textContent = out ? "on" : "off";
+          const second = {
+            conditions: [{ source: "HOOK_WARN", on_when: { equals: 1 } }],
+          };
+          if (r) second.blink = r;
+          $("f-json").textContent = json({
+            led: "HOOK",
+            any_of: [{ conditions: [{ source: "LAMP_TEST", on_when: { equals: 1 } }] }, second],
+          });
+        }
+        // Faster than either rate turns, so the demo turns when the converter would.
+        setInterval(draw, 20);
+        draw();
+      })();
+
       // ---- match another lamp
       (() => {
         const fl = seg("m-floor", draw);
@@ -3887,7 +3972,7 @@
             "Stored lamp conditions",
             "conditions, any_of",
             "Stored signal",
-            "Tests written once, as a lamp's are, for every lamp that repeats one cockpit lamp. On or off, or a level for a dimmer; each lamp keeps its own brightness.",
+            "Tests written once, as a lamp's are, for every lamp that repeats one cockpit lamp. On or off, or a level for a dimmer; each lamp keeps its own brightness. Whether each group flashes is set here too, for every lamp lit by it.",
             "stored",
           ],
           [
@@ -3930,6 +4015,13 @@
             "any_of",
             "Lamp",
             "Another group of conditions that can light the lamp. The brightest alternative wins, unless the row picks the one that moved last.",
+            "combining",
+          ],
+          [
+            "Flashing",
+            'blink: "slow", "fast"',
+            "Lamp, alternative, stored lamp conditions",
+            "The group flashes while it holds: slowly is twice a second, fast three times, each lit for half its time and every lamp in step. Absent is steady. Only for a lamp DCS keeps steady.",
             "combining",
           ],
           [

@@ -307,15 +307,41 @@ otherwise it would be written once by the sweep and then never follow anything.
 
 `same_as` is mutually exclusive with `conditions`, `any_of` and `always`.
 
-## Blink comes from the source
+## Blink
 
 Where a DCS lamp flashes F/A-18 gear in transit, for instance the module's own
-argument is oscillating, and mirroring it reproduces the flash. There is no blink
-setting to configure for those cases, and none should be offered, or users will
-apply it on top of an already-blinking source and get a beat frequency.
+argument is oscillating, and mirroring it reproduces the flash. A blink set on
+top of that beats against it, so the editor says to flash only a lamp DCS keeps
+steady.
 
-A synthetic blink belongs only where DCS does not already express one. It is a
-later addition, not part of v1.
+For those, `blink` is set per block of conditions: a lamp's own `conditions`
+take it on the row, each alternative in `any_of` carries its own, and a stored
+signal of lamp conditions carries it the same way, as the one source of truth
+for every lamp lit by it. A lamp lit by a stored signal flashes as the signal
+says and its own `blink` is set aside.
+
+```jsonc
+{ "led": "HOOK",
+  "any_of": [
+    { "conditions": [ { "source": "LAMP_TEST", "on_when": { "equals": 1 } } ] },
+    { "conditions": [ { "source": "HOOK_WARN", "on_when": { "equals": 1 } } ],
+      "blink": "fast" } ] }
+```
+
+`"slow"` is twice a second and `"fast"` three times, each lit for exactly the
+first half of its flash. Absent is steady and steady is never written, so no
+profile changed when this arrived. A flashing block in its dark half counts as
+not holding, so the lamp falls to its `off`, or to another alternative that
+does hold: steady wins over flashing while both hold.
+
+One clock serves every lamp, started with the stream, so every lamp at one
+rate flashes in step: a cockpit lamp and its repeater on another panel. Each
+turn is worked out from the clock's start rather than added up, so a third of
+a second never drifts. The engine re-resolves only the flashing lamps on a
+turn, outside the frame cap, and tells the daemon how long until the next one,
+which waits no longer than that for a datagram. Held to the 40 ms frame grid,
+each turn would land up to a frame late by a different amount and the flash
+would look uneven.
 
 ## The editor window
 

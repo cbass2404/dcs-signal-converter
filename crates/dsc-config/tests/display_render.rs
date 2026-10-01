@@ -906,6 +906,8 @@ fn a_stretch_draws_in_its_own_colour_and_size() {
             text: "FULL".into(),
             colour: Some(Colour::Amber),
             inverse: false,
+            small: false,
+            reading: false,
         },
     );
     let full = at(&r, 65535);
@@ -1511,6 +1513,8 @@ fn a_band_carries_its_own_colour() {
             text: "NU".into(),
             colour: Some(Colour::Green),
             inverse: false,
+            small: false,
+            reading: false,
         },
     )]
     .into_iter()
@@ -1537,6 +1541,8 @@ fn a_band_can_draw_inverse() {
             text: " ".into(),
             colour: None,
             inverse: true,
+            small: false,
+            reading: false,
         },
     )]
     .into_iter()

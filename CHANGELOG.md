@@ -32,3 +32,10 @@ unless this says what moved.
 - **Positions with no case draw nothing,** unless the switch has an else
   case. Two cases naming one position, a case the selector never reaches,
   and positions with no case are cautions on the field, not refusals.
+- **An alias can now keep the number and only colour it.** Tick the
+  reading on an alias row and the reading draws as usual, in that row's
+  colour or inverse, while it is in that band: a radar altimeter that turns
+  red below 50. An alias with an empty box and the reading unticked still
+  draws nothing, as before.
+- **An alias can draw in the small font** on the MCDU and the PFPs, the
+  same small font a piece of text can use.

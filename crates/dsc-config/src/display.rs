@@ -1280,6 +1280,18 @@ pub struct AliasDraw {
     pub text: String,
     pub colour: Option<Colour>,
     pub inverse: bool,
+    /// Draw this band in the small font. Text grids only, like a piece's own
+    /// `small`, and either asking is enough, the way a conversion row's is.
+    pub small: bool,
+    /// Draw the reading itself, in this band's colour or inverse, rather than
+    /// characters in its place.
+    ///
+    /// A band is also how a reading is styled: a needle past 120 is the same
+    /// number, and the point is that it draws red. An empty `text` cannot say
+    /// that, because a blank is already a thing a band draws on purpose, the
+    /// centre of a trim indicator worth a row of its own that draws nothing.
+    /// So it is said outright, and `problems` refuses it beside `text`.
+    pub reading: bool,
 }
 
 /// An alias as it is written on disk: bare characters, or an object once it
@@ -1289,11 +1301,18 @@ pub struct AliasDraw {
 enum AliasRepr {
     Text(String),
     Styled {
-        text: String,
+        // Absent only on a band that draws the reading, which has no
+        // characters of its own. Every other band writes it, blank or not.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        text: Option<String>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         colour: Option<Colour>,
         #[serde(default, skip_serializing_if = "is_false")]
         inverse: bool,
+        #[serde(default, skip_serializing_if = "is_false")]
+        small: bool,
+        #[serde(default, skip_serializing_if = "is_false")]
+        reading: bool,
     },
 }
 
@@ -1304,15 +1323,21 @@ impl From<AliasRepr> for AliasDraw {
                 text,
                 colour: None,
                 inverse: false,
+                small: false,
+                reading: false,
             },
             AliasRepr::Styled {
                 text,
                 colour,
                 inverse,
+                small,
+                reading,
             } => AliasDraw {
-                text,
+                text: text.unwrap_or_default(),
                 colour,
                 inverse,
+                small,
+                reading,
             },
         }
     }
@@ -1327,14 +1352,19 @@ impl From<AliasDraw> for AliasRepr {
     /// back in a different shape would make every aliased row in every profile
     /// read as one the user had edited, and those rows are never updated
     /// again.
+    ///
+    /// A band drawing the reading has no characters, and writes none: `text`
+    /// beside `reading` would be two answers to one question.
     fn from(a: AliasDraw) -> Self {
-        if a.colour.is_none() && !a.inverse {
+        if a.colour.is_none() && !a.inverse && !a.small && !a.reading {
             return AliasRepr::Text(a.text);
         }
         AliasRepr::Styled {
-            text: a.text,
+            text: (!a.reading || !a.text.is_empty()).then_some(a.text),
             colour: a.colour,
             inverse: a.inverse,
+            small: a.small,
+            reading: a.reading,
         }
     }
 }
@@ -1351,6 +1381,8 @@ impl From<String> for AliasDraw {
             text,
             colour: None,
             inverse: false,
+            small: false,
+            reading: false,
         }
     }
 }
@@ -2227,14 +2259,19 @@ impl Span {
     /// Only if none does is the number drawn, and only then is the sign
     /// dropped for `abs`, so a band written for negative readings still
     /// matches on a piece that draws magnitudes.
+    ///
+    /// A band that draws the reading claims it for its style alone: the
+    /// number is drawn exactly as if no band had matched, and the band is
+    /// still handed back for its colour and inverse.
     pub fn format_reading(&self, value: u16, max: u16) -> (String, Option<&AliasDraw>) {
         let (reading, half_step) = self.convert(value, max);
         let reading = self.settle(reading, half_step);
-        if let Some(drawn) = self.band_for(reading) {
+        let band = self.band_for(reading);
+        if let Some(drawn) = band.filter(|b| !b.reading) {
             return (drawn.text.clone(), Some(drawn));
         }
         let shown = if self.abs { reading.abs() } else { reading };
-        (self.format_number_at(shown), None)
+        (self.format_number_at(shown), band)
     }
 
     /// What the dial reads at a raw count, before rounding, and half of one
@@ -2343,9 +2380,13 @@ impl Span {
         let (lo, hi) = (low.min(high), low.max(high));
         let step = 10f64.powi(-i32::from(self.decimals));
         let tol = self.tolerance();
+        // A band drawing the reading leaves the number to be drawn, so it
+        // covers nothing.
         let mut spans: Vec<(f64, f64)> = self
             .value_aliases
-            .keys()
+            .iter()
+            .filter(|(_, drawn)| !drawn.reading)
+            .map(|(band, _)| band)
             .flat_map(|band| match band {
                 ValueBand::Range { lo, hi } => vec![(*lo, *hi)],
                 other => other.values().into_iter().map(|v| (v, v)).collect(),
@@ -2461,6 +2502,7 @@ impl Span {
         let longest_alias = self
             .value_aliases
             .values()
+            .filter(|a| !a.reading)
             .map(|a| a.text.chars().count())
             .max()
             .unwrap_or(0);
@@ -3191,6 +3233,7 @@ impl Readout {
                         seen(&span.source, value, &text);
                         banded = band.and_then(|b| b.colour);
                         band_inverse = band.is_some_and(|b| b.inverse);
+                        small |= band.is_some_and(|b| b.small);
                         if let Some(stretch) = span.conversion_for(value) {
                             stretched = stretch.colour;
                             small |= stretch.small;

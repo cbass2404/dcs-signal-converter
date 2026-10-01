@@ -158,6 +158,10 @@ pub enum Error {
     AliasBandsOverlap(String, String, String),
     #[error("alias {0} on {1:?} is outside everything the face reads, {2} to {3}, so nothing would ever draw it")]
     AliasBandUnreachable(String, String, String, String),
+    #[error("alias {0} on {1:?} shows the reading and also has {2:?} to draw in its place; it can do one")]
+    AliasReadingAndText(String, String, String),
+    #[error("alias {0} on {1:?} shows the reading with no colour, inverse or small font, which is how the reading draws without it; give it one, or take it out")]
+    AliasReadingUnstyled(String, String),
     #[error(
         "{0:?} is converted two ways, by a range and by a list of conversions; it can have one"
     )]
@@ -2655,7 +2659,7 @@ impl Profile {
                     // A band's colour is styling like any other, and a band
                     // that asks for one on glass with no colours is a setting
                     // nothing draws.
-                    || s.value_aliases.values().any(|a| a.colour.is_some())
+                    || s.value_aliases.values().any(|a| a.colour.is_some() || a.small)
                     || s.conversions.iter().any(|c| c.colour.is_some() || c.small)
             });
             let ruled = r.divider && (r.colour.is_some() || r.label_colour.is_some());
@@ -2732,10 +2736,27 @@ impl Profile {
                 let written = span
                     .text
                     .chars()
-                    .chain(span.value_aliases.values().flat_map(|a| a.text.chars()))
+                    .chain(
+                        span.value_aliases
+                            .values()
+                            .filter(|a| !a.small)
+                            .flat_map(|a| a.text.chars()),
+                    )
                     .chain(span.replace.values().filter_map(|to| to.chars().next()));
                 for c in written {
                     if !set.contains(&c) {
+                        out.push(Error::NotInFont(c, file.to_string(), r.cells.to_string()));
+                    }
+                }
+                // A band drawn small is drawn from the small alphabet whatever
+                // the piece asks for, and that is the smaller one.
+                let banded_small = span
+                    .value_aliases
+                    .values()
+                    .filter(|a| a.small)
+                    .flat_map(|a| a.text.chars());
+                for c in banded_small {
+                    if !chars.small.contains(&c) {
                         out.push(Error::NotInFont(c, file.to_string(), r.cells.to_string()));
                     }
                 }
@@ -2868,6 +2889,26 @@ fn band_problems(span: &Span, max: u16, out: &mut Vec<Error>) {
         return;
     }
     let tol = span.tolerance();
+    // A band showing the reading is there for its style, so one with
+    // characters as well is two answers, and one with no style does nothing.
+    // Refused like any piece of unfinished work, rather than drawn one way.
+    for (band, drawn) in &span.value_aliases {
+        if !drawn.reading {
+            continue;
+        }
+        if !drawn.text.is_empty() {
+            out.push(Error::AliasReadingAndText(
+                band.to_string(),
+                span.source.clone(),
+                drawn.text.clone(),
+            ));
+        } else if drawn.colour.is_none() && !drawn.inverse && !drawn.small {
+            out.push(Error::AliasReadingUnstyled(
+                band.to_string(),
+                span.source.clone(),
+            ));
+        }
+    }
     let bands: Vec<&ValueBand> = span.value_aliases.keys().collect();
     for (i, a) in bands.iter().enumerate() {
         for b in &bands[i + 1..] {

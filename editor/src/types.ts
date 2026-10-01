@@ -78,7 +78,9 @@ export interface Binding {
  * compares rows as JSON, so an alias that changed shape would read as one the
  * user had edited and stop being brought up to a new release.
  */
-export type AliasDraw = string | { text: string; colour?: string; inverse?: boolean };
+export type AliasDraw =
+  | string
+  | { text?: string; colour?: string; inverse?: boolean; small?: boolean; reading?: boolean };
 
 /**
  * One stretch of a needle's travel and what the dial reads along it, for a
@@ -96,7 +98,20 @@ export interface Conversion {
 
 /** The characters an alias draws, whichever shape it is written in. */
 export function aliasText(drawn: AliasDraw): string {
-  return typeof drawn === "string" ? drawn : drawn.text;
+  return typeof drawn === "string" ? drawn : (drawn.text ?? "");
+}
+
+/**
+ * Whether a band shows the reading itself, styled, rather than characters in
+ * its place. Said outright, because a blank band already means draw nothing.
+ */
+export function aliasSmall(drawn: AliasDraw): boolean {
+  return typeof drawn !== "string" && drawn.small === true;
+}
+
+/** Whether a band shows the reading itself rather than characters. */
+export function aliasShowsReading(drawn: AliasDraw): boolean {
+  return typeof drawn !== "string" && drawn.reading === true;
 }
 
 /** The colour an alias asks for, if any. */
@@ -113,11 +128,26 @@ export function aliasInverse(drawn: AliasDraw): boolean {
  * An alias in the shape it is stored in: bare characters unless it has a
  * colour or is inverse, so a plain row is byte for byte what it was.
  */
-export function aliasOf(text: string, colour?: string, inverse?: boolean): AliasDraw {
-  if (!colour && !inverse) return text;
-  const out: { text: string; colour?: string; inverse?: boolean } = { text };
+export function aliasOf(
+  text: string,
+  colour?: string,
+  inverse?: boolean,
+  reading?: boolean,
+  small?: boolean,
+): AliasDraw {
+  if (!colour && !inverse && !reading && !small) return text;
+  // A band showing the reading has no characters of its own to write.
+  const out: {
+    text?: string;
+    colour?: string;
+    inverse?: boolean;
+    small?: boolean;
+    reading?: boolean;
+  } = reading ? {} : { text };
   if (colour) out.colour = colour;
   if (inverse) out.inverse = true;
+  if (small) out.small = true;
+  if (reading) out.reading = true;
   return out;
 }
 

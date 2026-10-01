@@ -1688,7 +1688,10 @@
                     <td>
                       A word in place of the number, matched against what the face reads.
                       <code>"3"</code>, <code>"0,1,2"</code> or a band <code>"-1.5..-0.1"</code>,
-                      ends included. Each may take a colour, or inverse.
+                      ends included. Each may take a colour, small text, or inverse. Tick
+                      <span class="ed">the reading</span> to keep the number and only colour it,
+                      such as a radar altimeter turning red below 50:
+                      <code>{"reading": true, "colour": "red"}</code>.
                     </td>
                   </tr>
                   <tr>
@@ -2934,6 +2937,15 @@
               ["0.1..1.5", "NU", ""],
             ],
           },
+          "Radar altimeter, red below 50 m (Mi-24P)": {
+            id: "PLT_RV5_ALT",
+            max: 65535,
+            raw: 3500,
+            reads: [0, 750],
+            dp: 0,
+            round: "nearest",
+            aliases: [["0..50", "", "red", true]],
+          },
           "Pitch trim magnitude (F-16)": {
             id: "PITCHTRIMIND",
             max: 65535,
@@ -3070,9 +3082,23 @@
             col.append(h("option", { value: "" }, "piece's colour"));
             for (const c of Object.keys(INK)) col.append(h("option", { value: c }, c));
             col.value = a[2];
+            // Showing the reading keeps the number and only styles it, so
+            // there is nothing to type while it is ticked.
+            const shows = h("input", { type: "checkbox", "aria-label": "show the reading" });
+            shows.checked = !!a[3];
+            const settle = () => {
+              text.disabled = !!a[3];
+              text.value = a[3] ? "" : a[1];
+              text.placeholder = a[3] ? "the reading" : "blank";
+            };
+            settle();
             band.addEventListener("input", () => ((a[0] = band.value), draw()));
             text.addEventListener("input", () => ((a[1] = text.value.toUpperCase()), draw()));
             col.addEventListener("change", () => ((a[2] = col.value), draw()));
+            shows.addEventListener("change", () => ((a[3] = shows.checked), settle(), draw()));
+            const small = h("input", { type: "checkbox", "aria-label": "small" });
+            small.checked = !!a[4];
+            small.addEventListener("change", () => ((a[4] = small.checked), draw()));
             host.append(
               h(
                 "div",
@@ -3080,7 +3106,9 @@
                 band,
                 h("span", {}, "→"),
                 text,
+                h("label", {}, shows, " the reading"),
                 col,
+                h("label", {}, small, " small"),
                 h(
                   "button",
                   {
@@ -3097,7 +3125,7 @@
           draw();
         }
         $("r-addalias").addEventListener("click", () => {
-          cfg.aliases.push(["", "", ""]);
+          cfg.aliases.push(["", "", "", false, false]);
           aliases();
         });
         // A line becomes stretches the moment a second one is wanted: the
@@ -3205,8 +3233,11 @@
               ? b.list.some((v) => Math.abs(v - reading) <= tol)
               : reading >= b.lo - tol && reading <= b.hi + tol,
           );
-          const signless = signed && cfg.abs && !hit ? Math.abs(reading) : reading;
-          const drawn = hit ? hit.a[1] : padded(signless, dp, digits);
+          // A band showing the reading claims it for its colour alone: the
+          // number draws as if no band had matched.
+          const worded = hit && !hit.a[3] ? hit : null;
+          const signless = signed && cfg.abs && !worded ? Math.abs(reading) : reading;
+          const drawn = worded ? worded.a[1] : padded(signless, dp, digits);
           const colour = hit && hit.a[2] ? hit.a[2] : stretch && stretch[4] ? stretch[4] : "amber";
 
           const step = (s, v, skip) =>
@@ -3244,7 +3275,7 @@
             step(
               "Draw as",
               hit
-                ? `"${hit.a[0]}" claims it: "${hit.a[1]}"${hit.a[2] ? ` in ${hit.a[2]}` : ""}`
+                ? `"${hit.a[0]}" claims it: ${hit.a[3] ? "the reading" : `"${hit.a[1]}"`}${hit.a[2] ? ` in ${hit.a[2]}` : ""}`
                 : cfg.aliases.length
                   ? `no alias claims ${fmt(reading, dp)}${bad ? `; ${bad} not understood` : ""}`
                   : "no aliases",
@@ -3256,19 +3287,19 @@
               step(
                 "Sign",
                 cfg.abs
-                  ? hit
+                  ? worded
                     ? "an alias drew it, sign unused"
                     : `dropped: ${fmt(signless, dp)}`
                   : "kept",
-                !cfg.abs || !!hit,
+                !cfg.abs || !!worded,
               ),
             );
           if (conv)
             pipe.append(
               step(
                 "Pad",
-                digits && !hit ? `to ${digits} digits: ${drawn}` : "no",
-                !digits || !!hit,
+                digits && !worded ? `to ${digits} digits: ${drawn}` : "no",
+                !digits || !!worded,
               ),
             );
           pipe.append(
@@ -3278,8 +3309,9 @@
             ),
           );
 
+          const small = !!(hit && hit.a[4]);
           const glyphs = fitTo(
-            [...drawn].map((ch) => ({ ch, colour })),
+            [...drawn].map((ch) => ({ ch, colour, small })),
             8,
             "right",
           );
@@ -3300,8 +3332,14 @@
             if (signed && cfg.abs) span.abs = true;
           }
           const va = {};
-          for (const [b, t, c] of cfg.aliases)
-            if (b.trim()) va[b.trim()] = c ? { text: t, colour: c } : t;
+          for (const [b, t, c, r, s] of cfg.aliases) {
+            if (!b.trim()) continue;
+            const drawn = r ? {} : { text: t };
+            if (c) drawn.colour = c;
+            if (s) drawn.small = true;
+            if (r) drawn.reading = true;
+            va[b.trim()] = !r && !c && !s ? t : drawn;
+          }
           if (Object.keys(va).length) span.value_aliases = va;
           span.colour = "amber";
           $("r-json").textContent = json(span);
@@ -3499,6 +3537,13 @@
             "Case",
             "Turn a wrap, padding or set of words the switch shares off for one case. Emptying the box takes the switch's back instead.",
             "switches",
+          ],
+          [
+            "Show the reading",
+            "reading",
+            "Alias",
+            "Draw the number itself while the reading is in this band, in the band's colour, small text or inverse, rather than a word. Needs one of those.",
+            "readings",
           ],
           [
             "Switch",
@@ -3861,8 +3906,8 @@
           [
             "Small",
             "small",
-            "Piece",
-            "The small font on a text grid, for a CDU's labels. Fewer characters are drawn small.",
+            "Piece, alias or row",
+            "The small font on a text grid, for a CDU's labels. A piece, an alias band or a conversion row can ask for it. Fewer characters are drawn small.",
             "glass",
           ],
           [

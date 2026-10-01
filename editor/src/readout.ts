@@ -38,7 +38,14 @@ import type { SpanKind } from "./content";
 import { cautionSlot, flagSlot } from "./flags";
 import { noteEditor } from "./note";
 import { infoIcon, signalPicker } from "./typeahead";
-import { aliasColour, aliasInverse, aliasOf, aliasText } from "./types";
+import {
+  aliasColour,
+  aliasInverse,
+  aliasOf,
+  aliasShowsReading,
+  aliasSmall,
+  aliasText,
+} from "./types";
 import type {
   AliasDraw,
   CellDraw,
@@ -262,6 +269,7 @@ function conversionRow(
   span: Span,
   signal: SignalView | undefined,
   set: string | null,
+  smallSet: string | null,
   colours: string[],
   inverse: boolean,
   edited: () => void,
@@ -524,7 +532,10 @@ function conversionRow(
     converted ? stretches : "",
     converted ? offer : "",
     converted ? el("div", { class: "test-row" }, values) : "",
-    tagged(valueAliasEditor(span, signal, set, colours, inverse, edited), "value_aliases"),
+    tagged(
+      valueAliasEditor(span, signal, set, smallSet, colours, inverse, edited),
+      "value_aliases",
+    ),
   );
 }
 
@@ -904,6 +915,10 @@ interface AliasRow {
   text: string;
   colour: string;
   inverse: boolean;
+  /** Show the reading itself in this band's style, rather than `text`. */
+  reading: boolean;
+  /** Draw this band in the small font, on a text grid. */
+  small: boolean;
 }
 
 /**
@@ -957,6 +972,7 @@ function valueAliasEditor(
   span: Span,
   signal: SignalView | undefined,
   set: string | null,
+  smallSet: string | null,
   colours: string[],
   inverse: boolean,
   onChange: () => void,
@@ -970,6 +986,8 @@ function valueAliasEditor(
     text: aliasText(drawn),
     colour: aliasColour(drawn) ?? "",
     inverse: aliasInverse(drawn),
+    reading: aliasShowsReading(drawn),
+    small: aliasSmall(drawn),
   }));
 
   const store = (): void => {
@@ -978,7 +996,13 @@ function valueAliasEditor(
       // A row with no band yet is one half typed, not one that draws nothing.
       // The drawing itself may be blank on purpose.
       if (row.band.trim() === "" || bandTrouble(row.band)) continue;
-      out[row.band.trim()] = aliasOf(row.text, row.colour || undefined, row.inverse);
+      out[row.band.trim()] = aliasOf(
+        row.text,
+        row.colour || undefined,
+        row.inverse,
+        row.reading,
+        row.small,
+      );
     }
     if (Object.keys(out).length > 0) span.value_aliases = out;
     else delete span.value_aliases;
@@ -1000,18 +1024,42 @@ function valueAliasEditor(
         value: row.text,
         placeholder: "blank",
       });
+      // Showing the reading draws the number in this band's style, so there
+      // are no characters to type, and the box says what will draw instead.
+      const shows = el("input", { type: "checkbox" });
+      shows.checked = row.reading;
+      const showsReading = (): void => {
+        alias.disabled = row.reading;
+        alias.value = row.reading ? "" : row.text;
+        alias.placeholder = row.reading ? "the reading" : "blank";
+      };
+      showsReading();
       const trouble = el("span", { class: "meta bad" });
       const check = (): void => {
-        const missing = set ? [...new Set([...row.text].filter((c) => !set.includes(c)))] : [];
+        const typed = row.reading ? "" : row.text;
+        // A band drawn small is drawn from the small alphabet, the smaller one.
+        const font = row.small ? smallSet : set;
+        const missing = font ? [...new Set([...typed].filter((c) => !font.includes(c)))] : [];
         const bad = bandTrouble(row.band);
         band.classList.toggle("bad", bad !== "");
         alias.classList.toggle("bad", missing.length > 0);
+        // A band showing the reading is there for its style, and with none
+        // it would change nothing, which the profile check refuses.
+        const plain = row.reading && !row.colour && !row.inverse && !row.small;
         trouble.textContent =
           bad ||
           (missing.length
             ? `The font does not draw ${missing.map((c) => JSON.stringify(c)).join(", ")}.`
-            : "");
+            : plain
+              ? "Give it a colour, inverse or small, or it draws the reading just as it would anyway."
+              : "");
       };
+      shows.addEventListener("change", () => {
+        row.reading = shows.checked;
+        showsReading();
+        check();
+        store();
+      });
       band.addEventListener("input", () => {
         row.band = band.value;
         check();
@@ -1034,6 +1082,14 @@ function valueAliasEditor(
         "div",
         { class: "alias-row band" },
         el("span", { class: "phrase" }, band, el("span", { class: "meta" }, "shows as"), alias),
+        explained(
+          el("label", { class: "meta" }, shows, " the reading"),
+          "About showing the reading",
+          "Draw the number itself while the reading is in this band, in the " +
+            "colour or inverse set here, rather than characters in its place. " +
+            "For a reading that turns red past a limit. An empty box with " +
+            "this unticked draws nothing at all.",
+        ),
       );
       const look = el("span", { class: "phrase" });
       // Only where the glass has colours to draw. A band's colour is the point
@@ -1045,9 +1101,19 @@ function valueAliasEditor(
         pick.value = row.colour;
         pick.addEventListener("change", () => {
           row.colour = pick.value;
+          check();
           store();
         });
         look.append(el("span", { class: "meta" }, "in"), pick);
+        // The small font, where there is one: the same glass that has colours.
+        const small = el("input", { type: "checkbox" });
+        small.checked = row.small;
+        small.addEventListener("change", () => {
+          row.small = small.checked;
+          check();
+          store();
+        });
+        look.append(el("label", { class: "meta" }, small, " small"));
       }
       // The same box a piece of text gets, and only where the glass draws
       // inverse. On a screen with no colours it is the way a band stands out,
@@ -1057,6 +1123,7 @@ function valueAliasEditor(
         flip.checked = row.inverse;
         flip.addEventListener("change", () => {
           row.inverse = flip.checked;
+          check();
           store();
         });
         look.append(el("label", { class: "meta" }, flip, " inverse"));
@@ -1070,7 +1137,7 @@ function valueAliasEditor(
 
   const add = el("button", { class: "add small" }, "Add an alias");
   add.addEventListener("click", () => {
-    held.push({ band: "", text: "", colour: "", inverse: false });
+    held.push({ band: "", text: "", colour: "", inverse: false, reading: false, small: false });
     draw();
   });
 
@@ -1080,7 +1147,14 @@ function valueAliasEditor(
   const fill = el("button", { class: "add small" }, "Name its positions");
   fill.addEventListener("click", () => {
     for (const [value, name] of Object.entries(named)) {
-      held.push({ band: value, text: name, colour: "", inverse: false });
+      held.push({
+        band: value,
+        text: name,
+        colour: "",
+        inverse: false,
+        reading: false,
+        small: false,
+      });
     }
     draw();
     store();
@@ -1094,7 +1168,9 @@ function valueAliasEditor(
       "What to draw instead of the number. A row claims one reading (3), a " +
         'list of them (0,1,2) or a band ("-1.5..-0.1"), in what the face ' +
         "reads rather than the number DCS-BIOS sends. A reading no row claims " +
-        "is drawn as the number, and two rows claiming one reading is refused.",
+        "is drawn as the number. Tick the reading to keep the number and only " +
+        "colour it. Two rows claiming one reading is a caution, and the lower " +
+        "one draws it.",
     ),
     rows,
     add,
@@ -1411,7 +1487,11 @@ function spanWidth(span: Span, signals: SignalView[]): number {
   // same way, as the daemon does. Aliases count as what they draw, and only
   // leave the number to measure when some reading has no band.
   const max = maxOf(signals, span.source);
-  const aliases = span.value_aliases ?? {};
+  // A band showing the reading adds no word and hides no number, so only the
+  // bands drawing characters count here, the way the daemon measures them.
+  const aliases = Object.fromEntries(
+    Object.entries(span.value_aliases ?? {}).filter(([, a]) => !aliasShowsReading(a)),
+  );
   const longest = Math.max(0, ...Object.values(aliases).map((a) => [...aliasText(a)].length));
   // Every end of a straight stretch of the face, which is where the widest
   // number it draws has to be.
@@ -2737,6 +2817,7 @@ function readingControls(
           span,
           signal,
           set,
+          alphabet(display, profile, true),
           display.text_grid ? display.colours : [],
           display.draws_inverse,
           edited,
@@ -2936,7 +3017,12 @@ function chainEditor(opts: RowOptions, refreshPreview: () => void): HTMLElement 
       });
       return button;
     };
-    add.append(addOne("signal", "+ a reading"), addOne("text", "+ text"), addOne("gap", "+ a gap"));
+    add.append(
+      addOne("signal", "+ a reading"),
+      addOne("switch", "+ a switch"),
+      addOne("text", "+ text"),
+      addOne("gap", "+ a gap"),
+    );
     // Only a text grid draws a rule, the same as a whole field's divider.
     if (display.text_grid) add.append(addOne("rule", "+ a rule"));
     wrap.append(add);
@@ -3190,7 +3276,9 @@ function describeField(readout: Readout, display: DisplayInfo): string {
           (s.abs ? ", without its sign" : "")
         : "";
       const named = aliases.length
-        ? ` drawn as ${aliases.map(([v, a]) => `${v}=${aliasText(a)}`).join(" ")}`
+        ? ` drawn as ${aliases
+            .map(([v, a]) => `${v}=${aliasShowsReading(a) ? "the reading" : aliasText(a)}`)
+            .join(" ")}`
         : "";
       const drawn = `${converted}${named}`;
       return `${s.source ? s.source : "a reading nobody has chosen yet"}${drawn}${held}`;

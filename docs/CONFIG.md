@@ -1006,6 +1006,19 @@ of its own:
   at all; anywhere else the profile is refused, as for an inverse piece. It is
   the colour of a screen with none, such as the DED, and a blank drawn inverse
   is a solid block.
+- `{ "text": "LOW", "small": true }` draws in the small font, on a text grid
+  only, as a piece's own `small` does. Either asking is enough, and a band
+  drawn small is checked against the small alphabet, which is the smaller
+  one.
+- `{ "reading": true, "colour": "red" }` draws the number itself, in the
+  band's colour or inverse, rather than characters in its place: a radar
+  altimeter that turns red below 50. The number is drawn exactly as it would
+  be with no band, `decimals`, `digits` and `abs` included. It is said
+  outright rather than by leaving `text` out, because a blank is already a
+  thing a band draws on purpose. A band with `reading` and `text` both is
+  refused, and so is one with no colour, inverse or small font, which would
+  change nothing. It hides no number, so the width check measures the number
+  beside it.
 
 **Two keys claiming one reading is a caution, and the lower one draws.** Keys
 are held in order of where they start, so which one draws is settled and does

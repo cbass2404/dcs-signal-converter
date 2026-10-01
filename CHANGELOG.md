@@ -43,3 +43,8 @@ unless this says what moved.
   draws nothing, as before.
 - **An alias can draw in the small font** on the MCDU and the PFPs, the
   same small font a piece of text can use.
+- **Gauge tables are built into the editor.** A converted reading has a
+  second menu with every gauge table the site lists for the aircraft, and
+  picking one copies its rows into the field. Choosing a gauge that has a
+  table starts it converted by that table. The rows stay hidden while
+  they are the table's, and choosing custom opens them to change.

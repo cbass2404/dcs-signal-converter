@@ -36,6 +36,7 @@ import {
 } from "./content";
 import type { SpanKind } from "./content";
 import { cautionSlot, flagSlot } from "./flags";
+import { gaugeTable, gaugeTables, matchingTable, tableRows } from "./gauges";
 import { noteEditor } from "./note";
 import { infoIcon, signalPicker } from "./typeahead";
 import {
@@ -220,11 +221,12 @@ function namedPositions(signal: SignalView | undefined): Record<string, string> 
  *
  * A switch whose positions have names arrives aliased to them, ready to be
  * shortened. A full word is a needle's position rather than a quantity, and 0
- * to 65535 means nothing on a screen, so it arrives converted, to a range the
- * user then sets from the dial. Anything else is a count or a selector whose
- * value already is the number, and is shown as sent.
+ * to 65535 means nothing on a screen, so it arrives converted: by the gauge's
+ * table where docs/gauges.json has one for it, or to a range the user then
+ * sets from the dial. Anything else is a count or a selector whose value
+ * already is the number, and is shown as sent.
  */
-function startReading(span: Span, signal: SignalView | undefined): void {
+function startReading(span: Span, signal: SignalView | undefined, module: string): void {
   clearReading(span);
   // A different signal, so the old one's bands mean nothing: they named
   // readings of a face this piece no longer reads. `clearReading` leaves them
@@ -234,7 +236,17 @@ function startReading(span: Span, signal: SignalView | undefined): void {
   if (!signal || signal.text) return;
   const named = namedPositions(signal);
   if (Object.keys(named).length > 0) span.value_aliases = named;
-  else if (signal.max_value >= 65535) span.reads = [0, 100];
+  else if (signal.max_value >= 65535) startConverted(span, signal, module);
+}
+
+/**
+ * The conversion a needle starts from: its gauge's table where there is one,
+ * since its marks are already worked out, and a plain range otherwise.
+ */
+function startConverted(span: Span, signal: SignalView, module: string): void {
+  const table = gaugeTable(module, signal.id);
+  if (table) span.conversions = tableRows(table);
+  else span.reads = [0, 100];
 }
 
 /**
@@ -257,6 +269,15 @@ function clearReading(span: Span): void {
 }
 
 /**
+ * Pieces whose table rows are open for editing. A piece whose rows are still
+ * a published table shows only the table's name, since the rows are a screen
+ * of numbers nobody needs to read; choosing custom opens them. Weak for the
+ * same reason the switch previews are: the editor is built again on every
+ * redraw, and this only matters while the piece is shown.
+ */
+const CUSTOMISING = new WeakSet<Span>();
+
+/**
  * How a number is drawn, laid out the way a lamp's test is: what to do with
  * it, then the numbers that go with that.
  *
@@ -268,6 +289,7 @@ function clearReading(span: Span): void {
 function conversionRow(
   span: Span,
   signal: SignalView | undefined,
+  module: string,
   set: string | null,
   smallSet: string | null,
   colours: string[],
@@ -283,13 +305,51 @@ function conversionRow(
   select.value = isConverted(span) ? "converted" : "sent";
   select.dataset.opt = "reads";
   select.addEventListener("change", () => {
-    // Converting starts from the signal's own range, which draws exactly what
-    // as sent did, so the choice changes nothing until a number is changed.
-    // Decimals mean nothing on a whole number sent as it is.
+    // Converting starts from the gauge's table where there is one. Otherwise
+    // from the signal's own range, which draws exactly what as sent did, so
+    // the choice changes nothing until a number is changed. Decimals mean
+    // nothing on a whole number sent as it is.
     clearReading(span);
-    if (select.value === "converted") span.reads = [0, max];
+    if (select.value === "converted") {
+      const table = signal ? gaugeTable(module, signal.id) : undefined;
+      if (table) span.conversions = tableRows(table);
+      else span.reads = [0, max];
+    }
     rebuild();
   });
+
+  // The module's tables from docs/gauges.json, any of which can be copied in.
+  // Not only this signal's: two needles on one aircraft often share a dial.
+  // It shows the table while the rows are still it, with the rows hidden, and
+  // custom with the rows open once custom is chosen or a row no longer
+  // matches.
+  const tables = gaugeTables(module);
+  const shown = CUSTOMISING.has(span) ? undefined : matchingTable(module, span.conversions ?? []);
+  const tableSelect = el("select", { class: "test" });
+  tableSelect.dataset.opt = "reads";
+  tableSelect.append(el("option", { value: "" }, "custom"));
+  for (const g of tables) {
+    const own = g.id === signal?.id ? ", this signal" : "";
+    tableSelect.append(
+      el("option", { value: g.id }, `${g.description}, ${g.unit} (${g.id}${own})`),
+    );
+  }
+  tableSelect.addEventListener("change", () => {
+    // Only the rows change: decimals, padding, rounding and wrap are about
+    // how the reading is drawn, and stay as they were.
+    // Custom opens the rows as they are, so a table can be the start of
+    // the field's own.
+    const table = tables.find((g) => g.id === tableSelect.value);
+    if (table) {
+      CUSTOMISING.delete(span);
+      delete span.reads;
+      span.conversions = tableRows(table);
+    } else {
+      CUSTOMISING.add(span);
+    }
+    rebuild();
+  });
+  tableSelect.value = shown?.id ?? "";
 
   const stretches = el("div", { class: "alias-rows", "data-opt": "reads" });
   const offer = el("button", { class: "add small" });
@@ -511,6 +571,7 @@ function conversionRow(
       "div",
       { class: "test-row" },
       select,
+      converted && tables.length > 0 ? tableSelect : "",
       infoIcon(
         "About converting the number",
         converted
@@ -524,13 +585,18 @@ function conversionRow(
               "than 1. Round down for a drum or a counter, which only shows a " +
               "digit once it has clicked over. Wrap for anything that starts " +
               "again from 0: one drum digit is 0 to 10 wrapping at 10, and a " +
-              "compass is 0 to 360 wrapping at 360."
+              "compass is 0 to 360 wrapping at 360." +
+              (tables.length > 0
+                ? " The second menu copies in a gauge's rows from the gauge " +
+                  "tables on the site, and hides them while they are the " +
+                  "table's. Choose custom to see and change them."
+                : "")
           : `The number DCS-BIOS sends, 0 to ${max}, drawn as it is. Right for ` +
               "a count or a selector. A needle wants converting.",
       ),
     ),
-    converted ? stretches : "",
-    converted ? offer : "",
+    converted && !shown ? stretches : "",
+    converted && !shown ? offer : "",
     converted ? el("div", { class: "test-row" }, values) : "",
     tagged(
       valueAliasEditor(span, signal, set, smallSet, colours, inverse, edited),
@@ -2857,6 +2923,7 @@ function readingControls(
         startReading(
           span,
           signals.find((s) => s.id === id),
+          profile.module,
         );
       }
       // A different signal brings a different set of controls with it: a
@@ -2884,6 +2951,7 @@ function readingControls(
         conversionRow(
           span,
           signal,
+          profile.module,
           set,
           alphabet(display, profile, true),
           display.text_grid ? display.colours : [],

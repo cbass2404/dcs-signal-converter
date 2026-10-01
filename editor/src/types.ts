@@ -229,7 +229,28 @@ export interface Span {
   label?: string;
   /** The label's colour, its own rather than the rule's. */
   label_colour?: string;
+  /**
+   * A selector whose position picks which of `cases` this piece draws.
+   *
+   * Everything else written on a switch is shared by its cases: a case piece
+   * that leaves an option unset takes the switch's, so `source` and
+   * `decimals` are written once and each case says only what is its own.
+   */
+  switch?: string;
+  /**
+   * What a switch draws at each position of its selector, keyed the way a
+   * value alias is (`"0"`, `"0,1"`, `"1..3"`) or `"else"`. A case is one piece
+   * or a chain of them, each written as only what differs from the switch.
+   */
+  cases?: Record<string, SpanPatch | SpanPatch[]>;
 }
+
+/**
+ * A piece inside a switch case, as written: only what differs from the
+ * switch. A key left out takes the switch's value, and `null` takes none,
+ * for the case that wants no wrap where every other case wraps.
+ */
+export type SpanPatch = { [K in keyof Span]?: Span[K] | null };
 
 /**
  * One field of a display, and the content that fills it.

@@ -1865,7 +1865,7 @@ impl Trace {
                     .readouts
                     .iter()
                     .filter(|r| runs(&r.device))
-                    .flat_map(|r| r.content.iter())
+                    .flat_map(|r| r.pieces())
                     .any(|s| {
                         s.source == source
                             && (s.reads.is_some()

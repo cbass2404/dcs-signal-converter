@@ -1466,6 +1466,41 @@ button.add.small {
   gap: 6px;
 }
 
+/* A switch's cases, each a short chain of its own, set in under the switch
+   the way a piece is set in under its field. */
+.switch {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.case {
+  border-left: 3px solid var(--line);
+  padding-left: 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.case-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.case-head .spacer {
+  flex: 1;
+}
+
+/* A setting a case takes from its switch, shown so the case reads whole but
+   set back so what the case says for itself stands out. */
+.inherited,
+.inherited input,
+.inherited select {
+  color: var(--muted);
+  font-style: italic;
+}
+
 .span-head {
   display: flex;
   align-items: center;

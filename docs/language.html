@@ -1799,11 +1799,88 @@
           </div>
         </section>
 
+        <!-- ========================================================= switches -->
+        <section id="switches" data-group="Screens" data-nav="Switches">
+          <div class="wrap">
+            <div class="section-head">
+              <span class="eyebrow">Screens, part 3</span>
+              <h2>Switches: a reading another knob decides</h2>
+            </div>
+            <div class="prose">
+              <p>
+                Some readings only make sense next to a knob. The Huey's ADF needle sends 0 to
+                65535 whichever band is selected, and the band switch says what that means: 190 to
+                400 kHz in the first band, 400 to 850 in the second, 850 to 1750 in the third. One
+                reading can't say all three.
+              </p>
+              <p>
+                A <span class="ed">switch</span> is a piece that picks how it draws from another
+                signal's position. You say which signal <span class="ed">decides</span>, then
+                give it a <span class="ed">case</span> for each position. Each case is a reading,
+                or a short chain of pieces, with every setting a reading has: its own range, rows
+                for an uneven dial, words, colours. Only one case draws at a time.
+              </p>
+              <p>
+                What every case has in common is set once, on the switch itself: the signal, the
+                decimals, the colour. A case only says what is different, and in the editor the
+                settings it takes from the switch are shown in grey. Change one to give that case
+                its own; empty it to take the switch's again. A wrap, padding or set of words the
+                switch shares can be turned <span class="ed">off</span> for one case.
+              </p>
+              <p>
+                A position no case names draws nothing, unless there is an
+                <span class="ed">else</span> case, which draws for every position the others leave.
+                The field is as wide as its widest case, which is what the fit warning measures.
+              </p>
+            </div>
+
+            <div class="demo" id="demo-switch">
+              <div class="demo-head">
+                <span class="t">One needle, three bands</span><span class="try">Try it</span>
+              </div>
+              <div class="demo-body">
+                <div class="controls">
+                  <div class="row">
+                    <span class="lbl">Band</span>
+                    <div class="seg" id="s-band">
+                      <button type="button" data-v="0" aria-pressed="true">190-400</button>
+                      <button type="button" data-v="1" aria-pressed="false">400-850</button>
+                      <button type="button" data-v="2" aria-pressed="false">850-1750</button>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <span class="lbl">DCS sends</span
+                    ><input type="range" id="s-raw" min="0" max="65535" value="32768" /><span
+                      class="mono"
+                      id="s-rawtext"
+                    ></span>
+                  </div>
+                  <div class="row">
+                    <span class="lbl">Third band</span
+                    ><label><input type="checkbox" id="s-amber" /> in amber, its own colour</label>
+                  </div>
+                </div>
+                <div class="out">
+                  <div class="glass"><div class="cells" id="s-cells" style="--n: 10"></div></div>
+                  <p class="say" id="s-say"></p>
+                  <pre id="s-json"></pre>
+                </div>
+              </div>
+            </div>
+            <p class="note">
+              A switch inside a case is refused, and so is a switch with no cases. Two cases naming
+              one position, a case past the positions the selector sends, and positions with no
+              case and no <code>else</code> are cautions: the lower case draws, the case never
+              draws, and those positions draw nothing.
+            </p>
+          </div>
+        </section>
+
         <!-- ============================================================ glass -->
         <section id="glass" data-group="Screens" data-nav="Each glass">
           <div class="wrap">
             <div class="section-head">
-              <span class="eyebrow">Screens, part 3</span>
+              <span class="eyebrow">Screens, part 4</span>
               <h2>What each glass can do</h2>
             </div>
             <div class="prose">
@@ -1903,7 +1980,7 @@
         <section id="pages" data-group="Screens" data-nav="Pages and slots">
           <div class="wrap">
             <div class="section-head">
-              <span class="eyebrow">Screens, part 4</span>
+              <span class="eyebrow">Screens, part 5</span>
               <h2>Pages and slots</h2>
             </div>
             <div class="prose">
@@ -3232,6 +3309,50 @@
         load();
       })();
 
+      /* --------------------------------------------------------- switches */
+      (() => {
+        const bands = [
+          [190, 400],
+          [400, 850],
+          [850, 1750],
+        ];
+        const band = seg("s-band", draw);
+        $("s-raw").addEventListener("input", draw);
+        $("s-amber").addEventListener("change", draw);
+
+        function draw() {
+          const raw = Number($("s-raw").value);
+          const at = Number(band.get());
+          const [lo, hi] = bands[at];
+          const amber = $("s-amber").checked;
+          $("s-rawtext").textContent = raw;
+          const value = String(Math.round(lo + (raw / 65535) * (hi - lo)));
+          const colour = at === 2 && amber ? "amber" : "green";
+          const text = `ADF ${value}`;
+          const glyphs = [...text].map((ch, i) => ({
+            ch,
+            colour: i < 4 ? "white" : colour,
+            small: i < 4,
+          }));
+          paint($("s-cells"), fitTo(glyphs, 10, "left"), 10);
+          $("s-say").innerHTML =
+            `The band switch is at <b>${at}</b>, so case <b>${at}</b> draws: ` +
+            `${raw} of 65535 reads <b>${value}</b> on a ${lo} to ${hi} dial` +
+            (at === 2 && amber ? ", in its own colour." : ", in the colour every case shares.");
+          const cases = bands.map(([a, b], i) =>
+            i === 2 && amber
+              ? `"${i}": { "reads": [${a}, ${b}], "colour": "amber" }`
+              : `"${i}": { "reads": [${a}, ${b}] }`,
+          );
+          $("s-json").textContent =
+            `"content": [\n` +
+            `  { "text": "ADF ", "small": true },\n` +
+            `  { "switch": "ADF_BAND", "source": "ADF_FREQ", "colour": "green",\n` +
+            `    "cases": {\n      ${cases.join(",\n      ")}\n    } }\n]`;
+        }
+        draw();
+      })();
+
       /* ------------------------------------------------------------ pages */
       (() => {
         const panels = {
@@ -3358,6 +3479,34 @@
       (() => {
         // [editor words, file key, where, meaning, section]
         const T = [
+          [
+            "Case",
+            "cases",
+            "Switch",
+            "What a switch draws at some of its selector's positions: \"1\", \"0,2\" or \"1..3\". A reading or a short chain, saying only what differs from the switch.",
+            "switches",
+          ],
+          [
+            "Else",
+            "\"else\"",
+            "Switch",
+            "The case for every position no other case names. Without one, those positions draw nothing.",
+            "switches",
+          ],
+          [
+            "Off, in a case",
+            "null",
+            "Case",
+            "Turn a wrap, padding or set of words the switch shares off for one case. Emptying the box takes the switch's back instead.",
+            "switches",
+          ],
+          [
+            "Switch",
+            "switch",
+            "Piece",
+            "A piece whose reading another signal decides, such as an ADF needle read by band. Settings on the switch are shared by every case.",
+            "switches",
+          ],
           [
             "Alternative",
             "any_of",

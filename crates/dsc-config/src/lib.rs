@@ -48,10 +48,11 @@ pub fn build_label() -> &'static str {
 }
 
 pub use display::{
-    divider_rule, divider_text, min_divider_cells, text_cells, AliasDraw, Align, Cell, CellRange,
-    Colour, ColourSource, Conversion, Display, DisplayCatalogue, Glass, Glyph, Grid, Reading,
-    Readout, Region, Round, RuleCell, Screen, ShapeArt, Span, StrokeArt, TextCell, TextGrid,
-    Transport, ValueBand, SEAT_SIGNAL,
+    divider_rule, divider_text, min_divider_cells, text_cells, AliasDraw, Align, Case, CaseKey,
+    CaseWritten, Cases, Cell, CellRange, Colour, ColourSource, Conversion, Display,
+    DisplayCatalogue, Glass, Glyph, Grid, Reading, Readout, Region, Round, RuleCell, Screen,
+    ShapeArt, Span, SpanPatch, StrokeArt, TextCell, TextGrid, Transport, Tri, ValueBand,
+    SEAT_SIGNAL,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -231,6 +232,22 @@ pub enum Error {
     PageNameTaken(String, String),
     #[error("the page {0:?} is drawn on {1:?}, which is not a display we know")]
     PageOnUnknownDisplay(String, String),
+    #[error("the switch on {1} of display {0:?} reads {2:?} but has no cases, so it draws nothing; add a case or take the switch out")]
+    SwitchWithoutCases(String, String, String),
+    #[error("a piece on {1} of display {0:?} has cases but no switch to choose between them; pick the signal that decides")]
+    CasesWithoutSwitch(String, String),
+    #[error("the switch on {1} of display {0:?} has {2}, which belongs to a piece in one of its cases; a switch only shares how its cases read")]
+    SwitchCarries(String, String, &'static str),
+    #[error("a case of the switch on {1} of display {0:?} holds another switch on {2:?}; a switch cannot sit inside another")]
+    SwitchInSwitch(String, String, String),
+    #[error("{0:?} reports characters, so it has no position for a switch to match; only its else case would ever draw")]
+    SwitchOnText(String),
+    #[error("cases {0} and {1} of the switch on {2:?} both claim the same position; the lower one draws it")]
+    SwitchCasesOverlap(String, String, String),
+    #[error("case {0} of the switch on {1:?} is outside the positions it sends, 0 to {2}, so nothing would ever draw it")]
+    SwitchCaseUnreachable(String, String, u16),
+    #[error("positions {1} of {0:?} have no case and the switch has no else")]
+    SwitchUncovered(String, String),
 }
 
 impl Error {
@@ -280,6 +297,10 @@ impl Error {
                 | Error::Unconverted(..)
                 | Error::RuleLabelMayNotFit(..)
                 | Error::NotInGlyphs(..)
+                | Error::SwitchOnText(_)
+                | Error::SwitchCasesOverlap(..)
+                | Error::SwitchCaseUnreachable(..)
+                | Error::SwitchUncovered(..)
         )
     }
 
@@ -302,6 +323,9 @@ impl Error {
             // The arithmetic settles both of these, so the note says how.
             Error::ConversionsOverlap(..) => "It will load anyway: the lower conversion converts the counts both claim.",
             Error::Unconverted(..) => "It will load anyway: those counts read as the end of the nearest conversion.",
+            Error::SwitchCasesOverlap(..) => "It will load anyway: the lower case draws the positions both claim.",
+            Error::SwitchCaseUnreachable(..) => "It will load anyway: that case simply never draws.",
+            Error::SwitchUncovered(..) => "It will load anyway: the switch draws nothing in those positions.",
             _ => "It will load anyway, in case DCS-BIOS is wrong about it.",
         }
     }
@@ -1101,6 +1125,22 @@ impl Readout {
                 cells,
                 unbounded: false,
             };
+        }
+        // A switch draws one case at a time, so the field is as wide as its
+        // widest case, never the cases added up.
+        if self.has_switch() {
+            return self.variants().iter().map(|v| v.width(module)).fold(
+                Width {
+                    widest: 0,
+                    cells,
+                    unbounded: false,
+                },
+                |a, b| Width {
+                    widest: a.widest.max(b.widest),
+                    cells,
+                    unbounded: a.unbounded || b.unbounded,
+                },
+            );
         }
         let mut widest = 0;
         let mut unbounded = false;
@@ -2178,246 +2218,418 @@ impl Profile {
                 }
             }
 
-            // A divider reads nothing, so every check below it is about a
-            // source it does not have. What it can get wrong is its own: glass
-            // that cannot draw it, a signal named anyway, or a run with no room
-            // for a dash between two margins.
-            if r.divider {
+            // A field without a switch is checked as it is. One with a switch
+            // is checked as each of its cases would draw it, after the
+            // switch's own faults, and a fault several cases share is said
+            // once: a unit missing from every case is one thing to fix.
+            if !r.has_switch() {
+                self.content_problems(r, display, module, out);
+                continue;
+            }
+            if self.switch_problems(r, module, out) {
+                continue;
+            }
+            let mut found: Vec<Error> = Vec::new();
+            for variant in r.variants() {
+                let mut each = Vec::new();
+                self.content_problems(&variant, display, module, &mut each);
+                for e in each {
+                    if !found.iter().any(|f| f.to_string() == e.to_string()) {
+                        found.push(e);
+                    }
+                }
+            }
+            out.extend(found);
+        }
+    }
+
+    /// The checks on what one field draws: its pieces, how they read and
+    /// whether the glass can show them.
+    ///
+    /// Asked of a field with a switch once per case, through
+    /// [`Readout::variants`], so nothing here needs to know switches exist.
+    fn content_problems(
+        &self,
+        r: &Readout,
+        display: &Display,
+        module: &Module,
+        out: &mut Vec<Error>,
+    ) {
+        // A divider reads nothing, so every check below it is about a
+        // source it does not have. What it can get wrong is its own: glass
+        // that cannot draw it, a signal named anyway, or a run with no room
+        // for a dash between two margins.
+        if r.divider {
+            if !display.is_text_grid() {
+                out.push(Error::DividerNotDrawn(
+                    r.display.clone(),
+                    r.cells.to_string(),
+                ));
+            }
+            if let Some(source) = r.sources().first() {
+                out.push(Error::DividerReadsSignal(
+                    r.display.clone(),
+                    r.cells.to_string(),
+                    (*source).to_string(),
+                ));
+            }
+            // There is no minimum for the rule itself: it runs corner
+            // to corner of its cells, and one cell is one dash. A label is
+            // the only thing here that needs room.
+            if !r.label.is_empty() && r.cells.len() < min_divider_cells(&r.label) {
+                // A label with no room is left off the rule rather than
+                // crowding it, so without this the rule would quietly draw
+                // plain and nothing would say where the label went.
+                out.push(Error::DividerLabelTooWide(
+                    r.display.clone(),
+                    r.cells.to_string(),
+                    r.cells.len(),
+                    min_divider_cells(&r.label),
+                    r.label.clone(),
+                ));
+            }
+            self.text_problems(r, display, out);
+            return;
+        }
+
+        // A field with nothing in it is unfinished work rather than a
+        // mistake, but it still stops the profile loading, so it is said
+        // plainly and in those terms. A chain with an empty span in the
+        // middle is the same thing: a piece somebody started and left.
+        if r.content.is_empty() || r.content.iter().any(Span::is_empty) {
+            out.push(Error::UnfinishedField(
+                r.display.clone(),
+                r.cells.to_string(),
+            ));
+            return;
+        }
+
+        for (at, span) in r.content.iter().enumerate() {
+            // Cases with nothing choosing between them would quietly never
+            // draw, and the piece would draw as a plain reading instead.
+            if !span.cases.is_empty() && !span.is_switch() {
+                out.push(Error::CasesWithoutSwitch(
+                    r.display.clone(),
+                    r.cells.to_string(),
+                ));
+            }
+            // A box wider than the run it sits in cannot be drawn: the
+            // field crops what will not fit, so the piece would take the
+            // whole run and whatever shares it would be the part that
+            // goes. Refused rather than cautioned, unlike an overflow,
+            // because this one is certain before a single frame arrives.
+            if span.width > r.cells.len() {
+                out.push(Error::SpanWiderThanField(
+                    r.display.clone(),
+                    r.cells.to_string(),
+                    span.width,
+                    r.cells.len(),
+                ));
+            }
+            // A rule fills room it was given rather than drawing anything
+            // of its own, which is what a gap is. On a piece that has its
+            // own content there is nowhere to put it.
+            if span.rule {
+                if !span.gap {
+                    out.push(Error::RuleNotOnGap(r.display.clone(), r.cells.to_string()));
+                }
                 if !display.is_text_grid() {
                     out.push(Error::DividerNotDrawn(
                         r.display.clone(),
                         r.cells.to_string(),
                     ));
                 }
-                if let Some(source) = r.sources().first() {
-                    out.push(Error::DividerReadsSignal(
-                        r.display.clone(),
-                        r.cells.to_string(),
-                        (*source).to_string(),
-                    ));
-                }
-                // There is no minimum for the rule itself: it runs corner
-                // to corner of its cells, and one cell is one dash. A label is
-                // the only thing here that needs room.
-                if !r.label.is_empty() && r.cells.len() < min_divider_cells(&r.label) {
-                    // A label with no room is left off the rule rather than
-                    // crowding it, so without this the rule would quietly draw
-                    // plain and nothing would say where the label went.
-                    out.push(Error::DividerLabelTooWide(
-                        r.display.clone(),
-                        r.cells.to_string(),
-                        r.cells.len(),
-                        min_divider_cells(&r.label),
-                        r.label.clone(),
-                    ));
-                }
-                self.text_problems(r, display, out);
-                continue;
             }
-
-            // A field with nothing in it is unfinished work rather than a
-            // mistake, but it still stops the profile loading, so it is said
-            // plainly and in those terms. A chain with an empty span in the
-            // middle is the same thing: a piece somebody started and left.
-            if r.content.is_empty() || r.content.iter().any(Span::is_empty) {
-                out.push(Error::UnfinishedField(
-                    r.display.clone(),
-                    r.cells.to_string(),
-                ));
-                continue;
-            }
-
-            for (at, span) in r.content.iter().enumerate() {
-                // A box wider than the run it sits in cannot be drawn: the
-                // field crops what will not fit, so the piece would take the
-                // whole run and whatever shares it would be the part that
-                // goes. Refused rather than cautioned, unlike an overflow,
-                // because this one is certain before a single frame arrives.
-                if span.width > r.cells.len() {
-                    out.push(Error::SpanWiderThanField(
+            if !span.label.is_empty() {
+                if !span.rule {
+                    out.push(Error::LabelNotOnRule(
                         r.display.clone(),
                         r.cells.to_string(),
-                        span.width,
-                        r.cells.len(),
+                        span.label.clone(),
                     ));
-                }
-                // A rule fills room it was given rather than drawing anything
-                // of its own, which is what a gap is. On a piece that has its
-                // own content there is nowhere to put it.
-                if span.rule {
-                    if !span.gap {
-                        out.push(Error::RuleNotOnGap(r.display.clone(), r.cells.to_string()));
-                    }
-                    if !display.is_text_grid() {
-                        out.push(Error::DividerNotDrawn(
-                            r.display.clone(),
-                            r.cells.to_string(),
-                        ));
-                    }
-                }
-                if !span.label.is_empty() {
-                    if !span.rule {
-                        out.push(Error::LabelNotOnRule(
+                } else {
+                    // A box is not what a label needs; a width that holds
+                    // still is, and a rule sharing its line with nothing
+                    // that changes width has one without being boxed. A
+                    // rule with the line to itself is the plain case:
+                    // nothing else is taking room off it, so it is the
+                    // whole run in every frame.
+                    match r.settled_cells(at) {
+                        Some(cells) if cells < min_divider_cells(&span.label) => {
+                            out.push(Error::RuleLabelTooWide(
+                                r.display.clone(),
+                                r.cells.to_string(),
+                                cells,
+                                min_divider_cells(&span.label),
+                                span.label.clone(),
+                            ));
+                        }
+                        Some(_) => {}
+                        // As wide as the readings beside it leave it, so
+                        // the room for the label is whatever they are not
+                        // using. `divider_rule` drops a label it cannot
+                        // fit and draws a plain line, so the label comes
+                        // and goes. Cautioned rather than refused: only
+                        // the user knows how wide their readings really
+                        // get, and a fixed width is the fix when it bites.
+                        None => out.push(Error::RuleLabelMayNotFit(
                             r.display.clone(),
                             r.cells.to_string(),
                             span.label.clone(),
-                        ));
-                    } else {
-                        // A box is not what a label needs; a width that holds
-                        // still is, and a rule sharing its line with nothing
-                        // that changes width has one without being boxed. A
-                        // rule with the line to itself is the plain case:
-                        // nothing else is taking room off it, so it is the
-                        // whole run in every frame.
-                        match r.settled_cells(at) {
-                            Some(cells) if cells < min_divider_cells(&span.label) => {
-                                out.push(Error::RuleLabelTooWide(
-                                    r.display.clone(),
-                                    r.cells.to_string(),
-                                    cells,
-                                    min_divider_cells(&span.label),
-                                    span.label.clone(),
-                                ));
-                            }
-                            Some(_) => {}
-                            // As wide as the readings beside it leave it, so
-                            // the room for the label is whatever they are not
-                            // using. `divider_rule` drops a label it cannot
-                            // fit and draws a plain line, so the label comes
-                            // and goes. Cautioned rather than refused: only
-                            // the user knows how wide their readings really
-                            // get, and a fixed width is the fix when it bites.
-                            None => out.push(Error::RuleLabelMayNotFit(
-                                r.display.clone(),
-                                r.cells.to_string(),
-                                span.label.clone(),
-                            )),
-                        }
+                        )),
                     }
                 }
-                // A gap draws nothing and measures itself from what is left,
-                // so anything written on one is something that will never be
-                // seen. Refused rather than ignored, for the same reason a
-                // signal on a divider is.
-                if span.gap {
-                    if !span.text.is_empty() || span.is_signal() {
-                        out.push(Error::GapHasContent(r.display.clone(), r.cells.to_string()));
-                    }
-                    continue;
+            }
+            // A gap draws nothing and measures itself from what is left,
+            // so anything written on one is something that will never be
+            // seen. Refused rather than ignored, for the same reason a
+            // signal on a divider is.
+            if span.gap {
+                if !span.text.is_empty() || span.is_signal() {
+                    out.push(Error::GapHasContent(r.display.clone(), r.cells.to_string()));
                 }
-                // Characters and a signal are two different answers to what
-                // this span draws, so a span holding both is one somebody
-                // half changed rather than one that means anything.
-                if !span.text.is_empty() && span.is_signal() {
-                    out.push(Error::SpanReadsAndWrites(
+                continue;
+            }
+            // Characters and a signal are two different answers to what
+            // this span draws, so a span holding both is one somebody
+            // half changed rather than one that means anything.
+            if !span.text.is_empty() && span.is_signal() {
+                out.push(Error::SpanReadsAndWrites(
+                    r.display.clone(),
+                    r.cells.to_string(),
+                    span.source.clone(),
+                ));
+                continue;
+            }
+            // What a span writes is only shaped by what it reads, so
+            // nothing below applies to characters the user typed. Their
+            // one rule, that the font can draw them, is in text_problems
+            // where the font is known.
+            if !span.is_signal() {
+                if span.shapes_a_number() {
+                    out.push(Error::RangeOnText(span.text.clone()));
+                }
+                if !span.value_aliases.is_empty() {
+                    out.push(Error::AliasesOnText(span.text.clone()));
+                }
+                continue;
+            }
+            // Flagged rather than refused, as for a lamp condition.
+            let Some(output) = module.signal(&span.source).and_then(|s| s.primary()) else {
+                continue;
+            };
+            // A number shown as sent, converted or as words is the user's
+            // choice. Raw 0 to 65535 is a strange thing to put on a
+            // screen, but the editor says so where the choice is made,
+            // and it draws exactly what it says it will.
+            if output.r#type == "string" {
+                if span.reads.is_some()
+                    || !span.conversions.is_empty()
+                    || span.digits != 0
+                    || span.wrap.is_some()
+                    || span.round != Round::Nearest
+                    || span.abs
+                {
+                    out.push(Error::RangeOnText(span.source.clone()));
+                }
+                if !span.value_aliases.is_empty() {
+                    out.push(Error::AliasesOnText(span.source.clone()));
+                }
+            } else {
+                conversion_problems(span, output.number_max(), out);
+                band_problems(span, output.number_max(), out);
+            }
+
+            if let Some(format) = &span.format {
+                if !display.draws_inverse() {
+                    out.push(Error::FormatNotDrawn(
                         r.display.clone(),
                         r.cells.to_string(),
-                        span.source.clone(),
                     ));
-                    continue;
                 }
-                // What a span writes is only shaped by what it reads, so
-                // nothing below applies to characters the user typed. Their
-                // one rule, that the font can draw them, is in text_problems
-                // where the font is known.
-                if !span.is_signal() {
-                    if span.shapes_a_number() {
-                        out.push(Error::RangeOnText(span.text.clone()));
+                if let Some(o) = module.signal(format).and_then(|s| s.primary()) {
+                    if o.r#type != "string" {
+                        out.push(Error::FormatNotText(format.clone()));
                     }
-                    if !span.value_aliases.is_empty() {
-                        out.push(Error::AliasesOnText(span.text.clone()));
-                    }
-                    continue;
                 }
-                // Flagged rather than refused, as for a lamp condition.
-                let Some(output) = module.signal(&span.source).and_then(|s| s.primary()) else {
-                    continue;
-                };
-                // A number shown as sent, converted or as words is the user's
-                // choice. Raw 0 to 65535 is a strange thing to put on a
-                // screen, but the editor says so where the choice is made,
-                // and it draws exactly what it says it will.
-                if output.r#type == "string" {
-                    if span.reads.is_some()
-                        || !span.conversions.is_empty()
-                        || span.digits != 0
-                        || span.wrap.is_some()
-                        || span.round != Round::Nearest
-                        || span.abs
-                    {
-                        out.push(Error::RangeOnText(span.source.clone()));
-                    }
-                    if !span.value_aliases.is_empty() {
-                        out.push(Error::AliasesOnText(span.source.clone()));
-                    }
-                } else {
-                    conversion_problems(span, output.number_max(), out);
-                    band_problems(span, output.number_max(), out);
-                }
+            }
 
-                if let Some(format) = &span.format {
-                    if !display.draws_inverse() {
-                        out.push(Error::FormatNotDrawn(
-                            r.display.clone(),
-                            r.cells.to_string(),
+            if let Some(colours) = &span.colours {
+                if let Some(o) = module.signal(&colours.source).and_then(|s| s.primary()) {
+                    if o.r#type != "string" {
+                        out.push(Error::FormatNotText(colours.source.clone()));
+                    }
+                }
+                for code in colours.codes.keys() {
+                    if code.chars().count() != 1 {
+                        out.push(Error::ColourCodeNotOneChar(code.clone()));
+                    }
+                }
+            }
+
+            for (from, to) in &span.replace {
+                if from.chars().count() != 1 || to.chars().count() != 1 {
+                    out.push(Error::ReplaceNotOneChar(from.clone(), to.clone()));
+                }
+            }
+        }
+
+        // Gaps space out what is around them. With nothing around them
+        // they are an elaborate way of writing blanks, which is what an
+        // empty run already does. A rule is not blanks: a field that is
+        // nothing but one is a divider written the long way, and drawing
+        // it is the right answer rather than a fault.
+        if !r.content.is_empty() && r.content.iter().all(|s| s.gap && !s.rule) {
+            out.push(Error::NothingButGaps(
+                r.display.clone(),
+                r.cells.to_string(),
+            ));
+        }
+
+        // Inverse is the one piece of styling a span can ask for on glass
+        // that is not a text grid, so it is checked against what the
+        // display can actually do rather than lumped in with colour. A
+        // band can ask for it too.
+        let asks_inverse = r
+            .content
+            .iter()
+            .any(|s| s.inverse || s.value_aliases.values().any(|a| a.inverse));
+        if !display.draws_inverse() && asks_inverse {
+            out.push(Error::FormatNotDrawn(
+                r.display.clone(),
+                r.cells.to_string(),
+            ));
+        }
+
+        self.text_problems(r, display, out);
+    }
+
+    /// What a field's switches can be wrong about in themselves, before their
+    /// cases are checked as plain fields.
+    ///
+    /// True where a switch is too broken for its cases to mean anything, so
+    /// the caller does not go on to report every case of a switch with no
+    /// cases, or of one sitting inside another.
+    ///
+    /// Positions are cautions, like alias bands. Two cases claiming one
+    /// position settle on the lower, a case past the selector's travel never
+    /// draws, and positions with no case and no `else` draw nothing. None of
+    /// them is undefined, and a profile refused whole over one of them would
+    /// take every screen dark.
+    fn switch_problems(&self, r: &Readout, module: &Module, out: &mut Vec<Error>) -> bool {
+        let mut broken = false;
+        for span in r.content.iter().filter(|s| s.is_switch()) {
+            let carried = [
+                (!span.text.is_empty(), "characters to draw"),
+                (span.gap, "a gap"),
+                (span.rule, "a rule"),
+                (
+                    !span.label.is_empty() || span.label_colour.is_some(),
+                    "a label",
+                ),
+                (span.width > 0 || span.align != Align::Left, "a fixed width"),
+            ];
+            for (has, what) in carried {
+                if has {
+                    out.push(Error::SwitchCarries(
+                        r.display.clone(),
+                        r.cells.to_string(),
+                        what,
+                    ));
+                    broken = true;
+                }
+            }
+            if span.cases.is_empty() {
+                out.push(Error::SwitchWithoutCases(
+                    r.display.clone(),
+                    r.cells.to_string(),
+                    span.switch.clone(),
+                ));
+                broken = true;
+                continue;
+            }
+            for case in &span.cases.0 {
+                if let Some(inner) = case.pieces.iter().find(|p| p.is_switch()) {
+                    out.push(Error::SwitchInSwitch(
+                        r.display.clone(),
+                        r.cells.to_string(),
+                        inner.switch.clone(),
+                    ));
+                    broken = true;
+                }
+            }
+            // A selector this DCS-BIOS lacks is flagged as a missing signal,
+            // like any other source, and has no positions to check against.
+            let Some(output) = module.signal(&span.switch).and_then(|s| s.primary()) else {
+                continue;
+            };
+            if output.r#type == "string" {
+                out.push(Error::SwitchOnText(span.switch.clone()));
+                continue;
+            }
+            let max = output.number_max();
+            let bands: Vec<&ValueBand> = span
+                .cases
+                .0
+                .iter()
+                .filter_map(|c| match &c.when {
+                    CaseKey::Band(b) => Some(b),
+                    CaseKey::Else => None,
+                })
+                .collect();
+            for (i, a) in bands.iter().enumerate() {
+                for b in &bands[i + 1..] {
+                    if a.overlaps(b, 0.0) {
+                        out.push(Error::SwitchCasesOverlap(
+                            a.to_string(),
+                            b.to_string(),
+                            span.switch.clone(),
                         ));
                     }
-                    if let Some(o) = module.signal(format).and_then(|s| s.primary()) {
-                        if o.r#type != "string" {
-                            out.push(Error::FormatNotText(format.clone()));
-                        }
-                    }
-                }
-
-                if let Some(colours) = &span.colours {
-                    if let Some(o) = module.signal(&colours.source).and_then(|s| s.primary()) {
-                        if o.r#type != "string" {
-                            out.push(Error::FormatNotText(colours.source.clone()));
-                        }
-                    }
-                    for code in colours.codes.keys() {
-                        if code.chars().count() != 1 {
-                            out.push(Error::ColourCodeNotOneChar(code.clone()));
-                        }
-                    }
-                }
-
-                for (from, to) in &span.replace {
-                    if from.chars().count() != 1 || to.chars().count() != 1 {
-                        out.push(Error::ReplaceNotOneChar(from.clone(), to.clone()));
-                    }
                 }
             }
-
-            // Gaps space out what is around them. With nothing around them
-            // they are an elaborate way of writing blanks, which is what an
-            // empty run already does. A rule is not blanks: a field that is
-            // nothing but one is a divider written the long way, and drawing
-            // it is the right answer rather than a fault.
-            if !r.content.is_empty() && r.content.iter().all(|s| s.gap && !s.rule) {
-                out.push(Error::NothingButGaps(
-                    r.display.clone(),
-                    r.cells.to_string(),
+            for band in &bands {
+                if band.highest() < 0.0 || band.lowest() > f64::from(max) {
+                    out.push(Error::SwitchCaseUnreachable(
+                        band.to_string(),
+                        span.switch.clone(),
+                        max,
+                    ));
+                }
+            }
+            if span.cases.0.iter().any(|c| c.when == CaseKey::Else) {
+                continue;
+            }
+            // Walked position by position, which a selector's handful makes
+            // cheap and a continuous signal's 65536 still does not make slow.
+            let mut runs: Vec<(u16, u16)> = Vec::new();
+            for position in 0..=max {
+                if span.case_for(f64::from(position)).is_some() {
+                    continue;
+                }
+                match runs.last_mut() {
+                    Some((_, end)) if *end + 1 == position => *end = position,
+                    _ => runs.push((position, position)),
+                }
+            }
+            if !runs.is_empty() {
+                let named: Vec<String> = runs
+                    .iter()
+                    .map(|&(a, b)| {
+                        if a == b {
+                            a.to_string()
+                        } else {
+                            format!("{a} to {b}")
+                        }
+                    })
+                    .collect();
+                out.push(Error::SwitchUncovered(
+                    span.switch.clone(),
+                    named.join(", "),
                 ));
             }
-
-            // Inverse is the one piece of styling a span can ask for on glass
-            // that is not a text grid, so it is checked against what the
-            // display can actually do rather than lumped in with colour. A
-            // band can ask for it too.
-            let asks_inverse = r
-                .content
-                .iter()
-                .any(|s| s.inverse || s.value_aliases.values().any(|a| a.inverse));
-            if !display.draws_inverse() && asks_inverse {
-                out.push(Error::FormatNotDrawn(
-                    r.display.clone(),
-                    r.cells.to_string(),
-                ));
-            }
-
-            self.text_problems(r, display, out);
         }
+        broken
     }
 
     /// What only a text grid can take, and what a text grid needs.

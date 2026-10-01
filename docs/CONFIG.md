@@ -895,6 +895,7 @@ brightness, a field asks "which cells, fed by what" and resolves to characters.
     "seat": 0,               // only where the module reports one
     "aliases": { "--": "_" },
     "format": "DED_L1_FORMAT", // text marking inverse cells, where the glass has them
+    // "switch" and "cases": see "A switch" under Content
     "note": "",
   },
 ]
@@ -1230,6 +1231,79 @@ draws a plain rule, so the label comes and goes with the reading beside it.
 That is a caution on the field and not a refusal: the rule draws either way,
 only the user knows how wide their readings really get, and a `width` on the
 rule is the fix where it bites.
+
+#### A switch: a reading another knob decides
+
+Some readings only mean something beside a knob. The Huey's ADF needle,
+`ADF_FREQ`, runs 0 to 65535 whichever band is selected, and `ADF_BAND` says
+whether that is 190 to 400 kHz, 400 to 850 or 850 to 1750. One `reads` cannot
+say all three, and three fields on one run of cells would be three owners for
+it. A switch is one piece that picks how it draws by another signal's
+position:
+
+```jsonc
+{
+  "cells": "0-9",
+  "content": [
+    { "text": "ADF ", "small": true },
+    {
+      "switch": "ADF_BAND",  // the selector whose position decides
+      "source": "ADF_FREQ",  // shared by every case
+      "colour": "green",
+      "cases": {
+        "0": { "reads": [190, 400] },
+        "1": { "reads": [400, 850] },
+        "2": { "reads": [850, 1750], "colour": "amber" },
+      },
+    },
+  ],
+}
+```
+
+**Each case is what the switch draws in those positions.** Its key is written
+the way a `value_aliases` key is, `"1"`, `"0,2"` or `"1..3"`, and matched
+against the position the selector sends, or `"else"`, which claims every
+position no other case does. A case is one piece, written as an object, or a
+chain of them written as an array, so a case can carry a label or a unit of its
+own. Only the case the selector is in draws, and its pieces take the switch's
+place in the line, so a gap in a case shares the line with the pieces around
+the switch.
+
+**Everything else on the switch is shared by its cases.** A case piece that
+leaves an option unset takes the switch's, so the source, the decimals and the
+colour are written once and each case says only what is its own. A case
+setting an option replaces the switch's whole: a case with `value_aliases` of
+its own does not merge them with the switch's. Each kind of piece takes only
+what applies to it: typed text takes the switch's `colour`, `small`, `inverse`
+and `replace`, and never its `decimals`; a gap takes only the styling a rule
+draws in.
+
+- `reads` and `conversions` are one choice made two ways, so a case that
+  makes it either way, or clears it, takes neither from the switch.
+- `null` clears an option for one case: `"wrap": null` draws that case with no
+  wrap where every other case wraps at 360. In the editor a shared wrap,
+  padding or set of words is turned off by a checkbox under the case, and
+  emptying the box hands the option back to the switch instead.
+- Shared options stay on the switch when the file is saved. They are never
+  copied into the cases, so changing one later changes every case that did
+  not set its own.
+
+A switch carries no `text`, `gap`, rule, label or `width` of its own, and is
+refused with one: those belong to a piece inside a case. A switch with no
+cases is refused, and so is a switch inside a case. A field holding a switch is
+always written as `content`, since no field written before switches has one.
+
+**The field is checked as each of its cases would draw it.** Every check a
+plain field gets is asked of each case in turn, and a fault several cases
+share is said once. The width warning measures the widest case, never the
+cases added up. The selector's positions are cautions, like alias bands: two
+cases claiming one position draw the lower, a case past the most the selector
+sends never draws, positions no case claims draw nothing where there is no
+`else`, and a selector DCS-BIOS reports as characters has no position to match,
+so only `else` could draw.
+
+The selector is read like any other signal: until it arrives the switch draws
+nothing and leaves its cells alone, and turning it repaints the field.
 
 ### Text grids
 

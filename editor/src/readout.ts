@@ -18,7 +18,22 @@
 import { cellInk, dividerRule, fontGlyphs } from "./api";
 import { iconButton } from "./binding";
 import { confirmAction } from "./confirm";
-import { contentOf, isLiteral, kindOf, newSpan, setContent } from "./content";
+import {
+  SWITCHABLE_OFF,
+  caseKeys,
+  casePieces,
+  contentOf,
+  expandSwitches,
+  inherits,
+  isLiteral,
+  keyClaims,
+  kindOf,
+  newSpan,
+  patchOf,
+  patchesOf,
+  resolvePiece,
+  setContent,
+} from "./content";
 import type { SpanKind } from "./content";
 import { cautionSlot, flagSlot } from "./flags";
 import { noteEditor } from "./note";
@@ -38,6 +53,7 @@ import type {
   ShapeArt,
   SignalView,
   Span,
+  SpanPatch,
 } from "./types";
 
 /** The swatch beside each colour name, so the menu shows what it means. */
@@ -257,6 +273,7 @@ function conversionRow(
     select.append(el("option", { value: kind }, READING_LABELS[kind]));
   }
   select.value = isConverted(span) ? "converted" : "sent";
+  select.dataset.opt = "reads";
   select.addEventListener("change", () => {
     // Converting starts from the signal's own range, which draws exactly what
     // as sent did, so the choice changes nothing until a number is changed.
@@ -266,7 +283,7 @@ function conversionRow(
     rebuild();
   });
 
-  const stretches = el("div", { class: "alias-rows" });
+  const stretches = el("div", { class: "alias-rows", "data-opt": "reads" });
   const offer = el("button", { class: "add small" });
   const values = el("span", { class: "values-row flow" });
   const converted = isConverted(span);
@@ -444,6 +461,11 @@ function conversionRow(
       el("option", { value: "down" }, "down"),
     );
     round.value = span.round ?? "nearest";
+    dp.dataset.opt = "decimals";
+    digits.dataset.opt = "digits";
+    wrap.dataset.opt = "wrap";
+    round.dataset.opt = "round";
+    unsign.dataset.opt = "abs";
     const sync = (): void => {
       const places = Number(dp.value) || 0;
       if (places > 0) span.decimals = places;
@@ -502,8 +524,14 @@ function conversionRow(
     converted ? stretches : "",
     converted ? offer : "",
     converted ? el("div", { class: "test-row" }, values) : "",
-    valueAliasEditor(span, signal, set, colours, inverse, edited),
+    tagged(valueAliasEditor(span, signal, set, colours, inverse, edited), "value_aliases"),
   );
+}
+
+/** Mark a control with the option it edits, which a switch case greys out while it inherits it. */
+function tagged(node: HTMLElement, opt: string): HTMLElement {
+  node.dataset.opt = opt;
+  return node;
 }
 
 /** Whether a piece converts its number, by a range or by stretches. */
@@ -1218,7 +1246,9 @@ interface RowOptions {
  * range that starts at 0.
  */
 function meaningful(key: string, value: unknown): boolean {
-  if (value === undefined || value === null || value === false || value === "") return false;
+  // Null is a switch case turning a shared option off, which says something.
+  if (value === null) return true;
+  if (value === undefined || value === false || value === "") return false;
   if (key === "decimals" && value === 0) return false;
   if (key === "align" && value === "left") return false;
   if (key === "width" && value === 0) return false;
@@ -1358,6 +1388,16 @@ function resetButton(opts: RowOptions): HTMLElement | null {
  * once, in one place.
  */
 function spanWidth(span: Span, signals: SignalView[]): number {
+  // A switch draws one case at a time, so it is as wide as its widest case,
+  // never its cases added up.
+  if (kindOf(span) === "switch") {
+    return Math.max(
+      0,
+      ...caseKeys(span).map((key) =>
+        casePieces(span, key).reduce((n, piece) => n + spanWidth(piece, signals), 0),
+      ),
+    );
+  }
   // A box is the whole answer, and the only one that holds for a gauge with no
   // range: whatever it reads, it draws this many cells.
   if (span.width) return span.width;
@@ -1500,8 +1540,17 @@ function settledCells(readout: Readout, spans: Span[], index: number): number | 
   const cells = cellCount(readout.cells);
   // A one cell run takes a piece's whole value as a single glyph, which is
   // what the daemon does, so its length is the run's rather than its text's.
+  // A switch is as wide as whichever case is drawing.
   const settled = (s: Span): number | null =>
-    s.width ? s.width : s.gap ? null : cells === 1 ? 1 : s.source ? null : (s.text ?? "").length;
+    s.width
+      ? s.width
+      : s.gap || kindOf(s) === "switch"
+        ? null
+        : cells === 1
+          ? 1
+          : s.source
+            ? null
+            : (s.text ?? "").length;
   if (!piece.gap || piece.width) return settled(piece);
   let used = 0;
   const elastic: number[] = [];
@@ -1563,14 +1612,17 @@ function signalWidth(span: Span, signals: SignalView[]): number {
 function unbounded(spans: Span[], signals: SignalView[]): boolean {
   return spans.some(
     (s) =>
+      (kindOf(s) === "switch" &&
+        caseKeys(s).some((key) => unbounded(casePieces(s, key), signals))) ||
       // A box bounds what nothing else does: in one, a reading of any width
       // draws its width and no more.
-      !s.width &&
-      !s.gap &&
-      !isLiteral(s) &&
-      s.source !== "" &&
-      isText(signals, s.source ?? "") &&
-      textLength(signals, s.source ?? "") === 0,
+      (!s.width &&
+        !s.gap &&
+        kindOf(s) !== "switch" &&
+        !isLiteral(s) &&
+        s.source !== "" &&
+        isText(signals, s.source ?? "") &&
+        textLength(signals, s.source ?? "") === 0),
   );
 }
 
@@ -1674,7 +1726,10 @@ async function layoutCells(
   // colour and size, or left as a block where a reading goes. Built per piece
   // rather than flat, because a gap cannot be measured until everything that
   // is not a gap has been laid out, the same way the daemon does it.
-  const spans = contentOf(readout);
+  //
+  // A switch is laid out as the case chosen to preview, which is its first
+  // until the user picks another.
+  const spans = expandSwitches(contentOf(readout), previewedCase);
   const groups: PreviewCell[][] = [];
   const gaps: number[] = [];
   for (const span of spans) {
@@ -2046,8 +2101,10 @@ function spanEditor(
   opts: RowOptions,
   redraw: () => void,
   refresh: () => void,
+  ctx: PieceContext = {},
 ): HTMLElement {
   const { readout, display, profile, signals, onChange } = opts;
+  const save = ctx.save ?? ((): void => setContent(readout, spans));
   // The array the chain is drawing, not another copy of it. A field still in
   // the flat shape gives a fresh array and fresh pieces every time `contentOf`
   // is called, so deriving one here handed this a piece that was not the one
@@ -2058,7 +2115,7 @@ function spanEditor(
   // watching, and update the parts that read the content. Not rebuild the
   // chain, which would throw away the box being typed into.
   const edited = (): void => {
-    setContent(readout, spans);
+    save();
     refresh();
     onChange();
   };
@@ -2073,20 +2130,46 @@ function spanEditor(
   if (display.text_grid || kindOf(span) === "rule") {
     kind.append(el("option", { value: "rule" }, "a rule"));
   }
+  // Not inside a case: a switch cannot sit inside another.
+  if (!ctx.nested) kind.append(el("option", { value: "switch" }, "a switch"));
   kind.value = kindOf(span);
   kind.addEventListener("change", () => {
     // Everything on a piece describes the one value it draws, so switching
     // what it draws leaves none of it meaningful. Colour and size are the
     // exception: they are about how it looks, and the user picked them. A gap
     // keeps none of it, because it draws nothing to style.
+    //
+    // A reading and a switch are the one pair that keep each other's
+    // settings. A reading made into a switch is usually the reading that
+    // turned out to depend on a knob, and how it reads is what the cases go
+    // on to share; a switch made back into a reading reads the way its cases
+    // shared.
     const next = kind.value as SpanKind;
-    if (next === "gap" || next === "rule") {
+    const was = kindOf(span);
+    if (next === "switch" && was === "signal") {
+      const shared: Span = { ...span, switch: "", cases: {} };
+      delete shared.width;
+      delete shared.align;
+      spans[index] = shared;
+    } else if (next === "signal" && was === "switch") {
+      const reading: Span = { ...span, source: span.source ?? "" };
+      delete reading.switch;
+      delete reading.cases;
+      spans[index] = reading;
+    } else if (next === "switch") {
+      spans[index] = {
+        ...newSpan("switch"),
+        colour: span.colour,
+        small: span.small,
+        inverse: span.inverse,
+      };
+    } else if (next === "gap" || next === "rule") {
       spans[index] = newSpan(next);
     } else {
       const kept: Span = { colour: span.colour, small: span.small, inverse: span.inverse };
       spans[index] = next === "text" ? { ...kept, text: "" } : { ...kept, source: "" };
     }
-    setContent(readout, spans);
+    save();
     redraw();
     onChange();
   });
@@ -2139,65 +2222,16 @@ function spanEditor(
     });
     check();
     body.append(box, trouble);
+  } else if (kindOf(span) === "switch") {
+    body.append(switchEditor(spans, index, opts, redraw, refresh, save));
   } else {
-    const picker = signalPicker({
-      signals,
-      value: span.source ?? "",
-      onPick: (id) => {
-        const was = span.source ?? "";
-        span.source = id;
-        followTwin(span, signals, was);
-        // Only fill in a conversion for a piece that had no number before, so
-        // swapping the signal under a tuned range does not discard it, the
-        // same bargain a lamp's test makes.
-        if (!was || isText(signals, was)) {
-          startReading(
-            span,
-            signals.find((s) => s.id === id),
-          );
-        }
-        // A different signal brings a different set of controls with it: a
-        // range where the old one was a number, none where it reports
-        // characters, a highlighting twin or not. So this one rebuilds.
-        setContent(readout, spans);
+    body.append(
+      ...readingControls(span, opts, edited, () => {
+        save();
         redraw();
         onChange();
-      },
-    });
-    body.append(picker);
-
-    if (span.source) {
-      // A signal the catalogue says reports characters is offered no range,
-      // since one would usually mean nothing. One written anyway is kept and
-      // shown: DCS-BIOS is not always right about what a signal is, the check
-      // cautions rather than refuses, and quietly dropping it here would undo
-      // the user's choice the moment the field was drawn.
-      const textual = isText(signals, span.source);
-      if (!textual || isConverted(span) || span.value_aliases) {
-        // Choosing between as sent, converted and aliases changes which boxes
-        // there are, so that rebuilds. Typing in them does not.
-        const signal = signals.find((s) => s.id === span.source);
-        const set = alphabet(display, profile, span.small ?? false);
-        body.append(
-          conversionRow(
-            span,
-            signal,
-            set,
-            display.text_grid ? display.colours : [],
-            display.draws_inverse,
-            edited,
-            () => {
-              setContent(readout, spans);
-              redraw();
-              onChange();
-            },
-          ),
-        );
-      }
-      // A substitution is about what this signal sends, so it belongs to the
-      // piece that reads it rather than to the field around it.
-      body.append(aliasEditor(span, edited));
-    }
+      }),
+    );
   }
 
   // --- how it looks --------------------------------------------------------
@@ -2210,6 +2244,7 @@ function spanEditor(
     const colour = el("select", { class: "colour" });
     for (const name of display.colours) colour.append(el("option", { value: name }, name));
     colour.value = span.colour ?? "white";
+    colour.dataset.opt = "colour";
     colour.addEventListener("change", () => {
       span.colour = colour.value;
       edited();
@@ -2224,13 +2259,13 @@ function spanEditor(
       // The small font draws fewer characters than the large one, so what the
       // typed text is checked against has changed. That check is built with
       // the box, so this one really does rebuild.
-      setContent(readout, spans);
+      save();
       redraw();
       onChange();
     });
     style.append(
       explained(
-        el("label", { class: "meta" }, small, " small"),
+        el("label", { class: "meta", "data-opt": "small" }, small, " small"),
         "About the small font",
         "The grid's small font, which a CDU uses for its labels. It draws " +
           "fewer characters than the large one, so a character that was fine " +
@@ -2241,7 +2276,10 @@ function spanEditor(
 
   // Typed text and a reading alike: a reading the user put on the glass has no
   // highlighting signal of its own to ask, so this is the only way to mark it.
-  if (display.draws_inverse && (isLiteral(span) || kindOf(span) === "signal")) {
+  if (
+    display.draws_inverse &&
+    (isLiteral(span) || kindOf(span) === "signal" || kindOf(span) === "switch")
+  ) {
     const flip = el("input", { type: "checkbox" });
     flip.checked = span.inverse === true;
     flip.addEventListener("change", () => {
@@ -2249,11 +2287,11 @@ function spanEditor(
       else delete span.inverse;
       // Whether the highlighting chooser is offered depends on this, so it
       // rebuilds.
-      setContent(readout, spans);
+      save();
       redraw();
       onChange();
     });
-    style.append(el("label", { class: "meta" }, flip, " inverse"));
+    style.append(el("label", { class: "meta", "data-opt": "inverse" }, flip, " inverse"));
   }
 
   // A highlighting signal marks characters, so it means nothing over a number,
@@ -2267,14 +2305,15 @@ function spanEditor(
     span.source &&
     (isText(signals, span.source) || span.format !== undefined)
   ) {
-    style.append(spanFormatChooser(span, signals, edited));
+    style.append(tagged(spanFormatChooser(span, signals, edited), "format"));
   }
 
   // Last in the style row, because it is about where the piece sits rather
   // than what it draws, and every kind of piece can have one: a box on a gap
   // is a spacer of exactly that many blanks, and on a rule it is what lets it
-  // carry a label.
-  style.append(boxControls(span, readout, edited));
+  // carry a label. Not a switch, whose cases each draw at their own width:
+  // a box goes on the piece inside the case.
+  if (kindOf(span) !== "switch") style.append(boxControls(span, readout, edited));
 
   const up = el("button", { class: "icon", title: "Move this piece earlier" }, "↑");
   up.disabled = index === 0;
@@ -2282,7 +2321,7 @@ function spanEditor(
     const moved = spans.splice(index, 1)[0];
     if (!moved) return;
     spans.splice(index - 1, 0, moved);
-    setContent(readout, spans);
+    save();
     redraw();
     onChange();
   });
@@ -2292,7 +2331,7 @@ function spanEditor(
     const moved = spans.splice(index, 1)[0];
     if (!moved) return;
     spans.splice(index + 1, 0, moved);
-    setContent(readout, spans);
+    save();
     redraw();
     onChange();
   });
@@ -2300,7 +2339,7 @@ function spanEditor(
   drop.disabled = spans.length === 1;
   drop.addEventListener("click", () => {
     spans.splice(index, 1);
-    setContent(readout, spans);
+    save();
     redraw();
     onChange();
   });
@@ -2311,6 +2350,407 @@ function spanEditor(
     style,
   );
   return wrap;
+}
+
+/** Where a piece sits, when that is inside a switch case rather than on the field. */
+interface PieceContext {
+  /** Write the chain back after an edit. The field's own chain by default. */
+  save?: () => void;
+  /** A piece inside a case, which cannot be a switch itself. */
+  nested?: boolean;
+}
+
+/**
+ * The case each switch on screen shows in the preview, until the user picks
+ * another. Weak for the same reason the rule checks are: the chain is built
+ * again on every redraw, and an entry only matters while its piece is shown.
+ */
+const PREVIEWING = new WeakMap<Span, string>();
+
+/** The case the preview lays a switch out as: the one picked, or the first. */
+function previewedCase(span: Span): string | undefined {
+  const keys = caseKeys(span);
+  const picked = PREVIEWING.get(span);
+  return picked !== undefined && keys.includes(picked) ? picked : keys[0];
+}
+
+/**
+ * What each case piece on screen wrote last, so an option it turned off stays
+ * off when something else in it is edited. Keyed by the piece the window
+ * edits, which keeps its identity through a move.
+ */
+const WRITTEN = new WeakMap<Span, SpanPatch>();
+
+/** What the off toggle for each shared option says it turns off. */
+const OFF_NAMES: Record<(typeof SWITCHABLE_OFF)[number], string> = {
+  wrap: "no wrap",
+  digits: "no padding",
+  value_aliases: "no words",
+};
+
+/**
+ * A switch: the signal that decides, what every case shares, and the cases.
+ *
+ * What is shared is edited with exactly the controls a reading has, because
+ * that is what it is: a reading every case starts from. A case says only
+ * what differs, and the window shows it whole, with what it takes from here
+ * greyed out.
+ */
+function switchEditor(
+  spans: Span[],
+  index: number,
+  opts: RowOptions,
+  redraw: () => void,
+  refresh: () => void,
+  save: () => void,
+): HTMLElement {
+  const { signals, onChange } = opts;
+  const span = spans[index] as Span;
+  const rebuild = (): void => {
+    save();
+    redraw();
+    onChange();
+  };
+  const edited = (): void => {
+    save();
+    refresh();
+    onChange();
+  };
+  const wrap = el("div", { class: "switch" });
+
+  const selector = signalPicker({
+    signals,
+    value: span.switch ?? "",
+    onPick: (id) => {
+      span.switch = id;
+      // A case for each position the catalogue names, each taking everything
+      // from the switch, so choosing the selector is usually the only step
+      // before saying what differs in each.
+      if (Object.keys(span.cases ?? {}).length === 0) {
+        const cases: Record<string, SpanPatch> = {};
+        for (const v of signals.find((s) => s.id === id)?.values ?? []) {
+          cases[String(v.value)] = {};
+        }
+        span.cases = cases;
+      }
+      rebuild();
+    },
+  });
+  wrap.append(
+    explained(
+      el("span", { class: "meta" }, "decided by"),
+      "About switches",
+      "The signal whose position decides how this piece draws, such as a " +
+        "band switch deciding what a frequency needle reads. Each case below " +
+        "draws while the switch is in the positions it names. A position no " +
+        "case names draws nothing, unless there is an else case.",
+    ),
+    selector,
+  );
+
+  wrap.append(
+    explained(
+      el("div", { class: "meta" }, "Every case reads this way unless it says otherwise:"),
+      "About shared settings",
+      "Set here once, and every case takes it. In a case, a grey value is " +
+        "one it takes from here: change it to give that case its own, and " +
+        "empty it to take this one again. Off turns a shared wrap, padding or " +
+        "set of words off for that case alone.",
+    ),
+    ...readingControls(span, opts, edited, rebuild),
+  );
+
+  for (const key of caseKeys(span)) {
+    wrap.append(caseEditor(spans, index, key, opts, redraw, refresh, save));
+  }
+
+  // The next position nothing claims yet, and else once every one is taken.
+  const max = signals.find((s) => s.id === span.switch)?.max_value ?? 0;
+  const keys = caseKeys(span);
+  let next: string | undefined;
+  for (let v = 0; v <= Math.min(max, 1000) && next === undefined; v += 1) {
+    if (!keys.some((k) => keyClaims(k, v))) next = String(v);
+  }
+  if (next === undefined && !keys.includes("else")) next = "else";
+  const add = el("button", { class: "add small" }, next ? `+ a case for ${next}` : "+ a case");
+  add.disabled = next === undefined;
+  add.title = next === undefined ? "Every position has a case, and so does else." : "";
+  add.addEventListener("click", () => {
+    if (next === undefined) return;
+    span.cases = { ...(span.cases ?? {}), [next]: {} };
+    rebuild();
+  });
+  wrap.append(el("div", { class: "chain-add" }, add));
+  return wrap;
+}
+
+/**
+ * One case of a switch: the positions it claims, and the pieces it draws.
+ *
+ * Each piece is edited whole, the shared settings filled in, with the same
+ * editor any piece has. What is written back is only what differs from the
+ * switch, which `patchOf` works out after every edit, so the file says once
+ * what every case shares.
+ */
+function caseEditor(
+  spans: Span[],
+  index: number,
+  key: string,
+  opts: RowOptions,
+  redraw: () => void,
+  refresh: () => void,
+  saveAll: () => void,
+): HTMLElement {
+  const { display, onChange } = opts;
+  const span = spans[index] as Span;
+  const box = el("div", { class: "case" });
+  const written = span.cases?.[key] ?? {};
+  const patches = patchesOf(written);
+  const views = patches.map((p) => resolvePiece(p, span));
+  views.forEach((v, i) => WRITTEN.set(v, patches[i] ?? {}));
+  const nodes: HTMLElement[] = [];
+
+  const greyOut = (): void => {
+    views.forEach((view, i) => {
+      const node = nodes[i];
+      if (!node) return;
+      const patch = WRITTEN.get(view) ?? {};
+      for (const control of node.querySelectorAll<HTMLElement>("[data-opt]")) {
+        const opt = control.dataset.opt ?? "";
+        control.classList.toggle("inherited", inherits(view, patch, span, opt));
+      }
+    });
+  };
+  const commit = (): void => {
+    const next = views.map((view) => {
+      const patch = patchOf(view, span, WRITTEN.get(view) ?? {});
+      WRITTEN.set(view, patch);
+      return patch;
+    });
+    const one = next.length === 1 && !Array.isArray(span.cases?.[key]);
+    span.cases = { ...(span.cases ?? {}), [key]: one ? (next[0] as SpanPatch) : next };
+    saveAll();
+    greyOut();
+  };
+
+  // --- which positions -------------------------------------------------------
+  const keyBox = el("input", { type: "text", class: "value", value: key, placeholder: "0" });
+  const trouble = el("div", { class: "meta" });
+  keyBox.addEventListener("change", () => {
+    const next = keyBox.value.trim();
+    const problem =
+      next === "else"
+        ? ""
+        : next === ""
+          ? "A case needs the positions it draws for."
+          : next !== key && span.cases?.[next] !== undefined
+            ? `There is already a case for ${next}.`
+            : bandTrouble(next);
+    keyBox.classList.toggle("bad", problem !== "");
+    trouble.classList.toggle("bad", problem !== "");
+    trouble.textContent = problem;
+    if (problem || next === key) return;
+    // Renamed in place, keeping every other case where it was.
+    const cases: Record<string, SpanPatch | SpanPatch[]> = {};
+    for (const [k, v] of Object.entries(span.cases ?? {})) cases[k === key ? next : k] = v;
+    span.cases = cases;
+    if (PREVIEWING.get(span) === key) PREVIEWING.set(span, next);
+    saveAll();
+    redraw();
+    onChange();
+  });
+  const showing = previewedCase(span) === key;
+  const show = el(
+    "button",
+    {
+      class: "icon",
+      title: showing ? "This case is in the preview" : "Show this case in the preview",
+    },
+    showing ? "â—‰" : "â—‹",
+  );
+  show.addEventListener("click", () => {
+    PREVIEWING.set(span, key);
+    redraw();
+  });
+  const drop = el("button", { class: "icon danger", title: "Remove this case" }, "Ã—");
+  drop.addEventListener("click", () => {
+    const cases = { ...(span.cases ?? {}) };
+    delete cases[key];
+    span.cases = cases;
+    saveAll();
+    redraw();
+    onChange();
+  });
+  box.append(
+    el(
+      "div",
+      { class: "case-head" },
+      explained(
+        el("label", { class: "meta" }, "when at ", keyBox),
+        "About a case's positions",
+        'One position, as in "1", a list, as in "0,2", or a run, as in ' +
+          '"1..3". "else" draws for every position no other case names. ' +
+          "Two cases naming one position is allowed, and the lower draws it.",
+      ),
+      el("span", { class: "spacer" }),
+      show,
+      drop,
+    ),
+    trouble,
+  );
+
+  // --- what it draws ---------------------------------------------------------
+  const pieces = el("div", { class: "chain" });
+  views.forEach((view, i) => {
+    const node = spanEditor(views, i, opts, redraw, refresh, { save: commit, nested: true });
+    const off = offToggles(view, span, commit, () => {
+      redraw();
+      onChange();
+    });
+    if (off) node.append(off);
+    nodes.push(node);
+    pieces.append(node);
+  });
+  greyOut();
+
+  const add = el("div", { class: "chain-add" });
+  const addOne = (patch: SpanPatch, label: string): HTMLElement => {
+    const button = el("button", { class: "add small" }, label);
+    button.addEventListener("click", () => {
+      const view = resolvePiece(patch, span);
+      WRITTEN.set(view, patch);
+      views.push(view);
+      commit();
+      redraw();
+      onChange();
+    });
+    return button;
+  };
+  add.append(
+    addOne({}, "+ a reading"),
+    addOne({ text: "" }, "+ text"),
+    addOne({ gap: true }, "+ a gap"),
+  );
+  if (display.text_grid) add.append(addOne({ gap: true, rule: true }, "+ a rule"));
+  box.append(pieces, add);
+  return box;
+}
+
+/**
+ * Turning off, for one case, a wrap, padding or set of words the switch
+ * shares. Emptying the box would hand it back to the switch instead, so off
+ * needs saying out loud. Only offered for what the switch actually shares.
+ */
+function offToggles(
+  view: Span,
+  shared: Span,
+  commit: () => void,
+  rebuild: () => void,
+): HTMLElement | null {
+  if (kindOf(view) !== "signal") return null;
+  const offered = SWITCHABLE_OFF.filter((k) => shared[k] !== undefined);
+  if (offered.length === 0) return null;
+  const row = el("span", { class: "test-row" });
+  for (const key of offered) {
+    const box = el("input", { type: "checkbox" });
+    box.checked = WRITTEN.get(view)?.[key] === null;
+    box.addEventListener("change", () => {
+      const patch: SpanPatch = { ...(WRITTEN.get(view) ?? {}) };
+      if (box.checked) {
+        delete view[key];
+        patch[key] = null;
+      } else {
+        // Back to the switch's, which is what an option equal to it means.
+        (view as Record<string, unknown>)[key] = JSON.parse(JSON.stringify(shared[key]));
+        delete patch[key];
+      }
+      WRITTEN.set(view, patch);
+      commit();
+      rebuild();
+    });
+    row.append(el("label", { class: "meta" }, box, ` ${OFF_NAMES[key]}`));
+  }
+  return explained(
+    el("div", { class: "test-row" }, el("span", { class: "meta" }, "in this case:"), row),
+    "About turning a shared setting off",
+    "The switch wraps, pads or names readings for every case. Tick one here " +
+      "to draw this case without it: no wrap, no leading zeros, or the plain " +
+      "number in place of words. Untick it to take the switch's again.",
+  );
+}
+
+/**
+ * Which signal a reading reads and how it draws it: the picker, the way the
+ * number is converted and named, and the module's substitutions.
+ *
+ * The same controls for a reading on its own and for what a switch shares
+ * with its cases, which is a reading in every respect but the cells it draws.
+ * `rebuild` is for a change that brings different controls with it.
+ */
+function readingControls(
+  span: Span,
+  opts: RowOptions,
+  edited: () => void,
+  rebuild: () => void,
+): HTMLElement[] {
+  const { display, profile, signals } = opts;
+  const parts: HTMLElement[] = [];
+  const picker = signalPicker({
+    signals,
+    value: span.source ?? "",
+    onPick: (id) => {
+      const was = span.source ?? "";
+      span.source = id;
+      followTwin(span, signals, was);
+      // Only fill in a conversion for a piece that had no number before, so
+      // swapping the signal under a tuned range does not discard it, the
+      // same bargain a lamp's test makes.
+      if (!was || isText(signals, was)) {
+        startReading(
+          span,
+          signals.find((s) => s.id === id),
+        );
+      }
+      // A different signal brings a different set of controls with it: a
+      // range where the old one was a number, none where it reports
+      // characters, a highlighting twin or not. So this one rebuilds.
+      rebuild();
+    },
+  });
+  picker.dataset.opt = "source";
+  parts.push(picker);
+
+  if (span.source) {
+    // A signal the catalogue says reports characters is offered no range,
+    // since one would usually mean nothing. One written anyway is kept and
+    // shown: DCS-BIOS is not always right about what a signal is, the check
+    // cautions rather than refuses, and quietly dropping it here would undo
+    // the user's choice the moment the field was drawn.
+    const textual = isText(signals, span.source);
+    if (!textual || isConverted(span) || span.value_aliases) {
+      // Choosing between as sent, converted and aliases changes which boxes
+      // there are, so that rebuilds. Typing in them does not.
+      const signal = signals.find((s) => s.id === span.source);
+      const set = alphabet(display, profile, span.small ?? false);
+      parts.push(
+        conversionRow(
+          span,
+          signal,
+          set,
+          display.text_grid ? display.colours : [],
+          display.draws_inverse,
+          edited,
+          rebuild,
+        ),
+      );
+    }
+    // A substitution is about what this signal sends, so it belongs to the
+    // piece that reads it rather than to the field around it.
+    const substitutions = aliasEditor(span, edited);
+    substitutions.dataset.opt = "aliases";
+    parts.push(substitutions);
+  }
+  return parts;
 }
 
 /**
@@ -2611,11 +3051,23 @@ const readsLine = (text: string): HTMLElement =>
 
 /** What a field reads, a line per signal, for a row that is not open. */
 function fieldReads(readout: Readout, signals: SignalView[]): HTMLElement[] {
+  // A switch reads its selector and whatever its cases read.
   const ids = [
     ...new Set(
-      contentOf(readout)
-        .filter((s) => kindOf(s) === "signal")
-        .map((s) => s.source ?? ""),
+      contentOf(readout).flatMap((s) =>
+        kindOf(s) === "switch"
+          ? [
+              s.switch ?? "",
+              ...caseKeys(s).flatMap((key) =>
+                casePieces(s, key)
+                  .filter((p) => kindOf(p) === "signal")
+                  .map((p) => p.source ?? ""),
+              ),
+            ]
+          : kindOf(s) === "signal"
+            ? [s.source ?? ""]
+            : [],
+      ),
     ),
   ];
   if (ids.length === 0) return [readsLine("Typed text only. It reads no signal.")];
@@ -2717,6 +3169,12 @@ function describeField(readout: Readout, display: DisplayInfo): string {
     const held = s.width ? ` held to ${s.width} cells` : "";
     if (s.rule) return s.label ? `a rule labelled ${s.label}${held}` : `a rule${held}`;
     if (s.gap) return `a gap${held}`;
+    if (kindOf(s) === "switch") {
+      const n = caseKeys(s).length;
+      return s.switch
+        ? `a switch on ${s.switch} with ${n} case${n === 1 ? "" : "s"}`
+        : "a switch nobody has pointed at a selector yet";
+    }
     if (kindOf(s) === "signal") {
       // How it draws the number, so a reset that only changes that says so
       // rather than showing the same line twice.

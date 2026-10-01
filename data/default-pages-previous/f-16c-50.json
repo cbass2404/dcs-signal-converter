@@ -46,37 +46,7 @@
               "width": 2
             },
             {
-              "source": "FUELTOTALIZER_10K",
-              "width": 1,
-              "reads": [
-                0.0,
-                10.0
-              ],
-              "round": "down",
-              "wrap": 10.0,
-              "colour": "amber"
-            },
-            {
-              "source": "FUELTOTALIZER_1K",
-              "width": 1,
-              "reads": [
-                0.0,
-                10.0
-              ],
-              "round": "down",
-              "wrap": 10.0,
-              "colour": "amber"
-            },
-            {
-              "source": "FUELTOTALIZER_100",
-              "width": 2,
-              "reads": [
-                0.0,
-                100.0
-              ],
-              "digits": 2,
-              "round": "down",
-              "wrap": 100.0,
+              "signal": "dxkh8y",
               "colour": "amber"
             },
             {
@@ -279,15 +249,9 @@
               "colour": "amber"
             },
             {
-              "source": "PITCHTRIMIND",
+              "signal": "t4oc8g",
               "width": 3,
               "align": "right",
-              "reads": [
-                -1.5,
-                1.5
-              ],
-              "decimals": 1,
-              "round": "down",
               "value_aliases": {
                 "-1.5..-0.1": "ND",
                 "0": "",
@@ -311,14 +275,8 @@
               "colour": "amber"
             },
             {
-              "source": "ROLLTRIMIND",
+              "signal": "qmr9xb",
               "width": 3,
-              "reads": [
-                -3.0,
-                3.0
-              ],
-              "decimals": 1,
-              "round": "down",
               "value_aliases": {
                 "-3..-0.1": "RWD",
                 "0": "",
@@ -341,14 +299,8 @@
               "colour": "amber"
             },
             {
-              "source": "YAW_TRIM",
+              "signal": "erhyz4",
               "width": 1,
-              "reads": [
-                -5.0,
-                5.0
-              ],
-              "decimals": 1,
-              "round": "down",
               "value_aliases": {
                 "-5..-0.1": "L",
                 "0": "",
@@ -484,14 +436,8 @@
           "cells": "20-23",
           "content": [
             {
-              "source": "PITCHTRIMIND",
-              "width": 4,
-              "reads": [
-                -1.5,
-                1.5
-              ],
-              "decimals": 1,
-              "round": "down"
+              "signal": "t4oc8g",
+              "width": 4
             }
           ]
         },
@@ -499,19 +445,93 @@
           "cells": "25-28",
           "content": [
             {
-              "source": "ROLLTRIMIND",
-              "width": 4,
-              "reads": [
-                -3.0,
-                3.0
-              ],
-              "decimals": 1,
-              "round": "down"
+              "signal": "qmr9xb",
+              "width": 4
             }
           ]
         },
         {
           "cells": "30-33",
+          "signal": "erhyz4"
+        }
+      ]
+    }
+  ],
+  "signals": [
+    {
+      "id": "dxkh8y",
+      "name": "Fuel Totalizer",
+      "terms": [
+        {
+          "source": "FUELTOTALIZER_10K",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "source": "FUELTOTALIZER_1K",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "source": "FUELTOTALIZER_100",
+          "reads": [
+            0.0,
+            100.0
+          ],
+          "digits": 2,
+          "round": "down",
+          "wrap": 100.0,
+          "width": 2,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "id": "t4oc8g",
+      "name": "Pitch Trim Indicator",
+      "terms": [
+        {
+          "source": "PITCHTRIMIND",
+          "reads": [
+            -1.5,
+            1.5
+          ],
+          "decimals": 1,
+          "round": "down"
+        }
+      ]
+    },
+    {
+      "id": "qmr9xb",
+      "name": "Roll Trim Indicator",
+      "terms": [
+        {
+          "source": "ROLLTRIMIND",
+          "reads": [
+            -3.0,
+            3.0
+          ],
+          "decimals": 1,
+          "round": "down"
+        }
+      ]
+    },
+    {
+      "id": "erhyz4",
+      "name": "YAW TRIM Knob",
+      "terms": [
+        {
           "source": "YAW_TRIM",
           "reads": [
             -5.0,
@@ -519,6 +539,48 @@
           ],
           "decimals": 1,
           "round": "down"
+        }
+      ]
+    },
+    {
+      "id": "zdq52f",
+      "name": "MASTER CAUTION Light (yellow)",
+      "conditions": [
+        {
+          "source": "LIGHT_MASTER_CAUTION",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "6e1lp3",
+      "name": "ECM Light (green)",
+      "conditions": [
+        {
+          "source": "LIGHT_ECM",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "gxjlfp",
+      "name": "COMM 1 and COMM 2 on",
+      "conditions": [
+        {
+          "source": "COMM1_MODE_KNB",
+          "on_when": {
+            "gte": 1
+          }
+        },
+        {
+          "source": "COMM2_MODE_KNB",
+          "on_when": {
+            "gte": 1
+          }
         }
       ]
     }

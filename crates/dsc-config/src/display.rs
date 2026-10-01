@@ -1722,8 +1722,8 @@ pub struct Span {
     /// Hornet scratchpad's second string arrives as `"--"` where the cockpit
     /// says `"_"`, and `"--"` is not a glyph. That is a property of the module,
     /// so it is recorded with the module's mapping rather than in the engine.
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub aliases: HashMap<String, String>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub aliases: BTreeMap<String, String>,
     /// A second string signal, laid out like `source`, whose `i` marks the
     /// characters to draw inverse.
     ///
@@ -1765,8 +1765,8 @@ pub struct Span {
     /// stand-in: the A-10C's arrows arrive as `»` and `«`. Unlike `aliases`,
     /// which swap a whole value, this works inside a line of text. Each key
     /// and value is one character.
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub replace: HashMap<String, String>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub replace: BTreeMap<String, String>,
 }
 
 impl Span {
@@ -2352,12 +2352,12 @@ struct ReadoutRepr {
     small: bool,
     #[serde(default, skip_serializing_if = "is_false")]
     inverse: bool,
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    aliases: HashMap<String, String>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    aliases: BTreeMap<String, String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     colours: Option<ColourSource>,
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    replace: HashMap<String, String>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    replace: BTreeMap<String, String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     content: Vec<Span>,
     #[serde(default, skip_serializing_if = "String::is_empty")]
@@ -2873,5 +2873,5 @@ pub struct ColourSource {
     /// Catalogue signal id, a string one character per cell.
     pub source: String,
     /// Each letter the module sends, and the colour it means.
-    pub codes: HashMap<String, Colour>,
+    pub codes: BTreeMap<String, Colour>,
 }

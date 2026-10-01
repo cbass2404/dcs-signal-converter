@@ -255,6 +255,10 @@ dialog.confirm p {
   white-space: pre-line;
 }
 
+dialog.confirm .flag {
+  color: var(--danger);
+}
+
 .actions {
   display: flex;
   gap: 8px;

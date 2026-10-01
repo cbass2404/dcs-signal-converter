@@ -78,7 +78,41 @@
     {
       "device": "MCDU_Captain",
       "led": "Fail",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "PLT_MASTER_CAUTION_L",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 0
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "CPG_MASTER_CAUTION_L",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "MCDU_Captain",
@@ -113,7 +147,41 @@
     {
       "device": "MCDU_Captain",
       "led": "STATUS",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "CPG_MASTER_WARNING_L",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "PLT_MASTER_WARNING_L",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 0
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "MCDU_Captain",
@@ -342,12 +410,80 @@
     {
       "device": "PFP3N_Captain",
       "led": "FAIL",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "CPG_MASTER_CAUTION_L",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "PLT_MASTER_CAUTION_L",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 0
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "PFP3N_Captain",
       "led": "MSG",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "CPG_MASTER_WARNING_L",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "PLT_MASTER_WARNING_L",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 0
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "PFP3N_Captain",
@@ -489,12 +625,80 @@
     {
       "device": "PFP4_Captain",
       "led": "FAIL",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "CPG_MASTER_CAUTION_L",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "PLT_MASTER_CAUTION_L",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 0
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "PFP4_Captain",
       "led": "MSG",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "CPG_MASTER_WARNING_L",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "PLT_MASTER_WARNING_L",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 0
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "PFP4_Captain",
@@ -636,12 +840,80 @@
     {
       "device": "PFP7_Captain",
       "led": "FAIL",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "CPG_MASTER_CAUTION_L",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "PLT_MASTER_CAUTION_L",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 0
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "PFP7_Captain",
       "led": "MSG",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "CPG_MASTER_WARNING_L",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "PLT_MASTER_WARNING_L",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 0
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "PFP7_Captain",
@@ -1108,7 +1380,14 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "NOSE",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "EXT_WOW_TAIL",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
@@ -1118,12 +1397,26 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "RIGHT",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "EXT_WOW_RIGHT",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "LEFT",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "EXT_WOW_LEFT",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
@@ -1168,10 +1461,13 @@
       "start": 1,
       "slots": [
         {
+          "page": "coqxi1",
+          "key": null
+        },
+        {
           "page": null,
           "key": null
         },
-        null,
         null,
         null,
         null,
@@ -1362,10 +1658,13 @@
       "start": 1,
       "slots": [
         {
+          "page": "kkwii7",
+          "key": null
+        },
+        {
           "page": null,
           "key": null
         },
-        null,
         null,
         null,
         null,

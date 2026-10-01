@@ -552,14 +552,16 @@ export function pageSection(device: Device, display: DisplayInfo, ctx: PageConte
     // profile on the module, so the question lists them first.
     remove.addEventListener("click", () => {
       void (async () => {
-        const places = shownAt(ctx, page.id);
+        const places = shownAt(ctx, page.id).map((p) => `- ${p}`);
         const question =
           `Delete the page ${page.name}?` +
           (places.length > 0
-            ? `\n\nThese slots show it and will be emptied: ${places.join("; ")}.`
+            ? `\n\nThese slots are using this page:\n${places.join("\n")}` +
+              "\n\nActively displayed pages will attempt to cycle to the next set slot." +
+              "\n\nUse the appropriate slot select key plus modifier to return to this slot."
             : "") +
-          "\n\nThis cannot be undone.";
-        if (!(await confirmAction(question, "Delete"))) return;
+          "\n\nDeletion cannot be undone.";
+        if (!(await confirmAction(question, "Delete", places))) return;
         try {
           const [view, touched] = await deletePage(book.module, page.id, book.file);
           update(book, view);

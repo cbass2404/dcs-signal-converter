@@ -13,8 +13,15 @@
  * the user go back and reread the question. Cancel takes the focus, so Enter
  * on a dialog opened by a misclick does nothing harmful. Escape and a click
  * outside the box both cancel.
+ *
+ * A line of `message` that matches one in `flagged` exactly is drawn in red,
+ * for what the action is about to take away.
  */
-export function confirmAction(message: string, ok: string): Promise<boolean> {
+export function confirmAction(
+  message: string,
+  ok: string,
+  flagged: string[] = [],
+): Promise<boolean> {
   return new Promise((resolve) => {
     // Laid out like the editor's other dialogs: the question as the heading,
     // what it means under it, and the buttons at the bottom right.
@@ -28,7 +35,17 @@ export function confirmAction(message: string, ok: string): Promise<boolean> {
     for (const para of detail) {
       const p = document.createElement("p");
       p.className = "meta";
-      p.textContent = para;
+      para.split("\n").forEach((line, i) => {
+        if (i > 0) p.append("\n");
+        if (flagged.includes(line)) {
+          const span = document.createElement("span");
+          span.className = "flag";
+          span.textContent = line;
+          p.append(span);
+        } else {
+          p.append(line);
+        }
+      });
       dialog.append(p);
     }
 

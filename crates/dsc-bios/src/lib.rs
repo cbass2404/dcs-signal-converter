@@ -296,7 +296,18 @@ impl Listener {
 
     /// Receive one datagram and append the writes it carried.
     pub fn recv(&mut self, out: &mut Vec<Write>) -> io::Result<usize> {
-        let n = self.socket.recv(&mut self.buf)?;
+        let n = match self.socket.recv(&mut self.buf) {
+            Ok(n) => n,
+            // socket2 opens overlapped sockets on Windows, and a read timeout
+            // on one now and then comes back as WSA_IO_PENDING instead of
+            // WSAETIMEDOUT. Nothing is lost and the next recv works, so it is
+            // reported as the timeout it is rather than ending the run.
+            #[cfg(windows)]
+            Err(e) if e.raw_os_error() == Some(997) => {
+                return Err(io::Error::new(io::ErrorKind::TimedOut, e));
+            }
+            Err(e) => return Err(e),
+        };
         let before = out.len();
         let buf = std::mem::take(&mut self.buf);
         self.decoder.push_slice(&buf[..n], out);

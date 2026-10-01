@@ -22,7 +22,39 @@ wrong addresses silently, because addresses are allocated sequentially as
 controls are defined. Nothing needs doing after a clone: every command that
 reads the catalogue builds it first if it is missing or out of date (see below).
 
+**Built and flown 2026-09-30: beta.005, every shipped profile checked in
+its aircraft.** `69c3095` to `8a5af9a` on `beta005-profile-verification`,
+one commit per profile, each closing its milestone issues. What moved, row
+by row, is in [CHANGELOG.md](../CHANGELOG.md).
+
+- **Profiles flown and filled in:** F-16, F-14 and F-14BU, CH-47F, AH-64D,
+  A-10C and A-10C2. Each got PTO2, MCDU and PFP lamps with a 1:1 cockpit
+  meaning, and most a UFC or DED page; the CH-47F and AH-64D got Backup
+  pages on both, the F-14s and F-16 a UFC Flight page. The F-16's Flight
+  page is now CDU Flight.
+- **The A-10C's followers had the A-10C2 CDU.** Its Co-Pilot and Observer
+  names on the MCDU and PFPs carried `a10c-cdu` (ARC-210 radios) in slot 1
+  since the split; now `i63dn3` like the Captain. Hidden while they follow,
+  as shipped.
+- **os error 997 on the export stream** ends nothing now: socket2's
+  overlapped socket sometimes reports a read timeout as WSA_IO_PENDING, and
+  `Listener::recv` maps it to `TimedOut`.
+- **Page maps save sorted.** `aliases`, `replace` and `colours.codes` are
+  `BTreeMap`s, so saving a page no longer reshuffles them in the file.
+- **Deleting a page in a slot** lists the slots in red and says where the
+  screen goes (`confirmAction` takes lines to flag).
+- **Docs caught up at ship:** the README table and the site's aircraft list
+  gained the Mosquito, which shipped in beta.004 without either, and the
+  site's tags now name each aircraft's MCDU pages and the other screens it
+  ships pages for.
+- **The benchmark is live only.** `bench_daemon.py` lost its dry run and
+  the `--live` flag (Cory, 2026-09-30): writing to the panels costs more
+  than the main loop at typical and a dry run cannot see it. PERFORMANCE.md is
+  rebuilt on the beta.005 live pass, one 60 s pass per scenario, with no
+  notable change from beta.004.
+
 **Built and flown 2026-09-30: the performance pass, cb08032 to a416010.**
+Shipped in beta.004.
 It began as "idle CPU in the benchmark" and ended with each panel written
 from its own thread. Where it stands now: the benchmark counts exact cycles
 and can drive the panels (`--live`, every scenario); lamps and screens go

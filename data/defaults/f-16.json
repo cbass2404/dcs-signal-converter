@@ -88,7 +88,14 @@
     {
       "device": "MCDU_Captain",
       "led": "Fail",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "LIGHT_MASTER_CAUTION",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "MCDU_Captain",
@@ -108,7 +115,14 @@
     {
       "device": "MCDU_Captain",
       "led": "FM1",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "COMM1_MODE_KNB",
+          "on_when": {
+            "gte": 1
+          }
+        }
+      ]
     },
     {
       "device": "MCDU_Captain",
@@ -123,12 +137,26 @@
     {
       "device": "MCDU_Captain",
       "led": "STATUS",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "LIGHT_ECM",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "MCDU_Captain",
       "led": "FM2",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "COMM2_MODE_KNB",
+          "on_when": {
+            "gte": 1
+          }
+        }
+      ]
     },
     {
       "device": "MCDU_CoPilot",
@@ -338,12 +366,32 @@
     {
       "device": "PFP3N_Captain",
       "led": "FAIL",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "LIGHT_MASTER_CAUTION",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "PFP3N_Captain",
       "led": "MSG",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "COMM1_MODE_KNB",
+          "on_when": {
+            "gte": 1
+          }
+        },
+        {
+          "source": "COMM2_MODE_KNB",
+          "on_when": {
+            "gte": 1
+          }
+        }
+      ]
     },
     {
       "device": "PFP3N_Captain",
@@ -353,7 +401,14 @@
     {
       "device": "PFP3N_Captain",
       "led": "EXEC",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "LIGHT_ECM",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "PFP3N_CoPilot",
@@ -485,12 +540,32 @@
     {
       "device": "PFP4_Captain",
       "led": "FAIL",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "LIGHT_MASTER_CAUTION",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "PFP4_Captain",
       "led": "MSG",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "COMM1_MODE_KNB",
+          "on_when": {
+            "gte": 1
+          }
+        },
+        {
+          "source": "COMM2_MODE_KNB",
+          "on_when": {
+            "gte": 1
+          }
+        }
+      ]
     },
     {
       "device": "PFP4_Captain",
@@ -500,7 +575,14 @@
     {
       "device": "PFP4_Captain",
       "led": "EXEC",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "LIGHT_ECM",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "PFP4_CoPilot",
@@ -632,12 +714,32 @@
     {
       "device": "PFP7_Captain",
       "led": "FAIL",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "LIGHT_MASTER_CAUTION",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "PFP7_Captain",
       "led": "MSG",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "COMM1_MODE_KNB",
+          "on_when": {
+            "gte": 1
+          }
+        },
+        {
+          "source": "COMM2_MODE_KNB",
+          "on_when": {
+            "gte": 1
+          }
+        }
+      ]
     },
     {
       "device": "PFP7_Captain",
@@ -647,7 +749,14 @@
     {
       "device": "PFP7_Captain",
       "led": "EXEC",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "LIGHT_ECM",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "PFP7_CoPilot",
@@ -799,32 +908,206 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "JETT",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "MASTER_ARM_SW",
+          "on_when": {
+            "equals": 2
+          }
+        },
+        {
+          "source": "EXT_WOW_NOSE",
+          "on_when": {
+            "equals": 0
+          }
+        }
+      ],
+      "note": "MASTER ARM switch is labeled backwards from in game functionality. 0 = simulate, 2 = armed, weight on wheels because jettison only works when WoW and Master Arm on"
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "CTR",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "LIGHT_ECM_1_A",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "LIGHT_ECM_1_S",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "LIGHT_ECM_1_T",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "LI",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "LIGHT_ECM_2_A",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "LIGHT_ECM_2_S",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "LIGHT_ECM_2_T",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "LO",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "LIGHT_ECM_4_A",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "LIGHT_ECM_4_S",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "LIGHT_ECM_4_T",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "RO",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "LIGHT_ECM_5_A",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "LIGHT_ECM_5_S",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "LIGHT_ECM_5_T",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "RI",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "LIGHT_ECM_3_A",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "LIGHT_ECM_3_S",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "LIGHT_ECM_3_T",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
@@ -880,7 +1163,14 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "HOOK",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "LIGHT_HOOK",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "ViperAce_ICP",
@@ -899,9 +1189,6 @@
       "note": "Held at full, because at 0 the screen shows nothing. It lights only while this profile puts fields on the screen, whatever it is bound to, so a screen with nothing on it stays black."
     }
   ],
-  "disabled_devices": [
-    "CarrierAce_UFC"
-  ],
   "follows": {
     "CarrierAce_MFD_L": "CarrierAce_MFD_C",
     "CarrierAce_MFD_R": "CarrierAce_MFD_C",
@@ -919,10 +1206,13 @@
       "start": 1,
       "slots": [
         {
+          "page": "khj513",
+          "key": null
+        },
+        {
           "page": null,
           "key": null
         },
-        null,
         null,
         null,
         null,

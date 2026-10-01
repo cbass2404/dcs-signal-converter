@@ -78,24 +78,28 @@ Which lamps each one has is in [docs/PROTOCOL-WINCTRL.md](docs/PROTOCOL-WINCTRL.
 starter profile the first time you fly it, ready to fill in with the
 [editor](#4-make-it-yours).
 
-| Profile     | Covers                                                                             |
-| ----------- | ---------------------------------------------------------------------------------- |
-| A-10C       | A-10C                                                                              |
-| A-10C2      | A-10C II                                                                           |
-| AH-64D      | AH-64D                                                                             |
-| CH-47Fbl1   | CH-47F                                                                             |
-| F-14        | F-14A, F-14B                                                                       |
-| F-14BU      | F-14B (Upgrade)                                                                    |
-| F-16        | F-16C, F-16D and variants, F-16I                                                   |
-| FA-18       | F/A-18C, and the EA-18G, E and F mods                                              |
-| Mi-24P      | Mi-24P                                                                             |
-| FC3         | The Flaming Cliffs aircraft, and the mods and modules with no profile of their own |
-| No aircraft | Spectator and free camera                                                          |
+| Profile        | Covers                                                                             |
+| -------------- | ---------------------------------------------------------------------------------- |
+| A-10C          | A-10C                                                                              |
+| A-10C2         | A-10C II                                                                           |
+| AH-64D         | AH-64D                                                                             |
+| CH-47Fbl1      | CH-47F                                                                             |
+| F-14           | F-14A, F-14B                                                                       |
+| F-14BU         | F-14B (Upgrade)                                                                    |
+| F-16           | F-16C, F-16D and variants, F-16I                                                   |
+| FA-18          | F/A-18C, and the EA-18G, E and F mods                                              |
+| Mi-24P         | Mi-24P                                                                             |
+| MosquitoFBMkVI | Mosquito FB Mk VI                                                                  |
+| FC3            | The Flaming Cliffs aircraft, and the mods and modules with no profile of their own |
+| No aircraft    | Spectator and free camera                                                          |
 
 The A-10C, AH-64D, CH-47F and F-14B (Upgrade) also put their own CDU on the MCDU
-screen, and on a PFP's, which is the same screen. On any other aircraft the screen is yours to fill in the
-[editor](#4-make-it-yours): a label you type, a reading beside it, each in the
-colour and size you choose. Open a profile to see exactly what it drives.
+screen, and on a PFP's, which is the same screen. The F-16, F/A-18, Mi-24P and
+Mosquito get pages built from their own readings there instead, and every
+aircraft profile ships a page for the UFC, the ICP's DED, or both. Every
+screen is yours to change in the [editor](#4-make-it-yours): a label you type,
+a reading beside it, each in the colour and size you choose. Open a profile to
+see exactly what it drives.
 
 Every aircraft profile ties every panel backlight to one row, held at a steady
 brightness, so the whole pit stays readable whatever the cockpit lighting is
@@ -235,8 +239,8 @@ A few more things the editor does:
   how many cells it needs.
 - **`+ a rule`** draws a line across a row, for a page that does not fill the
   glass, and can carry a label in the middle naming what it divides. The rule
-  and the label each take their own colour. The A-10C, AH-64D and F-16 pages
-  ship with one.
+  and the label each take their own colour. The A-10C, AH-64D, F-16, Mi-24P
+  and Mosquito MCDU pages ship with one.
 - **Pages.** Every screen shows pages: the MCDU, the UFC and the ICP's DED
   each have six slots, each showing a page, a blank screen, or nothing. In
   flight, hold Ctrl and press a page key to swap the screen to that slot's

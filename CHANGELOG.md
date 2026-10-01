@@ -84,6 +84,12 @@ Both profiles carry the same rows.
 
 - **MCDU, PFP-3N, PFP-4 and PFP-7:** FAIL follows the Master Caution
   light.
+- **A-10C only:** the Co-Pilot and Observer names of the MCDU, PFP-3N,
+  PFP-4 and PFP-7 had the A-10C2 CDU page in slot 1, with radios the
+  A-10C does not have. They now show the A-10C CDU, as the Captain does.
+  While a Co-Pilot or Observer follows its Captain, as shipped, it already
+  showed the Captain's page, so this matters only to one set to drive on
+  its own.
 
 ### Fixes
 

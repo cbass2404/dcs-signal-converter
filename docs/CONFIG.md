@@ -1376,7 +1376,7 @@ there rather than leaving a row of dark cells with nothing saying why. The dash
 must be in the aircraft's font, and the blank too where there is a label to set
 apart, which is checked the same way `replace` is.
 
-**The shipped A-10C CDU and AH-64D KU pages carry one**, and the F-16 Flight
+**The shipped A-10C CDU and AH-64D KU pages carry one**, and the F-16 CDU Flight
 page a labelled rule piece over its trim row. The A-10C's CDU is ten lines on a screen of fourteen, so its rule sits on row 4,
 above the first line. The Apache exports only its keyboard unit, on the bottom
 row, so its rule sits on row 13 directly above, inset to the same 22 cells the

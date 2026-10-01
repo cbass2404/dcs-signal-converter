@@ -38,6 +38,7 @@ import type { SpanKind } from "./content";
 import { cautionSlot, flagSlot } from "./flags";
 import { gaugeTable, gaugeTables, matchingTable, tableRows } from "./gauges";
 import { noteEditor } from "./note";
+import { storedSignal, storedSignals } from "./stored";
 import { infoIcon, signalPicker } from "./typeahead";
 import {
   aliasColour,
@@ -296,6 +297,7 @@ function conversionRow(
   inverse: boolean,
   edited: () => void,
   rebuild: () => void,
+  aliases = true,
 ): HTMLElement {
   const max = signal?.max_value ?? 65535;
   const select = el("select", { class: "test" });
@@ -527,6 +529,7 @@ function conversionRow(
     round.append(
       el("option", { value: "nearest" }, "to the nearest"),
       el("option", { value: "down" }, "down"),
+      el("option", { value: "up" }, "up"),
     );
     round.value = span.round ?? "nearest";
     dp.dataset.opt = "decimals";
@@ -544,7 +547,7 @@ function conversionRow(
       const every = Number(wrap.value);
       if (Number.isFinite(every) && every > 0) span.wrap = every;
       else delete span.wrap;
-      if (round.value === "down") span.round = "down";
+      if (round.value === "down" || round.value === "up") span.round = round.value;
       else delete span.round;
       settleSign();
       edited();
@@ -598,10 +601,12 @@ function conversionRow(
     converted && !shown ? stretches : "",
     converted && !shown ? offer : "",
     converted ? el("div", { class: "test-row" }, values) : "",
-    tagged(
-      valueAliasEditor(span, signal, set, smallSet, colours, inverse, edited),
-      "value_aliases",
-    ),
+    aliases
+      ? tagged(
+          valueAliasEditor(span, signal, set, smallSet, colours, inverse, edited),
+          "value_aliases",
+        )
+      : "",
   );
 }
 
@@ -1547,6 +1552,17 @@ function spanWidth(span: Span, signals: SignalView[]): number {
   // can never be the reason content will not fit.
   if (span.gap) return 0;
   if (isLiteral(span)) return (span.text ?? "").length;
+  // A stored signal is as wide as its terms laid side by side, or the
+  // longest word drawn in its place.
+  if (kindOf(span) === "stored") {
+    const stored = storedSignal(span.signal ?? "");
+    if (!stored) return 0;
+    const terms = stored.terms.reduce((n, t) => n + spanWidth(t, signals), 0);
+    const words = Object.values(span.value_aliases ?? {})
+      .filter((a) => !aliasShowsReading(a))
+      .map((a) => [...aliasText(a)].length);
+    return Math.max(terms, ...words);
+  }
   if (!span.source) return 0;
   if (isText(signals, span.source)) return textLength(signals, span.source);
   // As sent is a conversion onto the signal's own range, so both measure the
@@ -1571,7 +1587,11 @@ function spanWidth(span: Span, signals: SignalView[]): number {
   // Settled the way the daemon settles them: rounded, wrapped, and never -0.
   const settle = (end: number): number => {
     const rounded =
-      span.round === "down" ? Math.floor(end * 10 ** dp) / 10 ** dp : Number(end.toFixed(dp));
+      span.round === "down"
+        ? Math.floor(end * 10 ** dp) / 10 ** dp
+        : span.round === "up"
+          ? Math.ceil(end * 10 ** dp) / 10 ** dp
+          : Number(end.toFixed(dp));
     const wrapped = every ? ((rounded % every) + every) % every : rounded;
     return wrapped === 0 ? 0 : wrapped;
   };
@@ -2268,6 +2288,7 @@ function spanEditor(
 
   const kind = el("select", { class: "span-kind" });
   kind.append(el("option", { value: "signal" }, "a reading"));
+  kind.append(el("option", { value: "stored" }, "a stored signal"));
   kind.append(el("option", { value: "text" }, "text"));
   kind.append(el("option", { value: "gap" }, "a gap"));
   // Only a text grid draws a rule, the same as a whole field's divider. Kept
@@ -2312,6 +2333,14 @@ function spanEditor(
       };
     } else if (next === "gap" || next === "rule") {
       spans[index] = newSpan(next);
+    } else if (next === "stored") {
+      // How it looks is kept, as for text; the signal says the rest.
+      spans[index] = {
+        ...newSpan("stored"),
+        colour: span.colour,
+        small: span.small,
+        inverse: span.inverse,
+      };
     } else {
       const kept: Span = { colour: span.colour, small: span.small, inverse: span.inverse };
       spans[index] = next === "text" ? { ...kept, text: "" } : { ...kept, source: "" };
@@ -2371,6 +2400,14 @@ function spanEditor(
     body.append(box, trouble);
   } else if (kindOf(span) === "switch") {
     body.append(switchEditor(spans, index, opts, redraw, refresh, save));
+  } else if (kindOf(span) === "stored") {
+    body.append(
+      ...storedControls(span, opts, edited, () => {
+        save();
+        redraw();
+        onChange();
+      }),
+    );
   } else {
     body.append(
       ...readingControls(span, opts, edited, () => {
@@ -2425,7 +2462,7 @@ function spanEditor(
   // highlighting signal of its own to ask, so this is the only way to mark it.
   if (
     display.draws_inverse &&
-    (isLiteral(span) || kindOf(span) === "signal" || kindOf(span) === "switch")
+    (isLiteral(span) || ["signal", "stored", "switch"].includes(kindOf(span)))
   ) {
     const flip = el("input", { type: "checkbox" });
     flip.checked = span.inverse === true;
@@ -2460,7 +2497,9 @@ function spanEditor(
   // is a spacer of exactly that many blanks, and on a rule it is what lets it
   // carry a label. Not a switch, whose cases each draw at their own width:
   // a box goes on the piece inside the case.
-  if (kindOf(span) !== "switch") style.append(boxControls(span, readout, edited));
+  if (kindOf(span) !== "switch") {
+    style.append(boxControls(span, cellCount(readout.cells), edited));
+  }
 
   const up = el("button", { class: "icon", title: "Move this piece earlier" }, "↑");
   up.disabled = index === 0;
@@ -2894,6 +2933,124 @@ function offToggles(
 }
 
 /**
+ * What a piece drawing a stored signal offers: which signal, and how it
+ * looks. The signal has already shaped the number, so the words, colour and
+ * size are all there is to say here.
+ */
+function storedControls(
+  span: Span,
+  opts: RowOptions,
+  edited: () => void,
+  rebuild: () => void,
+): HTMLElement[] {
+  const { display, profile } = opts;
+  const all = storedSignals();
+  const pick = el("select", { class: "test" });
+  pick.dataset.opt = "signal";
+  pick.append(el("option", { value: "" }, all.length ? "choose one" : "none on this module yet"));
+  for (const s of all) pick.append(el("option", { value: s.id }, s.name));
+  // One the module no longer has stays listed, so the menu says what the
+  // piece points at rather than quietly showing another.
+  if (span.signal && !all.some((s) => s.id === span.signal)) {
+    pick.append(el("option", { value: span.signal }, `${span.signal} (not on this module)`));
+  }
+  pick.value = span.signal ?? "";
+  pick.addEventListener("change", () => {
+    span.signal = pick.value;
+    rebuild();
+  });
+  const chosen = storedSignal(span.signal ?? "");
+  const parts: HTMLElement[] = [
+    el(
+      "div",
+      { class: "test-row" },
+      pick,
+      infoIcon(
+        "About stored signals",
+        "A number made once in Stored Signals at the top of the profile and " +
+          "drawn by any page on the module. Change it there and every piece " +
+          "drawing it changes. Here you say only how it looks: words for its " +
+          "readings, a colour or the small font.",
+      ),
+    ),
+  ];
+  if (chosen?.note) parts.push(el("div", { class: "meta block" }, chosen.note));
+  if (chosen) {
+    parts.push(
+      tagged(
+        valueAliasEditor(
+          span,
+          undefined,
+          alphabet(display, profile, span.small ?? false),
+          alphabet(display, profile, true),
+          display.text_grid ? display.colours : [],
+          display.draws_inverse,
+          edited,
+        ),
+        "value_aliases",
+      ),
+    );
+  }
+  return parts;
+}
+
+/**
+ * The controls for one term of a stored signal: which DCS-BIOS signal, how
+ * its number is shaped, and the cells it takes. A reading's own controls, so
+ * a term is shaped exactly the way a field is, without the words and colours
+ * that belong to whatever draws it.
+ */
+export function termControls(
+  term: Span,
+  signals: SignalView[],
+  module: string,
+  edited: () => void,
+  rebuild: () => void,
+): HTMLElement[] {
+  const picker = signalPicker({
+    signals,
+    value: term.source ?? "",
+    onPick: (id) => {
+      const was = term.source ?? "";
+      term.source = id;
+      if (!was || isText(signals, was)) {
+        const width = term.width;
+        const align = term.align;
+        startReading(
+          term,
+          signals.find((s) => s.id === id),
+          module,
+        );
+        // A term names no positions: words are the drawing piece's.
+        delete term.value_aliases;
+        if (width) term.width = width;
+        if (align) term.align = align;
+      }
+      rebuild();
+    },
+  });
+  const parts: HTMLElement[] = [picker];
+  if (term.source && !isText(signals, term.source)) {
+    parts.push(
+      conversionRow(
+        term,
+        signals.find((s) => s.id === term.source),
+        module,
+        null,
+        null,
+        [],
+        false,
+        edited,
+        rebuild,
+        false,
+      ),
+    );
+  }
+  parts.push(boxControls(term, null, edited));
+  return parts;
+}
+
+/**
  * Which signal a reading reads and how it draws it: the picker, the way the
  * number is converted and named, and the module's substitutions.
  *
@@ -3036,16 +3193,15 @@ const ruleChecks = new WeakMap<Span, () => void>();
  * character, while right keeps the digits pinned and grows the blanks in
  * front of them.
  */
-function boxControls(span: Span, readout: Readout, edited: () => void): HTMLElement {
-  const cells = cellCount(readout.cells);
+function boxControls(span: Span, cells: number | null, edited: () => void): HTMLElement {
   const width = el("input", {
     type: "number",
     class: "num small",
     min: "0",
-    max: String(cells),
     value: String(span.width ?? 0),
     placeholder: "0",
   });
+  if (cells !== null) width.max = String(cells);
   const align = el("select", { class: "colour" });
   align.append(el("option", { value: "left" }, "left"));
   align.append(el("option", { value: "centre" }, "centred"));
@@ -3055,7 +3211,7 @@ function boxControls(span: Span, readout: Readout, edited: () => void): HTMLElem
   const trouble = el("div", { class: "meta" });
   const check = (): void => {
     align.disabled = !span.width;
-    const over = (span.width ?? 0) > cells;
+    const over = cells !== null && (span.width ?? 0) > cells;
     width.classList.toggle("bad", over);
     trouble.classList.toggle("bad", over);
     trouble.textContent = over
@@ -3397,6 +3553,10 @@ function describeField(readout: Readout, display: DisplayInfo): string {
       return s.switch
         ? `a switch on ${s.switch}${read} with ${n} case${n === 1 ? "" : "s"}`
         : "a switch nobody has pointed at a selector yet";
+    }
+    if (kindOf(s) === "stored") {
+      const named = storedSignal(s.signal ?? "")?.name;
+      return `${named ? `the stored signal ${named}` : "a stored signal nobody has chosen yet"}${held}`;
     }
     if (kindOf(s) === "signal") {
       // How it draws the number, so a reset that only changes that says so

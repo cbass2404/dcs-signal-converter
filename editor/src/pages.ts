@@ -10,6 +10,7 @@
 import { deletePage, newPageId, savePage } from "./api";
 import { confirmAction } from "./confirm";
 import { fieldTable, fontPicker } from "./readout";
+import { setStoredSignals } from "./stored";
 import type {
   Device,
   DisplayInfo,
@@ -20,6 +21,7 @@ import type {
   Profile,
   Readout,
   SignalView,
+  StoredSignal,
 } from "./types";
 
 /** How many slots a screen has: one per page key the device lists. */
@@ -95,6 +97,9 @@ export interface PageBook {
   used: PageUse[];
   /** The module's pages as they shipped. */
   shipped: Page[];
+  /** The module's stored signals as saved, and as they shipped. */
+  signals: StoredSignal[];
+  shippedSignals: StoredSignal[];
   /**
    * The page open on each screen, by device key. One per screen, so an edit
    * cannot be dropped by opening another over it, but any number of screens,
@@ -134,6 +139,8 @@ export function pageBook(module: string, file: string, view: PagesView): PageBoo
     broken: view.broken,
     used: view.used.filter((u) => u.file !== file),
     shipped: view.shipped,
+    signals: takeSignals(view),
+    shippedSignals: view.shipped_signals,
     editing: new Map(),
     problems: new Map(),
     sections: [],
@@ -181,10 +188,27 @@ function update(book: PageBook, view: PagesView): void {
   book.broken = view.broken;
   book.used = view.used.filter((u) => u.file !== book.file);
   book.shipped = view.shipped;
+  book.signals = takeSignals(view);
+  book.shippedSignals = view.shipped_signals;
+}
+
+/** The module's stored signals, handed on to every piece that draws one. */
+function takeSignals(view: PagesView): StoredSignal[] {
+  setStoredSignals(view.signals);
+  return view.signals;
 }
 
 function redrawAll(book: PageBook): void {
   for (const draw of book.sections) draw();
+}
+
+/**
+ * Take in what saving or deleting a stored signal says the library now holds,
+ * and redraw every screen, since a page there may draw it.
+ */
+export function signalsChanged(book: PageBook, view: PagesView): void {
+  update(book, view);
+  redrawAll(book);
 }
 
 const sameName = (a: string, b: string): boolean =>

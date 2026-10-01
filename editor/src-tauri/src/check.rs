@@ -144,7 +144,7 @@ impl Cache {
 
     /// Run `f` over the named module, loading it only if the last check was
     /// for another one.
-    fn with_module<R>(
+    pub(crate) fn with_module<R>(
         &self,
         paths: &Paths,
         name: &str,

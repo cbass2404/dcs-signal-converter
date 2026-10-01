@@ -103,10 +103,11 @@ export function newSpan(kind: SpanKind): Span {
   if (kind === "rule") return { gap: true, rule: true };
   if (kind === "gap") return { gap: true };
   if (kind === "switch") return { switch: "", source: "", cases: {} };
+  if (kind === "stored") return { signal: "" };
   return kind === "text" ? { text: "" } : { source: "" };
 }
 
-export type SpanKind = "text" | "signal" | "gap" | "rule" | "switch";
+export type SpanKind = "text" | "signal" | "stored" | "gap" | "rule" | "switch";
 
 /**
  * Which of the four a piece is.
@@ -132,6 +133,7 @@ export function kindOf(span: Span): SpanKind {
   if ("switch" in span) return "switch";
   if (span.rule) return "rule";
   if (span.gap) return "gap";
+  if ("signal" in span) return "stored";
   return "source" in span ? "signal" : "text";
 }
 
@@ -155,7 +157,7 @@ export function isLiteral(span: Span): boolean {
 // is what the panel draws by; the window needs the same answer per keystroke.
 
 /** What a piece decides for itself and never takes from its switch. */
-const OWN = ["text", "gap", "rule", "label", "label_colour", "width", "align"] as const;
+const OWN = ["text", "signal", "gap", "rule", "label", "label_colour", "width", "align"] as const;
 
 /** What a reading takes from its switch where it leaves it unset. */
 const SHAPING = [
@@ -200,14 +202,18 @@ const CHOSEN_BY_ABSENCE = new Set<string>([
 /** The options a switch shares that a case can turn off with its toggle. */
 export const SWITCHABLE_OFF = ["wrap", "digits", "value_aliases"] as const;
 
+/** What a case piece can be. A stored signal is drawn, not shaped, so it takes styling only. */
+type PieceKind = "gap" | "text" | "signal" | "stored";
+
 /** The kind a case piece is, read the way `kindOf` reads a piece. */
-function patchKind(patch: SpanPatch): "gap" | "text" | "signal" {
+function patchKind(patch: SpanPatch): PieceKind {
   if (patch.gap) return "gap";
-  return "text" in patch ? "text" : "signal";
+  if ("text" in patch) return "text";
+  return "signal" in patch ? "stored" : "signal";
 }
 
 /** Whether a piece of this kind takes `key` from its switch. */
-function takes(kind: "gap" | "text" | "signal", key: SharedKey): boolean {
+function takes(kind: PieceKind, key: SharedKey): boolean {
   if ((STYLING as readonly string[]).includes(key)) return true;
   if (key === "replace") return kind !== "gap";
   return kind === "signal";
@@ -271,7 +277,13 @@ export function resolvePiece(patch: SpanPatch, shared: Span): Span {
  * into it.
  */
 export function patchOf(view: Span, shared: Span, was: SpanPatch): SpanPatch {
-  const kind = view.gap ? "gap" : "text" in view ? "text" : "signal";
+  const kind: PieceKind = view.gap
+    ? "gap"
+    : "text" in view
+      ? "text"
+      : "signal" in view
+        ? "stored"
+        : "signal";
   const out: SpanPatch = {};
   const write = out as Record<string, unknown>;
   for (const key of OWN) {
@@ -280,7 +292,13 @@ export function patchOf(view: Span, shared: Span, was: SpanPatch): SpanPatch {
   }
   // What this kind of piece would take if it set nothing.
   const base = resolvePiece(
-    kind === "gap" ? { gap: true } : kind === "text" ? { text: "" } : {},
+    kind === "gap"
+      ? { gap: true }
+      : kind === "text"
+        ? { text: "" }
+        : kind === "stored"
+          ? { signal: view.signal ?? "" }
+          : {},
     shared,
   );
   for (const key of SHARED) {

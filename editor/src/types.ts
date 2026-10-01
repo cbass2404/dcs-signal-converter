@@ -169,6 +169,11 @@ export interface Span {
   /** Catalogue signal id. */
   source?: string;
   /**
+   * A stored signal's id, on a piece that draws one. The signal shapes the
+   * number; the piece only says how it looks.
+   */
+  signal?: string;
+  /**
    * Draw nothing, and take whatever cells the rest of the chain leaves.
    *
    * How content reaches both ends of a line. A label at the left and its value
@@ -191,9 +196,10 @@ export interface Span {
   /**
    * How a number lands on its last decimal place. Absent is to the nearest,
    * which a needle wants; `down` is for a drum or anything else that clicks
-   * over, which shows 4 until the 5 has fully arrived.
+   * over, which shows 4 until the 5 has fully arrived; `up` shows the next
+   * step as soon as it has started towards it.
    */
-  round?: "down";
+  round?: "down" | "up";
   /**
    * Start again from zero every this many, after converting and rounding: a
    * drum digit is 0 to 10 wrapping at 10, a compass 0 to 360 wrapping at 360.
@@ -373,7 +379,7 @@ export interface Readout {
   decimals?: number;
   /** The fewest digits before the point, made up with leading zeros: 001. */
   digits?: number;
-  round?: "down";
+  round?: "down" | "up";
   wrap?: number;
   /** Draw a converted reading without its sign. */
   abs?: boolean;
@@ -466,6 +472,37 @@ export interface PageUse {
   slot: number;
 }
 
+/**
+ * One DCS-BIOS signal in a stored signal, shaped the way a reading is, and
+ * the cells it takes.
+ */
+export type Term = Pick<
+  Span,
+  | "source"
+  | "reads"
+  | "conversions"
+  | "decimals"
+  | "digits"
+  | "round"
+  | "wrap"
+  | "abs"
+  | "width"
+  | "align"
+>;
+
+/**
+ * A number on one module worked out once and named, for any page there to
+ * draw: one DCS-BIOS signal shaped, or several laid side by side.
+ */
+export interface StoredSignal {
+  /** Fixed when it is made. What a piece points at. */
+  id: string;
+  /** What the window shows. Unique on its module. */
+  name: string;
+  note?: string;
+  terms: Term[];
+}
+
 /** One module's pages, as the editor opens them with a profile. */
 export interface PagesView {
   pages: Page[];
@@ -474,6 +511,10 @@ export interface PagesView {
   used: PageUse[];
   /** The module's pages as they shipped. A page the user made is not here. */
   shipped: Page[];
+  /** The module's stored signals. */
+  signals: StoredSignal[];
+  /** The stored signals as they shipped. */
+  shipped_signals: StoredSignal[];
 }
 
 /**

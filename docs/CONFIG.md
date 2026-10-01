@@ -884,7 +884,7 @@ brightness, a field asks "which cells, fed by what" and resolves to characters.
     "reads": [0, 750],       // what the dial is marked with, numbers only
     "decimals": 0,
     "digits": 3,             // pad with leading zeros: 001
-    "round": "down",         // absent rounds to the nearest
+    "round": "down",         // or "up"; absent rounds to the nearest
     "wrap": 360,             // start again from 0 every this many
     "abs": true,             // draw the reading without its sign
     "value_aliases": {       // what to draw instead of the number
@@ -923,8 +923,10 @@ conversion, and giving it a range is an error rather than a no-op.
 **`round` and `wrap` are for readings that click over or go round.** The
 conversion is still a straight line from 0 to 65535 onto `reads`. After it,
 the number is rounded to `decimals` places, to the nearest unless `round` is
-`"down"`, and then `wrap` takes the remainder, so the reading starts again
-from 0 every `wrap`. Rounding comes first, so a compass at 359.7 draws 0
+`"down"` or `"up"`, and then `wrap` takes the remainder, so the reading
+starts again from 0 every `wrap`. Up shows the next step as soon as the
+reading has started towards it, with the same allowance for DCS-BIOS
+rounding the position that down has. Rounding comes first, so a compass at 359.7 draws 0
 rather than 360.
 
 - One odometer drum digit, such as each of the F-16's `FUELTOTALIZER_*`
@@ -1686,6 +1688,74 @@ hand, since saving would write over it.
   deleted never takes a screen dark that nobody chose to. A start slot that
   goes moves to the first slot still in use.
 
+### Stored signals
+
+Built 2026-10-01. A number worked out once and named, for any page on the
+module to draw. Kept in the module's page file beside its pages:
+
+```jsonc
+// data/pages/f-16c-50.json
+{
+  "module": "F-16C_50",
+  "pages": [
+    {
+      "id": "k3f9x2",
+      "name": "Fuel",
+      "display": "MCDU",
+      "fields": [
+        { "cells": "0-5", "signal": "q7m2ra", "colour": "green" },
+      ],
+    },
+  ],
+  "signals": [
+    {
+      "id": "q7m2ra", // fixed when it is made, unique with the page ids
+      "name": "Fuel total", // unique on the module
+      "note": "Totalizer drums, hundreds of pounds",
+      "terms": [
+        { "source": "FUELTOTALIZER_10K", "reads": [0, 10], "round": "down", "wrap": 10, "width": 1 },
+        { "source": "FUELTOTALIZER_1K", "reads": [0, 10], "round": "down", "wrap": 10, "width": 1 },
+        { "source": "FUELTOTALIZER_100", "reads": [0, 10], "round": "down", "wrap": 10, "width": 1 },
+      ],
+    },
+  ],
+}
+```
+
+- **Parts laid side by side, not added.** Each term is one DCS-BIOS signal
+  with the keys that shape a reading (`reads` or `conversions`, `decimals`,
+  `digits`, `round`, `wrap`, `abs`) and a box (`width`, `align`), and is
+  worked out exactly as a reading is. The characters are joined in order. A
+  drum that is rolling is already partway to its next digit, so adding the
+  drums would count that twice; settling each one on its own first, rounded
+  down and wrapped, is what keeps them agreeing. One term is the plain case:
+  a reading named so several pages can draw it.
+- **The number is the signal's, the look is the piece's.** A piece draws one
+  with `signal`, its id, instead of `text` or `source`. It takes bands,
+  colour, small, inverse and a box; anything that shapes a number on it is
+  refused, since the signal already says, and so is one that also has text or
+  a source. Bands match the joined characters read as a number, to the places
+  they show. Characters that are not a number draw as they are.
+- **Nothing draws until every term has arrived.** A number missing a digit is
+  a different number. A label beside it in the chain still draws.
+- **Worked out once a paint.** The engine keeps one answer per signal for each
+  paint, however many fields draw it, and a field repaints when any term's
+  address moves, as it does for its own signals. A field is checked for every
+  term's signal as if it read it itself: one this DCS-BIOS lacks is flagged
+  and the field turned off.
+- **Checked as a reading is.** A term with no signal chosen and a colour or
+  size on a conversion are refused; a range on characters is a caution.
+  Each signal a profile's fields draw is checked once when the profile loads.
+  A piece naming a signal the page file does not have is refused.
+- **Saved on its own**, like a page, from the **Stored Signals** section at
+  the top of the profile, above the panels. Every profile on the module
+  shares it. One a saved page draws cannot be deleted until it is taken off;
+  the editor names the pages.
+- **The page file attaches the definitions when it loads**, so everything
+  downstream (`with_pages`, the checks, a frame) reads a field exactly as it
+  always has. A file without `signals` is as it was, and an older release
+  ignores the key, though a piece drawing one reads to it as unfinished.
+
 ### Updates: pages and profiles apart
 
 An update reconciles pages and profiles as two separate checks. Neither reads
@@ -1710,6 +1780,11 @@ release shipped them:
   added, as on import.
 - **A page the release no longer ships** goes only while it is still exactly
   as the snapshot has it, name and fields both. One the user changed stays.
+- **Stored signals** go by the same rules a whole signal at a time: a new one
+  comes in, renamed with a number if its name is taken; one still as the
+  snapshot has it follows the release; one the user changed or deleted is
+  left as they left it; one the release no longer ships goes only while it is
+  untouched and no page draws it.
 
 **Profiles**, against `data/defaults-previous` as now. A device's slots are
 reconciled with the profile's display fields, keyed on device and slot
@@ -1758,6 +1833,11 @@ pairs of folders:
   imported profile's slots following it. So does one whose id a page on
   another module has. **A name already taken** gets a number added, which the
   preview shows and can be changed there.
+- **Stored signals travel with the pages that draw them**, in `signals`
+  beside `pages`. One already here reading the same is used as it is, one not
+  here comes in, renamed with a number if its name is taken, and one whose id
+  a different signal has comes in under a new id, the pages arriving with it
+  following.
 - **Merge from... offers slots on every screen**: slot n of
   the source replaces slot n of the target, and brings its page into the
   library if it is not there.

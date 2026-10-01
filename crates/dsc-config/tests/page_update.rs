@@ -65,6 +65,7 @@ fn write(dir: &Path, sub: &str, pages: Vec<Page>) {
     PageFile {
         module: "A-10C".into(),
         pages,
+        signals: Vec::new(),
     }
     .save(&dir.join(sub).join("a-10c.json"))
     .unwrap();
@@ -117,12 +118,14 @@ fn a_file_named_by_its_module_key_is_renamed_before_seeding() {
     PageFile {
         module: "A-10C".into(),
         pages: vec![fuel.clone()],
+        signals: Vec::new(),
     }
     .save(&dir.join("pages").join("A-10C.json"))
     .unwrap();
     let hornet = |pages| PageFile {
         module: "FA-18C_hornet".into(),
         pages,
+        signals: Vec::new(),
     };
     hornet(vec![fuel])
         .save(&dir.join("pages").join("FA-18C_hornet.json"))
@@ -178,6 +181,7 @@ fn a_renamed_file_takes_the_pages_the_snapshot_already_had() {
     PageFile {
         module: "A-10C".into(),
         pages: vec![radios],
+        signals: Vec::new(),
     }
     .save(&dir.join("pages").join("A-10C.json"))
     .unwrap();

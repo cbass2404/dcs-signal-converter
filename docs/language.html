@@ -1671,8 +1671,9 @@
                     <td>2. Round</td>
                     <td><code>decimals</code>, <code>round</code></td>
                     <td>
-                      To that many places, to the nearest, or <code>"down"</code> so a drum shows a
-                      digit only once it has reached it.
+                      To that many places, to the nearest, <code>"down"</code> so a drum shows a
+                      digit only once it has reached it, or <code>"up"</code> to show the next step
+                      as soon as it has started towards it.
                     </td>
                   </tr>
                   <tr>
@@ -1912,11 +1913,95 @@
           </div>
         </section>
 
+        <!-- =========================================================== stored -->
+        <section id="stored" data-group="Screens" data-nav="Stored signals">
+          <div class="wrap">
+            <div class="section-head">
+              <span class="eyebrow">Screens, part 4</span>
+              <h2>Stored signals: a number made once, drawn anywhere</h2>
+            </div>
+            <div class="prose">
+              <p>
+                A reading shapes its own number, so two pages showing the same fuel say how in full,
+                twice. A <span class="ed">stored signal</span> says it once. It sits in
+                <span class="ed">Stored Signals</span> at the top of the profile, above the panels,
+                and any page on the aircraft can draw it: pick
+                <span class="ed">a stored signal</span> as a piece of a field.
+              </p>
+              <p>
+                A stored signal is one or more <span class="ed">parts</span>, each one DCS-BIOS
+                signal shaped exactly the way a reading is: converted, rounded, wrapped, padded, and
+                given a fixed number of cells. The parts are laid side by side as characters. Three
+                fuel drums, each converted to 0 to 10, rounded down and wrapped at 10, read as one
+                number.
+              </p>
+              <p>
+                Rounding each drum on its own is the point. A drum that is rolling is already
+                partway to its next digit, so the thousands drum at 1.6 means 1, not 2. Rounded to
+                the nearest, it would show the next thousand while the drum beside it still reads 6.
+              </p>
+              <p>
+                Only the number lives in the stored signal. How it is drawn, its words, colour and
+                small text, belongs to the piece drawing it, so two pages can draw one signal two
+                ways. Bands match the characters read as a number. Nothing draws until every part
+                has arrived, since a number missing a digit is a different number. Each one has a
+                <span class="ed">note</span> for saying what it is for.
+              </p>
+              <p>
+                Like a page, a stored signal is saved on its own with
+                <span class="ed">Save signal</span>, and every profile on the aircraft shares it. It
+                travels with a page that is exported, and one that is drawn on a page cannot be
+                deleted until it is taken off.
+              </p>
+            </div>
+
+            <div class="demo" id="demo-stored">
+              <div class="demo-head">
+                <span class="t">Three drums, one number</span><span class="try">Try it</span>
+              </div>
+              <div class="demo-body">
+                <div class="controls">
+                  <div class="row">
+                    <span class="lbl">Fuel</span
+                    ><input
+                      type="range"
+                      id="st-fuel"
+                      min="0"
+                      max="19900"
+                      step="10"
+                      value="1660"
+                    /><span class="mono" id="st-fueltext"></span>
+                  </div>
+                  <div class="row">
+                    <span class="lbl">Each part</span>
+                    <div class="seg" id="st-round">
+                      <button type="button" data-v="down" aria-pressed="true">rounded down</button>
+                      <button type="button" data-v="nearest" aria-pressed="false">
+                        to the nearest
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="out">
+                  <div class="glass"><div class="cells" id="st-cells" style="--n: 10"></div></div>
+                  <p class="say" id="st-say"></p>
+                  <pre id="st-json"></pre>
+                </div>
+              </div>
+            </div>
+            <p class="note">
+              A piece drawing a stored signal can't also shape the number: decimals or a range on it
+              are refused, since the signal already says. A stored signal the aircraft doesn't have
+              is refused too, and so is a part with no signal chosen.
+            </p>
+          </div>
+        </section>
+
         <!-- ============================================================ glass -->
         <section id="glass" data-group="Screens" data-nav="Each glass">
           <div class="wrap">
             <div class="section-head">
-              <span class="eyebrow">Screens, part 4</span>
+              <span class="eyebrow">Screens, part 5</span>
               <h2>What each glass can do</h2>
             </div>
             <div class="prose">
@@ -2016,7 +2101,7 @@
         <section id="pages" data-group="Screens" data-nav="Pages and slots">
           <div class="wrap">
             <div class="section-head">
-              <span class="eyebrow">Screens, part 5</span>
+              <span class="eyebrow">Screens, part 6</span>
               <h2>Pages and slots</h2>
             </div>
             <div class="prose">
@@ -3453,6 +3538,67 @@
         draw();
       })();
 
+      /* --------------------------------------------------- stored signals */
+      (() => {
+        const drums = [
+          ["FUELTOTALIZER_10K", 10000],
+          ["FUELTOTALIZER_1K", 1000],
+          ["FUELTOTALIZER_100", 100],
+        ];
+        const round = seg("st-round", draw);
+        $("st-fuel").addEventListener("input", draw);
+        function draw() {
+          const fuel = Number($("st-fuel").value);
+          const down = round.get() === "down";
+          $("st-fueltext").textContent = `${fuel} lb`;
+          // Where each drum is: rolling, so partway to its next digit.
+          const at = drums.map(([, per]) => (fuel / per) % 10);
+          const digits = at.map((d) => (down ? Math.floor(d) : Math.round(d)) % 10);
+          const text = `FUEL ${digits.join("")}00`;
+          const right =
+            digits.join("") ===
+            String(Math.floor(fuel / 100))
+              .padStart(3, "0")
+              .slice(-3);
+          paint(
+            $("st-cells"),
+            fitTo(
+              [...text].map((ch, i) => ({
+                ch,
+                colour: i < 5 ? "white" : right ? "green" : "red",
+                small: i < 5,
+              })),
+              10,
+              "left",
+            ),
+            10,
+          );
+          $("st-say").innerHTML =
+            `The drums sit at <b>${at.map((d) => d.toFixed(2)).join("</b>, <b>")}</b>. ` +
+            (down
+              ? "Each rounded down on its own, they read what is in the tanks."
+              : right
+                ? "Rounded to the nearest, they happen to agree here. Move the fuel until a drum passes halfway."
+                : "Rounded to the nearest, a drum past halfway shows its next digit while the one beside it has not rolled over.");
+          const parts = drums.map(
+            ([source]) =>
+              `      { "source": "${source}", "reads": [0, 10],` +
+              (down ? ` "round": "down",` : "") +
+              ` "wrap": 10, "width": 1 }`,
+          );
+          $("st-json").textContent =
+            `"signals": [\n` +
+            `  { "id": "k3x9qa", "name": "Fuel total",\n` +
+            `    "note": "Totalizer drums, hundreds of pounds",\n` +
+            `    "terms": [\n${parts.join(",\n")}\n    ] }\n]\n\n` +
+            `"content": [\n` +
+            `  { "text": "FUEL ", "small": true },\n` +
+            `  { "signal": "k3x9qa", "colour": "green" },\n` +
+            `  { "text": "00", "colour": "green" }\n]`;
+        }
+        draw();
+      })();
+
       /* ------------------------------------------------------------ pages */
       (() => {
         const panels = {
@@ -3613,6 +3759,27 @@
             "Switch",
             "Convert the signal that decides, from one end of its dial to the other, so cases are written in its units: 0..999 lb of fuel. Rounded to a whole number. Without it, cases name the positions as sent.",
             "switches",
+          ],
+          [
+            "Stored signal",
+            "signals",
+            "Page file",
+            "A number made once and named, for any page on the aircraft to draw. One or more parts, laid side by side. Saved on its own, shared by every profile on the aircraft.",
+            "stored",
+          ],
+          [
+            "A stored signal, as a piece",
+            "signal",
+            "Piece",
+            "Draw a stored signal, by its id. The piece says how it looks, its words, colour and small text, and nothing about the number.",
+            "stored",
+          ],
+          [
+            "Part",
+            "terms",
+            "Stored signal",
+            "One DCS-BIOS signal in a stored signal, converted, rounded, wrapped, padded and given its cells the way a reading is. The parts are laid side by side.",
+            "stored",
           ],
           [
             "Switch",
@@ -3934,7 +4101,7 @@
             "Round",
             "round",
             "Reading",
-            "To the nearest, or down, so a drum shows a digit only once it has reached it. Before wrap.",
+            "To the nearest, down, so a drum shows a digit only once it has reached it, or up. Before wrap.",
             "readings",
           ],
           [

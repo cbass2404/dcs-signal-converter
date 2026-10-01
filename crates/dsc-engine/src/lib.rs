@@ -688,6 +688,9 @@ impl Engine {
         let drawn = &self.drawn;
         let mut fresh: Vec<Drawn> = Vec::new();
         let mut this_paint: HashSet<&str> = HashSet::new();
+        // Stored signals the same way: worked out by the first field to draw
+        // one, and handed to every other field drawing it this paint.
+        let stored = dsc_config::StoredCache::default();
         for device in &self.devices.devices {
             if !runs(&self.connected, profile, &device.key) {
                 continue;
@@ -783,7 +786,7 @@ impl Engine {
                     // label belongs on the glass before the reading beside it.
                     let module = self.catalogue.module(&profile.module);
                     let state = &self.state;
-                    let Some(glyphs) = r.compose_seen(
+                    let Some(glyphs) = r.compose_cached(
                         |id| {
                             let output = module?.signal(id)?.primary()?;
                             if output.r#type == "string" {
@@ -799,6 +802,7 @@ impl Engine {
                                     max: output.number_max(),
                                 })
                         },
+                        &stored,
                         |source, raw, text| {
                             if !this_paint.insert(source) {
                                 return;

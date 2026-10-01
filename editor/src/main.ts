@@ -46,6 +46,7 @@ import {
   showPageProblems,
 } from "./pages";
 import type { PageBook } from "./pages";
+import { signalSection } from "./signals";
 import { setLearnContext, stopLearning } from "./learn";
 import { infoIcon } from "./typeahead";
 import type {
@@ -1623,7 +1624,14 @@ async function showProfile(file: string): Promise<void> {
     book = pageBook(profile.module, file, await openPages(profile.module));
   } catch (e) {
     const why = e instanceof Error ? e.message : String(e);
-    book = pageBook(profile.module, file, { pages: [], broken: why, used: [], shipped: [] });
+    book = pageBook(profile.module, file, {
+      pages: [],
+      broken: why,
+      used: [],
+      shipped: [],
+      signals: [],
+      shipped_signals: [],
+    });
   }
 
   // Which panels are here, so the page can put them first. Asked again while
@@ -1781,8 +1789,17 @@ async function showProfile(file: string): Promise<void> {
     },
   };
   save.setAttribute("disabled", "");
-  // A page open with changes is unsaved work too, though Save does not write it.
-  unsavedWork = () => session.dirty || pageUnsaved(book);
+  // The module's stored signals, saved on their own like its pages.
+  const stored = signalSection({
+    book,
+    signals,
+    tell: showBanner,
+    fail: showError,
+    changed: () => session.recheck(),
+  });
+  // A page or a stored signal open with changes is unsaved work too, though
+  // Save does not write either.
+  unsavedWork = () => session.dirty || pageUnsaved(book) || stored.unsaved();
 
   const back = el("button", {}, "← Profiles");
   back.addEventListener("click", () => {
@@ -1883,7 +1900,9 @@ async function showProfile(file: string): Promise<void> {
     "Devices not found",
     "Supported, but not plugged in. They can still be opened and set up.",
   );
-  app.append(active.box, inactive.box, missing.box);
+  // Stored signals first, above every panel: pages draw from them, and
+  // below the panels they would be easy to miss.
+  app.append(stored.box, active.box, inactive.box, missing.box);
 
   const sections = devices.map((device) =>
     deviceSection(device, devices, byLamp, session, () => regroup()),

@@ -620,6 +620,8 @@ fn main() {
             pages::new_page_id,
             pages::save_page,
             pages::delete_page,
+            pages::save_signal,
+            pages::delete_signal,
             reset_profile,
             delete_profile,
             share::export_profile,

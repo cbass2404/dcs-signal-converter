@@ -20,8 +20,10 @@ pub mod nightly_only;
 pub mod pages;
 pub mod paths;
 pub mod settings;
+pub mod stored;
 
 pub use pages::{Page, PageFile, PageLibrary, PageRun, PageSlots, Pages, Slot, SlotNote, SlotRun};
+pub use stored::{StoredCache, StoredSignal, StoredValue, Term};
 
 /// The profile format this version reads and writes. Version 2 is the first
 /// with MCDU pages, and version 1 files are refused rather than migrated.
@@ -254,6 +256,22 @@ pub enum Error {
     SwitchReadsWithoutSwitch(String, String),
     #[error("positions {1} of {0:?} have no case and the switch has no else")]
     SwitchUncovered(String, String),
+    #[error("a piece on {1} of display {0:?} draws the stored signal {2:?}, which is not among this module's stored signals; pick another or take the piece out")]
+    UnknownStoredSignal(String, String, String),
+    #[error("a piece on {1} of display {0:?} draws a stored signal and also has characters or a signal of its own; it can have one")]
+    StoredAndOther(String, String),
+    #[error("the piece drawing {2:?} on {1} of display {0:?} also says how to shape the number; a stored signal shapes its own, so change it there")]
+    ShapingOnStored(String, String, String),
+    #[error("a stored signal needs a name")]
+    StoredUnnamed,
+    #[error("a stored signal on {1} is already called {0:?}")]
+    StoredNameTaken(String, String),
+    #[error("the stored signal {0:?} reads nothing; give it a signal to read")]
+    StoredWithoutTerms(String),
+    #[error("the stored signal {0:?} has a part with no signal chosen yet; pick one or take the part out")]
+    StoredTermUnfinished(String),
+    #[error("the stored signal {0:?} gives a conversion a colour or size; how it draws belongs to the field drawing it, as a band")]
+    StoredTermStyled(String),
 }
 
 impl Error {
@@ -1151,6 +1169,30 @@ impl Readout {
         let mut widest = 0;
         let mut unbounded = false;
         for span in &self.content {
+            if span.is_stored() {
+                // A box is the whole answer, as for any piece. Otherwise the
+                // signal's own width, or the longest word that draws in its
+                // place, whichever is wider.
+                if span.width > 0 {
+                    widest += span.width;
+                    continue;
+                }
+                let longest_alias = span
+                    .value_aliases
+                    .values()
+                    .filter(|a| !a.reading)
+                    .map(|a| a.text.chars().count())
+                    .max()
+                    .unwrap_or(0);
+                match span.stored.as_ref().map(|s| s.widest(module)) {
+                    Some(Some(n)) => widest += n.max(longest_alias),
+                    Some(None) => unbounded = true,
+                    // A signal the page file lacks draws nothing, and is
+                    // refused as its own problem.
+                    None => {}
+                }
+                continue;
+            }
             if !span.is_signal() {
                 widest += span.text.chars().count();
                 continue;
@@ -1821,6 +1863,17 @@ impl Profile {
             }
         }
         self.readout_problems(module, devices, displays, &mut out, &mut Vec::new());
+        // Each stored signal a field draws, once however many draw it. One
+        // nothing draws cannot stop this profile, so it is left to the editor
+        // to say about where it is made.
+        let mut checked = BTreeSet::new();
+        for r in &self.readouts {
+            for stored in r.pieces().filter_map(|s| s.stored.as_ref()) {
+                if checked.insert(stored.id.as_str()) {
+                    out.extend(stored.problems(module));
+                }
+            }
+        }
         self.slot_problems(module, devices, displays, pages, &mut out);
         out.retain(|e| !e.is_advisory());
         out
@@ -2397,9 +2450,38 @@ impl Profile {
             // seen. Refused rather than ignored, for the same reason a
             // signal on a divider is.
             if span.gap {
-                if !span.text.is_empty() || span.is_signal() {
+                if !span.text.is_empty() || span.reads() {
                     out.push(Error::GapHasContent(r.display.clone(), r.cells.to_string()));
                 }
+                continue;
+            }
+            // A stored signal shapes its own number, so the piece drawing
+            // it says only how it looks. Anything that shapes a number here
+            // would be a second answer the frame never uses.
+            if span.is_stored() {
+                if !span.text.is_empty() || span.is_signal() {
+                    out.push(Error::StoredAndOther(
+                        r.display.clone(),
+                        r.cells.to_string(),
+                    ));
+                    continue;
+                }
+                let Some(stored) = &span.stored else {
+                    out.push(Error::UnknownStoredSignal(
+                        r.display.clone(),
+                        r.cells.to_string(),
+                        span.signal.clone(),
+                    ));
+                    continue;
+                };
+                if span.shapes_a_number() {
+                    out.push(Error::ShapingOnStored(
+                        r.display.clone(),
+                        r.cells.to_string(),
+                        stored.name.clone(),
+                    ));
+                }
+                band_problems(span, &stored.name, None, stored.tolerance(), out);
                 continue;
             }
             // Characters and a signal are two different answers to what
@@ -2449,7 +2531,8 @@ impl Profile {
                 }
             } else {
                 conversion_problems(span, output.number_max(), out);
-                band_problems(span, output.number_max(), out);
+                let face = span.face(output.number_max());
+                band_problems(span, &span.source, Some(face), span.tolerance(), out);
             }
 
             if let Some(format) = &span.format {
@@ -2845,6 +2928,83 @@ fn glyph_problems(r: &Readout, display: &Display, out: &mut Vec<Error>) {
 /// whole profile dark over one dial. Counts no stretch claims are the one worth
 /// saying most, because they are how a half finished table looks, and the
 /// editor offers a stretch for them.
+impl StoredSignal {
+    /// What this signal can be wrong about in itself, wherever it is drawn.
+    ///
+    /// A term is held to what a reading is: a range on characters is a
+    /// caution, a conversion that ends before it starts is refused. A colour
+    /// on a conversion is refused outright, because how the signal draws is
+    /// the field's and the frame would never use it.
+    pub fn problems(&self, module: &Module) -> Vec<Error> {
+        let mut out = Vec::new();
+        let name = self.name.trim().to_string();
+        if name.is_empty() {
+            out.push(Error::StoredUnnamed);
+        }
+        if self.terms.is_empty() {
+            out.push(Error::StoredWithoutTerms(name.clone()));
+        }
+        let mut unfinished = false;
+        for term in &self.terms {
+            let span = &term.0;
+            if span
+                .conversions
+                .iter()
+                .any(|c| c.colour.is_some() || c.small)
+            {
+                out.push(Error::StoredTermStyled(name.clone()));
+            }
+            if span.source.is_empty() {
+                if !unfinished {
+                    unfinished = true;
+                    out.push(Error::StoredTermUnfinished(name.clone()));
+                }
+                continue;
+            }
+            // A signal this DCS-BIOS lacks is flagged where it is drawn, as
+            // any missing signal is.
+            let Some(output) = module.signal(&span.source).and_then(|s| s.primary()) else {
+                continue;
+            };
+            if output.r#type == "string" {
+                if span.shapes_a_number() {
+                    out.push(Error::RangeOnText(span.source.clone()));
+                }
+            } else {
+                conversion_problems(span, output.number_max(), &mut out);
+            }
+        }
+        out
+    }
+
+    /// The widest this can ever read, in characters, or None where a term
+    /// reads characters with no length DCS-BIOS declares.
+    pub fn widest(&self, module: &Module) -> Option<usize> {
+        let mut total = 0;
+        for term in &self.terms {
+            let span = &term.0;
+            if span.width > 0 {
+                total += span.width;
+                continue;
+            }
+            let Some(output) = module.signal(&span.source).and_then(|s| s.primary()) else {
+                continue;
+            };
+            let number_max = (output.r#type != "string").then(|| output.number_max());
+            total += span.widest(output.max_length.map(usize::from), number_max)?;
+        }
+        Some(total)
+    }
+
+    /// How close a reading has to be to a band's edge to count as inside it:
+    /// half the last place the last term shows, which is where the
+    /// characters end.
+    pub fn tolerance(&self) -> f64 {
+        let places = self.terms.last().map_or(0, |t| t.0.decimals);
+        10f64.powi(-i32::from(places)) / 2.0
+    }
+}
+
 fn conversion_problems(span: &Span, max: u16, out: &mut Vec<Error>) {
     if span.conversions.is_empty() {
         return;
@@ -2899,11 +3059,15 @@ fn conversion_problems(span: &Span, max: u16, out: &mut Vec<Error>) {
 /// nothing rather than drawing something wrong. It is worth saying because the
 /// likeliest way to write one is to band a converted face in the raw counts
 /// DCS-BIOS sends, and that mistake is otherwise silent.
-fn band_problems(span: &Span, max: u16, out: &mut Vec<Error>) {
+///
+/// `name` is what the messages call the reading: its signal, or the stored
+/// signal it draws. `face` is what the face reads end to end, where that is
+/// known; a stored signal's characters can be anything, so its bands are not
+/// held to one.
+fn band_problems(span: &Span, name: &str, face: Option<[f64; 2]>, tol: f64, out: &mut Vec<Error>) {
     if span.value_aliases.is_empty() {
         return;
     }
-    let tol = span.tolerance();
     // A band showing the reading is there for its style, so one with
     // characters as well is two answers, and one with no style does nothing.
     // Refused like any piece of unfinished work, rather than drawn one way.
@@ -2914,13 +3078,13 @@ fn band_problems(span: &Span, max: u16, out: &mut Vec<Error>) {
         if !drawn.text.is_empty() {
             out.push(Error::AliasReadingAndText(
                 band.to_string(),
-                span.source.clone(),
+                name.to_string(),
                 drawn.text.clone(),
             ));
         } else if drawn.colour.is_none() && !drawn.inverse && !drawn.small {
             out.push(Error::AliasReadingUnstyled(
                 band.to_string(),
-                span.source.clone(),
+                name.to_string(),
             ));
         }
     }
@@ -2931,18 +3095,20 @@ fn band_problems(span: &Span, max: u16, out: &mut Vec<Error>) {
                 out.push(Error::AliasBandsOverlap(
                     a.to_string(),
                     b.to_string(),
-                    span.source.clone(),
+                    name.to_string(),
                 ));
             }
         }
     }
-    let [low, high] = span.face(max);
+    let Some([low, high]) = face else {
+        return;
+    };
     let (lo, hi) = (low.min(high), low.max(high));
     for band in bands {
         if band.highest() < lo - tol || band.lowest() > hi + tol {
             out.push(Error::AliasBandUnreachable(
                 band.to_string(),
-                span.source.clone(),
+                name.to_string(),
                 low.to_string(),
                 high.to_string(),
             ));

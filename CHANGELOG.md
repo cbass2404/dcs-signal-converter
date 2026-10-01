@@ -48,3 +48,12 @@ unless this says what moved.
   picking one copies its rows into the field. Choosing a gauge that has a
   table starts it converted by that table. The rows stay hidden while
   they are the table's, and choosing custom opens them to change.
+- **Stored signals: a number made once, drawn on any page.** A new
+  section at the top of the profile, above the panels, holds the
+  aircraft's stored signals. Each reads one or more signals, shaped the
+  way a reading is, laid side by side: three fuel drums, each rounded down
+  on its own, read as one number without a rolling drum counting twice.
+  Pick "a stored signal" as a piece of a field to draw one, and give it
+  words and colours there. Each has a note, is saved on its own, is shared
+  by every profile on the aircraft, and travels with an exported page.
+- **A reading can round up** as well as down or to the nearest.

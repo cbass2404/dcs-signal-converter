@@ -30,6 +30,7 @@ import type {
   Settings,
   SettingsView,
   SignalView,
+  StoredSignal,
   Update,
 } from "./types";
 
@@ -137,6 +138,15 @@ export const deletePage = (module: string, id: string, current: string) =>
   invoke<[PagesView, string[]]>("delete_page", { module, id, current }).then(
     ([view, emptied]): [PagesView, string[]] => [rulesNotDividers(view), emptied],
   );
+/**
+ * Save one stored signal to the module's page file. Returns the module's
+ * pages and signals as they now are.
+ */
+export const saveSignal = (module: string, signal: StoredSignal) =>
+  invoke<PagesView>("save_signal", { module, signal }).then(rulesNotDividers);
+/** Delete a stored signal no saved page draws. */
+export const deleteSignal = (module: string, id: string) =>
+  invoke<PagesView>("delete_signal", { module, id }).then(rulesNotDividers);
 export const resetProfile = (file: string) => invoke<void>("reset_profile", { file });
 /**
  * Delete a profile, first giving its aircraft to `giveTo` if one is named. It

@@ -64,6 +64,7 @@ fn here() -> PageLibrary {
         PageFile {
             module: "OTHER".into(),
             pages: vec![page("othr01", "Elsewhere", "0-1")],
+            signals: Vec::new(),
         },
     );
     lib

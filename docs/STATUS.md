@@ -47,6 +47,11 @@ by row, is in [CHANGELOG.md](../CHANGELOG.md).
   gained the Mosquito, which shipped in beta.004 without either, and the
   site's tags now name each aircraft's MCDU pages and the other screens it
   ships pages for.
+- **The benchmark is live only.** `bench_daemon.py` lost its dry run and
+  the `--live` flag (Cory, 2026-09-30): writing to the panels costs more
+  than the main loop at typical and a dry run cannot see it. PERFORMANCE.md is
+  rebuilt on the beta.005 live pass, one 60 s pass per scenario, with no
+  notable change from beta.004.
 
 **Built and flown 2026-09-30: the performance pass, cb08032 to a416010.**
 Shipped in beta.004.

@@ -4,7 +4,6 @@
   python tools/bench_daemon.py                          # A-10C, all scenarios
   python tools/bench_daemon.py --aircraft F-16C_50 --module F-16C_50
   python tools/bench_daemon.py --scenario stress --seconds 60
-  python tools/bench_daemon.py --live                   # all scenarios, panels driven
 
 No DCS needed. The tool plays a synthetic DCS-BIOS export stream onto the
 multicast group (239.255.50.10:5010), shaped like the real one: a frame every
@@ -19,16 +18,12 @@ Scenarios:
     typical  30 Hz, 20 integer outputs and 1 text field moving per frame
     stress   60 Hz, every output in the module rewritten every frame
 
-The daemon runs with --dry-run unless --live is given. A dry run finds the
-panels but never opens or writes to them, so they must be plugged in, or it
-exits with nothing to drive. --live drives them for real, to check now and
-then that the HID writes cost what the dry runs assume: the lamps and screens
-show random values for the length of the run and are cleared at the end.
-A live run covers stress along with typical, so a regression under load is
-seen: the frame cap holds lamps and screens to 25 sends a second however fast
-the stream runs, so stress costs the panels no more writes than typical. A
-live run needs the panels to itself, so stop any daemon the editor started
-first.
+The daemon drives the panels for real: the lamps and screens show random
+values for the length of the run and are cleared at the end. There is no dry
+run, since writing to the panels is most of what the daemon costs in flight
+and a dry run cannot see it. Stress is as safe as typical: the frame cap holds
+lamps and screens to 25 sends a second however fast the stream runs. The run
+needs the panels to itself, so stop any daemon the editor started first.
 
 The daemon's own output goes to NUL, since printing it would be the thing
 measured, and its log to a temporary folder, so a run never rotates the log
@@ -313,8 +308,6 @@ def measure(args, scenario):
     exe = args.exe
     logs = tempfile.mkdtemp(prefix="dcs-signal-bench-")
     cmd = [exe, "run", "--seconds", str(int(args.seconds + args.warmup) + 2), "--log-dir", logs]
-    if not args.live:
-        cmd.append("--dry-run")
     launched = time.perf_counter()
     proc = subprocess.Popen(
         cmd, cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
@@ -334,10 +327,8 @@ def measure(args, scenario):
 
     def exited_early():
         stop.set()
-        hint = ""
-        if args.live:
-            hint = "; another daemon may have the panels, stop it first"
-        sys.exit(f"dcs-signal exited early with code {proc.returncode}{hint}")
+        sys.exit(f"dcs-signal exited early with code {proc.returncode}; "
+                 "another daemon may have the panels, stop it first")
 
     rate = args.rate
     threads = Threads(proc.pid)
@@ -438,11 +429,6 @@ def main():
         help="cores the daemon may run on, as a mask; 0xff is the P-cores of a 12900K",
     )
     ap.add_argument(
-        "--live",
-        action="store_true",
-        help="drive the panels for real",
-    )
-    ap.add_argument(
         "--exe",
         default=os.path.join(ROOT, "target", "release", "dcs-signal.exe"),
         help="daemon to measure, such as an older build from a worktree",
@@ -456,13 +442,11 @@ def main():
         sys.exit(f"{args.catalogue} missing - build it with: cargo run --bin dcs-signal -- catalogue")
 
     names = list(SCENARIOS) if args.scenario == "all" else [args.scenario]
-    if args.live:
-        print("LIVE: the panels are driven for real. Lamps and screens show random")
-        print("values for the length of each run and are cleared at the end.\n")
+    print("LIVE: the panels are driven for real. Lamps and screens show random")
+    print("values for the length of each run and are cleared at the end.\n")
 
     args.rate = cycle_rate()
-    mode = "live" if args.live else "dry run"
-    print(f"dcs-signal run ({mode}), {args.aircraft}, {args.seconds:g}s per scenario, "
+    print(f"dcs-signal run (live), {args.aircraft}, {args.seconds:g}s per scenario, "
           f"cycle counter at {args.rate / 1e6:.0f} MHz\n")
     print(f"{'scenario':<9} {'frames/s':>8} {'CPU avg':>8} {'CPU peak':>9} "
           f"{'WS avg':>8} {'WS peak':>8} {'private':>8}")

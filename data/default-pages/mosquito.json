@@ -950,27 +950,15 @@
               "gap": true
             },
             {
-              "source": "PORT_TACHO_1000_G",
+              "signal": "u27sib",
               "width": 1,
               "align": "right",
-              "reads": [
-                0.0,
-                5.0
-              ],
-              "round": "down",
               "colour": "amber"
             },
             {
-              "source": "PORT_TACHO_100_G",
+              "signal": "hp8s4a",
               "width": 2,
               "align": "right",
-              "reads": [
-                0.0,
-                100.0
-              ],
-              "digits": 3,
-              "round": "down",
-              "wrap": 100.0,
               "colour": "amber"
             },
             {
@@ -984,27 +972,15 @@
               "small": true
             },
             {
-              "source": "STBD_TACHO_1000_G",
+              "signal": "ic3imn",
               "width": 1,
               "align": "right",
-              "reads": [
-                0.0,
-                5.0
-              ],
-              "round": "down",
               "colour": "amber"
             },
             {
-              "source": "STBD_TACHO_100_G",
+              "signal": "mmbi6t",
               "width": 2,
               "align": "right",
-              "reads": [
-                0.0,
-                100.0
-              ],
-              "digits": 3,
-              "round": "down",
-              "wrap": 100.0,
               "colour": "amber"
             },
             {
@@ -2121,27 +2097,15 @@
               "gap": true
             },
             {
-              "source": "PORT_TACHO_1000_G",
+              "signal": "u27sib",
               "width": 1,
               "align": "right",
-              "reads": [
-                0.0,
-                5.0
-              ],
-              "round": "down",
               "colour": "amber"
             },
             {
-              "source": "PORT_TACHO_100_G",
+              "signal": "hp8s4a",
               "width": 2,
               "align": "right",
-              "reads": [
-                0.0,
-                100.0
-              ],
-              "digits": 3,
-              "round": "down",
-              "wrap": 100.0,
               "colour": "amber"
             },
             {
@@ -2155,27 +2119,15 @@
               "small": true
             },
             {
-              "source": "STBD_TACHO_1000_G",
+              "signal": "ic3imn",
               "width": 1,
               "align": "right",
-              "reads": [
-                0.0,
-                5.0
-              ],
-              "round": "down",
               "colour": "amber"
             },
             {
-              "source": "STBD_TACHO_100_G",
+              "signal": "mmbi6t",
               "width": 2,
               "align": "right",
-              "reads": [
-                0.0,
-                100.0
-              ],
-              "digits": 3,
-              "round": "down",
-              "wrap": 100.0,
               "colour": "amber"
             },
             {
@@ -2576,12 +2528,8 @@
               "width": 4
             },
             {
-              "source": "GUNSIGHT_RANGE",
+              "signal": "zc32e5",
               "width": 3,
-              "reads": [
-                100.0,
-                500.0
-              ],
               "inverse": true
             },
             {
@@ -2589,81 +2537,9 @@
               "width": 3
             },
             {
-              "source": "GUNSIGHT_SPAN",
+              "signal": "slqd52",
               "width": 3,
               "align": "right",
-              "conversions": [
-                {
-                  "raw": [
-                    0,
-                    8253
-                  ],
-                  "reads": [
-                    100.0,
-                    90.0
-                  ]
-                },
-                {
-                  "raw": [
-                    8254,
-                    15180
-                  ],
-                  "reads": [
-                    90.0,
-                    80.0
-                  ]
-                },
-                {
-                  "raw": [
-                    15181,
-                    22062
-                  ],
-                  "reads": [
-                    80.0,
-                    70.0
-                  ]
-                },
-                {
-                  "raw": [
-                    22063,
-                    29263
-                  ],
-                  "reads": [
-                    70.0,
-                    60.0
-                  ]
-                },
-                {
-                  "raw": [
-                    29264,
-                    43719
-                  ],
-                  "reads": [
-                    60.0,
-                    50.0
-                  ]
-                },
-                {
-                  "raw": [
-                    43720,
-                    57856
-                  ],
-                  "reads": [
-                    50.0,
-                    40.0
-                  ]
-                },
-                {
-                  "raw": [
-                    57857,
-                    65535
-                  ],
-                  "reads": [
-                    40.0,
-                    30.0
-                  ]
-                }
-              ],
               "inverse": true
             }
           ]
@@ -2715,13 +2591,9 @@
               "text": "R"
             },
             {
-              "source": "GUNSIGHT_RANGE",
+              "signal": "zc32e5",
               "width": 3,
-              "align": "right",
-              "reads": [
-                100.0,
-                500.0
-              ]
+              "align": "right"
             }
           ]
         },
@@ -2732,83 +2604,179 @@
               "text": "B"
             },
             {
-              "source": "GUNSIGHT_SPAN",
+              "signal": "slqd52",
               "width": 3,
-              "align": "right",
-              "conversions": [
-                {
-                  "raw": [
-                    0,
-                    8253
-                  ],
-                  "reads": [
-                    100.0,
-                    90.0
-                  ]
-                },
-                {
-                  "raw": [
-                    8254,
-                    15180
-                  ],
-                  "reads": [
-                    90.0,
-                    80.0
-                  ]
-                },
-                {
-                  "raw": [
-                    15181,
-                    22062
-                  ],
-                  "reads": [
-                    80.0,
-                    70.0
-                  ]
-                },
-                {
-                  "raw": [
-                    22063,
-                    29263
-                  ],
-                  "reads": [
-                    70.0,
-                    60.0
-                  ]
-                },
-                {
-                  "raw": [
-                    29264,
-                    43719
-                  ],
-                  "reads": [
-                    60.0,
-                    50.0
-                  ]
-                },
-                {
-                  "raw": [
-                    43720,
-                    57856
-                  ],
-                  "reads": [
-                    50.0,
-                    40.0
-                  ]
-                },
-                {
-                  "raw": [
-                    57857,
-                    65535
-                  ],
-                  "reads": [
-                    40.0,
-                    30.0
-                  ]
-                }
+              "align": "right"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "signals": [
+    {
+      "id": "u27sib",
+      "name": "Tacho 1000 Port",
+      "terms": [
+        {
+          "source": "PORT_TACHO_1000_G",
+          "reads": [
+            0.0,
+            5.0
+          ],
+          "round": "down"
+        }
+      ]
+    },
+    {
+      "id": "hp8s4a",
+      "name": "Tacho 100 Port",
+      "terms": [
+        {
+          "source": "PORT_TACHO_100_G",
+          "reads": [
+            0.0,
+            100.0
+          ],
+          "digits": 3,
+          "round": "down",
+          "wrap": 100.0
+        }
+      ]
+    },
+    {
+      "id": "ic3imn",
+      "name": "Tacho 1000 Starboard",
+      "terms": [
+        {
+          "source": "STBD_TACHO_1000_G",
+          "reads": [
+            0.0,
+            5.0
+          ],
+          "round": "down"
+        }
+      ]
+    },
+    {
+      "id": "mmbi6t",
+      "name": "Tacho 100 Starboard",
+      "terms": [
+        {
+          "source": "STBD_TACHO_100_G",
+          "reads": [
+            0.0,
+            100.0
+          ],
+          "digits": 3,
+          "round": "down",
+          "wrap": 100.0
+        }
+      ]
+    },
+    {
+      "id": "zc32e5",
+      "name": "Reflector Sight Setter Rings Range",
+      "terms": [
+        {
+          "source": "GUNSIGHT_RANGE",
+          "reads": [
+            100.0,
+            500.0
+          ]
+        }
+      ]
+    },
+    {
+      "id": "slqd52",
+      "name": "Reflector Sight Setter Rings Span",
+      "terms": [
+        {
+          "source": "GUNSIGHT_SPAN",
+          "conversions": [
+            {
+              "raw": [
+                0,
+                8253
+              ],
+              "reads": [
+                100.0,
+                90.0
+              ]
+            },
+            {
+              "raw": [
+                8254,
+                15180
+              ],
+              "reads": [
+                90.0,
+                80.0
+              ]
+            },
+            {
+              "raw": [
+                15181,
+                22062
+              ],
+              "reads": [
+                80.0,
+                70.0
+              ]
+            },
+            {
+              "raw": [
+                22063,
+                29263
+              ],
+              "reads": [
+                70.0,
+                60.0
+              ]
+            },
+            {
+              "raw": [
+                29264,
+                43719
+              ],
+              "reads": [
+                60.0,
+                50.0
+              ]
+            },
+            {
+              "raw": [
+                43720,
+                57856
+              ],
+              "reads": [
+                50.0,
+                40.0
+              ]
+            },
+            {
+              "raw": [
+                57857,
+                65535
+              ],
+              "reads": [
+                40.0,
+                30.0
               ]
             }
           ]
+        }
+      ]
+    },
+    {
+      "id": "m0hc5k",
+      "name": "Transmitter TypeF Light (yellow)",
+      "conditions": [
+        {
+          "source": "TRANS_TYPF_L",
+          "on_when": {
+            "equals": 1
+          }
         }
       ]
     }

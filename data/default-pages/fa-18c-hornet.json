@@ -548,5 +548,19 @@
         }
       ]
     }
+  ],
+  "signals": [
+    {
+      "id": "91w501",
+      "name": "MASTER CAUTION (yellow)",
+      "conditions": [
+        {
+          "source": "MASTER_CAUTION_LT",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
+    }
   ]
 }

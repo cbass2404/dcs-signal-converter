@@ -79,28 +79,7 @@
       "device": "MCDU_Captain",
       "led": "Fail",
       "conditions": [],
-      "any_of": [
-        {
-          "conditions": [
-            {
-              "source": "PLT_MASTER_CAUTION",
-              "on_when": {
-                "equals": 1
-              }
-            }
-          ]
-        },
-        {
-          "conditions": [
-            {
-              "source": "RIO_MASTERCAUTION_LIGHT",
-              "on_when": {
-                "equals": 1
-              }
-            }
-          ]
-        }
-      ]
+      "signal": "wu4yip"
     },
     {
       "device": "MCDU_Captain",
@@ -364,28 +343,7 @@
       "device": "PFP3N_Captain",
       "led": "FAIL",
       "conditions": [],
-      "any_of": [
-        {
-          "conditions": [
-            {
-              "source": "PLT_MASTER_CAUTION",
-              "on_when": {
-                "equals": 1
-              }
-            }
-          ]
-        },
-        {
-          "conditions": [
-            {
-              "source": "RIO_MASTERCAUTION_LIGHT",
-              "on_when": {
-                "equals": 1
-              }
-            }
-          ]
-        }
-      ]
+      "signal": "wu4yip"
     },
     {
       "device": "PFP3N_Captain",
@@ -532,28 +490,7 @@
       "device": "PFP4_Captain",
       "led": "FAIL",
       "conditions": [],
-      "any_of": [
-        {
-          "conditions": [
-            {
-              "source": "PLT_MASTER_CAUTION",
-              "on_when": {
-                "equals": 1
-              }
-            }
-          ]
-        },
-        {
-          "conditions": [
-            {
-              "source": "RIO_MASTERCAUTION_LIGHT",
-              "on_when": {
-                "equals": 1
-              }
-            }
-          ]
-        }
-      ]
+      "signal": "wu4yip"
     },
     {
       "device": "PFP4_Captain",
@@ -700,28 +637,7 @@
       "device": "PFP7_Captain",
       "led": "FAIL",
       "conditions": [],
-      "any_of": [
-        {
-          "conditions": [
-            {
-              "source": "PLT_MASTER_CAUTION",
-              "on_when": {
-                "equals": 1
-              }
-            }
-          ]
-        },
-        {
-          "conditions": [
-            {
-              "source": "RIO_MASTERCAUTION_LIGHT",
-              "on_when": {
-                "equals": 1
-              }
-            }
-          ]
-        }
-      ]
+      "signal": "wu4yip"
     },
     {
       "device": "PFP7_Captain",
@@ -877,28 +793,7 @@
       "device": "TAKEOFF_PLANEL_2",
       "led": "Master_Caution",
       "conditions": [],
-      "any_of": [
-        {
-          "conditions": [
-            {
-              "source": "PLT_MASTER_CAUTION",
-              "on_when": {
-                "equals": 1
-              }
-            }
-          ]
-        },
-        {
-          "conditions": [
-            {
-              "source": "RIO_MASTERCAUTION_LIGHT",
-              "on_when": {
-                "equals": 1
-              }
-            }
-          ]
-        }
-      ]
+      "signal": "wu4yip"
     },
     {
       "device": "TAKEOFF_PLANEL_2",

@@ -91,6 +91,36 @@ unless this says what moved.
   change. Closed with its ×, or gone once they are made one.
 - **A shared result is worked out only when one of its parts moves.**
 
+### Profiles
+
+- **The shipped profiles now use shared results and shared conditions.**
+  Lamps that lit by the same conditions point at one set of shared
+  conditions, and a reading shaped the same way on more than one page
+  draws one shared result. Every lamp and reading shows what it did
+  before; the logic is now written once, at the top of the profile. A row
+  you have changed is left as you have it. The rows that moved:
+  - **A-10C and A-10C II:** the master caution on the MCDU FAIL, the PFPs'
+    FAIL key and the PTO2 Master Caution.
+  - **AH-64D:** the master warning on the MCDU STATUS and the PFPs' MSG
+    key, and the master caution on the PFPs' FAIL key, both by seat. On
+    the UFC Backup and DED Backup pages, the altimeter drums and the
+    standby airspeed.
+  - **CH-47F:** the master caution, by seat, on the MCDU FAIL and the PTO2
+    Master Caution, and on the PFPs' FAIL key.
+  - **F-14 and F-14BU:** the master caution on the MCDU
+    FAIL, the PFPs' FAIL key and the PTO2 Master Caution.
+  - **F-16C:** the master caution on the MCDU FAIL, the PFPs' FAIL key and
+    the PTO2 Master Caution; the ECM light on the MCDU STATUS and the
+    PFPs' EXEC key; the radio mode knobs on the PFPs' MSG key. On the CDU
+    Flight and UFC Flight pages, the fuel totalizer and the three trims.
+  - **F/A-18C:** the master caution on the MCDU FAIL, the PFPs' FAIL key
+    and the PTO2 Master Caution.
+  - **Mi-24P:** on the UFC Flight and DED Flight pages, the radar altitude
+    and both airspeeds.
+  - **Mosquito FB Mk VI:** the transmitter Type F light on the MCDU FM and
+    the PFPs' MSG key. The tachometers on the War and Cruise pages, and
+    the sight range and span on both Sight Settings pages.
+
 ### Editor
 
 - **The check's banners close with an ×.** The problems, the cautions and

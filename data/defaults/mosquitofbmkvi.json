@@ -79,14 +79,8 @@
     {
       "device": "MCDU_Captain",
       "led": "FM",
-      "conditions": [
-        {
-          "source": "TRANS_TYPF_L",
-          "on_when": {
-            "equals": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "m0hc5k"
     },
     {
       "device": "MCDU_Captain",
@@ -357,14 +351,8 @@
     {
       "device": "PFP3N_Captain",
       "led": "MSG",
-      "conditions": [
-        {
-          "source": "TRANS_TYPF_L",
-          "on_when": {
-            "equals": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "m0hc5k"
     },
     {
       "device": "PFP3N_Captain",
@@ -503,14 +491,8 @@
     {
       "device": "PFP4_Captain",
       "led": "MSG",
-      "conditions": [
-        {
-          "source": "TRANS_TYPF_L",
-          "on_when": {
-            "equals": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "m0hc5k"
     },
     {
       "device": "PFP4_Captain",
@@ -649,14 +631,8 @@
     {
       "device": "PFP7_Captain",
       "led": "MSG",
-      "conditions": [
-        {
-          "source": "TRANS_TYPF_L",
-          "on_when": {
-            "equals": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "m0hc5k"
     },
     {
       "device": "PFP7_Captain",

@@ -48,20 +48,21 @@ unless this says what moved.
   picking one copies its rows into the field. Choosing a gauge that has a
   table starts it converted by that table. The rows stay hidden while
   they are the table's, and choosing custom opens them to change.
-- **Shared signals: a number made once, drawn on any page.** A new
-  section at the top of the profile, above the panels, holds the
-  aircraft's shared signals. Each reads one or more signals, shaped the
-  way a reading is, laid side by side: three fuel drums, each rounded down
-  on its own, read as one number without a rolling drum counting twice.
-  Pick "a shared signal" as a piece of a field to draw one, and give it
-  words and colours there. Each has a note, is saved on its own, is shared
+- **Shared results: a value made once, drawn on any page.** A new
+  section at the top of the profile, Shared Results, holds the aircraft's
+  shared results. Each reads one or more signals, shaped the way a
+  reading is, laid side by side: three fuel drums, each rounded down on
+  its own, read as one number without a rolling drum counting twice. Pick
+  "a shared result" as a piece of a field to draw one, and give it words
+  and colours there. Each has a note, is saved on its own, is shared
   by every profile on the aircraft, and travels with an exported page.
 - **A reading can round up** as well as down or to the nearest.
-- **Shared lamp conditions.** Write a lamp's logic once, seat choice and
-  all, and point any number of lamps at it, on any panel: the CH-47's
-  master caution on every CDU and the PTO2 from one set of conditions.
-  Each lamp keeps its own brightness.
-- **A switch can be decided by a shared signal**, in its units: a FUEL
+- **Shared conditions.** In their own section under Shared Results, write
+  a lamp's logic once, seat choice and all, and point any number of lamps
+  at it with "Use shared conditions", on any panel: the CH-47's master
+  caution on every CDU and the PTO2 from one set of conditions. Each lamp
+  keeps its own brightness.
+- **A switch can be decided by a shared result**, in its units: a FUEL
   label red at or below 999 and green from 1000.
 - **Switch cases read like lamp tests**: is exactly, is one of, is
   between, is at least, is at most, or is anything else. At least and at
@@ -69,17 +70,23 @@ unless this says what moved.
 - **Lamps can flash.** Each group of conditions ends with a choice of
   steady, flashing slowly (twice a second) or flashing fast (three times a
   second), on a lamp's own conditions, on each alternative, and on shared
-  lamp conditions, where it applies to every lamp lit by them. Every lamp
+  conditions, where it applies to every lamp lit by them. Every lamp
   at one rate flashes in step, lit and dark for equal halves. A steady
   alternative that also holds keeps the lamp lit. Flash only a lamp DCS
   keeps steady: where the cockpit lamp flashes, the panel already follows
   it. Nothing changes until you set one.
-- **Readings shaped the same way twice are offered as one shared signal.**
+- **Readings shaped the same way twice are offered as one shared result.**
   When one signal is shaped the same way in two or more readings on the
-  aircraft's pages, a banner at the top of Shared Signals offers to make it
-  one shared signal and point every one of them at it. Each reading keeps
-  its own words, colour and box. It asks first, listing every reading and
-  every slot it changes, then saves the signal and the pages together, or
-  none of them. The banner goes once they are made one, or when you close
-  it with its ×.
-- **A shared number is worked out only when one of its parts moves.**
+  aircraft's pages, a banner at the top of Shared Results offers to make
+  it one shared result and point every one of them at it. Each reading
+  keeps its own words, colour and box. It asks first, listing every
+  reading and every slot it changes, then saves the result and the pages
+  together, or none of them. The banner goes once they are made one, or
+  when you close it with its ×.
+- **Lamps lit the same way are offered as shared conditions.** When two
+  or more lamps in a profile light by exactly the same conditions, a
+  banner at the top of Shared Conditions offers to write them once. It
+  lists the lamps first, then saves the conditions and switches the lamps
+  to them, each keeping its own brightness; save the profile to keep the
+  change. Closed with its ×, or gone once they are made one.
+- **A shared result is worked out only when one of its parts moves.**

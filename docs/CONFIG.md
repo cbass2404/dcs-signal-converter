@@ -1717,9 +1717,10 @@ hand, since saving would write over it.
 ### Stored signals
 
 Built 2026-10-01. A number worked out once and named, for any page on the
-module to draw. The editor calls them shared signals, its section Shared
-Signals, since sharing is what they are for; the code and the files keep
-the stored name. Kept in the module's page file beside its pages:
+module to draw. The editor calls a number made of parts a shared result,
+in Shared Results, and lamp conditions shared conditions, in Shared
+Conditions, so the two kinds read apart; the code and the files keep the
+stored name for both. Kept in the module's page file beside its pages:
 
 ```jsonc
 // data/pages/f-16c-50.json

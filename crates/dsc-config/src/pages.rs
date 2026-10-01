@@ -459,13 +459,13 @@ impl PageLibrary {
             for s in &file.signals {
                 if let Some(other) = ids.insert(&s.id, module) {
                     out.push(format!(
-                        "shared signal id {:?} is used on {other} and again on {module}",
+                        "shared result or conditions id {:?} is used on {other} and again on {module}",
                         s.id
                     ));
                 }
                 if names.iter().any(|n| same_name(n, &s.name)) {
                     out.push(format!(
-                        "two shared signals on {module} are called {:?}",
+                        "two shared results or conditions on {module} go by {:?}",
                         s.name.trim()
                     ));
                 }
@@ -854,11 +854,14 @@ impl Pages {
                 (removed, "field(s) removed that the pages no longer ship"),
                 (renamed, "unchanged page name(s) updated"),
                 (retired, "unchanged page(s) removed that no longer ship"),
-                (signals.added, "new shared signal(s) added"),
-                (signals.updated, "unchanged shared signal(s) updated"),
+                (signals.added, "new shared result(s) or conditions added"),
+                (
+                    signals.updated,
+                    "unchanged shared result(s) or conditions updated",
+                ),
                 (
                     signals.retired,
-                    "unchanged shared signal(s) removed that no longer ship",
+                    "unchanged shared result(s) or conditions removed that no longer ship",
                 ),
             ] {
                 if n > 0 {

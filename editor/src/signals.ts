@@ -1,25 +1,36 @@
-// Shared signals: the module's numbers worked out once and named, for any
-// page on it to draw. Stored signals in the code and the files, shared in the
-// window, since sharing is what they are for.
+// Shared Results and Shared Conditions: the module's stored signals, worked
+// out once and named. Stored signals in the code and the files; in the window
+// each kind has its own section and name, since they are used in different
+// places and nothing else would tell them apart.
 //
-// First on the profile page, above every panel, because a page draws from
-// them and they are easy to miss below eighteen lamps. Like a page, each one
-// belongs to the module's library rather than to the profile open here, so
-// it is saved on its own and every profile on the module shares it. The
+// First on the profile page, above every panel, because pages and lamps draw
+// from them and they are easy to miss below eighteen lamps. Like a page, each
+// one belongs to the module's library rather than to the profile open here,
+// so it is saved on its own and every profile on the module shares it. The
 // profile's Save writes none of this.
 //
-// A signal is one of two kinds. A number is a short chain of parts, each one
-// DCS-BIOS signal shaped exactly the way a reading is, laid side by side: the
-// F-16's three fuel drums, each rounded down and wrapped at 10, read as one
-// number. How it is drawn, its words and colours, is the piece's that draws
-// it. Lamp conditions are tests written as a lamp's are, for every lamp that
-// repeats one cockpit lamp; each lamp keeps its own brightness.
+// A shared result is a short chain of parts, each one DCS-BIOS signal shaped
+// exactly the way a reading is, laid side by side: the F-16's three fuel
+// drums, each rounded down and wrapped at 10, read as one number. How it is
+// drawn, its words and colours, is the piece's that draws it. Shared
+// conditions are tests written as a lamp's are, for every lamp that repeats
+// one cockpit lamp; each lamp keeps its own brightness.
 
 import { deleteSignal, newPageId, savePage, saveSignal } from "./api";
 import { bindingEditor, iconButton } from "./binding";
 import { confirmAction } from "./confirm";
-import { dismiss, dismissed, duplicates, pagesIn, pagesOf, placeOf, repoint } from "./duplicates";
-import type { Duplicate } from "./duplicates";
+import {
+  dismiss,
+  dismissed,
+  duplicates,
+  lampDuplicates,
+  lightBy,
+  pagesIn,
+  pagesOf,
+  placeOf,
+  repoint,
+} from "./duplicates";
+import type { Duplicate, LampDuplicate } from "./duplicates";
 import { noteEditor } from "./note";
 import { signalsChanged, whereShown } from "./pages";
 import type { PageBook } from "./pages";
@@ -56,6 +67,8 @@ export interface SignalContext {
   devicesFor: (display: string) => string[];
   /** A device's name as the window shows it. */
   nameOf: (key: string) => string;
+  /** Lamps in the profile were changed from here: redraw them and mark the profile unsaved. */
+  lampsChanged: () => void;
 }
 
 /** One signal as the window holds it while it is being edited. */
@@ -97,12 +110,18 @@ function draws(page: Page, id: string): boolean {
 }
 
 /**
- * The Shared Signals section, and whether it holds edits not yet saved, which
- * leaving the profile would lose.
+ * The Shared Results section, or with `lamp` the Shared Conditions section,
+ * and whether it holds edits not yet saved, which leaving the profile would
+ * lose.
  */
-export function signalSection(ctx: SignalContext): {
+export function signalSection(
+  ctx: SignalContext,
+  lamp: boolean,
+): {
   box: HTMLElement;
   unsaved: () => boolean;
+  /** Look again for duplicates, after an edit made elsewhere. */
+  refresh: () => void;
 } {
   const { book } = ctx;
   const module = book.module;
@@ -111,25 +130,36 @@ export function signalSection(ctx: SignalContext): {
   const list = el("div", {});
   const lead = el("p", { class: "meta" });
   const banner = el("div", { class: "cautions", hidden: "" });
-  const add = el("button", { class: "add small" }, "+ a shared number");
-  const addLamp = el("button", { class: "add small" }, "+ shared lamp conditions");
+  const add = el(
+    "button",
+    { class: "add small" },
+    lamp ? "+ shared conditions" : "+ a shared result",
+  );
 
-  const hold = (signal: StoredSignal, fresh: boolean, lamp = isLampSignal(signal)): Working => {
+  const hold = (signal: StoredSignal, fresh: boolean): Working => {
     const w = { signal: structuredClone(signal), baseline: JSON.stringify(signal), fresh, lamp };
     working.set(signal.id, w);
     return w;
   };
   const unsaved = (w: Working): boolean => w.fresh || JSON.stringify(w.signal) !== w.baseline;
 
-  /** Every signal shown: the saved ones, as being edited where they are, then the new ones. */
+  /**
+   * Every signal of this section's kind shown: the saved ones, as being
+   * edited where they are, then the new ones.
+   */
   const shown = (): Working[] => {
-    const saved = book.signals.map((s) => working.get(s.id) ?? hold(s, false));
+    const saved = book.signals
+      .filter((s) => isLampSignal(s) === lamp)
+      .map((s) => working.get(s.id) ?? hold(s, false));
     const fresh = [...working.values()].filter((w) => w.fresh);
     return [...saved, ...fresh];
   };
 
+  // A name is unique across both kinds, so the other section's saved names
+  // are taken too.
   const freeName = (name: string, except: string): string => {
     const taken = (n: string): boolean =>
+      book.signals.some((s) => s.id !== except && sameName(s.name, n)) ||
       shown().some((w) => w.signal.id !== except && sameName(w.signal.name, n));
     if (!taken(name)) return name;
     for (let k = 2; ; k += 1) if (!taken(`${name} ${k}`)) return `${name} ${k}`;
@@ -215,17 +245,17 @@ export function signalSection(ctx: SignalContext): {
           state,
           w.lamp
             ? infoIcon(
-                "About shared lamp conditions",
+                "About shared conditions",
                 "Conditions written once, for every lamp that repeats one cockpit " +
-                  'lamp: choose "Use a shared signal" on each lamp. Each test ' +
+                  'lamp: choose "Use shared conditions" on each lamp. Each test ' +
                   "lights the lamp or leaves it off, and a scale dims it. Every " +
                   "lamp keeps its own brightness, so one can be full and another " +
                   "dimmer from the same conditions.",
               )
             : infoIcon(
-                "About shared signals",
-                "A number made once, for any page on this aircraft to draw: pick " +
-                  '"a shared signal" as a piece of a field. Each part reads one ' +
+                "About shared results",
+                "A value made once, for any page on this aircraft to draw: pick " +
+                  '"a shared result" as a piece of a field. Each part reads one ' +
                   "signal and shapes it the way a reading does, and the parts are " +
                   "laid side by side, so three fuel drums, each rounded down and " +
                   "wrapped at 10, read as one number. Rounding each drum on its own " +
@@ -307,7 +337,7 @@ export function signalSection(ctx: SignalContext): {
         );
       }
 
-      const save = el("button", { class: "primary" }, "Save signal");
+      const save = el("button", { class: "primary" }, lamp ? "Save conditions" : "Save result");
       save.disabled = book.broken !== null;
       save.addEventListener("click", () => {
         void saveSignal(module, w.signal).then(
@@ -318,7 +348,9 @@ export function signalSection(ctx: SignalContext): {
             signalsChanged(book, view);
             redraw();
             ctx.changed();
-            ctx.tell(`Saved ${w.signal.name.trim()}. Every page drawing it draws the change.`);
+            ctx.tell(
+              `Saved ${w.signal.name.trim()}. ${lamp ? "Every lamp lit by it follows" : "Every page drawing it draws"} the change.`,
+            );
           },
           (e: unknown) => ctx.fail("Saving the signal", e),
         );
@@ -338,7 +370,7 @@ export function signalSection(ctx: SignalContext): {
         const places = usedBy().map((p) => `- ${p}`);
         const where = w.lamp ? "These lamps light by it" : "These pages draw it";
         void confirmAction(
-          `Delete the shared signal ${w.signal.name}?` +
+          `Delete the shared ${lamp ? "conditions" : "result"} ${w.signal.name}?` +
             (places.length > 0
               ? `\n\n${where}:\n${places.join("\n")}` +
                 `\n\nTake it off those ${w.lamp ? "lamps" : "pages"} before it can be deleted.`
@@ -396,16 +428,120 @@ export function signalSection(ctx: SignalContext): {
         el(
           "div",
           { class: "grow" },
-          el("strong", {}, "These readings could each be one shared signal"),
+          el("strong", {}, "These readings could each be one shared result"),
           el(
             "div",
             { class: "meta" },
-            "Each signal below is shaped the same way in more than one reading. Made one shared signal, it is shaped once, and every reading draws it as it does now.",
+            "Each signal below is shaped the same way in more than one reading. Made one shared result, it is shaped once, and every reading draws it as it does now.",
           ),
         ),
         close,
       ),
       ...groups.map(groupRow),
+    );
+  };
+
+  /**
+   * Lamps in the profile open whose whole logic is the same, as a banner
+   * offering to make it shared conditions. It lives as the readings' banner
+   * does: until its × puts it away or the lamps are made one.
+   */
+  const drawLampBanner = (): void => {
+    const away = dismissed(module);
+    const groups = book.broken
+      ? []
+      : lampDuplicates(ctx.profile().bindings).filter((d) => !away.has(d.key));
+    banner.hidden = groups.length === 0;
+    if (groups.length === 0) {
+      banner.replaceChildren();
+      return;
+    }
+    const close = iconButton("cancel", "✕", "Put this away", () => {
+      dismiss(
+        module,
+        groups.map((d) => d.key),
+      );
+      drawLampBanner();
+    });
+    banner.replaceChildren(
+      el(
+        "div",
+        { class: "condition-view" },
+        el(
+          "div",
+          { class: "grow" },
+          el("strong", {}, "These lamps could each light by shared conditions"),
+          el(
+            "div",
+            { class: "meta" },
+            "Each group below lights by the same conditions. Made shared conditions, they are written once, and every lamp keeps its own brightness.",
+          ),
+        ),
+        close,
+      ),
+      ...groups.map(lampRow),
+    );
+  };
+
+  /** A lamp as the dialog names it: its panel, then the lamp. */
+  const lampName = (b: Binding): string => `${ctx.nameOf(b.device)}: ${b.led}`;
+
+  /** What a group's conditions read, by the first signal they test. */
+  const lampLogicName = (d: LampDuplicate): string => {
+    const first = d.logic.any_of?.[0]?.conditions[0] ?? d.logic.conditions[0];
+    const source = first?.source ?? "Conditions";
+    return ctx.signals.find((s) => s.id === source)?.description ?? source;
+  };
+
+  /** One group of lamps in the banner, and the button that makes them one. */
+  const lampRow = (d: LampDuplicate): HTMLElement => {
+    const make = el("button", { class: "add small" }, "Make shared conditions");
+    make.addEventListener("click", () => {
+      make.disabled = true;
+      void consolidateLamps(d)
+        .catch((e: unknown) => ctx.fail("Making the shared conditions", e))
+        .finally(() => (make.disabled = false));
+    });
+    return el(
+      "div",
+      { class: "caution" },
+      `${lampLogicName(d)}, on ${d.lamps.length} lamps: ${d.lamps.map(lampName).join(", ")}. `,
+      make,
+    );
+  };
+
+  /**
+   * Make `d` shared conditions once the user confirms. They are saved; the
+   * lamps are switched over in the profile, which is left for the user to
+   * save with the rest of their edits.
+   */
+  const consolidateLamps = async (d: LampDuplicate): Promise<void> => {
+    const name = lampLogicName(d);
+    const ok = await confirmAction(
+      `Light these lamps by shared conditions, ${name}?` +
+        `\n\nThe conditions are saved as shared conditions, and these ${d.lamps.length} lamps light by them instead, each at its own brightness:` +
+        `\n${d.lamps.map((b) => `- ${lampName(b)}`).join("\n")}` +
+        "\n\nThe lamps change in this profile, which is then unsaved: Save it to keep them.",
+      "Confirm",
+    );
+    if (!ok) return;
+    const id = await newPageId(avoid());
+    const signal: StoredSignal = {
+      id,
+      name: freeName(name, id),
+      terms: [],
+      conditions: structuredClone(d.logic.conditions),
+    };
+    if (d.logic.any_of) signal.any_of = structuredClone(d.logic.any_of);
+    if (d.logic.pick) signal.pick = d.logic.pick;
+    if (d.logic.blink) signal.blink = d.logic.blink;
+    signalsChanged(book, await saveSignal(module, signal));
+    lightBy(d, id);
+    ctx.lampsChanged();
+    redraw();
+    ctx.changed();
+    ctx.tell(
+      `Made ${signal.name}, shared conditions, and switched ${d.lamps.length} lamps to it. Save the profile to keep them.`,
     );
   };
 
@@ -416,7 +552,7 @@ export function signalSection(ctx: SignalContext): {
     const open = pagesIn(d)
       .filter((p) => [...book.editing.values()].some((e) => e.page.id === p.id))
       .map((p) => p.name);
-    const make = el("button", { class: "add small" }, "Make a shared signal");
+    const make = el("button", { class: "add small" }, "Make a shared result");
     if (open.length > 0) {
       make.disabled = true;
       make.title = `Close ${open.join(", ")} first: saving would replace what is open there.`;
@@ -424,7 +560,7 @@ export function signalSection(ctx: SignalContext): {
     make.addEventListener("click", () => {
       make.disabled = true;
       void consolidate(d, named ?? source)
-        .catch((e: unknown) => ctx.fail("Making the shared signal", e))
+        .catch((e: unknown) => ctx.fail("Making the shared result", e))
         .finally(() => (make.disabled = false));
     });
     return el(
@@ -457,8 +593,8 @@ export function signalSection(ctx: SignalContext): {
       return [head, ...readings].join("\n");
     });
     const ok = await confirmAction(
-      `Make ${name} one shared signal?` +
-        `\n\nIt is saved as a shared signal, and these ${d.uses.length} readings draw it instead, each as it does now:` +
+      `Make ${name} one shared result?` +
+        `\n\nIt is saved as a shared result, and these ${d.uses.length} readings draw it instead, each as it does now:` +
         `\n\n${where.join("\n\n")}` +
         "\n\nThe pages are saved too, which changes them in every slot above.",
       "Confirm",
@@ -508,17 +644,19 @@ export function signalSection(ctx: SignalContext): {
     redraw();
     ctx.changed();
     ctx.tell(
-      `Made ${signal.name}, a shared signal, and saved ${pagesOf(d).join(", ")} with ${d.uses.length} readings drawing it.`,
+      `Made ${signal.name}, a shared result, and saved ${pagesOf(d).join(", ")} with ${d.uses.length} readings drawing it.`,
     );
   };
 
   const redraw = (): void => {
     lead.textContent = book.broken
-      ? `The page file for ${module} would not load, so its shared signals cannot be edited until it is fixed: ${book.broken}`
-      : `Numbers made once and named, for any page on ${module} to draw. Each is saved on its own, and every profile on ${module} shares it.`;
+      ? `The page file for ${module} would not load, so its shared ${lamp ? "conditions" : "results"} cannot be edited until it is fixed: ${book.broken}`
+      : lamp
+        ? `Lamp conditions written once and named, for any lamp on ${module} to light by. Each is saved on its own, and every profile on ${module} shares it.`
+        : `Values made once and named, for any page on ${module} to draw. Each is saved on its own, and every profile on ${module} shares it.`;
     add.disabled = book.broken !== null;
-    addLamp.disabled = book.broken !== null;
-    drawBanner();
+    if (lamp) drawLampBanner();
+    else drawBanner();
     list.replaceChildren(...shown().map(card));
   };
 
@@ -531,33 +669,33 @@ export function signalSection(ctx: SignalContext): {
     ...[...book.editing.values()].filter((e) => e.fresh).map((e) => e.page.id),
   ];
 
-  const start = (lamp: boolean): void => {
+  const start = (): void => {
     void newPageId(avoid()).then(
       (id) => {
-        const name = freeName(lamp ? "New lamp conditions" : "New signal", id);
-        hold({ id, name, terms: lamp ? [] : [{ source: "" }], conditions: [] }, true, lamp);
+        const name = freeName(lamp ? "New conditions" : "New result", id);
+        hold({ id, name, terms: lamp ? [] : [{ source: "" }], conditions: [] }, true);
         opened.add(id);
         redraw();
       },
       (e: unknown) => ctx.fail("Adding a signal", e),
     );
   };
-  add.addEventListener("click", () => start(false));
+  add.addEventListener("click", start);
   // A page saved or deleted on any screen can make or end a duplicate.
-  book.sections.push(drawBanner);
-  addLamp.addEventListener("click", () => start(true));
+  if (!lamp) book.sections.push(drawBanner);
 
   redraw();
   return {
     box: el(
       "section",
       { class: "device-group" },
-      el("h2", {}, "Shared Signals"),
+      el("h2", {}, lamp ? "Shared Conditions" : "Shared Results"),
       lead,
       banner,
       list,
-      el("div", { class: "chain-add" }, add, addLamp),
+      el("div", { class: "chain-add" }, add),
     ),
     unsaved: () => [...working.values()].some(unsaved),
+    refresh: lamp ? drawLampBanner : drawBanner,
   };
 }

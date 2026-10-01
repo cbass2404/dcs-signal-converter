@@ -256,43 +256,43 @@ pub enum Error {
     SwitchReadsWithoutSwitch(String, String),
     #[error("positions {1} of {0:?} have no case and the switch has no else")]
     SwitchUncovered(String, String),
-    #[error("a piece on {1} of display {0:?} draws the shared signal {2:?}, which is not among this module's shared signals; pick another or take the piece out")]
+    #[error("a piece on {1} of display {0:?} draws the shared result {2:?}, which is not among this module's shared results; pick another or take the piece out")]
     UnknownStoredSignal(String, String, String),
-    #[error("a piece on {1} of display {0:?} draws a shared signal and also has characters or a signal of its own; it can have one")]
+    #[error("a piece on {1} of display {0:?} draws a shared result and also has characters or a signal of its own; it can have one")]
     StoredAndOther(String, String),
-    #[error("the piece drawing {2:?} on {1} of display {0:?} also says how to shape the number; a shared signal shapes its own, so change it there")]
+    #[error("the piece drawing {2:?} on {1} of display {0:?} also says how to shape the number; a shared result shapes its own, so change it there")]
     ShapingOnStored(String, String, String),
-    #[error("a shared signal needs a name")]
+    #[error("a shared result or shared conditions need a name")]
     StoredUnnamed,
-    #[error("a shared signal on {1} is already called {0:?}")]
+    #[error("a shared result or shared conditions on {1} already go by {0:?}")]
     StoredNameTaken(String, String),
-    #[error("the shared signal {0:?} reads nothing; give it a signal to read")]
+    #[error("the shared result {0:?} reads nothing; give it a signal to read")]
     StoredWithoutTerms(String),
-    #[error("the shared signal {0:?} has a part with no signal chosen yet; pick one or take the part out")]
+    #[error("the shared result {0:?} has a part with no signal chosen yet; pick one or take the part out")]
     StoredTermUnfinished(String),
-    #[error("the shared signal {0:?} gives a conversion a colour or size; how it draws belongs to the field drawing it, as a band")]
+    #[error("the shared result {0:?} gives a conversion a colour or size; how it draws belongs to the field drawing it, as a band")]
     StoredTermStyled(String),
-    #[error("the shared signal {0:?} has both parts and lamp conditions; it is one or the other")]
+    #[error("{0:?} has both parts and lamp conditions; it is a shared result or shared conditions, not both")]
     StoredTwoKinds(String),
-    #[error("the shared signal {0:?} carries both conditions and any_of; put every alternative in any_of")]
+    #[error("the shared conditions {0:?} carry both conditions and any_of; put every alternative in any_of")]
     StoredConditionsWithAnyOf(String),
-    #[error("the shared signal {0:?} has an alternative with no conditions in it")]
+    #[error("the shared conditions {0:?} have an alternative with no conditions in it")]
     StoredEmptyBranch(String),
-    #[error("the shared signal {0:?} picks between alternatives but has none; pick applies only to any_of")]
+    #[error("the shared conditions {0:?} pick between alternatives but have none; pick applies only to any_of")]
     StoredPickWithoutAlternatives(String),
-    #[error("the shared signal {0:?} has a condition with no signal chosen yet; pick one or delete the condition")]
+    #[error("the shared conditions {0:?} have a condition with no signal chosen yet; pick one or delete the condition")]
     StoredUnfinishedCondition(String),
     #[error(
         "{0:?} is lamp conditions, so it has no number for a screen to draw or a switch to read"
     )]
     StoredNotANumber(String),
-    #[error("LED {0:?} lights by the shared signal {1:?}, which is a number made of parts, not lamp conditions")]
+    #[error("LED {0:?} lights by {1:?}, which is a shared result, not shared conditions")]
     LampSignalNotConditions(String, String),
-    #[error("LED {0:?} lights by the shared signal {1:?}, which is not among this module's shared signals; pick another or take it off")]
+    #[error("LED {0:?} lights by the shared conditions {1:?}, which are not among this module's shared conditions; pick others or take them off")]
     UnknownLampSignal(String, String),
-    #[error("LED {0:?} lights by a shared signal and also carries its own conditions, always on or a lamp to match; it can have one")]
+    #[error("LED {0:?} lights by shared conditions and also carries its own conditions, always on or a lamp to match; it can have one")]
     LampSignalWithConditions(String),
-    #[error("the switch on {1} of display {0:?} is decided by both a signal and a shared signal; it can have one")]
+    #[error("the switch on {1} of display {0:?} is decided by both a signal and a shared result; it can have one")]
     SwitchTwoDeciders(String, String),
 }
 

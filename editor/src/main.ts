@@ -1730,6 +1730,8 @@ async function showProfile(file: string): Promise<void> {
   };
 
   let pending: number | undefined;
+  // Set once Shared Conditions is built, below; the session is made first.
+  let conditionsRefresh = (): void => {};
   const session: Session = {
     file,
     profile,
@@ -1753,6 +1755,8 @@ async function showProfile(file: string): Promise<void> {
       // the answer is there by the time the user looks up from the row.
       window.clearTimeout(pending);
       pending = window.setTimeout(() => {
+        // A lamp edit can make or end a group of lamps with the same logic.
+        conditionsRefresh();
         // Snapshotted before the call: the user keeps typing while it is in
         // flight, and a late answer about an older profile must not be shown
         // as though it were about this one.
@@ -1790,7 +1794,7 @@ async function showProfile(file: string): Promise<void> {
   };
   save.setAttribute("disabled", "");
   // The module's shared signals, saved on their own like its pages.
-  const stored = signalSection({
+  const signalContext = {
     book,
     signals,
     tell: showBanner,
@@ -1798,18 +1802,27 @@ async function showProfile(file: string): Promise<void> {
     changed: () => session.recheck(),
     profile: () => session.profile,
     // The panels this profile drives first.
-    devicesFor: (display) => {
+    devicesFor: (display: string) => {
       const off = session.profile.disabled_devices ?? [];
       return devices
         .filter((d) => d.displays.some((x) => x.key === display))
         .map((d) => d.key)
         .sort((a, b) => Number(off.includes(a)) - Number(off.includes(b)));
     },
-    nameOf: (key) => devices.find((d) => d.key === key)?.display_name ?? key,
-  });
+    nameOf: (key: string) => devices.find((d) => d.key === key)?.display_name ?? key,
+    lampsChanged: () => {
+      for (const redraw of session.afterSave) redraw();
+      session.refreshDirty();
+    },
+  };
+  // Results for pages and switches, conditions for lamps: one kind each.
+  const results = signalSection(signalContext, false);
+  const conditions = signalSection(signalContext, true);
+  conditionsRefresh = conditions.refresh;
   // A page or a stored signal open with changes is unsaved work too, though
   // Save does not write either.
-  unsavedWork = () => session.dirty || pageUnsaved(book) || stored.unsaved();
+  unsavedWork = () =>
+    session.dirty || pageUnsaved(book) || results.unsaved() || conditions.unsaved();
 
   const back = el("button", {}, "← Profiles");
   back.addEventListener("click", () => {
@@ -1912,7 +1925,7 @@ async function showProfile(file: string): Promise<void> {
   );
   // Stored signals first, above every panel: pages draw from them, and
   // below the panels they would be easy to miss.
-  app.append(stored.box, active.box, inactive.box, missing.box);
+  app.append(results.box, conditions.box, active.box, inactive.box, missing.box);
 
   const sections = devices.map((device) =>
     deviceSection(device, devices, byLamp, session, () => regroup()),

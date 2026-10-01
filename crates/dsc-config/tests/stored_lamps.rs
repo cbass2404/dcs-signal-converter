@@ -169,7 +169,9 @@ fn a_lamp_cannot_light_by_a_number() {
         &lib(Vec::new()),
     );
     assert!(
-        found.iter().any(|e| e.contains("not lamp conditions")),
+        found
+            .iter()
+            .any(|e| e.contains("a shared result, not shared conditions")),
         "{found:?}"
     );
 }

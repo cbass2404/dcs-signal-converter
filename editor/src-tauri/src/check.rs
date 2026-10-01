@@ -417,7 +417,7 @@ impl FlagView {
             Place::Branch { .. } => "This alternative is left out; the others still work.",
             Place::Field { .. } => "The field stays blank.",
             Place::Signal { .. } => {
-                "In the shared signal it lights by: its tests that read this are left out, an alternative at a time where it has them."
+                "In the shared conditions it lights by: its tests that read this are left out, an alternative at a time where it has them."
             }
         };
         FlagView {

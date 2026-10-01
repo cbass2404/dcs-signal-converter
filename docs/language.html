@@ -1968,22 +1968,22 @@
         </section>
 
         <!-- =========================================================== stored -->
-        <section id="stored" data-group="Screens" data-nav="Shared signals">
+        <section id="stored" data-group="Screens" data-nav="Shared results">
           <div class="wrap">
             <div class="section-head">
               <span class="eyebrow">Screens, part 4</span>
-              <h2>Shared signals: a number made once, drawn anywhere</h2>
+              <h2>Shared results and conditions: made once, used anywhere</h2>
             </div>
             <div class="prose">
               <p>
                 A reading shapes its own number, so two pages showing the same fuel say how in full,
-                twice. A <span class="ed">shared signal</span> says it once. It sits in
-                <span class="ed">Shared Signals</span> at the top of the profile, above the panels,
+                twice. A <span class="ed">shared result</span> says it once. It sits in
+                <span class="ed">Shared Results</span> at the top of the profile, above the panels,
                 and any page on the aircraft can draw it: pick
-                <span class="ed">a shared signal</span> as a piece of a field.
+                <span class="ed">a shared result</span> as a piece of a field.
               </p>
               <p>
-                A shared signal is one or more <span class="ed">parts</span>, each one DCS-BIOS
+                A shared result is one or more <span class="ed">parts</span>, each one DCS-BIOS
                 signal shaped exactly the way a reading is: converted, rounded, wrapped, padded, and
                 given a fixed number of cells. The parts are laid side by side as characters. Three
                 fuel drums, each converted to 0 to 10, rounded down and wrapped at 10, read as one
@@ -1995,24 +1995,24 @@
                 the nearest, it would show the next thousand while the drum beside it still reads 6.
               </p>
               <p>
-                Only the number lives in the shared signal. How it is drawn, its words, colour and
-                small text, belongs to the piece drawing it, so two pages can draw one signal two
+                Only the number lives in the shared result. How it is drawn, its words, colour and
+                small text, belongs to the piece drawing it, so two pages can draw one result two
                 ways. Bands match the characters read as a number. Nothing draws until every part
                 has arrived, since a number missing a digit is a different number. Each one has a
                 <span class="ed">note</span> for saying what it is for.
               </p>
               <p>
-                Like a page, a shared signal is saved on its own with
-                <span class="ed">Save signal</span>, and every profile on the aircraft shares it. It
+                Like a page, a shared result is saved on its own with
+                <span class="ed">Save result</span>, and every profile on the aircraft shares it. It
                 travels with a page that is exported, and one that is drawn on a page cannot be
                 deleted until it is taken off.
               </p>
               <p>
                 When one signal is shaped the same way in two or more readings on the aircraft's
-                pages, a banner at the top of <span class="ed">Shared Signals</span> says so.
-                <span class="ed">Make a shared signal</span> makes it once and points every one of
+                pages, a banner at the top of <span class="ed">Shared Results</span> says so.
+                <span class="ed">Make a shared result</span> makes it once and points every one of
                 those readings at it, each keeping its own words, colour and box. It first lists
-                every reading it changes and every slot showing those pages, and saves the signal
+                every reading it changes and every slot showing those pages, and saves the result
                 and the pages together, or none of them. Only readings that shape a number count, so
                 a knob drawn as words beside the same knob drawn as a number is left alone. The
                 banner goes once they are made one, or when you close it.
@@ -2055,7 +2055,7 @@
             </div>
             <div class="prose">
               <p>
-                A switch can be <span class="ed">decided by</span> a shared signal too. Its number
+                A switch can be <span class="ed">decided by</span> a shared result too. Its number
                 is already shaped, so the cases are written in its units: a FUEL label that reads
                 <code>..999</code> in red and <code>1000..</code> in green. Each case is a test, in
                 the words a lamp uses: is exactly, is one of, is between,
@@ -2063,13 +2063,20 @@
                 anything else.
               </p>
               <p>
-                <span class="ed">Shared lamp conditions</span> are the other kind of shared signal:
-                tests written once, the way a lamp's are, for every lamp that repeats one cockpit
-                lamp. The CH-47's master caution shows on every CDU and on the PTO2, and which
-                cockpit lamp it follows depends on your seat. Write that once, then choose
-                <span class="ed">Use a shared signal</span> on each lamp. Each test lights the lamp
-                or leaves it off, and a scale dims it, so the answer is on or off unless it is a
-                dimmer. Every lamp keeps its own brightness.
+                <span class="ed">Shared conditions</span>, in their own section under Shared
+                Results, are tests written once, the way a lamp's are, for every lamp that repeats
+                one cockpit lamp. The CH-47's master caution shows on every CDU and on the PTO2, and
+                which cockpit lamp it follows depends on your seat. Write that once, then choose
+                <span class="ed">Use shared conditions</span> on each lamp. Each test lights the
+                lamp or leaves it off, and a scale dims it, so the answer is on or off unless it is
+                a dimmer. Every lamp keeps its own brightness.
+              </p>
+              <p>
+                When two or more lamps in the profile light by exactly the same conditions, a banner
+                at the top of <span class="ed">Shared Conditions</span> says so.
+                <span class="ed">Make shared conditions</span> lists the lamps, saves the conditions
+                and switches the lamps to them, each keeping its own brightness. The profile is then
+                unsaved, for you to save with the rest of your edits.
               </p>
             </div>
 
@@ -2121,11 +2128,11 @@
               </div>
             </div>
             <p class="note">
-              A piece drawing a shared signal can't also shape the number: decimals or a range on it
-              are refused, since the signal already says. A shared signal the aircraft doesn't have
-              is refused too, and so is a part with no signal chosen. A lamp can't light by a
-              number, and a screen can't draw lamp conditions. A shared signal a page or a lamp uses
-              can't be deleted until it is taken off.
+              A piece drawing a shared result can't also shape the number: decimals or a range on it
+              are refused, since the result already says. A shared result the aircraft doesn't have
+              is refused too, and so is a part with no signal chosen. A lamp can't light by a shared
+              result, and a screen can't draw shared conditions. Either one, used by a page or a
+              lamp, can't be deleted until it is taken off.
             </p>
           </div>
         </section>
@@ -3702,7 +3709,7 @@
         draw();
       })();
 
-      /* --------------------------------------------------- shared signals */
+      /* --------------------------------------------------- shared results */
       (() => {
         const drums = [
           ["FUELTOTALIZER_10K", 10000],
@@ -3763,7 +3770,7 @@
         draw();
       })();
 
-      /* -------------------------------------------- shared lamp conditions */
+      /* ------------------------------------------------ shared conditions */
       (() => {
         const seat = seg("sl-seat", draw);
         const plt = toggle($("sl-plt"), draw);
@@ -3965,38 +3972,38 @@
             "switches",
           ],
           [
-            "Shared signal",
+            "Shared result",
             "signals",
             "Page file",
-            "A number made once and named, for any page on the aircraft to draw. One or more parts, laid side by side. Saved on its own, shared by every profile on the aircraft.",
+            "A value made once and named, for any page on the aircraft to draw. One or more parts, laid side by side. Saved on its own, shared by every profile on the aircraft.",
             "stored",
           ],
           [
-            "A shared signal, as a piece",
+            "A shared result, as a piece",
             "signal",
             "Piece",
-            "Draw a shared signal, by its id. The piece says how it looks, its words, colour and small text, and nothing about the number.",
+            "Draw a shared result, by its id. The piece says how it looks, its words, colour and small text, and nothing about the number.",
             "stored",
           ],
           [
-            "Shared lamp conditions",
-            "conditions, any_of",
-            "Shared signal",
+            "Shared conditions",
+            "signals: conditions, any_of",
+            "Page file",
             "Tests written once, as a lamp's are, for every lamp that repeats one cockpit lamp. On or off, or a level for a dimmer; each lamp keeps its own brightness. Whether each group flashes is set here too, for every lamp lit by it.",
             "stored",
           ],
           [
-            "A shared signal, on a lamp",
+            "Shared conditions, on a lamp",
             "signal",
             "Lamp",
-            "Light by shared lamp conditions in place of conditions of the lamp's own. The lamp keeps its on and off.",
+            "Light by shared conditions in place of conditions of the lamp's own. The lamp keeps its on and off.",
             "stored",
           ],
           [
-            "Decided by a shared signal",
+            "Decided by a shared result",
             "switch_signal",
             "Switch",
-            "A shared number decides the cases, already shaped, so cases are written in its units.",
+            "A shared result decides the cases, already shaped, so cases are written in its units.",
             "stored",
           ],
           [
@@ -4009,8 +4016,8 @@
           [
             "Part",
             "terms",
-            "Shared signal",
-            "One DCS-BIOS signal in a shared signal, converted, rounded, wrapped, padded and given its cells the way a reading is. The parts are laid side by side.",
+            "Shared result",
+            "One DCS-BIOS signal in a shared result, converted, rounded, wrapped, padded and given its cells the way a reading is. The parts are laid side by side.",
             "stored",
           ],
           [
@@ -4030,7 +4037,7 @@
           [
             "Flashing",
             'blink: "slow", "fast"',
-            "Lamp, alternative, shared lamp conditions",
+            "Lamp, alternative, shared conditions",
             "The group flashes while it holds: slowly is twice a second, fast three times, each lit for half its time and every lamp in step. Absent is steady. Only for a lamp DCS keeps steady.",
             "combining",
           ],

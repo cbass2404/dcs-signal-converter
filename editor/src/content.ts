@@ -110,6 +110,26 @@ export function newSpan(kind: SpanKind): Span {
 export type SpanKind = "text" | "signal" | "stored" | "gap" | "rule" | "switch";
 
 /**
+ * Every kind of piece a field can hold, named as the window offers them, in
+ * the order it offers them. One list, so the kind menu and every row of add
+ * buttons offer the same pieces in the same order on every screen.
+ *
+ * A rule only where `textGrid`: no other glass has a rule glyph, and the
+ * profile check refuses one there. No switch `inCase`, since a switch cannot
+ * sit inside another.
+ */
+export function pieceKinds(textGrid: boolean, inCase = false): { kind: SpanKind; label: string }[] {
+  const out: { kind: SpanKind; label: string }[] = [
+    { kind: "signal", label: "a reading" },
+    { kind: "stored", label: "a shared result" },
+  ];
+  if (!inCase) out.push({ kind: "switch", label: "a switch" });
+  out.push({ kind: "text", label: "text" }, { kind: "gap", label: "a gap" });
+  if (textGrid) out.push({ kind: "rule", label: "a rule" });
+  return out;
+}
+
+/**
  * Which of the four a piece is.
  *
  * The key being present is what says so, not what is in it. A piece the user

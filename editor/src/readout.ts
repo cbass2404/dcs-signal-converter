@@ -31,6 +31,7 @@ import {
   newSpan,
   patchOf,
   patchesOf,
+  pieceKinds,
   resolvePiece,
   setContent,
 } from "./content";
@@ -2290,18 +2291,15 @@ function spanEditor(
   };
 
   const kind = el("select", { class: "span-kind" });
-  kind.append(el("option", { value: "signal" }, "a reading"));
-  kind.append(el("option", { value: "stored" }, "a shared signal"));
-  kind.append(el("option", { value: "text" }, "text"));
-  kind.append(el("option", { value: "gap" }, "a gap"));
-  // Only a text grid draws a rule, the same as a whole field's divider. Kept
-  // in the list for a piece that already is one, so glass that cannot draw it
-  // says so through the problem list rather than by quietly reading as a gap.
-  if (display.text_grid || kindOf(span) === "rule") {
+  for (const k of pieceKinds(display.text_grid, ctx.nested)) {
+    kind.append(el("option", { value: k.kind }, k.label));
+  }
+  // A rule is kept in the list for a piece that already is one, so glass
+  // that cannot draw it says so through the problem list rather than by
+  // quietly reading as a gap.
+  if (!display.text_grid && kindOf(span) === "rule") {
     kind.append(el("option", { value: "rule" }, "a rule"));
   }
-  // Not inside a case: a switch cannot sit inside another.
-  if (!ctx.nested) kind.append(el("option", { value: "switch" }, "a switch"));
   kind.value = kindOf(span);
   kind.addEventListener("change", () => {
     // Everything on a piece describes the one value it draws, so switching
@@ -2640,7 +2638,7 @@ function switchEditor(
   const from = el("select", { class: "test" });
   from.append(el("option", { value: "signal" }, "a signal"));
   if (numbers.length > 0 || byStored) {
-    from.append(el("option", { value: "stored" }, "a shared signal"));
+    from.append(el("option", { value: "stored" }, "a shared result"));
   }
   from.value = byStored ? "stored" : "signal";
   from.addEventListener("change", () => {
@@ -3017,13 +3015,11 @@ function caseEditor(
     });
     return button;
   };
-  add.append(
-    addOne({}, "+ a reading"),
-    addOne({ signal: "" }, "+ a shared signal"),
-    addOne({ text: "" }, "+ text"),
-    addOne({ gap: true }, "+ a gap"),
-  );
-  if (display.text_grid) add.append(addOne({ gap: true, rule: true }, "+ a rule"));
+  // A reading in a case writes nothing of its own, so it takes the switch's
+  // signal; every other kind is written as it starts.
+  for (const k of pieceKinds(display.text_grid, true)) {
+    add.append(addOne(k.kind === "signal" ? {} : newSpan(k.kind), `+ ${k.label}`));
+  }
   box.append(pieces, add);
   return box;
 }
@@ -3106,8 +3102,8 @@ function storedControls(
       { class: "test-row" },
       pick,
       infoIcon(
-        "About shared signals",
-        "A number made once in Shared Signals at the top of the profile and " +
+        "About shared results",
+        "A value made once in Shared Results at the top of the profile and " +
           "drawn by any page on the module. Change it there and every piece " +
           "drawing it changes. Here you say only how it looks: words for its " +
           "readings, a colour or the small font.",
@@ -3449,15 +3445,7 @@ function chainEditor(opts: RowOptions, refreshPreview: () => void): HTMLElement 
       });
       return button;
     };
-    add.append(
-      addOne("signal", "+ a reading"),
-      addOne("stored", "+ a shared signal"),
-      addOne("switch", "+ a switch"),
-      addOne("text", "+ text"),
-      addOne("gap", "+ a gap"),
-    );
-    // Only a text grid draws a rule, the same as a whole field's divider.
-    if (display.text_grid) add.append(addOne("rule", "+ a rule"));
+    for (const k of pieceKinds(display.text_grid)) add.append(addOne(k.kind, `+ ${k.label}`));
     wrap.append(add);
 
     // --- how wide it comes out ---------------------------------------------
@@ -3606,11 +3594,11 @@ function fieldReads(readout: Readout, signals: SignalView[]): HTMLElement[] {
   });
 }
 
-/** A shared signal a field draws, by name, with what it reads. */
+/** A shared result a field draws, by name, with what it reads. */
 function sharedReads(id: string): HTMLElement {
-  if (id === "") return el("span", { class: "bad" }, "A shared signal nobody has chosen yet");
+  if (id === "") return el("span", { class: "bad" }, "A shared result nobody has chosen yet");
   const shared = storedSignal(id);
-  if (!shared) return el("span", { class: "bad" }, `${id} is not a shared signal here`);
+  if (!shared) return el("span", { class: "bad" }, `${id} is not a shared result here`);
   const parts = shared.terms.map((t) => t.source || "a part with no signal yet");
   return el(
     "span",
@@ -3619,7 +3607,7 @@ function sharedReads(id: string): HTMLElement {
     el(
       "span",
       { class: "test" },
-      parts.length > 0 ? `shared signal, reads ${parts.join(", then ")}` : "shared signal",
+      parts.length > 0 ? `shared result, reads ${parts.join(", then ")}` : "shared result",
     ),
   );
 }
@@ -3721,7 +3709,7 @@ function describeField(readout: Readout, display: DisplayInfo): string {
     }
     if (kindOf(s) === "stored") {
       const named = storedSignal(s.signal ?? "")?.name;
-      return `${named ? `the shared signal ${named}` : "a shared signal nobody has chosen yet"}${held}`;
+      return `${named ? `the shared result ${named}` : "a shared result nobody has chosen yet"}${held}`;
     }
     if (kindOf(s) === "signal") {
       // How it draws the number, so a reset that only changes that says so
@@ -3939,14 +3927,8 @@ export function fieldTable(
     const buttons = el(
       "div",
       { class: "chain-add" },
-      add("signal", "+ a reading"),
-      add("stored", "+ a shared signal"),
-      add("text", "+ text"),
-      add("gap", "+ a gap"),
+      ...pieceKinds(display.text_grid).map((k) => add(k.kind, `+ ${k.label}`)),
     );
-    // Only a text grid draws a rule. A segment display draws from a glyph
-    // table with no dash in it, and the daemon refuses one there.
-    if (display.text_grid) buttons.append(add("rule", "+ a rule"));
     // A field the page shipped with here and the user threw away. Without
     // this there is nothing on the screen to say one was ever here.
     const offered: Readout[] = [];

@@ -351,7 +351,7 @@ function describeBinding(
       : "an unfinished condition";
   if (b.always) lines.push("Always on, reading no signal");
   else if (b.signal) {
-    lines.push(`Lights by the shared signal ${storedSignal(b.signal)?.name ?? b.signal}`);
+    lines.push(`Lights by the shared conditions ${storedSignal(b.signal)?.name ?? b.signal}`);
   } else if (b.same_as) {
     const elsewhere = b.same_as_device && b.same_as_device !== b.device;
     lines.push(`Matches ${b.same_as}${elsewhere ? ` on ${deviceName(b.same_as_device!)}` : ""}`);
@@ -666,13 +666,11 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
         el(
           "span",
           { class: "sub" },
-          el("span", { class: "test" }, chosen.note || "a shared signal of lamp conditions"),
+          el("span", { class: "test" }, chosen.note || "shared conditions"),
         ),
       );
     } else {
-      text.append(
-        el("span", { class: "bad" }, `${id} is not a shared signal of lamp conditions here`),
-      );
+      text.append(el("span", { class: "bad" }, `${id} is not among the shared conditions here`));
     }
     text.append(flagSlot(binding));
     const row = el("div", { class: "condition-view always" }, text);
@@ -687,7 +685,7 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
       row.append(pick);
     }
     row.append(
-      iconButton("cancel", "\u2715", "Stop lighting by the shared signal", () => {
+      iconButton("cancel", "\u2715", "Stop lighting by the shared conditions", () => {
         delete binding.signal;
         committed();
       }),
@@ -858,8 +856,8 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
       // offered where the module has any.
       const lamps = storedSignals().filter(isLampSignal);
       if (lamps.length > 0) {
-        const use = el("button", { class: "add", type: "button" }, "Use a shared signal");
-        use.title = "Light by a shared signal of lamp conditions, made once in Shared Signals.";
+        const use = el("button", { class: "add", type: "button" }, "Use shared conditions");
+        use.title = "Light by shared conditions, made once in Shared Conditions.";
         use.addEventListener("click", () => {
           binding.signal = lamps[0]?.id;
           committed();

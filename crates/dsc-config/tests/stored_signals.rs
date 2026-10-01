@@ -340,7 +340,7 @@ fn a_name_is_unique_on_its_module() {
         .map(|e| e.to_string())
         .collect();
     assert!(
-        found.iter().any(|e| e.contains("already called")),
+        found.iter().any(|e| e.contains("already go by")),
         "{found:?}"
     );
 }

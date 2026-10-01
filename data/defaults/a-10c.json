@@ -79,7 +79,14 @@
     {
       "device": "MCDU_Captain",
       "led": "Fail",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "MASTER_CAUTION",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "MCDU_Captain",
@@ -346,7 +353,14 @@
     {
       "device": "PFP3N_Captain",
       "led": "FAIL",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "MASTER_CAUTION",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "PFP3N_Captain",
@@ -493,7 +507,14 @@
     {
       "device": "PFP4_Captain",
       "led": "FAIL",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "MASTER_CAUTION",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "PFP4_Captain",
@@ -640,7 +661,14 @@
     {
       "device": "PFP7_Captain",
       "led": "FAIL",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "MASTER_CAUTION",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "PFP7_Captain",
@@ -811,8 +839,7 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "JETT",
-      "conditions": [],
-      "note": "UNDECIDED. Suggested: GUN_READY, but that conflicts with the throttle A/G suggestion. GUN_READY can only go one place."
+      "conditions": []
     },
     {
       "device": "TAKEOFF_PLANEL_2",
@@ -969,8 +996,7 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "HOOK",
-      "conditions": [],
-      "note": "UNDECIDED. This is the physically dim lamp, so it should carry something that never needs catching at a glance. Suggested: MARKER_BEACON or TAKE_OFF_TRIM."
+      "conditions": []
     },
     {
       "device": "ViperAce_ICP",

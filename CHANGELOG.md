@@ -78,6 +78,13 @@ Both profiles carry the same rows.
 - **New DED Backup page** for the ICP, now its starting page: the same
   readings, labelled.
 
+#### A-10C and A-10C2
+
+Both profiles carry the same rows.
+
+- **MCDU, PFP-3N, PFP-4 and PFP-7:** FAIL follows the Master Caution
+  light.
+
 ### Fixes
 
 - The converter no longer stops with "Overlapped I/O operation is in

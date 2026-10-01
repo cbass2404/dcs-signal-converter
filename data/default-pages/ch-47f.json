@@ -14,20 +14,20 @@
           "colours": {
             "source": "PLT_CDU_LINE1_COLOR",
             "codes": {
+              "w": "white",
               "b": "cyan",
               "g": "green",
-              "p": "magenta",
-              "w": "white"
+              "p": "magenta"
             }
           },
           "replace": {
-            "{": "↑",
-            "®": "Δ",
             "¡": "☐",
-            "?": "%",
-            "}": "↓",
             "«": "←",
-            "»": "→"
+            "»": "→",
+            "?": "%",
+            "®": "Δ",
+            "{": "↑",
+            "}": "↓"
           },
           "note": "CDU line 1, pilot seat. The CH-47F CDU is 14 lines of 24, the MCDU's own grid, so line n sits on row n. Each line has a twin, PLT_CDU_LINEn_COLOR, one letter per character; colours.codes says what the letters mean. A space there leaves the field's own colour, white."
         },
@@ -40,20 +40,20 @@
           "colours": {
             "source": "PLT_CDU_LINE2_COLOR",
             "codes": {
-              "g": "green",
               "p": "magenta",
+              "g": "green",
               "w": "white",
               "b": "cyan"
             }
           },
           "replace": {
-            "}": "↓",
             "?": "%",
-            "®": "Δ",
-            "{": "↑",
-            "¡": "☐",
             "»": "→",
-            "«": "←"
+            "{": "↑",
+            "«": "←",
+            "¡": "☐",
+            "}": "↓",
+            "®": "Δ"
           },
           "note": "Even lines 2 to 12 are the CDU's small labels, so they draw in the small font; line 14, the scratchpad, is large. Split taken from WCtrlDcsBiosBridge's CH-47F listener."
         },
@@ -65,20 +65,20 @@
           "colours": {
             "source": "PLT_CDU_LINE3_COLOR",
             "codes": {
-              "p": "magenta",
-              "g": "green",
               "w": "white",
-              "b": "cyan"
+              "p": "magenta",
+              "b": "cyan",
+              "g": "green"
             }
           },
           "replace": {
-            "{": "↑",
-            "}": "↓",
-            "«": "←",
-            "¡": "☐",
-            "®": "Δ",
             "?": "%",
-            "»": "→"
+            "®": "Δ",
+            "¡": "☐",
+            "}": "↓",
+            "»": "→",
+            "«": "←",
+            "{": "↑"
           },
           "note": "DCS-BIOS sends the CDU's symbols as single bytes above ASCII (CH-47F.lua, cdu_replace_map), and the braces as arrows. replace turns each into the character whose glyph the CH-47F font draws for it: the arrows, the check mark (box slot), the up-down arrow (Delta slot), and ? in the % slot."
         },
@@ -91,20 +91,20 @@
           "colours": {
             "source": "PLT_CDU_LINE4_COLOR",
             "codes": {
-              "p": "magenta",
+              "w": "white",
               "g": "green",
-              "b": "cyan",
-              "w": "white"
+              "p": "magenta",
+              "b": "cyan"
             }
           },
           "replace": {
             "}": "↓",
             "®": "Δ",
             "»": "→",
-            "{": "↑",
             "¡": "☐",
-            "«": "←",
-            "?": "%"
+            "{": "↑",
+            "?": "%",
+            "«": "←"
           }
         },
         {
@@ -116,19 +116,19 @@
             "source": "PLT_CDU_LINE5_COLOR",
             "codes": {
               "b": "cyan",
-              "w": "white",
+              "g": "green",
               "p": "magenta",
-              "g": "green"
+              "w": "white"
             }
           },
           "replace": {
-            "?": "%",
-            "®": "Δ",
-            "«": "←",
-            "{": "↑",
-            "»": "→",
             "}": "↓",
-            "¡": "☐"
+            "«": "←",
+            "®": "Δ",
+            "¡": "☐",
+            "{": "↑",
+            "?": "%",
+            "»": "→"
           }
         },
         {
@@ -140,20 +140,20 @@
           "colours": {
             "source": "PLT_CDU_LINE6_COLOR",
             "codes": {
+              "w": "white",
               "b": "cyan",
               "g": "green",
-              "w": "white",
               "p": "magenta"
             }
           },
           "replace": {
-            "{": "↑",
+            "»": "→",
             "®": "Δ",
-            "¡": "☐",
-            "}": "↓",
-            "?": "%",
             "«": "←",
-            "»": "→"
+            "}": "↓",
+            "{": "↑",
+            "?": "%",
+            "¡": "☐"
           }
         },
         {
@@ -164,20 +164,20 @@
           "colours": {
             "source": "PLT_CDU_LINE7_COLOR",
             "codes": {
-              "w": "white",
+              "p": "magenta",
               "b": "cyan",
               "g": "green",
-              "p": "magenta"
+              "w": "white"
             }
           },
           "replace": {
-            "»": "→",
-            "?": "%",
-            "«": "←",
             "}": "↓",
-            "®": "Δ",
             "¡": "☐",
-            "{": "↑"
+            "?": "%",
+            "®": "Δ",
+            "{": "↑",
+            "«": "←",
+            "»": "→"
           }
         },
         {
@@ -189,20 +189,20 @@
           "colours": {
             "source": "PLT_CDU_LINE8_COLOR",
             "codes": {
+              "g": "green",
               "b": "cyan",
               "p": "magenta",
-              "g": "green",
               "w": "white"
             }
           },
           "replace": {
-            "?": "%",
-            "®": "Δ",
-            "¡": "☐",
-            "»": "→",
-            "{": "↑",
             "}": "↓",
-            "«": "←"
+            "«": "←",
+            "{": "↑",
+            "?": "%",
+            "»": "→",
+            "®": "Δ",
+            "¡": "☐"
           }
         },
         {
@@ -213,20 +213,20 @@
           "colours": {
             "source": "PLT_CDU_LINE9_COLOR",
             "codes": {
-              "p": "magenta",
-              "w": "white",
               "b": "cyan",
-              "g": "green"
+              "g": "green",
+              "p": "magenta",
+              "w": "white"
             }
           },
           "replace": {
-            "{": "↑",
             "?": "%",
+            "}": "↓",
             "¡": "☐",
             "«": "←",
             "®": "Δ",
-            "}": "↓",
-            "»": "→"
+            "»": "→",
+            "{": "↑"
           }
         },
         {
@@ -238,20 +238,20 @@
           "colours": {
             "source": "PLT_CDU_LINE10_COLOR",
             "codes": {
-              "p": "magenta",
-              "b": "cyan",
               "w": "white",
-              "g": "green"
+              "g": "green",
+              "p": "magenta",
+              "b": "cyan"
             }
           },
           "replace": {
             "»": "→",
-            "?": "%",
-            "}": "↓",
-            "{": "↑",
-            "¡": "☐",
             "«": "←",
-            "®": "Δ"
+            "{": "↑",
+            "?": "%",
+            "®": "Δ",
+            "¡": "☐",
+            "}": "↓"
           }
         },
         {
@@ -263,19 +263,19 @@
             "source": "PLT_CDU_LINE11_COLOR",
             "codes": {
               "w": "white",
-              "g": "green",
               "b": "cyan",
-              "p": "magenta"
+              "p": "magenta",
+              "g": "green"
             }
           },
           "replace": {
-            "{": "↑",
-            "«": "←",
             "»": "→",
+            "«": "←",
             "?": "%",
             "¡": "☐",
+            "}": "↓",
             "®": "Δ",
-            "}": "↓"
+            "{": "↑"
           }
         },
         {
@@ -287,20 +287,20 @@
           "colours": {
             "source": "PLT_CDU_LINE12_COLOR",
             "codes": {
+              "w": "white",
               "g": "green",
               "p": "magenta",
-              "w": "white",
               "b": "cyan"
             }
           },
           "replace": {
-            "¡": "☐",
+            "}": "↓",
             "»": "→",
+            "{": "↑",
             "«": "←",
             "®": "Δ",
-            "?": "%",
-            "}": "↓",
-            "{": "↑"
+            "¡": "☐",
+            "?": "%"
           }
         },
         {
@@ -311,20 +311,20 @@
           "colours": {
             "source": "PLT_CDU_LINE13_COLOR",
             "codes": {
-              "w": "white",
               "b": "cyan",
+              "w": "white",
               "g": "green",
               "p": "magenta"
             }
           },
           "replace": {
             "¡": "☐",
-            "}": "↓",
             "«": "←",
-            "?": "%",
-            "®": "Δ",
             "»": "→",
-            "{": "↑"
+            "®": "Δ",
+            "}": "↓",
+            "{": "↑",
+            "?": "%"
           }
         },
         {
@@ -335,19 +335,19 @@
           "colours": {
             "source": "PLT_CDU_LINE14_COLOR",
             "codes": {
+              "g": "green",
               "w": "white",
-              "p": "magenta",
               "b": "cyan",
-              "g": "green"
+              "p": "magenta"
             }
           },
           "replace": {
-            "®": "Δ",
-            "¡": "☐",
             "}": "↓",
+            "»": "→",
             "{": "↑",
             "«": "←",
-            "»": "→",
+            "®": "Δ",
+            "¡": "☐",
             "?": "%"
           }
         },
@@ -359,20 +359,20 @@
           "colours": {
             "source": "CPLT_CDU_LINE1_COLOR",
             "codes": {
+              "w": "white",
               "g": "green",
               "b": "cyan",
-              "p": "magenta",
-              "w": "white"
+              "p": "magenta"
             }
           },
           "replace": {
             "}": "↓",
-            "¡": "☐",
-            "{": "↑",
             "?": "%",
-            "«": "←",
+            "®": "Δ",
             "»": "→",
-            "®": "Δ"
+            "{": "↑",
+            "¡": "☐",
+            "«": "←"
           },
           "note": "CDU line 1, copilot seat. Same cells as the pilot's line 1: seat picks which station's CDU is on the glass, so the MCDU follows you when you change seats."
         },
@@ -385,20 +385,20 @@
           "colours": {
             "source": "CPLT_CDU_LINE2_COLOR",
             "codes": {
+              "w": "white",
               "g": "green",
               "p": "magenta",
-              "w": "white",
               "b": "cyan"
             }
           },
           "replace": {
+            "¡": "☐",
+            "»": "→",
+            "«": "←",
+            "{": "↑",
             "®": "Δ",
             "?": "%",
-            "{": "↑",
-            "}": "↓",
-            "«": "←",
-            "¡": "☐",
-            "»": "→"
+            "}": "↓"
           }
         },
         {
@@ -409,20 +409,20 @@
           "colours": {
             "source": "CPLT_CDU_LINE3_COLOR",
             "codes": {
-              "g": "green",
               "p": "magenta",
               "w": "white",
+              "g": "green",
               "b": "cyan"
             }
           },
           "replace": {
+            "¡": "☐",
             "®": "Δ",
-            "«": "←",
-            "?": "%",
-            "{": "↑",
-            "}": "↓",
             "»": "→",
-            "¡": "☐"
+            "?": "%",
+            "}": "↓",
+            "{": "↑",
+            "«": "←"
           }
         },
         {
@@ -434,20 +434,20 @@
           "colours": {
             "source": "CPLT_CDU_LINE4_COLOR",
             "codes": {
+              "b": "cyan",
               "g": "green",
               "w": "white",
-              "p": "magenta",
-              "b": "cyan"
+              "p": "magenta"
             }
           },
           "replace": {
-            "?": "%",
-            "¡": "☐",
+            "}": "↓",
             "«": "←",
+            "¡": "☐",
             "»": "→",
             "®": "Δ",
             "{": "↑",
-            "}": "↓"
+            "?": "%"
           }
         },
         {
@@ -458,20 +458,20 @@
           "colours": {
             "source": "CPLT_CDU_LINE5_COLOR",
             "codes": {
-              "p": "magenta",
-              "g": "green",
               "b": "cyan",
-              "w": "white"
+              "w": "white",
+              "p": "magenta",
+              "g": "green"
             }
           },
           "replace": {
-            "?": "%",
-            "{": "↑",
             "}": "↓",
+            "«": "←",
+            "?": "%",
+            "®": "Δ",
             "¡": "☐",
             "»": "→",
-            "«": "←",
-            "®": "Δ"
+            "{": "↑"
           }
         },
         {
@@ -484,19 +484,19 @@
             "source": "CPLT_CDU_LINE6_COLOR",
             "codes": {
               "w": "white",
-              "b": "cyan",
               "p": "magenta",
-              "g": "green"
+              "g": "green",
+              "b": "cyan"
             }
           },
           "replace": {
-            "»": "→",
-            "{": "↑",
             "®": "Δ",
-            "}": "↓",
-            "¡": "☐",
+            "»": "→",
+            "«": "←",
+            "{": "↑",
             "?": "%",
-            "«": "←"
+            "¡": "☐",
+            "}": "↓"
           }
         },
         {
@@ -508,19 +508,19 @@
             "source": "CPLT_CDU_LINE7_COLOR",
             "codes": {
               "p": "magenta",
-              "w": "white",
               "b": "cyan",
+              "w": "white",
               "g": "green"
             }
           },
           "replace": {
+            "?": "%",
             "«": "←",
             "¡": "☐",
-            "®": "Δ",
+            "{": "↑",
             "»": "→",
             "}": "↓",
-            "{": "↑",
-            "?": "%"
+            "®": "Δ"
           }
         },
         {
@@ -532,20 +532,20 @@
           "colours": {
             "source": "CPLT_CDU_LINE8_COLOR",
             "codes": {
-              "w": "white",
-              "g": "green",
               "b": "cyan",
-              "p": "magenta"
+              "p": "magenta",
+              "w": "white",
+              "g": "green"
             }
           },
           "replace": {
-            "»": "→",
-            "}": "↓",
-            "¡": "☐",
-            "®": "Δ",
-            "«": "←",
             "{": "↑",
-            "?": "%"
+            "?": "%",
+            "«": "←",
+            "}": "↓",
+            "®": "Δ",
+            "¡": "☐",
+            "»": "→"
           }
         },
         {
@@ -558,17 +558,17 @@
             "codes": {
               "b": "cyan",
               "w": "white",
-              "g": "green",
-              "p": "magenta"
+              "p": "magenta",
+              "g": "green"
             }
           },
           "replace": {
             "}": "↓",
-            "{": "↑",
-            "¡": "☐",
-            "»": "→",
-            "®": "Δ",
             "«": "←",
+            "¡": "☐",
+            "®": "Δ",
+            "{": "↑",
+            "»": "→",
             "?": "%"
           }
         },
@@ -581,20 +581,20 @@
           "colours": {
             "source": "CPLT_CDU_LINE10_COLOR",
             "codes": {
+              "g": "green",
               "p": "magenta",
               "w": "white",
-              "b": "cyan",
-              "g": "green"
+              "b": "cyan"
             }
           },
           "replace": {
-            "?": "%",
             "{": "↑",
-            "®": "Δ",
-            "¡": "☐",
-            "«": "←",
             "»": "→",
-            "}": "↓"
+            "¡": "☐",
+            "}": "↓",
+            "«": "←",
+            "®": "Δ",
+            "?": "%"
           }
         },
         {
@@ -606,19 +606,19 @@
             "source": "CPLT_CDU_LINE11_COLOR",
             "codes": {
               "b": "cyan",
+              "p": "magenta",
               "w": "white",
-              "g": "green",
-              "p": "magenta"
+              "g": "green"
             }
           },
           "replace": {
-            "®": "Δ",
-            "»": "→",
             "{": "↑",
-            "}": "↓",
             "¡": "☐",
+            "«": "←",
+            "}": "↓",
+            "®": "Δ",
             "?": "%",
-            "«": "←"
+            "»": "→"
           }
         },
         {
@@ -630,18 +630,18 @@
           "colours": {
             "source": "CPLT_CDU_LINE12_COLOR",
             "codes": {
-              "g": "green",
+              "w": "white",
               "b": "cyan",
-              "p": "magenta",
-              "w": "white"
+              "g": "green",
+              "p": "magenta"
             }
           },
           "replace": {
-            "}": "↓",
-            "»": "→",
             "«": "←",
-            "{": "↑",
             "?": "%",
+            "{": "↑",
+            "»": "→",
+            "}": "↓",
             "®": "Δ",
             "¡": "☐"
           }
@@ -654,20 +654,20 @@
           "colours": {
             "source": "CPLT_CDU_LINE13_COLOR",
             "codes": {
-              "w": "white",
-              "b": "cyan",
               "g": "green",
-              "p": "magenta"
+              "w": "white",
+              "p": "magenta",
+              "b": "cyan"
             }
           },
           "replace": {
+            "«": "←",
             "}": "↓",
-            "¡": "☐",
-            "?": "%",
-            "®": "Δ",
             "{": "↑",
-            "»": "→",
-            "«": "←"
+            "?": "%",
+            "¡": "☐",
+            "®": "Δ",
+            "»": "→"
           }
         },
         {
@@ -678,20 +678,184 @@
           "colours": {
             "source": "CPLT_CDU_LINE14_COLOR",
             "codes": {
-              "g": "green",
-              "p": "magenta",
               "w": "white",
-              "b": "cyan"
+              "p": "magenta",
+              "b": "cyan",
+              "g": "green"
             }
           },
           "replace": {
             "?": "%",
-            "{": "↑",
-            "¡": "☐",
             "«": "←",
+            "¡": "☐",
             "»": "→",
-            "}": "↓",
-            "®": "Δ"
+            "®": "Δ",
+            "{": "↑",
+            "}": "↓"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1mf5dm",
+      "name": "DED Backup",
+      "display": "DED",
+      "fields": [
+        {
+          "cells": "96-119",
+          "content": [
+            {
+              "source": "ARC_186_FREQ_TENS_VALUE",
+              "width": 2,
+              "align": "right"
+            },
+            {
+              "source": "ARC_186_FREQ_ONES_VALUE",
+              "width": 1
+            },
+            {
+              "source": "ARC_186_FREQ_TENTHS_VALUE",
+              "width": 2
+            },
+            {
+              "source": "ARC_186_FREQ_HUNDREDTHS_VALUE",
+              "width": 2
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "RAD_ALT_DISPLAY",
+              "width": 4
+            }
+          ]
+        },
+        {
+          "cells": "72-95",
+          "content": [
+            {
+              "text": "ARC 186"
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "R ALT"
+            }
+          ]
+        },
+        {
+          "cells": "24-47",
+          "content": [
+            {
+              "source": "FIRE_HANDLE_ENG1_LIGHT",
+              "width": 4,
+              "value_aliases": {
+                "0": "",
+                "1..65535": {
+                  "text": "FIRE",
+                  "inverse": true
+                }
+              }
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "FIRE_HANDLE_ENG2_LIGHT",
+              "width": 4,
+              "value_aliases": {
+                "0": "",
+                "1..65535": {
+                  "text": "FIRE",
+                  "inverse": true
+                }
+              }
+            }
+          ]
+        },
+        {
+          "cells": "0-23",
+          "content": [
+            {
+              "text": "ENG1"
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "-- FIRE --"
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "ENG2"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "75z2op",
+      "name": "UFC Backup",
+      "display": "UFC1",
+      "fields": [
+        {
+          "cells": "2-8",
+          "content": [
+            {
+              "source": "ARC_186_FREQ_TENS_VALUE",
+              "width": 2
+            },
+            {
+              "source": "ARC_186_FREQ_ONES_VALUE",
+              "width": 1
+            },
+            {
+              "source": "ARC_186_FREQ_TENTHS_VALUE",
+              "width": 2
+            },
+            {
+              "source": "ARC_186_FREQ_HUNDREDTHS_VALUE",
+              "width": 2
+            }
+          ]
+        },
+        {
+          "cells": "10-13",
+          "source": "RAD_ALT_DISPLAY"
+        },
+        {
+          "cells": "15-18",
+          "text": "ENG1"
+        },
+        {
+          "cells": "25-28",
+          "text": "ENG2"
+        },
+        {
+          "cells": "20-23",
+          "source": "FIRE_HANDLE_ENG1_LIGHT",
+          "reads": [
+            0.0,
+            100.0
+          ],
+          "value_aliases": {
+            "0": "",
+            "1..65535": "FIRE"
+          }
+        },
+        {
+          "cells": "30-33",
+          "source": "FIRE_HANDLE_ENG2_LIGHT",
+          "reads": [
+            0.0,
+            100.0
+          ],
+          "value_aliases": {
+            "0": "",
+            "1..65535": "FIRE"
           }
         }
       ]

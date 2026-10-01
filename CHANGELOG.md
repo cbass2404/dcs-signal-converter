@@ -49,6 +49,22 @@ Both profiles carry the same rows.
 - **New UFC Flight page** for the UFC: fuel, heading, EHSI course and the
   three trims.
 
+#### CH-47F
+
+- **PTO2:** CAUTION follows the Master Caution lamp of the seat you are
+  in, and JETT lights while that seat's cargo hook release cover is open.
+  LI, RI, LO, RO and CTR show the hook selected while Hook Control is at
+  ARM (LI forward, RI middle, LO aft, RO tandem, CTR all). HOOK lights
+  while the hoist runs: the OUT/IN knob off centre with Hoist Control at
+  REMOTE or PLT. The gear lamp lights while the swivel switch is off its
+  first position.
+- **MCDU, PFP-3N, PFP-4 and PFP-7:** FAIL follows the Master Caution
+  lamp of the seat you are in.
+- **New UFC Backup page** for the UFC, now its starting page: the ARC-186
+  frequency, radar altitude and both engine FIRE handles.
+- **New DED Backup page** for the ICP, now its starting page: the same
+  readings, with each FIRE handle drawn inverse while it is lit.
+
 ### Fixes
 
 - The converter no longer stops with "Overlapped I/O operation is in

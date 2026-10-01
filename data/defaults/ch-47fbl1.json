@@ -78,7 +78,41 @@
     {
       "device": "MCDU_Captain",
       "led": "Fail",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "PLT_MASTER_CAUTION_LIGHT",
+              "on_when": {
+                "gte": 32768
+              }
+            },
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 0
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "CPLT_MASTER_CAUTION_LIGHT",
+              "on_when": {
+                "gte": 32768
+              }
+            },
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "MCDU_Captain",
@@ -328,7 +362,41 @@
     {
       "device": "PFP3N_Captain",
       "led": "FAIL",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "CPLT_MASTER_CAUTION_LIGHT",
+              "on_when": {
+                "gte": 32768
+              }
+            },
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "PLT_MASTER_CAUTION_LIGHT",
+              "on_when": {
+                "gte": 32768
+              }
+            },
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 0
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "PFP3N_Captain",
@@ -475,7 +543,41 @@
     {
       "device": "PFP4_Captain",
       "led": "FAIL",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "CPLT_MASTER_CAUTION_LIGHT",
+              "on_when": {
+                "gte": 32768
+              }
+            },
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "PLT_MASTER_CAUTION_LIGHT",
+              "on_when": {
+                "gte": 32768
+              }
+            },
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 0
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "PFP4_Captain",
@@ -622,7 +724,41 @@
     {
       "device": "PFP7_Captain",
       "led": "FAIL",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "CPLT_MASTER_CAUTION_LIGHT",
+              "on_when": {
+                "gte": 32768
+              }
+            },
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "PLT_MASTER_CAUTION_LIGHT",
+              "on_when": {
+                "gte": 32768
+              }
+            },
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 0
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "PFP7_Captain",
@@ -747,7 +883,14 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "Landing_gear_lights",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "SCP_SWIVEL",
+          "on_when": {
+            "gte": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
@@ -770,37 +913,170 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "Master_Caution",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "PLT_MASTER_CAUTION_LIGHT",
+              "on_when": {
+                "gte": 32768
+              }
+            },
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 0
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "CPLT_MASTER_CAUTION_LIGHT",
+              "on_when": {
+                "gte": 32768
+              }
+            },
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "JETT",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "PLT_CYCLIC_HOOK_RELEASE_COVER",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 0
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "CPLT_CYCLIC_HOOK_RELEASE_COVER",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "CTR",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "HOIST_HOOK_SELECT",
+          "on_when": {
+            "equals": 4
+          }
+        },
+        {
+          "source": "HOIST_HOOK_CONTROL",
+          "on_when": {
+            "equals": 2
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "LI",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "HOIST_HOOK_SELECT",
+          "on_when": {
+            "equals": 0
+          }
+        },
+        {
+          "source": "HOIST_HOOK_CONTROL",
+          "on_when": {
+            "equals": 2
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "LO",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "HOIST_HOOK_SELECT",
+          "on_when": {
+            "equals": 2
+          }
+        },
+        {
+          "source": "HOIST_HOOK_CONTROL",
+          "on_when": {
+            "equals": 2
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "RO",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "HOIST_HOOK_SELECT",
+          "on_when": {
+            "equals": 3
+          }
+        },
+        {
+          "source": "HOIST_HOOK_CONTROL",
+          "on_when": {
+            "equals": 2
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "RI",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "HOIST_HOOK_SELECT",
+          "on_when": {
+            "equals": 1
+          }
+        },
+        {
+          "source": "HOIST_HOOK_CONTROL",
+          "on_when": {
+            "equals": 2
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
@@ -835,7 +1111,47 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "HOOK",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "HOIST_CONTROL_KNOB",
+              "on_when": {
+                "lte": 32500
+              }
+            },
+            {
+              "source": "HOIST_CONTROL",
+              "on_when": {
+                "in": [
+                  0,
+                  2
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "HOIST_CONTROL_KNOB",
+              "on_when": {
+                "gte": 33000
+              }
+            },
+            {
+              "source": "HOIST_CONTROL",
+              "on_when": {
+                "in": [
+                  0,
+                  2
+                ]
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "ViperAce_ICP",
@@ -870,10 +1186,13 @@
       "start": 1,
       "slots": [
         {
+          "page": "75z2op",
+          "key": null
+        },
+        {
           "page": null,
           "key": null
         },
-        null,
         null,
         null,
         null,
@@ -1064,10 +1383,13 @@
       "start": 1,
       "slots": [
         {
+          "page": "1mf5dm",
+          "key": null
+        },
+        {
           "page": null,
           "key": null
         },
-        null,
         null,
         null,
         null,

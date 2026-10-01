@@ -20,8 +20,10 @@ pub mod nightly_only;
 pub mod pages;
 pub mod paths;
 pub mod settings;
+pub mod stored;
 
 pub use pages::{Page, PageFile, PageLibrary, PageRun, PageSlots, Pages, Slot, SlotNote, SlotRun};
+pub use stored::{StoredCache, StoredSignal, StoredValue, Term};
 
 /// The profile format this version reads and writes. Version 2 is the first
 /// with MCDU pages, and version 1 files are refused rather than migrated.
@@ -48,10 +50,11 @@ pub fn build_label() -> &'static str {
 }
 
 pub use display::{
-    divider_rule, divider_text, min_divider_cells, text_cells, AliasDraw, Align, Cell, CellRange,
-    Colour, ColourSource, Conversion, Display, DisplayCatalogue, Glass, Glyph, Grid, Reading,
-    Readout, Region, Round, RuleCell, Screen, ShapeArt, Span, StrokeArt, TextCell, TextGrid,
-    Transport, ValueBand, SEAT_SIGNAL,
+    divider_rule, divider_text, min_divider_cells, text_cells, AliasDraw, Align, Case, CaseKey,
+    CaseWritten, Cases, Cell, CellRange, Colour, ColourSource, Conversion, Display,
+    DisplayCatalogue, Glass, Glyph, Grid, Reading, Readout, Region, Round, RuleCell, Screen,
+    ShapeArt, Span, SpanPatch, StrokeArt, TextCell, TextGrid, Transport, Tri, ValueBand,
+    SEAT_SIGNAL,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -157,6 +160,10 @@ pub enum Error {
     AliasBandsOverlap(String, String, String),
     #[error("alias {0} on {1:?} is outside everything the face reads, {2} to {3}, so nothing would ever draw it")]
     AliasBandUnreachable(String, String, String, String),
+    #[error("alias {0} on {1:?} shows the reading and also has {2:?} to draw in its place; it can do one")]
+    AliasReadingAndText(String, String, String),
+    #[error("alias {0} on {1:?} shows the reading with no colour, inverse or small font, which is how the reading draws without it; give it one, or take it out")]
+    AliasReadingUnstyled(String, String),
     #[error(
         "{0:?} is converted two ways, by a range and by a list of conversions; it can have one"
     )]
@@ -231,6 +238,62 @@ pub enum Error {
     PageNameTaken(String, String),
     #[error("the page {0:?} is drawn on {1:?}, which is not a display we know")]
     PageOnUnknownDisplay(String, String),
+    #[error("the switch on {1} of display {0:?} reads {2:?} but has no cases, so it draws nothing; add a case or take the switch out")]
+    SwitchWithoutCases(String, String, String),
+    #[error("a piece on {1} of display {0:?} has cases but no switch to choose between them; pick the signal that decides")]
+    CasesWithoutSwitch(String, String),
+    #[error("the switch on {1} of display {0:?} has {2}, which belongs to a piece in one of its cases; a switch only shares how its cases read")]
+    SwitchCarries(String, String, &'static str),
+    #[error("a case of the switch on {1} of display {0:?} holds another switch on {2:?}; a switch cannot sit inside another")]
+    SwitchInSwitch(String, String, String),
+    #[error("{0:?} reports characters, so it has no position for a switch to match; only its else case would ever draw")]
+    SwitchOnText(String),
+    #[error("cases {0} and {1} of the switch on {2:?} both claim the same position; the lower one draws it")]
+    SwitchCasesOverlap(String, String, String),
+    #[error("case {0} of the switch on {1:?} is outside what it reads, {2}, so nothing would ever draw it")]
+    SwitchCaseUnreachable(String, String, String),
+    #[error("a piece on {1} of display {0:?} converts a switch's selector but is not a switch; pick the signal that decides")]
+    SwitchReadsWithoutSwitch(String, String),
+    #[error("positions {1} of {0:?} have no case and the switch has no else")]
+    SwitchUncovered(String, String),
+    #[error("a piece on {1} of display {0:?} draws the shared result {2:?}, which is not among this module's shared results; pick another or take the piece out")]
+    UnknownStoredSignal(String, String, String),
+    #[error("a piece on {1} of display {0:?} draws a shared result and also has characters or a signal of its own; it can have one")]
+    StoredAndOther(String, String),
+    #[error("the piece drawing {2:?} on {1} of display {0:?} also says how to shape the number; a shared result shapes its own, so change it there")]
+    ShapingOnStored(String, String, String),
+    #[error("a shared result or shared conditions need a name")]
+    StoredUnnamed,
+    #[error("a shared result or shared conditions on {1} already go by {0:?}")]
+    StoredNameTaken(String, String),
+    #[error("the shared result {0:?} reads nothing; give it a signal to read")]
+    StoredWithoutTerms(String),
+    #[error("the shared result {0:?} has a part with no signal chosen yet; pick one or take the part out")]
+    StoredTermUnfinished(String),
+    #[error("the shared result {0:?} gives a conversion a colour or size; how it draws belongs to the field drawing it, as a band")]
+    StoredTermStyled(String),
+    #[error("{0:?} has both parts and lamp conditions; it is a shared result or shared conditions, not both")]
+    StoredTwoKinds(String),
+    #[error("the shared conditions {0:?} carry both conditions and any_of; put every alternative in any_of")]
+    StoredConditionsWithAnyOf(String),
+    #[error("the shared conditions {0:?} have an alternative with no conditions in it")]
+    StoredEmptyBranch(String),
+    #[error("the shared conditions {0:?} pick between alternatives but have none; pick applies only to any_of")]
+    StoredPickWithoutAlternatives(String),
+    #[error("the shared conditions {0:?} have a condition with no signal chosen yet; pick one or delete the condition")]
+    StoredUnfinishedCondition(String),
+    #[error(
+        "{0:?} is lamp conditions, so it has no number for a screen to draw or a switch to read"
+    )]
+    StoredNotANumber(String),
+    #[error("LED {0:?} lights by {1:?}, which is a shared result, not shared conditions")]
+    LampSignalNotConditions(String, String),
+    #[error("LED {0:?} lights by the shared conditions {1:?}, which are not among this module's shared conditions; pick others or take them off")]
+    UnknownLampSignal(String, String),
+    #[error("LED {0:?} lights by shared conditions and also carries its own conditions, always on or a lamp to match; it can have one")]
+    LampSignalWithConditions(String),
+    #[error("the switch on {1} of display {0:?} is decided by both a signal and a shared result; it can have one")]
+    SwitchTwoDeciders(String, String),
 }
 
 impl Error {
@@ -280,6 +343,10 @@ impl Error {
                 | Error::Unconverted(..)
                 | Error::RuleLabelMayNotFit(..)
                 | Error::NotInGlyphs(..)
+                | Error::SwitchOnText(_)
+                | Error::SwitchCasesOverlap(..)
+                | Error::SwitchCaseUnreachable(..)
+                | Error::SwitchUncovered(..)
         )
     }
 
@@ -302,6 +369,9 @@ impl Error {
             // The arithmetic settles both of these, so the note says how.
             Error::ConversionsOverlap(..) => "It will load anyway: the lower conversion converts the counts both claim.",
             Error::Unconverted(..) => "It will load anyway: those counts read as the end of the nearest conversion.",
+            Error::SwitchCasesOverlap(..) => "It will load anyway: the lower case draws the positions both claim.",
+            Error::SwitchCaseUnreachable(..) => "It will load anyway: that case simply never draws.",
+            Error::SwitchUncovered(..) => "It will load anyway: the switch draws nothing in those positions.",
             _ => "It will load anyway, in case DCS-BIOS is wrong about it.",
         }
     }
@@ -885,6 +955,10 @@ pub struct Binding {
     /// How the alternatives in `any_of` combine. See [`Pick`].
     #[serde(default, skip_serializing_if = "Pick::is_brightest")]
     pub pick: Pick,
+    /// Whether the lamp's own `conditions` flash while they hold. Each
+    /// alternative in `any_of` carries its own instead. See [`Blink`].
+    #[serde(default, skip_serializing_if = "Blink::is_steady")]
+    pub blink: Blink,
     /// Mirror another lamp, by name, on this device unless
     /// [`same_as_device`](Self::same_as_device) names another.
     ///
@@ -914,6 +988,17 @@ pub struct Binding {
     /// follows, since its own rows are not in use.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub same_as_device: Option<String>,
+    /// A stored signal of lamp conditions this lamp lights by, in place of
+    /// conditions of its own. Its tests are read exactly as if they were
+    /// written here, against this lamp's own `on` and `off`, so one set of
+    /// conditions can drive every lamp that repeats a cockpit lamp, each as
+    /// bright as it should be.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub signal: Option<String>,
+    /// The stored signal `signal` names, attached when the profile is run
+    /// with its pages. Never written.
+    #[serde(skip)]
+    pub stored: Option<std::sync::Arc<StoredSignal>>,
     /// Omitted means "fully on for this lamp", resolved from the LED itself.
     ///
     /// Skipped when absent, and `off` when zero, so a profile the editor saves
@@ -1000,6 +1085,9 @@ pub enum Place {
     /// `readouts[readout]`, through its text, format or colours: the field is
     /// left blank.
     Field { readout: usize },
+    /// `bindings[binding]`, through the stored signal it lights by: as for
+    /// the lamp's own conditions, the chain holding the source is off.
+    Signal { binding: usize },
 }
 
 /// One condition or display field that reads something the installed
@@ -1102,9 +1190,49 @@ impl Readout {
                 unbounded: false,
             };
         }
+        // A switch draws one case at a time, so the field is as wide as its
+        // widest case, never the cases added up.
+        if self.has_switch() {
+            return self.variants().iter().map(|v| v.width(module)).fold(
+                Width {
+                    widest: 0,
+                    cells,
+                    unbounded: false,
+                },
+                |a, b| Width {
+                    widest: a.widest.max(b.widest),
+                    cells,
+                    unbounded: a.unbounded || b.unbounded,
+                },
+            );
+        }
         let mut widest = 0;
         let mut unbounded = false;
         for span in &self.content {
+            if span.is_stored() {
+                // A box is the whole answer, as for any piece. Otherwise the
+                // signal's own width, or the longest word that draws in its
+                // place, whichever is wider.
+                if span.width > 0 {
+                    widest += span.width;
+                    continue;
+                }
+                let longest_alias = span
+                    .value_aliases
+                    .values()
+                    .filter(|a| !a.reading)
+                    .map(|a| a.text.chars().count())
+                    .max()
+                    .unwrap_or(0);
+                match span.stored.as_ref().map(|s| s.widest(module)) {
+                    Some(Some(n)) => widest += n.max(longest_alias),
+                    Some(None) => unbounded = true,
+                    // A signal the page file lacks draws nothing, and is
+                    // refused as its own problem.
+                    None => {}
+                }
+                continue;
+            }
             if !span.is_signal() {
                 widest += span.text.chars().count();
                 continue;
@@ -1166,11 +1294,101 @@ impl Pick {
     }
 }
 
+/// How a block of conditions shows while it holds: steady, or flashing at
+/// one of two rates.
+///
+/// For a lamp DCS does not flash itself. Where the module's own argument
+/// oscillates, following it already flashes the lamp, and a blink on top
+/// beats against it. See docs/CONFIG.md "Blink".
+///
+/// Set per block, the lamp's own conditions or each alternative, so one lamp
+/// can be steady for one reason and flash for another. While a steady
+/// alternative and a flashing one both hold, the steady one wins, because
+/// the brightest alternative does and a flash is dark half the time.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Blink {
+    #[default]
+    Steady,
+    /// Twice a second.
+    Slow,
+    /// Three times a second.
+    Fast,
+}
+
+impl Blink {
+    /// Flashes a second at each rate, each lit for exactly half its time and
+    /// dark for the other half, so the flash looks even from start to end.
+    pub const SLOW_PER_SECOND: u128 = 2;
+    pub const FAST_PER_SECOND: u128 = 3;
+
+    pub fn is_steady(&self) -> bool {
+        *self == Blink::Steady
+    }
+
+    /// Whether a block flashing this way is in its lit half at `beat`.
+    pub fn lit(self, beat: Beat) -> bool {
+        match self {
+            Blink::Steady => true,
+            Blink::Slow => beat.slow,
+            Blink::Fast => beat.fast,
+        }
+    }
+}
+
+/// Where both flash rates are in their cycle: whether each is in its lit
+/// half. One clock for every lamp, so two lamps flashing at one rate flash
+/// together, as a cockpit lamp and its repeater on another panel should.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Beat {
+    pub slow: bool,
+    pub fast: bool,
+}
+
+impl Beat {
+    /// Both rates lit. How a flashing lamp is read where no clock runs, by a
+    /// check asking whether it lights at all.
+    pub const LIT: Beat = Beat {
+        slow: true,
+        fast: true,
+    };
+
+    /// The beat `elapsed` after the clock started.
+    pub fn at(elapsed: std::time::Duration) -> Beat {
+        let ns = elapsed.as_nanos();
+        Beat {
+            slow: half(ns, Blink::SLOW_PER_SECOND) % 2 == 0,
+            fast: half(ns, Blink::FAST_PER_SECOND) % 2 == 0,
+        }
+    }
+
+    /// How long after `elapsed` either rate next turns lit or dark. Worked
+    /// from the clock's start rather than added up turn by turn, so a third
+    /// of a second never drifts.
+    pub fn next_turn(elapsed: std::time::Duration) -> std::time::Duration {
+        let ns = elapsed.as_nanos();
+        let turn = |per_second: u128| {
+            let next = half(ns, per_second) + 1;
+            (next * 1_000_000_000).div_ceil(2 * per_second)
+        };
+        let at = turn(Blink::SLOW_PER_SECOND).min(turn(Blink::FAST_PER_SECOND));
+        std::time::Duration::from_nanos((at - ns) as u64)
+    }
+}
+
+/// Which half flash, lit or dark, `ns` falls in at `per_second` flashes.
+fn half(ns: u128, per_second: u128) -> u128 {
+    ns * 2 * per_second / 1_000_000_000
+}
+
 /// One alternative within `any_of`: conditions that must all hold together.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Branch {
     #[serde(default)]
     pub conditions: Vec<Condition>,
+    /// Whether this alternative flashes while it holds.
+    #[serde(default, skip_serializing_if = "Blink::is_steady")]
+    pub blink: Blink,
 }
 
 /// One signal and the test applied to it.
@@ -1206,8 +1424,11 @@ impl Binding {
             always: held,
             any_of: Vec::new(),
             pick: Pick::default(),
+            blink: Blink::Steady,
             same_as: None,
             same_as_device: None,
+            signal: None,
+            stored: None,
             on: None,
             off: if held { led.max_value() } else { 0 },
             note: note.to_string(),
@@ -1223,6 +1444,41 @@ impl Binding {
             && self.any_of.is_empty()
             && !self.always
             && self.same_as.is_none()
+            && self.signal.is_none()
+    }
+
+    /// The conditions, alternatives and pick this lamp lights by: a stored
+    /// signal's where it names one, and its own otherwise. Everything that
+    /// reads or resolves a lamp asks this, so a signal is followed everywhere
+    /// a lamp's own conditions would be.
+    pub fn logic(&self) -> (&[Condition], &[Branch], Pick) {
+        match (&self.signal, &self.stored) {
+            (Some(_), Some(s)) => (&s.conditions, &s.any_of, s.pick),
+            _ => (&self.conditions, &self.any_of, self.pick),
+        }
+    }
+
+    /// How the conditions [`logic`](Self::logic) gives flash, where there
+    /// are no alternatives: a stored signal's way where it names one.
+    fn own_blink(&self) -> Blink {
+        match (&self.signal, &self.stored) {
+            (Some(_), Some(s)) => s.blink,
+            _ => self.blink,
+        }
+    }
+
+    /// Whether any block this lamp lights by flashes, so its value can change
+    /// with no signal moving and has to be worked out again on the beat.
+    pub fn blinks(&self) -> bool {
+        if self.always {
+            return false;
+        }
+        let (conditions, any_of, _) = self.logic();
+        if any_of.is_empty() {
+            !conditions.is_empty() && !self.own_blink().is_steady()
+        } else {
+            any_of.iter().any(|b| !b.blink.is_steady())
+        }
     }
 
     /// Every signal this binding reads, across all forms.
@@ -1232,9 +1488,10 @@ impl Binding {
     /// this read" keeps that index correct as new forms are added: when
     /// `any_of` arrived, the index needed no knowledge of it.
     pub fn sources(&self) -> impl Iterator<Item = &str> {
-        self.conditions
+        let (conditions, any_of, _) = self.logic();
+        conditions
             .iter()
-            .chain(self.any_of.iter().flat_map(|b| b.conditions.iter()))
+            .chain(any_of.iter().flat_map(|b| b.conditions.iter()))
             .map(|c| c.source.as_str())
     }
 
@@ -1262,13 +1519,25 @@ impl Binding {
     /// `moved` answers with any number that grows with time, or `None` for a
     /// signal that has not changed since it was first seen. Only
     /// [`Pick::Latest`] asks it anything.
-    pub fn resolve_with_moves<F, M>(&self, led: &Led, mut read: F, mut moved: M) -> Option<u8>
+    pub fn resolve_with_moves<F, M>(&self, led: &Led, read: F, moved: M) -> Option<u8>
+    where
+        F: FnMut(&str) -> Option<u32>,
+        M: FnMut(&str) -> Option<u64>,
+    {
+        self.resolve_at(led, read, moved, Beat::LIT)
+    }
+
+    /// [`Binding::resolve_with_moves`] at one point in the flash cycle. A
+    /// flashing block in its dark half counts as not holding, so the lamp
+    /// falls to its `off`, or to another alternative that does hold.
+    pub fn resolve_at<F, M>(&self, led: &Led, mut read: F, mut moved: M, beat: Beat) -> Option<u8>
     where
         F: FnMut(&str) -> Option<u32>,
         M: FnMut(&str) -> Option<u64>,
     {
         let on = self.on.unwrap_or_else(|| led.on_value());
         let led_max = led.max_value();
+        let (conditions, any_of, pick) = self.logic();
 
         // Reads nothing, so it resolves the same on the module-load sweep as it
         // would at any other moment, and no later write ever revisits it.
@@ -1284,16 +1553,17 @@ impl Binding {
         // supplies the value instead, dark or not: the knob just turned down is
         // the one the player means. A branch's time is the latest of any
         // signal it reads.
-        if !self.any_of.is_empty() {
+        if !any_of.is_empty() {
             let mut best = 0u8;
             let mut latest: Option<(u64, u8)> = None;
-            for branch in &self.any_of {
+            for branch in any_of {
                 if branch.conditions.is_empty() {
                     continue;
                 }
                 let value = all_of(&branch.conditions, on, led_max, &mut read)?;
+                let value = if branch.blink.lit(beat) { value } else { 0 };
                 best = best.max(value);
-                if self.pick == Pick::Latest {
+                if pick == Pick::Latest {
                     let at = branch
                         .conditions
                         .iter()
@@ -1310,10 +1580,11 @@ impl Binding {
             return Some(if value == 0 { self.off } else { value });
         }
 
-        if self.conditions.is_empty() {
+        if conditions.is_empty() {
             return None;
         }
-        let value = all_of(&self.conditions, on, led_max, &mut read)?;
+        let value = all_of(conditions, on, led_max, &mut read)?;
+        let value = if self.own_blink().lit(beat) { value } else { 0 };
         Some(if value == 0 { self.off } else { value })
     }
 }
@@ -1579,6 +1850,12 @@ impl Profile {
         }
     }
 
+    /// Whether a lamp flashes, through the lamp it mirrors where it mirrors
+    /// one. See [`Binding::blinks`].
+    pub fn blinks(&self, b: &Binding) -> bool {
+        self.mirrored(b).unwrap_or(b).blinks()
+    }
+
     /// Every signal this profile names, once each: in lamp conditions, and in
     /// display fields as the text, its format and its colours. Unfinished
     /// conditions and fields, which name nothing yet, are left out.
@@ -1616,12 +1893,29 @@ impl Profile {
         F: FnMut(&str) -> Option<u32>,
         M: FnMut(&str) -> Option<u64>,
     {
+        self.resolve_binding_at(b, led, read, moved, Beat::LIT)
+    }
+
+    /// [`Profile::resolve_binding_with_moves`] at one point in the flash
+    /// cycle. See [`Binding::resolve_at`].
+    pub fn resolve_binding_at<F, M>(
+        &self,
+        b: &Binding,
+        led: &Led,
+        read: F,
+        moved: M,
+        beat: Beat,
+    ) -> Option<u8>
+    where
+        F: FnMut(&str) -> Option<u32>,
+        M: FnMut(&str) -> Option<u64>,
+    {
         let Some(target) = self.mirrored(b) else {
-            return b.resolve_with_moves(led, read, moved);
+            return b.resolve_at(led, read, moved, beat);
         };
         // Resolved against the target's own lamp range, then brought into this
         // one. `validate` rejects chains, so this never recurses further.
-        let value = target.resolve_with_moves(led, read, moved)?;
+        let value = target.resolve_at(led, read, moved, beat)?;
         Some(if value == 0 {
             b.off
         } else {
@@ -1684,6 +1978,8 @@ impl Profile {
             return vec![Error::NewerSchema(self.schema_version)];
         }
         let mut out = Vec::new();
+        // Each stored signal a lamp lights by, checked once however many do.
+        let mut checked_signals: BTreeSet<&str> = BTreeSet::new();
         // One owner for a screen, and it is the pages. A field resolved
         // from a page carries its id, so a profile checked after
         // `with_pages` is not refused for its own start page.
@@ -1732,6 +2028,30 @@ impl Profile {
             if b.always && !(b.conditions.is_empty() && b.any_of.is_empty()) {
                 out.push(Error::AlwaysWithConditions(b.led.clone()));
             }
+            // A lamp lit by a stored signal takes all its logic from there.
+            // Looked up in the library rather than read off the binding, since
+            // the daemon checks a profile before it attaches its pages.
+            if let Some(id) = &b.signal {
+                if b.always
+                    || b.same_as.is_some()
+                    || !b.conditions.is_empty()
+                    || !b.any_of.is_empty()
+                {
+                    out.push(Error::LampSignalWithConditions(b.led.clone()));
+                }
+                match pages.signals_on(&self.module).iter().find(|s| &s.id == id) {
+                    None => out.push(Error::UnknownLampSignal(b.led.clone(), id.clone())),
+                    Some(s) if !s.is_lamp() => out.push(Error::LampSignalNotConditions(
+                        b.led.clone(),
+                        s.name.clone(),
+                    )),
+                    Some(s) => {
+                        if checked_signals.insert(s.id.as_str()) {
+                            out.extend(s.problems(module));
+                        }
+                    }
+                }
+            }
             if !b.conditions.is_empty() && !b.any_of.is_empty() {
                 out.push(Error::ConditionsWithAnyOf(b.led.clone()));
             }
@@ -1775,6 +2095,17 @@ impl Profile {
             }
         }
         self.readout_problems(module, devices, displays, &mut out, &mut Vec::new());
+        // Each stored signal a field draws, once however many draw it. One
+        // nothing draws cannot stop this profile, so it is left to the editor
+        // to say about where it is made.
+        let mut checked = BTreeSet::new();
+        for r in &self.readouts {
+            for stored in r.pieces().filter_map(|s| s.stored.as_ref()) {
+                if checked.insert(stored.id.as_str()) {
+                    out.extend(stored.problems(module));
+                }
+            }
+        }
         self.slot_problems(module, devices, displays, pages, &mut out);
         out.retain(|e| !e.is_advisory());
         out
@@ -1855,6 +2186,17 @@ impl Profile {
                     }
                 }
             }
+            if let (Some(_), Some(s)) = (&b.signal, &b.stored) {
+                let all = s
+                    .conditions
+                    .iter()
+                    .chain(s.any_of.iter().flat_map(|br| br.conditions.iter()));
+                for c in all {
+                    if let Some(why) = unsound(module, c) {
+                        out.push(flag(Place::Signal { binding: bi }, c, why));
+                    }
+                }
+            }
         }
         for (ri, r) in self.readouts.iter().enumerate() {
             for source in missing_in_field(module, r) {
@@ -1895,6 +2237,23 @@ impl Profile {
                 if b.any_of.is_empty() {
                     // Nothing left to pick between.
                     b.pick = Pick::Brightest;
+                }
+            }
+            // The same rule for a stored signal, on this lamp's copy of it,
+            // since another lamp may share the original.
+            if let Some(s) = &b.stored {
+                if bad(&s.conditions) || s.any_of.iter().any(|br| bad(&br.conditions)) {
+                    let mut own = (**s).clone();
+                    if bad(&own.conditions) {
+                        own.conditions.clear();
+                    }
+                    if !own.any_of.is_empty() {
+                        own.any_of.retain(|branch| !bad(&branch.conditions));
+                        if own.any_of.is_empty() {
+                            own.pick = Pick::Brightest;
+                        }
+                    }
+                    b.stored = Some(std::sync::Arc::new(own));
                 }
             }
         }
@@ -2178,246 +2537,485 @@ impl Profile {
                 }
             }
 
-            // A divider reads nothing, so every check below it is about a
-            // source it does not have. What it can get wrong is its own: glass
-            // that cannot draw it, a signal named anyway, or a run with no room
-            // for a dash between two margins.
-            if r.divider {
+            // A field without a switch is checked as it is. One with a switch
+            // is checked as each of its cases would draw it, after the
+            // switch's own faults, and a fault several cases share is said
+            // once: a unit missing from every case is one thing to fix.
+            if !r.has_switch() {
+                self.content_problems(r, display, module, out);
+                continue;
+            }
+            if self.switch_problems(r, module, out) {
+                continue;
+            }
+            let mut found: Vec<Error> = Vec::new();
+            for variant in r.variants() {
+                let mut each = Vec::new();
+                self.content_problems(&variant, display, module, &mut each);
+                for e in each {
+                    if !found.iter().any(|f| f.to_string() == e.to_string()) {
+                        found.push(e);
+                    }
+                }
+            }
+            out.extend(found);
+        }
+    }
+
+    /// The checks on what one field draws: its pieces, how they read and
+    /// whether the glass can show them.
+    ///
+    /// Asked of a field with a switch once per case, through
+    /// [`Readout::variants`], so nothing here needs to know switches exist.
+    fn content_problems(
+        &self,
+        r: &Readout,
+        display: &Display,
+        module: &Module,
+        out: &mut Vec<Error>,
+    ) {
+        // A divider reads nothing, so every check below it is about a
+        // source it does not have. What it can get wrong is its own: glass
+        // that cannot draw it, a signal named anyway, or a run with no room
+        // for a dash between two margins.
+        if r.divider {
+            if !display.is_text_grid() {
+                out.push(Error::DividerNotDrawn(
+                    r.display.clone(),
+                    r.cells.to_string(),
+                ));
+            }
+            if let Some(source) = r.sources().first() {
+                out.push(Error::DividerReadsSignal(
+                    r.display.clone(),
+                    r.cells.to_string(),
+                    (*source).to_string(),
+                ));
+            }
+            // There is no minimum for the rule itself: it runs corner
+            // to corner of its cells, and one cell is one dash. A label is
+            // the only thing here that needs room.
+            if !r.label.is_empty() && r.cells.len() < min_divider_cells(&r.label) {
+                // A label with no room is left off the rule rather than
+                // crowding it, so without this the rule would quietly draw
+                // plain and nothing would say where the label went.
+                out.push(Error::DividerLabelTooWide(
+                    r.display.clone(),
+                    r.cells.to_string(),
+                    r.cells.len(),
+                    min_divider_cells(&r.label),
+                    r.label.clone(),
+                ));
+            }
+            self.text_problems(r, display, out);
+            return;
+        }
+
+        // A field with nothing in it is unfinished work rather than a
+        // mistake, but it still stops the profile loading, so it is said
+        // plainly and in those terms. A chain with an empty span in the
+        // middle is the same thing: a piece somebody started and left.
+        if r.content.is_empty() || r.content.iter().any(Span::is_empty) {
+            out.push(Error::UnfinishedField(
+                r.display.clone(),
+                r.cells.to_string(),
+            ));
+            return;
+        }
+
+        for (at, span) in r.content.iter().enumerate() {
+            // Cases with nothing choosing between them would quietly never
+            // draw, and the piece would draw as a plain reading instead.
+            if !span.cases.is_empty() && !span.is_switch() {
+                out.push(Error::CasesWithoutSwitch(
+                    r.display.clone(),
+                    r.cells.to_string(),
+                ));
+            }
+            if span.switch_reads.is_some() && !span.is_switch() {
+                out.push(Error::SwitchReadsWithoutSwitch(
+                    r.display.clone(),
+                    r.cells.to_string(),
+                ));
+            }
+            // A box wider than the run it sits in cannot be drawn: the
+            // field crops what will not fit, so the piece would take the
+            // whole run and whatever shares it would be the part that
+            // goes. Refused rather than cautioned, unlike an overflow,
+            // because this one is certain before a single frame arrives.
+            if span.width > r.cells.len() {
+                out.push(Error::SpanWiderThanField(
+                    r.display.clone(),
+                    r.cells.to_string(),
+                    span.width,
+                    r.cells.len(),
+                ));
+            }
+            // A rule fills room it was given rather than drawing anything
+            // of its own, which is what a gap is. On a piece that has its
+            // own content there is nowhere to put it.
+            if span.rule {
+                if !span.gap {
+                    out.push(Error::RuleNotOnGap(r.display.clone(), r.cells.to_string()));
+                }
                 if !display.is_text_grid() {
                     out.push(Error::DividerNotDrawn(
                         r.display.clone(),
                         r.cells.to_string(),
                     ));
                 }
-                if let Some(source) = r.sources().first() {
-                    out.push(Error::DividerReadsSignal(
-                        r.display.clone(),
-                        r.cells.to_string(),
-                        (*source).to_string(),
-                    ));
-                }
-                // There is no minimum for the rule itself: it runs corner
-                // to corner of its cells, and one cell is one dash. A label is
-                // the only thing here that needs room.
-                if !r.label.is_empty() && r.cells.len() < min_divider_cells(&r.label) {
-                    // A label with no room is left off the rule rather than
-                    // crowding it, so without this the rule would quietly draw
-                    // plain and nothing would say where the label went.
-                    out.push(Error::DividerLabelTooWide(
-                        r.display.clone(),
-                        r.cells.to_string(),
-                        r.cells.len(),
-                        min_divider_cells(&r.label),
-                        r.label.clone(),
-                    ));
-                }
-                self.text_problems(r, display, out);
-                continue;
             }
-
-            // A field with nothing in it is unfinished work rather than a
-            // mistake, but it still stops the profile loading, so it is said
-            // plainly and in those terms. A chain with an empty span in the
-            // middle is the same thing: a piece somebody started and left.
-            if r.content.is_empty() || r.content.iter().any(Span::is_empty) {
-                out.push(Error::UnfinishedField(
-                    r.display.clone(),
-                    r.cells.to_string(),
-                ));
-                continue;
-            }
-
-            for (at, span) in r.content.iter().enumerate() {
-                // A box wider than the run it sits in cannot be drawn: the
-                // field crops what will not fit, so the piece would take the
-                // whole run and whatever shares it would be the part that
-                // goes. Refused rather than cautioned, unlike an overflow,
-                // because this one is certain before a single frame arrives.
-                if span.width > r.cells.len() {
-                    out.push(Error::SpanWiderThanField(
+            if !span.label.is_empty() {
+                if !span.rule {
+                    out.push(Error::LabelNotOnRule(
                         r.display.clone(),
                         r.cells.to_string(),
-                        span.width,
-                        r.cells.len(),
+                        span.label.clone(),
                     ));
-                }
-                // A rule fills room it was given rather than drawing anything
-                // of its own, which is what a gap is. On a piece that has its
-                // own content there is nowhere to put it.
-                if span.rule {
-                    if !span.gap {
-                        out.push(Error::RuleNotOnGap(r.display.clone(), r.cells.to_string()));
-                    }
-                    if !display.is_text_grid() {
-                        out.push(Error::DividerNotDrawn(
-                            r.display.clone(),
-                            r.cells.to_string(),
-                        ));
-                    }
-                }
-                if !span.label.is_empty() {
-                    if !span.rule {
-                        out.push(Error::LabelNotOnRule(
+                } else {
+                    // A box is not what a label needs; a width that holds
+                    // still is, and a rule sharing its line with nothing
+                    // that changes width has one without being boxed. A
+                    // rule with the line to itself is the plain case:
+                    // nothing else is taking room off it, so it is the
+                    // whole run in every frame.
+                    match r.settled_cells(at) {
+                        Some(cells) if cells < min_divider_cells(&span.label) => {
+                            out.push(Error::RuleLabelTooWide(
+                                r.display.clone(),
+                                r.cells.to_string(),
+                                cells,
+                                min_divider_cells(&span.label),
+                                span.label.clone(),
+                            ));
+                        }
+                        Some(_) => {}
+                        // As wide as the readings beside it leave it, so
+                        // the room for the label is whatever they are not
+                        // using. `divider_rule` drops a label it cannot
+                        // fit and draws a plain line, so the label comes
+                        // and goes. Cautioned rather than refused: only
+                        // the user knows how wide their readings really
+                        // get, and a fixed width is the fix when it bites.
+                        None => out.push(Error::RuleLabelMayNotFit(
                             r.display.clone(),
                             r.cells.to_string(),
                             span.label.clone(),
-                        ));
-                    } else {
-                        // A box is not what a label needs; a width that holds
-                        // still is, and a rule sharing its line with nothing
-                        // that changes width has one without being boxed. A
-                        // rule with the line to itself is the plain case:
-                        // nothing else is taking room off it, so it is the
-                        // whole run in every frame.
-                        match r.settled_cells(at) {
-                            Some(cells) if cells < min_divider_cells(&span.label) => {
-                                out.push(Error::RuleLabelTooWide(
-                                    r.display.clone(),
-                                    r.cells.to_string(),
-                                    cells,
-                                    min_divider_cells(&span.label),
-                                    span.label.clone(),
-                                ));
-                            }
-                            Some(_) => {}
-                            // As wide as the readings beside it leave it, so
-                            // the room for the label is whatever they are not
-                            // using. `divider_rule` drops a label it cannot
-                            // fit and draws a plain line, so the label comes
-                            // and goes. Cautioned rather than refused: only
-                            // the user knows how wide their readings really
-                            // get, and a fixed width is the fix when it bites.
-                            None => out.push(Error::RuleLabelMayNotFit(
-                                r.display.clone(),
-                                r.cells.to_string(),
-                                span.label.clone(),
-                            )),
-                        }
+                        )),
                     }
                 }
-                // A gap draws nothing and measures itself from what is left,
-                // so anything written on one is something that will never be
-                // seen. Refused rather than ignored, for the same reason a
-                // signal on a divider is.
-                if span.gap {
-                    if !span.text.is_empty() || span.is_signal() {
-                        out.push(Error::GapHasContent(r.display.clone(), r.cells.to_string()));
-                    }
-                    continue;
+            }
+            // A gap draws nothing and measures itself from what is left,
+            // so anything written on one is something that will never be
+            // seen. Refused rather than ignored, for the same reason a
+            // signal on a divider is.
+            if span.gap {
+                if !span.text.is_empty() || span.reads() {
+                    out.push(Error::GapHasContent(r.display.clone(), r.cells.to_string()));
                 }
-                // Characters and a signal are two different answers to what
-                // this span draws, so a span holding both is one somebody
-                // half changed rather than one that means anything.
-                if !span.text.is_empty() && span.is_signal() {
-                    out.push(Error::SpanReadsAndWrites(
+                continue;
+            }
+            // A stored signal shapes its own number, so the piece drawing
+            // it says only how it looks. Anything that shapes a number here
+            // would be a second answer the frame never uses.
+            if span.is_stored() {
+                if !span.text.is_empty() || span.is_signal() {
+                    out.push(Error::StoredAndOther(
                         r.display.clone(),
                         r.cells.to_string(),
-                        span.source.clone(),
                     ));
                     continue;
                 }
-                // What a span writes is only shaped by what it reads, so
-                // nothing below applies to characters the user typed. Their
-                // one rule, that the font can draw them, is in text_problems
-                // where the font is known.
-                if !span.is_signal() {
-                    if span.shapes_a_number() {
-                        out.push(Error::RangeOnText(span.text.clone()));
-                    }
-                    if !span.value_aliases.is_empty() {
-                        out.push(Error::AliasesOnText(span.text.clone()));
-                    }
-                    continue;
-                }
-                // Flagged rather than refused, as for a lamp condition.
-                let Some(output) = module.signal(&span.source).and_then(|s| s.primary()) else {
+                let Some(stored) = &span.stored else {
+                    out.push(Error::UnknownStoredSignal(
+                        r.display.clone(),
+                        r.cells.to_string(),
+                        span.signal.clone(),
+                    ));
                     continue;
                 };
-                // A number shown as sent, converted or as words is the user's
-                // choice. Raw 0 to 65535 is a strange thing to put on a
-                // screen, but the editor says so where the choice is made,
-                // and it draws exactly what it says it will.
-                if output.r#type == "string" {
-                    if span.reads.is_some()
-                        || !span.conversions.is_empty()
-                        || span.digits != 0
-                        || span.wrap.is_some()
-                        || span.round != Round::Nearest
-                        || span.abs
-                    {
-                        out.push(Error::RangeOnText(span.source.clone()));
-                    }
-                    if !span.value_aliases.is_empty() {
-                        out.push(Error::AliasesOnText(span.source.clone()));
-                    }
-                } else {
-                    conversion_problems(span, output.number_max(), out);
-                    band_problems(span, output.number_max(), out);
+                if stored.is_lamp() {
+                    out.push(Error::StoredNotANumber(stored.name.clone()));
+                    continue;
                 }
+                if span.shapes_a_number() {
+                    out.push(Error::ShapingOnStored(
+                        r.display.clone(),
+                        r.cells.to_string(),
+                        stored.name.clone(),
+                    ));
+                }
+                band_problems(span, &stored.name, None, stored.tolerance(), out);
+                continue;
+            }
+            // Characters and a signal are two different answers to what
+            // this span draws, so a span holding both is one somebody
+            // half changed rather than one that means anything.
+            if !span.text.is_empty() && span.is_signal() {
+                out.push(Error::SpanReadsAndWrites(
+                    r.display.clone(),
+                    r.cells.to_string(),
+                    span.source.clone(),
+                ));
+                continue;
+            }
+            // What a span writes is only shaped by what it reads, so
+            // nothing below applies to characters the user typed. Their
+            // one rule, that the font can draw them, is in text_problems
+            // where the font is known.
+            if !span.is_signal() {
+                if span.shapes_a_number() {
+                    out.push(Error::RangeOnText(span.text.clone()));
+                }
+                if !span.value_aliases.is_empty() {
+                    out.push(Error::AliasesOnText(span.text.clone()));
+                }
+                continue;
+            }
+            // Flagged rather than refused, as for a lamp condition.
+            let Some(output) = module.signal(&span.source).and_then(|s| s.primary()) else {
+                continue;
+            };
+            // A number shown as sent, converted or as words is the user's
+            // choice. Raw 0 to 65535 is a strange thing to put on a
+            // screen, but the editor says so where the choice is made,
+            // and it draws exactly what it says it will.
+            if output.r#type == "string" {
+                if span.reads.is_some()
+                    || !span.conversions.is_empty()
+                    || span.digits != 0
+                    || span.wrap.is_some()
+                    || span.round != Round::Nearest
+                    || span.abs
+                {
+                    out.push(Error::RangeOnText(span.source.clone()));
+                }
+                if !span.value_aliases.is_empty() {
+                    out.push(Error::AliasesOnText(span.source.clone()));
+                }
+            } else {
+                conversion_problems(span, output.number_max(), out);
+                let face = span.face(output.number_max());
+                band_problems(span, &span.source, Some(face), span.tolerance(), out);
+            }
 
-                if let Some(format) = &span.format {
-                    if !display.draws_inverse() {
-                        out.push(Error::FormatNotDrawn(
+            if let Some(format) = &span.format {
+                if !display.draws_inverse() {
+                    out.push(Error::FormatNotDrawn(
+                        r.display.clone(),
+                        r.cells.to_string(),
+                    ));
+                }
+                if let Some(o) = module.signal(format).and_then(|s| s.primary()) {
+                    if o.r#type != "string" {
+                        out.push(Error::FormatNotText(format.clone()));
+                    }
+                }
+            }
+
+            if let Some(colours) = &span.colours {
+                if let Some(o) = module.signal(&colours.source).and_then(|s| s.primary()) {
+                    if o.r#type != "string" {
+                        out.push(Error::FormatNotText(colours.source.clone()));
+                    }
+                }
+                for code in colours.codes.keys() {
+                    if code.chars().count() != 1 {
+                        out.push(Error::ColourCodeNotOneChar(code.clone()));
+                    }
+                }
+            }
+
+            for (from, to) in &span.replace {
+                if from.chars().count() != 1 || to.chars().count() != 1 {
+                    out.push(Error::ReplaceNotOneChar(from.clone(), to.clone()));
+                }
+            }
+        }
+
+        // Gaps space out what is around them. With nothing around them
+        // they are an elaborate way of writing blanks, which is what an
+        // empty run already does. A rule is not blanks: a field that is
+        // nothing but one is a divider written the long way, and drawing
+        // it is the right answer rather than a fault.
+        if !r.content.is_empty() && r.content.iter().all(|s| s.gap && !s.rule) {
+            out.push(Error::NothingButGaps(
+                r.display.clone(),
+                r.cells.to_string(),
+            ));
+        }
+
+        // Inverse is the one piece of styling a span can ask for on glass
+        // that is not a text grid, so it is checked against what the
+        // display can actually do rather than lumped in with colour. A
+        // band can ask for it too.
+        let asks_inverse = r
+            .content
+            .iter()
+            .any(|s| s.inverse || s.value_aliases.values().any(|a| a.inverse));
+        if !display.draws_inverse() && asks_inverse {
+            out.push(Error::FormatNotDrawn(
+                r.display.clone(),
+                r.cells.to_string(),
+            ));
+        }
+
+        self.text_problems(r, display, out);
+    }
+
+    /// What a field's switches can be wrong about in themselves, before their
+    /// cases are checked as plain fields.
+    ///
+    /// True where a switch is too broken for its cases to mean anything, so
+    /// the caller does not go on to report every case of a switch with no
+    /// cases, or of one sitting inside another.
+    ///
+    /// Positions are cautions, like alias bands. Two cases claiming one
+    /// position settle on the lower, a case past the selector's travel never
+    /// draws, and positions with no case and no `else` draw nothing. None of
+    /// them is undefined, and a profile refused whole over one of them would
+    /// take every screen dark.
+    fn switch_problems(&self, r: &Readout, module: &Module, out: &mut Vec<Error>) -> bool {
+        let mut broken = false;
+        for span in r.content.iter().filter(|s| s.is_switch()) {
+            let carried = [
+                (!span.text.is_empty(), "characters to draw"),
+                (span.gap, "a gap"),
+                (span.rule, "a rule"),
+                (
+                    !span.label.is_empty() || span.label_colour.is_some(),
+                    "a label",
+                ),
+                (span.width > 0 || span.align != Align::Left, "a fixed width"),
+            ];
+            for (has, what) in carried {
+                if has {
+                    out.push(Error::SwitchCarries(
+                        r.display.clone(),
+                        r.cells.to_string(),
+                        what,
+                    ));
+                    broken = true;
+                }
+            }
+            if span.cases.is_empty() {
+                out.push(Error::SwitchWithoutCases(
+                    r.display.clone(),
+                    r.cells.to_string(),
+                    span.switch_name(),
+                ));
+                broken = true;
+                continue;
+            }
+            for case in &span.cases.0 {
+                if let Some(inner) = case.pieces.iter().find(|p| p.is_switch()) {
+                    out.push(Error::SwitchInSwitch(
+                        r.display.clone(),
+                        r.cells.to_string(),
+                        inner.switch.clone(),
+                    ));
+                    broken = true;
+                }
+            }
+            // A stored signal deciding it has its own number, already
+            // shaped, and no positions to walk: only overlapping cases can be
+            // said about it.
+            if !span.switch_signal.is_empty() {
+                if !span.switch.is_empty() {
+                    out.push(Error::SwitchTwoDeciders(
+                        r.display.clone(),
+                        r.cells.to_string(),
+                    ));
+                    broken = true;
+                    continue;
+                }
+                match &span.switch_stored {
+                    None => {
+                        out.push(Error::UnknownStoredSignal(
                             r.display.clone(),
                             r.cells.to_string(),
+                            span.switch_signal.clone(),
                         ));
+                        broken = true;
+                        continue;
                     }
-                    if let Some(o) = module.signal(format).and_then(|s| s.primary()) {
-                        if o.r#type != "string" {
-                            out.push(Error::FormatNotText(format.clone()));
-                        }
+                    Some(s) if s.is_lamp() => {
+                        out.push(Error::StoredNotANumber(s.name.clone()));
+                        broken = true;
+                        continue;
                     }
+                    Some(_) => {}
                 }
-
-                if let Some(colours) = &span.colours {
-                    if let Some(o) = module.signal(&colours.source).and_then(|s| s.primary()) {
-                        if o.r#type != "string" {
-                            out.push(Error::FormatNotText(colours.source.clone()));
-                        }
-                    }
-                    for code in colours.codes.keys() {
-                        if code.chars().count() != 1 {
-                            out.push(Error::ColourCodeNotOneChar(code.clone()));
-                        }
-                    }
+                if span.switch_reads.is_some() {
+                    out.push(Error::ShapingOnStored(
+                        r.display.clone(),
+                        r.cells.to_string(),
+                        span.switch_name(),
+                    ));
                 }
-
-                for (from, to) in &span.replace {
-                    if from.chars().count() != 1 || to.chars().count() != 1 {
-                        out.push(Error::ReplaceNotOneChar(from.clone(), to.clone()));
-                    }
+                case_overlaps(span, out);
+                continue;
+            }
+            // A selector this DCS-BIOS lacks is flagged as a missing signal,
+            // like any other source, and has no positions to check against.
+            let Some(output) = module.signal(&span.switch).and_then(|s| s.primary()) else {
+                continue;
+            };
+            if output.r#type == "string" {
+                out.push(Error::SwitchOnText(span.switch.clone()));
+                continue;
+            }
+            let (lo, hi) = span.switch_span(output.number_max());
+            let bands = case_overlaps(span, out);
+            for band in &bands {
+                if band.highest() < lo || band.lowest() > hi {
+                    out.push(Error::SwitchCaseUnreachable(
+                        band.to_string(),
+                        span.switch.clone(),
+                        format!("{lo} to {hi}"),
+                    ));
                 }
             }
-
-            // Gaps space out what is around them. With nothing around them
-            // they are an elaborate way of writing blanks, which is what an
-            // empty run already does. A rule is not blanks: a field that is
-            // nothing but one is a divider written the long way, and drawing
-            // it is the right answer rather than a fault.
-            if !r.content.is_empty() && r.content.iter().all(|s| s.gap && !s.rule) {
-                out.push(Error::NothingButGaps(
-                    r.display.clone(),
-                    r.cells.to_string(),
+            if span.cases.0.iter().any(|c| c.when == CaseKey::Else) {
+                continue;
+            }
+            // Walked position by position, which a selector's handful makes
+            // cheap and a continuous signal's 65536 still does not make slow.
+            // A converted face is walked in whole units, the steps it is
+            // rounded to. One converted to millions of units is past what is
+            // worth walking, and goes unchecked rather than stalling the
+            // editor.
+            if hi - lo > 1_000_000.0 {
+                continue;
+            }
+            let mut runs: Vec<(i64, i64)> = Vec::new();
+            for position in (lo as i64)..=(hi as i64) {
+                if span.case_for(position as f64).is_some() {
+                    continue;
+                }
+                match runs.last_mut() {
+                    Some((_, end)) if *end + 1 == position => *end = position,
+                    _ => runs.push((position, position)),
+                }
+            }
+            if !runs.is_empty() {
+                let named: Vec<String> = runs
+                    .iter()
+                    .map(|&(a, b)| {
+                        if a == b {
+                            a.to_string()
+                        } else {
+                            format!("{a} to {b}")
+                        }
+                    })
+                    .collect();
+                out.push(Error::SwitchUncovered(
+                    span.switch.clone(),
+                    named.join(", "),
                 ));
             }
-
-            // Inverse is the one piece of styling a span can ask for on glass
-            // that is not a text grid, so it is checked against what the
-            // display can actually do rather than lumped in with colour. A
-            // band can ask for it too.
-            let asks_inverse = r
-                .content
-                .iter()
-                .any(|s| s.inverse || s.value_aliases.values().any(|a| a.inverse));
-            if !display.draws_inverse() && asks_inverse {
-                out.push(Error::FormatNotDrawn(
-                    r.display.clone(),
-                    r.cells.to_string(),
-                ));
-            }
-
-            self.text_problems(r, display, out);
         }
+        broken
     }
 
     /// What only a text grid can take, and what a text grid needs.
@@ -2443,7 +3041,7 @@ impl Profile {
                     // A band's colour is styling like any other, and a band
                     // that asks for one on glass with no colours is a setting
                     // nothing draws.
-                    || s.value_aliases.values().any(|a| a.colour.is_some())
+                    || s.value_aliases.values().any(|a| a.colour.is_some() || a.small)
                     || s.conversions.iter().any(|c| c.colour.is_some() || c.small)
             });
             let ruled = r.divider && (r.colour.is_some() || r.label_colour.is_some());
@@ -2520,10 +3118,27 @@ impl Profile {
                 let written = span
                     .text
                     .chars()
-                    .chain(span.value_aliases.values().flat_map(|a| a.text.chars()))
+                    .chain(
+                        span.value_aliases
+                            .values()
+                            .filter(|a| !a.small)
+                            .flat_map(|a| a.text.chars()),
+                    )
                     .chain(span.replace.values().filter_map(|to| to.chars().next()));
                 for c in written {
                     if !set.contains(&c) {
+                        out.push(Error::NotInFont(c, file.to_string(), r.cells.to_string()));
+                    }
+                }
+                // A band drawn small is drawn from the small alphabet whatever
+                // the piece asks for, and that is the smaller one.
+                let banded_small = span
+                    .value_aliases
+                    .values()
+                    .filter(|a| a.small)
+                    .flat_map(|a| a.text.chars());
+                for c in banded_small {
+                    if !chars.small.contains(&c) {
                         out.push(Error::NotInFont(c, file.to_string(), r.cells.to_string()));
                     }
                 }
@@ -2597,6 +3212,133 @@ fn glyph_problems(r: &Readout, display: &Display, out: &mut Vec<Error>) {
 /// whole profile dark over one dial. Counts no stretch claims are the one worth
 /// saying most, because they are how a half finished table looks, and the
 /// editor offers a stretch for them.
+impl StoredSignal {
+    /// What this signal can be wrong about in itself, wherever it is drawn.
+    ///
+    /// A term is held to what a reading is: a range on characters is a
+    /// caution, a conversion that ends before it starts is refused. A colour
+    /// on a conversion is refused outright, because how the signal draws is
+    /// the field's and the frame would never use it.
+    pub fn problems(&self, module: &Module) -> Vec<Error> {
+        let mut out = Vec::new();
+        let name = self.name.trim().to_string();
+        if name.is_empty() {
+            out.push(Error::StoredUnnamed);
+        }
+        if self.is_lamp() {
+            if !self.terms.is_empty() {
+                out.push(Error::StoredTwoKinds(name.clone()));
+            }
+            self.condition_problems(&name, &mut out);
+            return out;
+        }
+        if self.terms.is_empty() {
+            out.push(Error::StoredWithoutTerms(name.clone()));
+        }
+        let mut unfinished = false;
+        for term in &self.terms {
+            let span = &term.0;
+            if span
+                .conversions
+                .iter()
+                .any(|c| c.colour.is_some() || c.small)
+            {
+                out.push(Error::StoredTermStyled(name.clone()));
+            }
+            if span.source.is_empty() {
+                if !unfinished {
+                    unfinished = true;
+                    out.push(Error::StoredTermUnfinished(name.clone()));
+                }
+                continue;
+            }
+            // A signal this DCS-BIOS lacks is flagged where it is drawn, as
+            // any missing signal is.
+            let Some(output) = module.signal(&span.source).and_then(|s| s.primary()) else {
+                continue;
+            };
+            if output.r#type == "string" {
+                if span.shapes_a_number() {
+                    out.push(Error::RangeOnText(span.source.clone()));
+                }
+            } else {
+                conversion_problems(span, output.number_max(), &mut out);
+            }
+        }
+        out
+    }
+
+    /// What lamp conditions can be wrong about, the checks a lamp's own get.
+    /// A signal this DCS-BIOS lacks is flagged on each lamp it drives.
+    fn condition_problems(&self, name: &str, out: &mut Vec<Error>) {
+        if !self.conditions.is_empty() && !self.any_of.is_empty() {
+            out.push(Error::StoredConditionsWithAnyOf(name.to_string()));
+        }
+        if self.any_of.iter().any(|b| b.conditions.is_empty()) {
+            out.push(Error::StoredEmptyBranch(name.to_string()));
+        }
+        if self.pick != Pick::Brightest && self.any_of.is_empty() {
+            out.push(Error::StoredPickWithoutAlternatives(name.to_string()));
+        }
+        if self.sources().any(str::is_empty) {
+            out.push(Error::StoredUnfinishedCondition(name.to_string()));
+        }
+    }
+
+    /// The widest this can ever read, in characters, or None where a term
+    /// reads characters with no length DCS-BIOS declares.
+    pub fn widest(&self, module: &Module) -> Option<usize> {
+        let mut total = 0;
+        for term in &self.terms {
+            let span = &term.0;
+            if span.width > 0 {
+                total += span.width;
+                continue;
+            }
+            let Some(output) = module.signal(&span.source).and_then(|s| s.primary()) else {
+                continue;
+            };
+            let number_max = (output.r#type != "string").then(|| output.number_max());
+            total += span.widest(output.max_length.map(usize::from), number_max)?;
+        }
+        Some(total)
+    }
+
+    /// How close a reading has to be to a band's edge to count as inside it:
+    /// half the last place the last term shows, which is where the
+    /// characters end.
+    pub fn tolerance(&self) -> f64 {
+        let places = self.terms.last().map_or(0, |t| t.0.decimals);
+        10f64.powi(-i32::from(places)) / 2.0
+    }
+}
+
+/// Two cases of a switch claiming one reading, which settles on the lower.
+/// Returns the cases' bands, `else` left out, for the checks that follow.
+fn case_overlaps<'a>(span: &'a Span, out: &mut Vec<Error>) -> Vec<&'a ValueBand> {
+    let bands: Vec<&ValueBand> = span
+        .cases
+        .0
+        .iter()
+        .filter_map(|c| match &c.when {
+            CaseKey::Band(b) => Some(b),
+            CaseKey::Else => None,
+        })
+        .collect();
+    for (i, a) in bands.iter().enumerate() {
+        for b in &bands[i + 1..] {
+            if a.overlaps(b, 0.0) {
+                out.push(Error::SwitchCasesOverlap(
+                    a.to_string(),
+                    b.to_string(),
+                    span.switch_name(),
+                ));
+            }
+        }
+    }
+    bands
+}
+
 fn conversion_problems(span: &Span, max: u16, out: &mut Vec<Error>) {
     if span.conversions.is_empty() {
         return;
@@ -2651,11 +3393,35 @@ fn conversion_problems(span: &Span, max: u16, out: &mut Vec<Error>) {
 /// nothing rather than drawing something wrong. It is worth saying because the
 /// likeliest way to write one is to band a converted face in the raw counts
 /// DCS-BIOS sends, and that mistake is otherwise silent.
-fn band_problems(span: &Span, max: u16, out: &mut Vec<Error>) {
+///
+/// `name` is what the messages call the reading: its signal, or the stored
+/// signal it draws. `face` is what the face reads end to end, where that is
+/// known; a stored signal's characters can be anything, so its bands are not
+/// held to one.
+fn band_problems(span: &Span, name: &str, face: Option<[f64; 2]>, tol: f64, out: &mut Vec<Error>) {
     if span.value_aliases.is_empty() {
         return;
     }
-    let tol = span.tolerance();
+    // A band showing the reading is there for its style, so one with
+    // characters as well is two answers, and one with no style does nothing.
+    // Refused like any piece of unfinished work, rather than drawn one way.
+    for (band, drawn) in &span.value_aliases {
+        if !drawn.reading {
+            continue;
+        }
+        if !drawn.text.is_empty() {
+            out.push(Error::AliasReadingAndText(
+                band.to_string(),
+                name.to_string(),
+                drawn.text.clone(),
+            ));
+        } else if drawn.colour.is_none() && !drawn.inverse && !drawn.small {
+            out.push(Error::AliasReadingUnstyled(
+                band.to_string(),
+                name.to_string(),
+            ));
+        }
+    }
     let bands: Vec<&ValueBand> = span.value_aliases.keys().collect();
     for (i, a) in bands.iter().enumerate() {
         for b in &bands[i + 1..] {
@@ -2663,18 +3429,20 @@ fn band_problems(span: &Span, max: u16, out: &mut Vec<Error>) {
                 out.push(Error::AliasBandsOverlap(
                     a.to_string(),
                     b.to_string(),
-                    span.source.clone(),
+                    name.to_string(),
                 ));
             }
         }
     }
-    let [low, high] = span.face(max);
+    let Some([low, high]) = face else {
+        return;
+    };
     let (lo, hi) = (low.min(high), low.max(high));
     for band in bands {
         if band.highest() < lo - tol || band.lowest() > hi + tol {
             out.push(Error::AliasBandUnreachable(
                 band.to_string(),
-                span.source.clone(),
+                name.to_string(),
                 low.to_string(),
                 high.to_string(),
             ));
@@ -3717,8 +4485,11 @@ mod tests {
             always: true,
             any_of: Vec::new(),
             pick: Pick::default(),
+            blink: Blink::Steady,
             same_as: None,
             same_as_device: None,
+            signal: None,
+            stored: None,
             on,
             off: 0,
             note: String::new(),
@@ -3775,20 +4546,25 @@ mod tests {
             conditions: Vec::new(),
             always: false,
             pick: Pick::default(),
+            blink: Blink::Steady,
             same_as: None,
             same_as_device: None,
+            signal: None,
+            stored: None,
             any_of: vec![
                 Branch {
                     conditions: vec![
                         cond("STATION", OnWhen::Equals(1)),
                         cond("CPG_BRIGHT", OnWhen::Scale([0, 65535])),
                     ],
+                    blink: Blink::Steady,
                 },
                 Branch {
                     conditions: vec![
                         cond("STATION", OnWhen::Equals(0)),
                         cond("PLT_BRIGHT", OnWhen::Scale([0, 65535])),
                     ],
+                    blink: Blink::Steady,
                 },
             ],
             on: None,
@@ -3890,14 +4666,19 @@ mod tests {
             conditions: Vec::new(),
             always: false,
             pick,
+            blink: Blink::Steady,
             same_as: None,
             same_as_device: None,
+            signal: None,
+            stored: None,
             any_of: vec![
                 Branch {
                     conditions: vec![cond("PLT_KNOB", OnWhen::Scale([0, 8]))],
+                    blink: Blink::Steady,
                 },
                 Branch {
                     conditions: vec![cond("RIO_KNOB", OnWhen::Scale([0, 8]))],
+                    blink: Blink::Steady,
                 },
             ],
             on: None,
@@ -3999,8 +4780,11 @@ mod tests {
                     always: false,
                     any_of: Vec::new(),
                     pick: Pick::default(),
+                    blink: Blink::Steady,
                     same_as: None,
                     same_as_device: None,
+                    signal: None,
+                    stored: None,
                     on: None,
                     off: 0,
                     note: String::new(),
@@ -4012,8 +4796,11 @@ mod tests {
                     always: false,
                     any_of: Vec::new(),
                     pick: Pick::default(),
+                    blink: Blink::Steady,
                     same_as: same_as.map(str::to_string),
                     same_as_device: None,
+                    signal: None,
+                    stored: None,
                     on: None,
                     off: 255,
                     note: String::new(),

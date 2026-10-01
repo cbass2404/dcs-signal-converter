@@ -18,8 +18,8 @@ use std::time::{Duration, Instant};
 
 use dsc_bios::{BiosState, Write};
 use dsc_config::{
-    Binding, Catalogue, DeviceInventory, Display, DisplayCatalogue, Module, Pick, Profile, Screen,
-    Transport, SEAT_SIGNAL,
+    Beat, Binding, Catalogue, DeviceInventory, Display, DisplayCatalogue, Module, Pick, Profile,
+    Screen, Transport, SEAT_SIGNAL,
 };
 
 pub mod learn;
@@ -245,6 +245,22 @@ pub struct Engine {
     /// What the last paint drew for each converted signal, so a batch reports
     /// only the readings that changed.
     drawn: HashMap<String, (u16, String)>,
+    /// Each stored signal's last inputs and what they made, so one is worked
+    /// out again only when a term moves. Fresh with every profile taken.
+    stored: dsc_config::StoredCache,
+    /// When the flash clock started: the first datagram or tick. One clock
+    /// for every lamp, so lamps flashing at one rate flash together.
+    epoch: Option<Instant>,
+    /// Where the flash cycle was at the last ingest or tick.
+    beat: Beat,
+    /// The active profile's bindings that flash, on devices that [`runs`].
+    /// Their value can change with no signal moving, so each turn of the beat
+    /// works them out again.
+    blinking: Vec<usize>,
+    /// One of `blinking` lights a screen, which is written with its paint.
+    blink_paint: bool,
+    /// The beat has turned since `blinking` was last worked out.
+    blink_due: bool,
 }
 
 /// Whether anything is worked out for a device: it is plugged in and the
@@ -293,6 +309,28 @@ fn binding_index(
     index
 }
 
+/// The active profile's bindings that flash, on devices that [`runs`], and
+/// whether any of them lights a screen.
+fn blink_index(
+    profile: &Profile,
+    devices: &DeviceInventory,
+    connected: &[String],
+) -> (Vec<usize>, bool) {
+    let mut out = Vec::new();
+    let mut paint = false;
+    for (bi, b) in profile.bindings.iter().enumerate() {
+        if !runs(connected, profile, &b.device) || !profile.blinks(b) {
+            continue;
+        }
+        out.push(bi);
+        paint |= devices
+            .device(&b.device)
+            .and_then(|d| d.led(&b.led))
+            .is_some_and(|(_, led)| led.lights_display);
+    }
+    (out, paint)
+}
+
 /// Profiles as they run, with every device that follows another given that
 /// device's rows. The one place a follower is resolved, so the engine never
 /// has to know one exists.
@@ -325,6 +363,12 @@ impl Engine {
             sent_at: None,
             frame_every: FRAME_EVERY,
             drawn: HashMap::new(),
+            stored: dsc_config::StoredCache::default(),
+            epoch: None,
+            beat: Beat::LIT,
+            blinking: Vec::new(),
+            blink_paint: false,
+            blink_due: false,
         }
     }
 
@@ -358,6 +402,7 @@ impl Engine {
             // are picked up when an aircraft is next detected.
             self.active = None;
             self.by_address.clear();
+            self.blinking.clear();
             return Batch::empty(Cause::ProfileReload);
         };
         self.select_profile(&aircraft);
@@ -444,6 +489,8 @@ impl Engine {
         self.aircraft = None;
         self.active = None;
         self.by_address.clear();
+        self.blinking.clear();
+        self.blink_due = false;
         self.moves.clear();
         self.pending = None;
         self.paint_reads.clear();
@@ -464,6 +511,8 @@ impl Engine {
             if let Some(module) = self.catalogue.module(&self.profiles[i].module) {
                 self.by_address = binding_index(&self.profiles[i], module, &self.connected);
             }
+            (self.blinking, self.blink_paint) =
+                blink_index(&self.profiles[i], &self.devices, &self.connected);
         }
         self.index_paint();
     }
@@ -509,6 +558,7 @@ impl Engine {
     /// `now` is passed in rather than read from the clock so the settle window
     /// can be exercised deterministically in tests.
     pub fn ingest(&mut self, writes: &[Write], now: Instant) -> Batch {
+        self.keep_beat(now);
         // Only addresses whose value moved. The whole map is re-exported on a
         // cycle, so without this every bound lamp would be re-resolved several
         // times a second with nothing happening in the cockpit. The output was
@@ -591,6 +641,7 @@ impl Engine {
     /// while.
     pub fn tick(&mut self, now: Instant) -> Batch {
         if self.pending.is_none() {
+            self.keep_beat(now);
             let (writes, lcd, drawn) = self.send_due(now);
             return Batch {
                 cause: Cause::SignalChange,
@@ -688,6 +739,9 @@ impl Engine {
         let drawn = &self.drawn;
         let mut fresh: Vec<Drawn> = Vec::new();
         let mut this_paint: HashSet<&str> = HashSet::new();
+        // Stored signals the same way: worked out again only when a term has
+        // moved, and handed to every field drawing one.
+        let stored = &self.stored;
         for device in &self.devices.devices {
             if !runs(&self.connected, profile, &device.key) {
                 continue;
@@ -731,7 +785,7 @@ impl Engine {
                             .iter()
                             .find(|b| b.device == device.key && b.led == led.name)?;
                         let module = self.catalogue.module(&profile.module)?;
-                        profile.resolve_binding_with_moves(
+                        profile.resolve_binding_at(
                             b,
                             led,
                             |source| {
@@ -745,6 +799,7 @@ impl Engine {
                                     .map(u32::from)
                             },
                             |source| self.moves.get(source)?.at,
+                            self.beat,
                         )
                     };
                     let value = if used {
@@ -783,7 +838,7 @@ impl Engine {
                     // label belongs on the glass before the reading beside it.
                     let module = self.catalogue.module(&profile.module);
                     let state = &self.state;
-                    let Some(glyphs) = r.compose_seen(
+                    let Some(glyphs) = r.compose_cached(
                         |id| {
                             let output = module?.signal(id)?.primary()?;
                             if output.r#type == "string" {
@@ -799,6 +854,7 @@ impl Engine {
                                     max: output.number_max(),
                                 })
                         },
+                        stored,
                         |source, raw, text| {
                             if !this_paint.insert(source) {
                                 return;
@@ -861,7 +917,14 @@ impl Engine {
         let early = self
             .sent_at
             .is_some_and(|t| now.saturating_duration_since(t) < self.frame_every);
-        if (!self.dirty && self.owed.is_empty()) || early {
+        if early && self.blink_due {
+            // A flash keeps its own time: held to the frame cap, each turn
+            // would land up to a frame late, by a different amount each time,
+            // and the flash would look uneven. Only the flashing lamps go;
+            // the rest waits for the frame.
+            return (self.incremental(&[]), Vec::new(), Vec::new());
+        }
+        if (!self.dirty && self.owed.is_empty() && !self.blink_due) || early {
             return (Vec::new(), Vec::new(), Vec::new());
         }
         self.sent_at = Some(now);
@@ -875,6 +938,33 @@ impl Engine {
         let (lamps, lcd, drawn) = self.paint();
         writes.extend(lamps);
         (writes, lcd, drawn)
+    }
+
+    /// How long from `now` until a flashing lamp next turns lit or dark, or
+    /// None with nothing flashing. The caller waits no longer than this for
+    /// a datagram, so each flash turns on time rather than on the next one.
+    pub fn next_beat(&self, now: Instant) -> Option<Duration> {
+        if self.blinking.is_empty() {
+            return None;
+        }
+        let epoch = self.epoch?;
+        Some(Beat::next_turn(now.saturating_duration_since(epoch)))
+    }
+
+    /// Move the flash clock to `now`. A turn owes the flashing lamps a look,
+    /// and the glass a paint where one of them lights a screen; both go out
+    /// with the next send the frame cap allows.
+    fn keep_beat(&mut self, now: Instant) {
+        let epoch = *self.epoch.get_or_insert(now);
+        let beat = Beat::at(now.saturating_duration_since(epoch));
+        if beat == self.beat {
+            return;
+        }
+        self.beat = beat;
+        if !self.blinking.is_empty() {
+            self.blink_due = true;
+            self.dirty |= self.blink_paint;
+        }
     }
 
     /// Work out which addresses the glass reads, the way [`paint`](Self::paint)
@@ -1034,11 +1124,15 @@ impl Engine {
     }
 
     fn select_profile(&mut self, aircraft: &str) {
+        // A signal edited in the editor keeps its id, so what was worked out
+        // from its old terms has to go with the profile it came from.
+        self.stored = dsc_config::StoredCache::default();
         self.active = self
             .profiles
             .iter()
             .position(|p| p.aircraft.iter().any(|a| a == aircraft));
         self.by_address.clear();
+        self.blinking.clear();
         self.paint_reads.clear();
         self.drawn.clear();
 
@@ -1052,6 +1146,7 @@ impl Engine {
         };
 
         self.by_address = binding_index(profile, module, &self.connected);
+        (self.blinking, self.blink_paint) = blink_index(profile, &self.devices, &self.connected);
 
         // Kept across a profile reload, so saving in the editor does not
         // forget which knob was turned last. Only what is still read is kept.
@@ -1059,7 +1154,7 @@ impl Engine {
         for b in profile
             .bindings
             .iter()
-            .filter(|b| b.pick == Pick::Latest && runs(&self.connected, profile, &b.device))
+            .filter(|b| b.logic().2 == Pick::Latest && runs(&self.connected, profile, &b.device))
         {
             for source in profile.sources_of(b) {
                 if self.moves.contains_key(source) {
@@ -1155,14 +1250,19 @@ impl Engine {
         let Some(active) = self.active else {
             return Vec::new();
         };
-        if touched.is_empty() {
-            return Vec::new();
-        }
 
         let mut hit: Vec<usize> = Vec::new();
         let mut seen = HashSet::new();
         for addr in touched {
             for &bi in self.by_address.get(addr).into_iter().flatten() {
+                if seen.insert(bi) {
+                    hit.push(bi);
+                }
+            }
+        }
+        // A turn of the beat moves the flashing lamps as a signal would.
+        if std::mem::take(&mut self.blink_due) {
+            for &bi in &self.blinking {
                 if seen.insert(bi) {
                     hit.push(bi);
                 }
@@ -1184,6 +1284,7 @@ impl Engine {
                         module,
                         &self.state,
                         &self.moves,
+                        self.beat,
                         profile,
                         &profile.bindings[bi],
                     )
@@ -1214,9 +1315,15 @@ impl Engine {
             .iter()
             .filter(|b| runs(&self.connected, profile, &b.device))
         {
-            if let Some((id, v)) =
-                resolve(&self.devices, module, &self.state, &self.moves, profile, b)
-            {
+            if let Some((id, v)) = resolve(
+                &self.devices,
+                module,
+                &self.state,
+                &self.moves,
+                self.beat,
+                profile,
+                b,
+            ) {
                 out.insert(id, v);
             }
         }
@@ -1235,6 +1342,7 @@ fn resolve(
     module: &Module,
     state: &BiosState,
     moves: &HashMap<String, Move>,
+    beat: Beat,
     profile: &Profile,
     b: &Binding,
 ) -> Option<(LedId, u8)> {
@@ -1248,7 +1356,7 @@ fn resolve(
 
     // Through the profile rather than the binding alone, because a lamp may
     // mirror another one and needs its sibling to resolve itself.
-    let value = profile.resolve_binding_with_moves(
+    let value = profile.resolve_binding_at(
         b,
         led,
         |source| {
@@ -1262,6 +1370,7 @@ fn resolve(
                 .map(u32::from)
         },
         |source| moves.get(source)?.at,
+        beat,
     )?;
 
     Some((

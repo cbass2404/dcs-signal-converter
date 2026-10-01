@@ -2613,7 +2613,7 @@
     },
     {
       "aircraft": "MiG-29 Fulcrum",
-      "bios_module": "MiG-29A",
+      "bios_module": "MiG-29 Fulcrum",
       "gauges": [
         {
           "id": "ITG_1_LEFT_ENGINE_GAS_TEMPERATURE_POINTER",

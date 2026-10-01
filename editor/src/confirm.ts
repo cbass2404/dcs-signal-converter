@@ -16,11 +16,16 @@
  *
  * A line of `message` that matches one in `flagged` exactly is drawn in red,
  * for what the action is about to take away.
+ *
+ * `blocked` asks the same question with only Close, for an action that
+ * cannot be taken until what is flagged is dealt with. The user sees what
+ * stands in the way where they would have confirmed. It always answers no.
  */
 export function confirmAction(
   message: string,
   ok: string,
   flagged: string[] = [],
+  blocked = false,
 ): Promise<boolean> {
   return new Promise((resolve) => {
     // Laid out like the editor's other dialogs: the question as the heading,
@@ -50,13 +55,14 @@ export function confirmAction(
     }
 
     const cancel = document.createElement("button");
-    cancel.textContent = "Cancel";
+    cancel.textContent = blocked ? "Close" : "Cancel";
     const go = document.createElement("button");
     go.className = "danger";
     go.textContent = ok;
     const actions = document.createElement("div");
     actions.className = "actions";
-    actions.append(cancel, go);
+    actions.append(cancel);
+    if (!blocked) actions.append(go);
     dialog.append(actions);
 
     let answered = false;

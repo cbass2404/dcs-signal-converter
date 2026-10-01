@@ -46,6 +46,7 @@ import {
   showPageProblems,
 } from "./pages";
 import type { PageBook } from "./pages";
+import { signalSection } from "./signals";
 import { setLearnContext, stopLearning } from "./learn";
 import { infoIcon } from "./typeahead";
 import type {
@@ -584,7 +585,11 @@ async function showLibrary(): Promise<void> {
   const list = el("ul", { class: "profiles" });
   const none = el("p", { class: "empty" }, "No profiles match.");
   const shown: [ProfileSummary, HTMLElement][] = [];
-  for (const row of rows) {
+  // By name, with FC3's catch-all last; No aircraft has nothing to edit.
+  const listed = rows
+    .filter((r) => !noAircraft(r))
+    .sort((a, b) => Number(a.module === "FC3") - Number(b.module === "FC3"));
+  for (const row of listed) {
     const aircraft = aircraftSummary(row.aircraft);
     const meta = row.error
       ? el("span", { class: "bad" }, row.error)
@@ -1003,7 +1008,17 @@ async function showImport(): Promise<void> {
 
 /** Profiles `row` could take lights and page slots from: any other on its module. */
 function mergeSources(row: ProfileSummary, rows: ProfileSummary[]): ProfileSummary[] {
-  return rows.filter((r) => r.file !== row.file && !r.error && r.module === row.module);
+  return rows.filter(
+    (r) => r.file !== row.file && !r.error && r.module === row.module && !noAircraft(r),
+  );
+}
+
+/**
+ * The profile flown outside any aircraft. It is kept and flown, but has
+ * nothing to edit, so the window does not offer it.
+ */
+function noAircraft(row: ProfileSummary): boolean {
+  return row.aircraft.length === 1 && row.aircraft[0] === "NONE";
 }
 
 /**
@@ -1623,7 +1638,14 @@ async function showProfile(file: string): Promise<void> {
     book = pageBook(profile.module, file, await openPages(profile.module));
   } catch (e) {
     const why = e instanceof Error ? e.message : String(e);
-    book = pageBook(profile.module, file, { pages: [], broken: why, used: [], shipped: [] });
+    book = pageBook(profile.module, file, {
+      pages: [],
+      broken: why,
+      used: [],
+      shipped: [],
+      signals: [],
+      shipped_signals: [],
+    });
   }
 
   // Which panels are here, so the page can put them first. Asked again while
@@ -1651,9 +1673,29 @@ async function showProfile(file: string): Promise<void> {
   // One line, only when a row reads something the DCS-BIOS nightly has and
   // the installed one lacks. The rows themselves carry the detail.
   const notice = el("div", { class: "cautions", hidden: "" });
+  // What each banner said when its × put it away. It stays away until a check
+  // says something else, so a new problem is never hidden by an old ×.
+  const away = { notice: "", cautions: "", problems: "" };
+  /** A banner's heading with the × that puts it away until `said` changes. */
+  const banner = (head: HTMLElement, key: keyof typeof away, said: string, redraw: () => void) =>
+    el(
+      "div",
+      { class: "condition-view" },
+      el("div", { class: "grow" }, head),
+      iconButton("cancel", "✕", "Put this away", () => {
+        away[key] = said;
+        redraw();
+      }),
+    );
+  let noticeText: string | null = null;
   const drawNotice = (text: string | null): void => {
-    notice.hidden = !text;
-    notice.textContent = text ?? "";
+    noticeText = text;
+    notice.hidden = !text || away.notice === text;
+    notice.replaceChildren();
+    if (!notice.hidden)
+      notice.append(
+        banner(el("span", {}, text ?? ""), "notice", text ?? "", () => drawNotice(noticeText)),
+      );
   };
 
   /**
@@ -1684,16 +1726,22 @@ async function showProfile(file: string): Promise<void> {
    * never many: the window prevents most of them from being made at all.
    */
   const drawProblems = (): void => {
+    const saidCautions = JSON.stringify(cautions);
     cautionList.replaceChildren();
-    cautionList.hidden = cautions.length === 0;
-    if (cautions.length > 0) {
+    cautionList.hidden = cautions.length === 0 || away.cautions === saidCautions;
+    if (!cautionList.hidden) {
       cautionList.append(
-        el(
-          "strong",
-          {},
-          cautions.length === 1
-            ? "This will load, but check it:"
-            : "These will load, but check them:",
+        banner(
+          el(
+            "strong",
+            {},
+            cautions.length === 1
+              ? "This will load, but check it:"
+              : "These will load, but check them:",
+          ),
+          "cautions",
+          saidCautions,
+          drawProblems,
         ),
       );
       for (const caution of cautions) {
@@ -1701,19 +1749,25 @@ async function showProfile(file: string): Promise<void> {
       }
     }
 
+    const saidProblems = JSON.stringify(problems);
     problemList.replaceChildren();
-    if (problems.length === 0) {
+    if (problems.length === 0 || away.problems === saidProblems) {
       problemList.hidden = true;
       return;
     }
     problemList.hidden = false;
     problemList.append(
-      el(
-        "strong",
-        {},
-        problems.length === 1
-          ? "This profile will not load until this is fixed:"
-          : `This profile will not load until these ${problems.length} are fixed:`,
+      banner(
+        el(
+          "strong",
+          {},
+          problems.length === 1
+            ? "This profile will not load until this is fixed:"
+            : `This profile will not load until these ${problems.length} are fixed:`,
+        ),
+        "problems",
+        saidProblems,
+        drawProblems,
       ),
     );
     for (const problem of problems) {
@@ -1722,6 +1776,8 @@ async function showProfile(file: string): Promise<void> {
   };
 
   let pending: number | undefined;
+  // Set once Shared Conditions is built, below; the session is made first.
+  let conditionsRefresh = (): void => {};
   const session: Session = {
     file,
     profile,
@@ -1745,6 +1801,8 @@ async function showProfile(file: string): Promise<void> {
       // the answer is there by the time the user looks up from the row.
       window.clearTimeout(pending);
       pending = window.setTimeout(() => {
+        // A lamp edit can make or end a group of lamps with the same logic.
+        conditionsRefresh();
         // Snapshotted before the call: the user keeps typing while it is in
         // flight, and a late answer about an older profile must not be shown
         // as though it were about this one.
@@ -1781,8 +1839,36 @@ async function showProfile(file: string): Promise<void> {
     },
   };
   save.setAttribute("disabled", "");
-  // A page open with changes is unsaved work too, though Save does not write it.
-  unsavedWork = () => session.dirty || pageUnsaved(book);
+  // The module's shared signals, saved on their own like its pages.
+  const signalContext = {
+    book,
+    signals,
+    tell: showBanner,
+    fail: showError,
+    changed: () => session.recheck(),
+    profile: () => session.profile,
+    // The panels this profile drives first.
+    devicesFor: (display: string) => {
+      const off = session.profile.disabled_devices ?? [];
+      return devices
+        .filter((d) => d.displays.some((x) => x.key === display))
+        .map((d) => d.key)
+        .sort((a, b) => Number(off.includes(a)) - Number(off.includes(b)));
+    },
+    nameOf: (key: string) => devices.find((d) => d.key === key)?.display_name ?? key,
+    lampsChanged: () => {
+      for (const redraw of session.afterSave) redraw();
+      session.refreshDirty();
+    },
+  };
+  // Results for pages and switches, conditions for lamps: one kind each.
+  const results = signalSection(signalContext, false);
+  const conditions = signalSection(signalContext, true);
+  conditionsRefresh = conditions.refresh;
+  // A page or a stored signal open with changes is unsaved work too, though
+  // Save does not write either.
+  unsavedWork = () =>
+    session.dirty || pageUnsaved(book) || results.unsaved() || conditions.unsaved();
 
   const back = el("button", {}, "← Profiles");
   back.addEventListener("click", () => {
@@ -1883,7 +1969,9 @@ async function showProfile(file: string): Promise<void> {
     "Devices not found",
     "Supported, but not plugged in. They can still be opened and set up.",
   );
-  app.append(active.box, inactive.box, missing.box);
+  // Stored signals first, above every panel: pages draw from them, and
+  // below the panels they would be easy to miss.
+  app.append(results.box, conditions.box, active.box, inactive.box, missing.box);
 
   const sections = devices.map((device) =>
     deviceSection(device, devices, byLamp, session, () => regroup()),

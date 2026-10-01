@@ -121,6 +121,14 @@ impl Cache {
                 )]
             }
         };
+        // The page arrives from the window without the module's stored
+        // signals attached, which would read every piece drawing one as
+        // drawing a signal that is not there.
+        let mut page = page.clone();
+        if let Some(file) = lib.files.get(&profile.module) {
+            file.attach_to(&mut page);
+        }
+        let page = &page;
         self.with_module(paths, &profile.module, |m| {
             let mut out: Vec<String> = lib
                 .page_problems(page, m, &devices, &displays)
@@ -144,7 +152,7 @@ impl Cache {
 
     /// Run `f` over the named module, loading it only if the last check was
     /// for another one.
-    fn with_module<R>(
+    pub(crate) fn with_module<R>(
         &self,
         paths: &Paths,
         name: &str,
@@ -188,6 +196,11 @@ impl Cache {
         pages: &PageLibrary,
     ) -> (Vec<FlagView>, Option<String>) {
         let devices = DeviceInventory::load(&paths.devices).ok();
+        // A lamp lit by a stored signal is flagged through the signal, which
+        // is attached only when a profile runs with its pages.
+        let mut profile = profile.clone();
+        profile.attach_signals(pages);
+        let profile = &profile;
         let Ok(flags) = self.with_module(paths, &profile.module, |m| {
             let mut all: Vec<(Option<String>, Flag)> =
                 profile.flags(m).into_iter().map(|f| (None, f)).collect();
@@ -403,6 +416,9 @@ impl FlagView {
             Place::Condition { .. } => "The lamp stays off.",
             Place::Branch { .. } => "This alternative is left out; the others still work.",
             Place::Field { .. } => "The field stays blank.",
+            Place::Signal { .. } => {
+                "In the shared conditions it lights by: its tests that read this are left out, an alternative at a time where it has them."
+            }
         };
         FlagView {
             place: f.place,

@@ -28,14 +28,23 @@ function el<K extends keyof HTMLElementTagNameMap>(
  *
  * `what` is the word for the row in the placeholder, "lamp" or "field".
  *
+ * `open` shows the box from the start, for a row whose note is its main
+ * description rather than an aside: a stored signal, whose name alone rarely
+ * says what it is for.
+ *
  * Closed to a button until there is something to read, because a device can
  * carry eighteen lamps and a textarea on each would push the ones with
  * conditions off the screen. Opening it writes nothing: an empty note is not
  * a note, and storing one would mark the profile unsaved for a stray click.
  */
-export function noteEditor(row: Annotated, what: string, onChange: () => void): HTMLElement {
+export function noteEditor(
+  row: Annotated,
+  what: string,
+  onChange: () => void,
+  always = false,
+): HTMLElement {
   const wrap = el("div", { class: "note-box" });
-  let open = (row.note ?? "") !== "";
+  let open = always || (row.note ?? "") !== "";
 
   const draw = (): void => {
     wrap.textContent = "";

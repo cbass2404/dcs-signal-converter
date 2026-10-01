@@ -1177,6 +1177,16 @@
                 <strong>Between alternatives, the brightest group wins.</strong> For on and off
                 lamps that means any one group is enough.
               </p>
+              <p>
+                Each group ends with <span class="ed">While this holds, the lamp is</span>: steady,
+                <span class="ed">flashing slowly</span> (twice a second) or
+                <span class="ed">flashing fast</span> (three times a second). Every flash is lit for
+                exactly half its time, and every lamp flashing at one rate flashes in step. A
+                flashing group in its dark half counts as not holding, so a steady group that also
+                holds keeps the lamp lit. Flash only a lamp DCS keeps steady: where the cockpit lamp
+                already flashes, its signal does too and the lamp follows it, and a flash on top
+                beats against it.
+              </p>
             </div>
 
             <div class="demo" id="demo-and">
@@ -1330,6 +1340,50 @@
               positions that arrive when the aircraft loads don't count as turning. Which knob moved
               last is forgotten when you change aircraft.
             </p>
+
+            <div class="demo" id="demo-flash">
+              <div class="demo-head">
+                <span class="t">Flashing: steady for one reason, flashing for another</span
+                ><span class="try">Try it</span>
+              </div>
+              <div class="demo-body">
+                <div class="controls">
+                  <p class="say">
+                    A hook lamp held steady by the lamp test, and flashing while a warning holds.
+                    Both lit, the steady group wins.
+                  </p>
+                  <div class="row">
+                    <span class="lbl">Warning flashes</span>
+                    <div class="seg" id="f-rate">
+                      <button type="button" data-v="" aria-pressed="false">steady</button>
+                      <button type="button" data-v="slow" aria-pressed="false">slowly</button>
+                      <button type="button" data-v="fast" aria-pressed="true">fast</button>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <span class="lbl">Warning</span
+                    ><button type="button" class="chip" id="f-warn" aria-pressed="true">
+                      HOOK WARN
+                    </button>
+                  </div>
+                  <div class="row">
+                    <span class="lbl">Lamp test</span
+                    ><button type="button" class="chip" id="f-test" aria-pressed="false">
+                      LAMP TEST
+                    </button>
+                  </div>
+                </div>
+                <div class="out">
+                  <div class="lamps">
+                    <div class="lamp">
+                      <div class="lens" id="f-lens">HOOK</div>
+                      <span class="val" id="f-out"></span>
+                    </div>
+                  </div>
+                  <pre id="f-json"></pre>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -1671,8 +1725,9 @@
                     <td>2. Round</td>
                     <td><code>decimals</code>, <code>round</code></td>
                     <td>
-                      To that many places, to the nearest, or <code>"down"</code> so a drum shows a
-                      digit only once it has reached it.
+                      To that many places, to the nearest, <code>"down"</code> so a drum shows a
+                      digit only once it has reached it, or <code>"up"</code> to show the next step
+                      as soon as it has started towards it.
                     </td>
                   </tr>
                   <tr>
@@ -1688,7 +1743,10 @@
                     <td>
                       A word in place of the number, matched against what the face reads.
                       <code>"3"</code>, <code>"0,1,2"</code> or a band <code>"-1.5..-0.1"</code>,
-                      ends included. Each may take a colour, or inverse.
+                      ends included. Each may take a colour, small text, or inverse. Tick
+                      <span class="ed">the reading</span> to keep the number and only colour it,
+                      such as a radar altimeter turning red below 50:
+                      <code>{"reading": true, "colour": "red"}</code>.
                     </td>
                   </tr>
                   <tr>
@@ -1799,11 +1857,292 @@
           </div>
         </section>
 
+        <!-- ========================================================= switches -->
+        <section id="switches" data-group="Screens" data-nav="Switches">
+          <div class="wrap">
+            <div class="section-head">
+              <span class="eyebrow">Screens, part 3</span>
+              <h2>Switches: a reading another knob decides</h2>
+            </div>
+            <div class="prose">
+              <p>
+                Some readings only make sense next to a knob. The Huey's ADF needle sends 0 to 65535
+                whichever band is selected, and the band switch says what that means: 190 to 400 kHz
+                in the first band, 400 to 850 in the second, 850 to 1750 in the third. One reading
+                can't say all three.
+              </p>
+              <p>
+                A <span class="ed">switch</span> is a piece that picks how it draws from another
+                signal's position. You say which signal <span class="ed">decides</span>, then give
+                it a <span class="ed">case</span> for each position. Each case is a reading, or a
+                short chain of pieces, with every setting a reading has: its own range, rows for an
+                uneven dial, words, colours. Only one case draws at a time.
+              </p>
+              <p>
+                What every case has in common is set once, on the switch itself: the signal, the
+                decimals, the colour. A case only says what is different, and in the editor the
+                settings it takes from the switch are shown in grey. Change one to give that case
+                its own; empty it to take the switch's again. A wrap, padding or set of words the
+                switch shares can be turned <span class="ed">off</span> for one case.
+              </p>
+              <p>
+                A position no case names draws nothing, unless there is an
+                <span class="ed">else</span> case, which draws for every position the others leave.
+                The field is as wide as its widest case, which is what the fit warning measures.
+              </p>
+              <p>
+                The signal that decides doesn't have to be a knob. Set it to
+                <span class="ed">converted to</span> and it is read the way a reading is, from one
+                end of the dial to the other, rounded to a whole number. Cases are then written in
+                the dial's units, which is how a label turns amber below 3000 lb of fuel and red
+                below 1000: <code>"0..999"</code>, <code>"1000..2999"</code> and <code>else</code>,
+                each a piece of text in its own colour.
+              </p>
+            </div>
+
+            <div class="demo" id="demo-switch">
+              <div class="demo-head">
+                <span class="t">One needle, three bands</span><span class="try">Try it</span>
+              </div>
+              <div class="demo-body">
+                <div class="controls">
+                  <div class="row">
+                    <span class="lbl">Band</span>
+                    <div class="seg" id="s-band">
+                      <button type="button" data-v="0" aria-pressed="true">190-400</button>
+                      <button type="button" data-v="1" aria-pressed="false">400-850</button>
+                      <button type="button" data-v="2" aria-pressed="false">850-1750</button>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <span class="lbl">DCS sends</span
+                    ><input type="range" id="s-raw" min="0" max="65535" value="32768" /><span
+                      class="mono"
+                      id="s-rawtext"
+                    ></span>
+                  </div>
+                  <div class="row">
+                    <span class="lbl">Third band</span
+                    ><label><input type="checkbox" id="s-amber" /> in amber, its own colour</label>
+                  </div>
+                </div>
+                <div class="out">
+                  <div class="glass"><div class="cells" id="s-cells" style="--n: 10"></div></div>
+                  <p class="say" id="s-say"></p>
+                  <pre id="s-json"></pre>
+                </div>
+              </div>
+            </div>
+            <div class="demo" id="demo-fuel">
+              <div class="demo-head">
+                <span class="t">A label coloured by what is left</span
+                ><span class="try">Try it</span>
+              </div>
+              <div class="demo-body">
+                <div class="controls">
+                  <div class="row">
+                    <span class="lbl">DCS sends</span
+                    ><input type="range" id="f-raw" min="0" max="65535" value="9000" /><span
+                      class="mono"
+                      id="f-rawtext"
+                    ></span>
+                  </div>
+                  <div class="row">
+                    <span class="lbl">read as</span
+                    ><span class="note">converted to 0 to 11000</span>
+                  </div>
+                </div>
+                <div class="out">
+                  <div class="glass"><div class="cells" id="f-cells" style="--n: 10"></div></div>
+                  <p class="say" id="f-say"></p>
+                  <pre id="f-json"></pre>
+                </div>
+              </div>
+            </div>
+            <p class="note">
+              A switch inside a case is refused, and so is a switch with no cases. Two cases naming
+              one position, a case past the positions the selector sends, and positions with no case
+              and no <code>else</code> are cautions: the lower case draws, the case never draws, and
+              those positions draw nothing.
+            </p>
+          </div>
+        </section>
+
+        <!-- =========================================================== stored -->
+        <section id="stored" data-group="Screens" data-nav="Shared results">
+          <div class="wrap">
+            <div class="section-head">
+              <span class="eyebrow">Screens, part 4</span>
+              <h2>Shared results and conditions: made once, used anywhere</h2>
+            </div>
+            <div class="prose">
+              <p>
+                A reading shapes its own number, so two pages showing the same fuel say how in full,
+                twice. A <span class="ed">shared result</span> says it once. It sits in
+                <span class="ed">Shared Results</span> at the top of the profile, above the panels,
+                and any page on the aircraft can draw it: pick
+                <span class="ed">a shared result</span> as a piece of a field.
+              </p>
+              <p>
+                A shared result is one or more <span class="ed">parts</span>, each one DCS-BIOS
+                signal shaped exactly the way a reading is: converted, rounded, wrapped, padded, and
+                given a fixed number of cells. The parts are laid side by side as characters. Three
+                fuel drums, each converted to 0 to 10, rounded down and wrapped at 10, read as one
+                number.
+              </p>
+              <p>
+                Rounding each drum on its own is the point. A drum that is rolling is already
+                partway to its next digit, so the thousands drum at 1.6 means 1, not 2. Rounded to
+                the nearest, it would show the next thousand while the drum beside it still reads 6.
+              </p>
+              <p>
+                Only the number lives in the shared result. How it is drawn, its words, colour and
+                small text, belongs to the piece drawing it, so two pages can draw one result two
+                ways. Bands match the characters read as a number. Nothing draws until every part
+                has arrived, since a number missing a digit is a different number. Each one has a
+                <span class="ed">note</span> for saying what it is for.
+              </p>
+              <p>
+                Like a page, a shared result is saved on its own with
+                <span class="ed">Save result</span>, and every profile on the aircraft shares it. It
+                travels with a page that is exported, and one that is drawn on a page cannot be
+                deleted until it is taken off.
+              </p>
+              <p>
+                When one signal is shaped the same way in two or more readings on the aircraft's
+                pages, a banner at the top of <span class="ed">Shared Results</span> says so.
+                <span class="ed">Make a shared result</span> makes it once and points every one of
+                those readings at it, each keeping its own words, colour and box. It first lists
+                every reading it changes and every slot showing those pages, and saves the result
+                and the pages together, or none of them. Only readings that shape a number count, so
+                a knob drawn as words beside the same knob drawn as a number is left alone. The
+                banner goes once they are made one, or when you close it.
+              </p>
+            </div>
+
+            <div class="demo" id="demo-stored">
+              <div class="demo-head">
+                <span class="t">Three drums, one number</span><span class="try">Try it</span>
+              </div>
+              <div class="demo-body">
+                <div class="controls">
+                  <div class="row">
+                    <span class="lbl">Fuel</span
+                    ><input
+                      type="range"
+                      id="st-fuel"
+                      min="0"
+                      max="19900"
+                      step="10"
+                      value="1660"
+                    /><span class="mono" id="st-fueltext"></span>
+                  </div>
+                  <div class="row">
+                    <span class="lbl">Each part</span>
+                    <div class="seg" id="st-round">
+                      <button type="button" data-v="down" aria-pressed="true">rounded down</button>
+                      <button type="button" data-v="nearest" aria-pressed="false">
+                        to the nearest
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="out">
+                  <div class="glass"><div class="cells" id="st-cells" style="--n: 10"></div></div>
+                  <p class="say" id="st-say"></p>
+                  <pre id="st-json"></pre>
+                </div>
+              </div>
+            </div>
+            <div class="prose">
+              <p>
+                A switch can be <span class="ed">decided by</span> a shared result too. Its number
+                is already shaped, so the cases are written in its units: a FUEL label that reads
+                <code>..999</code> in red and <code>1000..</code> in green. Each case is a test, in
+                the words a lamp uses: is exactly, is one of, is between,
+                <span class="ed">is at least</span>, <span class="ed">is at most</span>, or is
+                anything else.
+              </p>
+              <p>
+                <span class="ed">Shared conditions</span>, in their own section under Shared
+                Results, are tests written once, the way a lamp's are, for every lamp that repeats
+                one cockpit lamp. The CH-47's master caution shows on every CDU and on the PTO2, and
+                which cockpit lamp it follows depends on your seat. Write that once, then choose
+                <span class="ed">Use shared conditions</span> on each lamp. Each test lights the
+                lamp or leaves it off, and a scale dims it, so the answer is on or off unless it is
+                a dimmer. Every lamp keeps its own brightness.
+              </p>
+              <p>
+                When two or more lamps in the profile light by exactly the same conditions, a banner
+                at the top of <span class="ed">Shared Conditions</span> says so.
+                <span class="ed">Make shared conditions</span> lists the lamps, saves the conditions
+                and switches the lamps to them, each keeping its own brightness. The profile is then
+                unsaved, for you to save with the rest of your edits.
+              </p>
+            </div>
+
+            <div class="demo" id="demo-stored-lamps">
+              <div class="demo-head">
+                <span class="t">One set of conditions, three lamps</span
+                ><span class="try">Try it</span>
+              </div>
+              <div class="demo-body">
+                <div class="controls">
+                  <div class="row">
+                    <span class="lbl">You sit</span>
+                    <div class="seg" id="sl-seat">
+                      <button type="button" data-v="0" aria-pressed="true">Pilot</button>
+                      <button type="button" data-v="1" aria-pressed="false">Copilot</button>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <span class="lbl">Pilot's</span
+                    ><button type="button" class="chip" id="sl-plt" aria-pressed="true">
+                      MASTER CAUTION
+                    </button>
+                  </div>
+                  <div class="row">
+                    <span class="lbl">Copilot's</span
+                    ><button type="button" class="chip" id="sl-cplt" aria-pressed="false">
+                      MASTER CAUTION
+                    </button>
+                  </div>
+                </div>
+                <div class="out">
+                  <div class="lamps">
+                    <div class="lamp">
+                      <div class="lens" id="sl-a">M.CAUT</div>
+                      <span class="val" id="sl-av"></span>
+                    </div>
+                    <div class="lamp">
+                      <div class="lens" id="sl-b">M.CAUT</div>
+                      <span class="val" id="sl-bv"></span>
+                    </div>
+                    <div class="lamp">
+                      <div class="lens" id="sl-c">GEAR</div>
+                      <span class="val" id="sl-cv"></span>
+                    </div>
+                  </div>
+                  <p class="say" id="sl-say"></p>
+                  <pre id="sl-json"></pre>
+                </div>
+              </div>
+            </div>
+            <p class="note">
+              A piece drawing a shared result can't also shape the number: decimals or a range on it
+              are refused, since the result already says. A shared result the aircraft doesn't have
+              is refused too, and so is a part with no signal chosen. A lamp can't light by a shared
+              result, and a screen can't draw shared conditions. Either one, used by a page or a
+              lamp, can't be deleted until it is taken off.
+            </p>
+          </div>
+        </section>
+
         <!-- ============================================================ glass -->
         <section id="glass" data-group="Screens" data-nav="Each glass">
           <div class="wrap">
             <div class="section-head">
-              <span class="eyebrow">Screens, part 3</span>
+              <span class="eyebrow">Screens, part 5</span>
               <h2>What each glass can do</h2>
             </div>
             <div class="prose">
@@ -1903,7 +2242,7 @@
         <section id="pages" data-group="Screens" data-nav="Pages and slots">
           <div class="wrap">
             <div class="section-head">
-              <span class="eyebrow">Screens, part 4</span>
+              <span class="eyebrow">Screens, part 6</span>
               <h2>Pages and slots</h2>
             </div>
             <div class="prose">
@@ -2058,7 +2397,10 @@
               >Discord</a
             >
             &middot;
-            <a href="https://forum.dcs.world/topic/392602-dcs-signal-converter-panel-lights-custom-screens/" target="_blank" rel="noopener noreferrer"
+            <a
+              href="https://forum.dcs.world/topic/392602-dcs-signal-converter-panel-lights-custom-screens/"
+              target="_blank"
+              rel="noopener noreferrer"
               >DCS forum</a
             >
             &middot; <a href="https://github.com/cbass2404/dcs-signal-converter">GitHub</a></span
@@ -2449,6 +2791,37 @@
           $("l-out").textContent = `${out} of 255`;
           $("l-say").textContent = why;
         }
+        draw();
+      })();
+
+      // ---- flashing
+      (() => {
+        const rate = seg("f-rate", draw);
+        const warn = toggle($("f-warn"), draw);
+        const lampTest = toggle($("f-test"), draw);
+        // The converter's clock: lit for the first half of each flash.
+        const perSecond = { slow: 2, fast: 3 };
+        const start = performance.now();
+        const lit = (r) =>
+          !r || Math.floor(((performance.now() - start) * 2 * perSecond[r]) / 1000) % 2 === 0;
+        function draw() {
+          const r = rate.get();
+          const steady = lampTest() ? 1 : 0;
+          const flashing = warn() && lit(r) ? 1 : 0;
+          const out = Math.max(steady, flashing);
+          glow($("f-lens"), out, 1);
+          $("f-out").textContent = out ? "on" : "off";
+          const second = {
+            conditions: [{ source: "HOOK_WARN", on_when: { equals: 1 } }],
+          };
+          if (r) second.blink = r;
+          $("f-json").textContent = json({
+            led: "HOOK",
+            any_of: [{ conditions: [{ source: "LAMP_TEST", on_when: { equals: 1 } }] }, second],
+          });
+        }
+        // Faster than either rate turns, so the demo turns when the converter would.
+        setInterval(draw, 20);
         draw();
       })();
 
@@ -2857,6 +3230,15 @@
               ["0.1..1.5", "NU", ""],
             ],
           },
+          "Radar altimeter, red below 50 m (Mi-24P)": {
+            id: "PLT_RV5_ALT",
+            max: 65535,
+            raw: 3500,
+            reads: [0, 750],
+            dp: 0,
+            round: "nearest",
+            aliases: [["0..50", "", "red", true]],
+          },
           "Pitch trim magnitude (F-16)": {
             id: "PITCHTRIMIND",
             max: 65535,
@@ -2993,9 +3375,23 @@
             col.append(h("option", { value: "" }, "piece's colour"));
             for (const c of Object.keys(INK)) col.append(h("option", { value: c }, c));
             col.value = a[2];
+            // Showing the reading keeps the number and only styles it, so
+            // there is nothing to type while it is ticked.
+            const shows = h("input", { type: "checkbox", "aria-label": "show the reading" });
+            shows.checked = !!a[3];
+            const settle = () => {
+              text.disabled = !!a[3];
+              text.value = a[3] ? "" : a[1];
+              text.placeholder = a[3] ? "the reading" : "blank";
+            };
+            settle();
             band.addEventListener("input", () => ((a[0] = band.value), draw()));
             text.addEventListener("input", () => ((a[1] = text.value.toUpperCase()), draw()));
             col.addEventListener("change", () => ((a[2] = col.value), draw()));
+            shows.addEventListener("change", () => ((a[3] = shows.checked), settle(), draw()));
+            const small = h("input", { type: "checkbox", "aria-label": "small" });
+            small.checked = !!a[4];
+            small.addEventListener("change", () => ((a[4] = small.checked), draw()));
             host.append(
               h(
                 "div",
@@ -3003,7 +3399,9 @@
                 band,
                 h("span", {}, "→"),
                 text,
+                h("label", {}, shows, " the reading"),
                 col,
+                h("label", {}, small, " small"),
                 h(
                   "button",
                   {
@@ -3020,7 +3418,7 @@
           draw();
         }
         $("r-addalias").addEventListener("click", () => {
-          cfg.aliases.push(["", "", ""]);
+          cfg.aliases.push(["", "", "", false, false]);
           aliases();
         });
         // A line becomes stretches the moment a second one is wanted: the
@@ -3128,8 +3526,11 @@
               ? b.list.some((v) => Math.abs(v - reading) <= tol)
               : reading >= b.lo - tol && reading <= b.hi + tol,
           );
-          const signless = signed && cfg.abs && !hit ? Math.abs(reading) : reading;
-          const drawn = hit ? hit.a[1] : padded(signless, dp, digits);
+          // A band showing the reading claims it for its colour alone: the
+          // number draws as if no band had matched.
+          const worded = hit && !hit.a[3] ? hit : null;
+          const signless = signed && cfg.abs && !worded ? Math.abs(reading) : reading;
+          const drawn = worded ? worded.a[1] : padded(signless, dp, digits);
           const colour = hit && hit.a[2] ? hit.a[2] : stretch && stretch[4] ? stretch[4] : "amber";
 
           const step = (s, v, skip) =>
@@ -3167,7 +3568,7 @@
             step(
               "Draw as",
               hit
-                ? `"${hit.a[0]}" claims it: "${hit.a[1]}"${hit.a[2] ? ` in ${hit.a[2]}` : ""}`
+                ? `"${hit.a[0]}" claims it: ${hit.a[3] ? "the reading" : `"${hit.a[1]}"`}${hit.a[2] ? ` in ${hit.a[2]}` : ""}`
                 : cfg.aliases.length
                   ? `no alias claims ${fmt(reading, dp)}${bad ? `; ${bad} not understood` : ""}`
                   : "no aliases",
@@ -3179,19 +3580,19 @@
               step(
                 "Sign",
                 cfg.abs
-                  ? hit
+                  ? worded
                     ? "an alias drew it, sign unused"
                     : `dropped: ${fmt(signless, dp)}`
                   : "kept",
-                !cfg.abs || !!hit,
+                !cfg.abs || !!worded,
               ),
             );
           if (conv)
             pipe.append(
               step(
                 "Pad",
-                digits && !hit ? `to ${digits} digits: ${drawn}` : "no",
-                !digits || !!hit,
+                digits && !worded ? `to ${digits} digits: ${drawn}` : "no",
+                !digits || !!worded,
               ),
             );
           pipe.append(
@@ -3201,8 +3602,9 @@
             ),
           );
 
+          const small = !!(hit && hit.a[4]);
           const glyphs = fitTo(
-            [...drawn].map((ch) => ({ ch, colour })),
+            [...drawn].map((ch) => ({ ch, colour, small })),
             8,
             "right",
           );
@@ -3223,13 +3625,195 @@
             if (signed && cfg.abs) span.abs = true;
           }
           const va = {};
-          for (const [b, t, c] of cfg.aliases)
-            if (b.trim()) va[b.trim()] = c ? { text: t, colour: c } : t;
+          for (const [b, t, c, r, s] of cfg.aliases) {
+            if (!b.trim()) continue;
+            const drawn = r ? {} : { text: t };
+            if (c) drawn.colour = c;
+            if (s) drawn.small = true;
+            if (r) drawn.reading = true;
+            va[b.trim()] = !r && !c && !s ? t : drawn;
+          }
           if (Object.keys(va).length) span.value_aliases = va;
           span.colour = "amber";
           $("r-json").textContent = json(span);
         }
         load();
+      })();
+
+      /* --------------------------------------------------------- switches */
+      (() => {
+        const bands = [
+          [190, 400],
+          [400, 850],
+          [850, 1750],
+        ];
+        const band = seg("s-band", draw);
+        $("s-raw").addEventListener("input", draw);
+        $("s-amber").addEventListener("change", draw);
+
+        function draw() {
+          const raw = Number($("s-raw").value);
+          const at = Number(band.get());
+          const [lo, hi] = bands[at];
+          const amber = $("s-amber").checked;
+          $("s-rawtext").textContent = raw;
+          const value = String(Math.round(lo + (raw / 65535) * (hi - lo)));
+          const colour = at === 2 && amber ? "amber" : "green";
+          const text = `ADF ${value}`;
+          const glyphs = [...text].map((ch, i) => ({
+            ch,
+            colour: i < 4 ? "white" : colour,
+            small: i < 4,
+          }));
+          paint($("s-cells"), fitTo(glyphs, 10, "left"), 10);
+          $("s-say").innerHTML =
+            `The band switch is at <b>${at}</b>, so case <b>${at}</b> draws: ` +
+            `${raw} of 65535 reads <b>${value}</b> on a ${lo} to ${hi} dial` +
+            (at === 2 && amber ? ", in its own colour." : ", in the colour every case shares.");
+          const cases = bands.map(([a, b], i) =>
+            i === 2 && amber
+              ? `"${i}": { "reads": [${a}, ${b}], "colour": "amber" }`
+              : `"${i}": { "reads": [${a}, ${b}] }`,
+          );
+          $("s-json").textContent =
+            `"content": [\n` +
+            `  { "text": "ADF ", "small": true },\n` +
+            `  { "switch": "ADF_BAND", "source": "ADF_FREQ", "colour": "green",\n` +
+            `    "cases": {\n      ${cases.join(",\n      ")}\n    } }\n]`;
+        }
+        draw();
+      })();
+
+      /* ------------------------------------------------------- fuel label */
+      (() => {
+        const cases = [
+          ["0..999", 0, 999, "red"],
+          ["1000..2999", 1000, 2999, "amber"],
+          ["else", null, null, "green"],
+        ];
+        $("f-raw").addEventListener("input", draw);
+        function draw() {
+          const raw = Number($("f-raw").value);
+          $("f-rawtext").textContent = raw;
+          const lb = Math.round((raw / 65535) * 11000);
+          const hit =
+            cases.find(([, lo, hi]) => lo !== null && lb >= lo && lb <= hi) ||
+            cases[cases.length - 1];
+          const glyphs = [..."FUEL"].map((ch) => ({ ch, colour: hit[3] }));
+          paint($("f-cells"), fitTo(glyphs, 10, "left"), 10);
+          $("f-say").innerHTML =
+            `${raw} of 65535 reads <b>${lb}</b> lb, rounded, so case ` +
+            `<b>${hit[0]}</b> draws FUEL in ${hit[3]}.`;
+          $("f-json").textContent =
+            `{ "switch": "FUEL_TOTAL", "switch_reads": [0, 11000],\n` +
+            `  "cases": {\n` +
+            cases
+              .map(([k, , , c]) => `    "${k}": { "text": "FUEL", "colour": "${c}" }`)
+              .join(",\n") +
+            `\n  } }`;
+        }
+        draw();
+      })();
+
+      /* --------------------------------------------------- shared results */
+      (() => {
+        const drums = [
+          ["FUELTOTALIZER_10K", 10000],
+          ["FUELTOTALIZER_1K", 1000],
+          ["FUELTOTALIZER_100", 100],
+        ];
+        const round = seg("st-round", draw);
+        $("st-fuel").addEventListener("input", draw);
+        function draw() {
+          const fuel = Number($("st-fuel").value);
+          const down = round.get() === "down";
+          $("st-fueltext").textContent = `${fuel} lb`;
+          // Where each drum is: rolling, so partway to its next digit.
+          const at = drums.map(([, per]) => (fuel / per) % 10);
+          const digits = at.map((d) => (down ? Math.floor(d) : Math.round(d)) % 10);
+          const text = `FUEL ${digits.join("")}00`;
+          const right =
+            digits.join("") ===
+            String(Math.floor(fuel / 100))
+              .padStart(3, "0")
+              .slice(-3);
+          paint(
+            $("st-cells"),
+            fitTo(
+              [...text].map((ch, i) => ({
+                ch,
+                colour: i < 5 ? "white" : right ? "green" : "red",
+                small: i < 5,
+              })),
+              10,
+              "left",
+            ),
+            10,
+          );
+          $("st-say").innerHTML =
+            `The drums sit at <b>${at.map((d) => d.toFixed(2)).join("</b>, <b>")}</b>. ` +
+            (down
+              ? "Each rounded down on its own, they read what is in the tanks."
+              : right
+                ? "Rounded to the nearest, they happen to agree here. Move the fuel until a drum passes halfway."
+                : "Rounded to the nearest, a drum past halfway shows its next digit while the one beside it has not rolled over.");
+          const parts = drums.map(
+            ([source]) =>
+              `      { "source": "${source}", "reads": [0, 10],` +
+              (down ? ` "round": "down",` : "") +
+              ` "wrap": 10, "width": 1 }`,
+          );
+          $("st-json").textContent =
+            `"signals": [\n` +
+            `  { "id": "k3x9qa", "name": "Fuel total",\n` +
+            `    "note": "Totalizer drums, hundreds of pounds",\n` +
+            `    "terms": [\n${parts.join(",\n")}\n    ] }\n]\n\n` +
+            `"content": [\n` +
+            `  { "text": "FUEL ", "small": true },\n` +
+            `  { "signal": "k3x9qa", "colour": "green" },\n` +
+            `  { "text": "00", "colour": "green" }\n]`;
+        }
+        draw();
+      })();
+
+      /* ------------------------------------------------ shared conditions */
+      (() => {
+        const seat = seg("sl-seat", draw);
+        const plt = toggle($("sl-plt"), draw);
+        const cplt = toggle($("sl-cplt"), draw);
+        // Each lamp's own on, from the same conditions: an indicator, a dimmer
+        // at full, and the landing gear light held at 60.
+        const lamps = [
+          ["sl-a", "sl-av", 1, "CDU, an indicator"],
+          ["sl-b", "sl-bv", 255, "PTO2, full"],
+          ["sl-c", "sl-cv", 60, "gear light, on at 60"],
+        ];
+        function draw() {
+          const s = Number(seat.get());
+          const lit = (s === 0 && plt()) || (s === 1 && cplt());
+          for (const [lens, val, on, what] of lamps) {
+            const out = lit ? on : 0;
+            glow($(lens), out, on === 1 ? 1 : 255);
+            $(val).textContent = `${what}: ${out}`;
+          }
+          $("sl-say").innerHTML = lit
+            ? "The caution for your seat is on, so <b>every lamp lights</b>, each at its own <code>on</code>."
+            : "The caution for your seat is off, so every lamp is at its <code>off</code>.";
+          $("sl-json").textContent =
+            `"signals": [\n` +
+            `  { "id": "mc4k2p", "name": "Master caution",\n` +
+            `    "any_of": [\n` +
+            `      { "conditions": [ { "source": "SEAT_POSITION", "on_when": { "equals": 0 } },\n` +
+            `                        { "source": "PLT_MASTER_CAUTION", "on_when": { "equals": 1 } } ] },\n` +
+            `      { "conditions": [ { "source": "SEAT_POSITION", "on_when": { "equals": 1 } },\n` +
+            `                        { "source": "CPLT_MASTER_CAUTION", "on_when": { "equals": 1 } } ] }\n` +
+            `    ] }\n]\n\n` +
+            `"bindings": [\n` +
+            `  { "device": "MCDU_Captain", "led": "MASTER_CAUTION", "signal": "mc4k2p" },\n` +
+            `  { "device": "PTO2", "led": "MASTER_CAUTION", "signal": "mc4k2p" },\n` +
+            `  { "device": "TAKEOFF_PLANEL_2", "led": "Landing_gear_lights", "signal": "mc4k2p", "on": 60 }\n]`;
+        }
+        draw();
       })();
 
       /* ------------------------------------------------------------ pages */
@@ -3359,10 +3943,108 @@
         // [editor words, file key, where, meaning, section]
         const T = [
           [
+            "Case",
+            "cases",
+            "Switch",
+            'What a switch draws at some of its selector\'s positions: "1", "0,2" or "1..3". A reading or a short chain, saying only what differs from the switch.',
+            "switches",
+          ],
+          [
+            "Else",
+            '"else"',
+            "Switch",
+            "The case for every position no other case names. Without one, those positions draw nothing.",
+            "switches",
+          ],
+          [
+            "Off, in a case",
+            "null",
+            "Case",
+            "Turn a wrap, padding or set of words the switch shares off for one case. Emptying the box takes the switch's back instead.",
+            "switches",
+          ],
+          [
+            "Show the reading",
+            "reading",
+            "Alias",
+            "Draw the number itself while the reading is in this band, in the band's colour, small text or inverse, rather than a word. Needs one of those.",
+            "readings",
+          ],
+          [
+            "Read as, for a switch",
+            "switch_reads",
+            "Switch",
+            "Convert the signal that decides, from one end of its dial to the other, so cases are written in its units: 0..999 lb of fuel. Rounded to a whole number. Without it, cases name the positions as sent.",
+            "switches",
+          ],
+          [
+            "Shared result",
+            "signals",
+            "Page file",
+            "A value made once and named, for any page on the aircraft to draw. One or more parts, laid side by side. Saved on its own, shared by every profile on the aircraft.",
+            "stored",
+          ],
+          [
+            "A shared result, as a piece",
+            "signal",
+            "Piece",
+            "Draw a shared result, by its id. The piece says how it looks, its words, colour and small text, and nothing about the number.",
+            "stored",
+          ],
+          [
+            "Shared conditions",
+            "signals: conditions, any_of",
+            "Page file",
+            "Tests written once, as a lamp's are, for every lamp that repeats one cockpit lamp. On or off, or a level for a dimmer; each lamp keeps its own brightness. Whether each group flashes is set here too, for every lamp lit by it.",
+            "stored",
+          ],
+          [
+            "Shared conditions, on a lamp",
+            "signal",
+            "Lamp",
+            "Light by shared conditions in place of conditions of the lamp's own. The lamp keeps its on and off.",
+            "stored",
+          ],
+          [
+            "Decided by a shared result",
+            "switch_signal",
+            "Switch",
+            "A shared result decides the cases, already shaped, so cases are written in its units.",
+            "stored",
+          ],
+          [
+            "At least, at most",
+            '"1000..", "..999"',
+            "Case, alias",
+            "A band open at one end: every reading from 1000 up, or every one up to 999.",
+            "stored",
+          ],
+          [
+            "Part",
+            "terms",
+            "Shared result",
+            "One DCS-BIOS signal in a shared result, converted, rounded, wrapped, padded and given its cells the way a reading is. The parts are laid side by side.",
+            "stored",
+          ],
+          [
+            "Switch",
+            "switch",
+            "Piece",
+            "A piece whose reading another signal decides, such as an ADF needle read by band. Settings on the switch are shared by every case.",
+            "switches",
+          ],
+          [
             "Alternative",
             "any_of",
             "Lamp",
             "Another group of conditions that can light the lamp. The brightest alternative wins, unless the row picks the one that moved last.",
+            "combining",
+          ],
+          [
+            "Flashing",
+            'blink: "slow", "fast"',
+            "Lamp, alternative, shared conditions",
+            "The group flashes while it holds: slowly is twice a second, fast three times, each lit for half its time and every lamp in step. Absent is steady. Only for a lamp DCS keeps steady.",
             "combining",
           ],
           [
@@ -3671,7 +4353,7 @@
             "Round",
             "round",
             "Reading",
-            "To the nearest, or down, so a drum shows a digit only once it has reached it. Before wrap.",
+            "To the nearest, down, so a drum shows a digit only once it has reached it, or up. Before wrap.",
             "readings",
           ],
           [
@@ -3712,8 +4394,8 @@
           [
             "Small",
             "small",
-            "Piece",
-            "The small font on a text grid, for a CDU's labels. Fewer characters are drawn small.",
+            "Piece, alias or row",
+            "The small font on a text grid, for a CDU's labels. A piece, an alias band or a conversion row can ask for it. Fewer characters are drawn small.",
             "glass",
           ],
           [

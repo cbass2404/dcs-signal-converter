@@ -6,11 +6,14 @@
 //! so editing one here edits it everywhere: the window is told where each page
 //! is used so it can say so, and deleting one empties the slots showing it in
 //! every profile.
+//!
+//! The module's stored signals live in the same file and are kept the same
+//! way: each saved on its own, and shared by every page that draws it.
 
 use std::collections::BTreeSet;
 
 use dsc_config::paths::Paths;
-use dsc_config::{Page, PageFile, PageLibrary, Profile};
+use dsc_config::{Page, PageFile, PageLibrary, Profile, StoredSignal};
 
 use crate::{fail, Reply};
 
@@ -38,6 +41,10 @@ pub struct PagesView {
     /// be put back without touching the rest. Empty for a module that ships
     /// none; a page the user made is simply not in it.
     pub shipped: Vec<Page>,
+    /// The module's stored signals, in file order.
+    pub signals: Vec<StoredSignal>,
+    /// The stored signals as they shipped, for putting one back.
+    pub shipped_signals: Vec<StoredSignal>,
 }
 
 /// Pages as the window sends them, put the way a page file loads: every
@@ -69,6 +76,7 @@ pub fn library_with(paths: &Paths, module: &str, working: &[Page]) -> PageLibrar
         .or_insert_with(|| PageFile {
             module: module.to_string(),
             pages: Vec::new(),
+            signals: Vec::new(),
         });
     for page in tidy(working) {
         match file.pages.iter_mut().find(|p| p.id == page.id) {
@@ -76,6 +84,7 @@ pub fn library_with(paths: &Paths, module: &str, working: &[Page]) -> PageLibrar
             None => file.pages.push(page),
         }
     }
+    file.attach_signals();
     lib
 }
 
@@ -126,13 +135,14 @@ pub fn usage(paths: &Paths, module: &str) -> Vec<PageUse> {
 pub fn open_pages(module: String) -> Reply<PagesView> {
     let paths = Paths::resolve();
     let lib = paths.pages.library();
+    let shipped = PageLibrary::load_dir(&paths.pages.defaults);
     Ok(PagesView {
         pages: lib.on_module(&module).to_vec(),
         broken: lib.broken(&module).map(str::to_string),
         used: usage(&paths, &module),
-        shipped: PageLibrary::load_dir(&paths.pages.defaults)
-            .on_module(&module)
-            .to_vec(),
+        shipped: shipped.on_module(&module).to_vec(),
+        signals: lib.signals_on(&module).to_vec(),
+        shipped_signals: shipped.signals_on(&module).to_vec(),
     })
 }
 
@@ -172,6 +182,9 @@ pub fn save_page(
     }
     let mut page = tidy(std::slice::from_ref(&page)).remove(0);
     page.name = page.name.trim().to_string();
+    if let Some(file) = lib.files.get(&module) {
+        file.attach_to(&mut page);
+    }
     let problems = cache.page_problems(&paths, &lib, &profile, &page, &device);
     if !problems.is_empty() {
         return Err(format!(
@@ -184,6 +197,7 @@ pub fn save_page(
     let file = lib.files.entry(module.clone()).or_insert_with(|| PageFile {
         module: module.clone(),
         pages: Vec::new(),
+        signals: Vec::new(),
     });
     match file.pages.iter_mut().find(|p| p.id == page.id) {
         Some(there) => *there = page,
@@ -230,4 +244,102 @@ pub fn delete_page(module: String, id: String, current: String) -> Reply<(PagesV
         }
     }
     Ok((open_pages(module)?, touched))
+}
+
+/// Save one stored signal into its module's file, adding it or replacing the
+/// one with its id, and hand back the module's pages as they now are.
+///
+/// Refused when it is not finished or another signal on the module has its
+/// name. Every page drawing it draws the change, in every profile on the
+/// module, since the signal is the library's like the pages.
+#[tauri::command]
+pub fn save_signal(
+    module: String,
+    signal: StoredSignal,
+    cache: tauri::State<crate::check::Cache>,
+) -> Reply<PagesView> {
+    let paths = Paths::resolve();
+    let mut lib = paths.pages.library();
+    if let Some(why) = lib.broken(&module) {
+        return Err(format!(
+            "{} was not saved, because the page file for {module} would not load and saving would replace it: {why}",
+            signal.name.trim()
+        ));
+    }
+    let mut signal = signal;
+    signal.name = signal.name.trim().to_string();
+    let problems = cache
+        .with_module(&paths, &module, |m| lib.signal_problems(&signal, m))
+        .map_err(|e| format!("{} was not saved: {e}", signal.name))?;
+    if !problems.is_empty() {
+        let lines: Vec<String> = problems.iter().map(ToString::to_string).collect();
+        return Err(format!(
+            "{} was not saved:\n{}",
+            signal.name,
+            lines.join("\n")
+        ));
+    }
+    let file = lib.files.entry(module.clone()).or_insert_with(|| PageFile {
+        module: module.clone(),
+        pages: Vec::new(),
+        signals: Vec::new(),
+    });
+    match file.signals.iter_mut().find(|s| s.id == signal.id) {
+        Some(there) => *there = signal,
+        None => file.signals.push(signal),
+    }
+    lib.save_module(&paths.pages.active, &module)
+        .map_err(|e| fail(&format!("writing the pages for {module}"), e))?;
+    open_pages(module)
+}
+
+/// Delete a stored signal from its module's file.
+///
+/// Refused while a saved page draws it, naming the pages: the piece would be
+/// left drawing a signal that is not there, which every profile showing the
+/// page would be refused for.
+#[tauri::command]
+pub fn delete_signal(module: String, id: String) -> Reply<PagesView> {
+    let paths = Paths::resolve();
+    let mut lib = paths.pages.library();
+    if let Some(why) = lib.broken(&module) {
+        return Err(format!(
+            "the page file for {module} would not load, so nothing was deleted: {why}"
+        ));
+    }
+    let drawing: Vec<&str> = lib
+        .on_module(&module)
+        .iter()
+        .filter(|p| dsc_config::bundle::signals_named(std::slice::from_ref(*p)).contains(&id))
+        .map(|p| p.name.as_str())
+        .collect();
+    if !drawing.is_empty() {
+        return Err(format!(
+            "It was not deleted, because these pages draw it: {}. Take it off them first.",
+            drawing.join(", ")
+        ));
+    }
+    // Lamps light by one from their profiles, which this window may not have
+    // open: every saved profile on the module is asked.
+    let lighting: Vec<String> = profiles_on(&paths, &module)
+        .iter()
+        .flat_map(|(_, p)| {
+            p.bindings
+                .iter()
+                .filter(|b| b.signal.as_deref() == Some(id.as_str()))
+                .map(move |b| format!("{} in {}", b.led, p.name))
+        })
+        .collect();
+    if !lighting.is_empty() {
+        return Err(format!(
+            "It was not deleted, because these lamps light by it: {}. Take it off them first.",
+            lighting.join(", ")
+        ));
+    }
+    if let Some(file) = lib.files.get_mut(&module) {
+        file.signals.retain(|s| s.id != id);
+    }
+    lib.save_module(&paths.pages.active, &module)
+        .map_err(|e| fail(&format!("writing the pages for {module}"), e))?;
+    open_pages(module)
 }

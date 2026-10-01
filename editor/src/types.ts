@@ -28,7 +28,12 @@ export interface Condition {
 /** One alternative within `any_of`: conditions that must all hold together. */
 export interface Branch {
   conditions: Condition[];
+  /** Flashes while it holds. Absent is steady. */
+  blink?: BlinkRate;
 }
+
+/** How fast a block of conditions flashes: twice or three times a second. */
+export type BlinkRate = "slow" | "fast";
 
 export interface Binding {
   device: string;
@@ -55,6 +60,13 @@ export interface Binding {
    */
   pick?: "brightest" | "latest";
   /**
+   * Whether `conditions` flash while they hold. Absent is steady. Each
+   * alternative in `any_of` carries its own instead.
+   */
+  blink?: BlinkRate;
+  /** A stored signal of lamp conditions this lamp lights by, in place of its own. */
+  signal?: string;
+  /**
    * Mirror another lamp on the same device, by name. A link rather than a copy,
    * so changing what the other lamp reads moves this one with it.
    *
@@ -78,7 +90,9 @@ export interface Binding {
  * compares rows as JSON, so an alias that changed shape would read as one the
  * user had edited and stop being brought up to a new release.
  */
-export type AliasDraw = string | { text: string; colour?: string; inverse?: boolean };
+export type AliasDraw =
+  | string
+  | { text?: string; colour?: string; inverse?: boolean; small?: boolean; reading?: boolean };
 
 /**
  * One stretch of a needle's travel and what the dial reads along it, for a
@@ -96,7 +110,20 @@ export interface Conversion {
 
 /** The characters an alias draws, whichever shape it is written in. */
 export function aliasText(drawn: AliasDraw): string {
-  return typeof drawn === "string" ? drawn : drawn.text;
+  return typeof drawn === "string" ? drawn : (drawn.text ?? "");
+}
+
+/**
+ * Whether a band shows the reading itself, styled, rather than characters in
+ * its place. Said outright, because a blank band already means draw nothing.
+ */
+export function aliasSmall(drawn: AliasDraw): boolean {
+  return typeof drawn !== "string" && drawn.small === true;
+}
+
+/** Whether a band shows the reading itself rather than characters. */
+export function aliasShowsReading(drawn: AliasDraw): boolean {
+  return typeof drawn !== "string" && drawn.reading === true;
 }
 
 /** The colour an alias asks for, if any. */
@@ -113,11 +140,26 @@ export function aliasInverse(drawn: AliasDraw): boolean {
  * An alias in the shape it is stored in: bare characters unless it has a
  * colour or is inverse, so a plain row is byte for byte what it was.
  */
-export function aliasOf(text: string, colour?: string, inverse?: boolean): AliasDraw {
-  if (!colour && !inverse) return text;
-  const out: { text: string; colour?: string; inverse?: boolean } = { text };
+export function aliasOf(
+  text: string,
+  colour?: string,
+  inverse?: boolean,
+  reading?: boolean,
+  small?: boolean,
+): AliasDraw {
+  if (!colour && !inverse && !reading && !small) return text;
+  // A band showing the reading has no characters of its own to write.
+  const out: {
+    text?: string;
+    colour?: string;
+    inverse?: boolean;
+    small?: boolean;
+    reading?: boolean;
+  } = reading ? {} : { text };
   if (colour) out.colour = colour;
   if (inverse) out.inverse = true;
+  if (small) out.small = true;
+  if (reading) out.reading = true;
   return out;
 }
 
@@ -138,6 +180,13 @@ export interface Span {
   text?: string;
   /** Catalogue signal id. */
   source?: string;
+  /**
+   * A stored signal's id, on a piece that draws one. The signal shapes the
+   * number; the piece only says how it looks.
+   */
+  signal?: string;
+  /** A stored number deciding a switch's cases, in place of `switch`. */
+  switch_signal?: string;
   /**
    * Draw nothing, and take whatever cells the rest of the chain leaves.
    *
@@ -161,9 +210,10 @@ export interface Span {
   /**
    * How a number lands on its last decimal place. Absent is to the nearest,
    * which a needle wants; `down` is for a drum or anything else that clicks
-   * over, which shows 4 until the 5 has fully arrived.
+   * over, which shows 4 until the 5 has fully arrived; `up` shows the next
+   * step as soon as it has started towards it.
    */
-  round?: "down";
+  round?: "down" | "up";
   /**
    * Start again from zero every this many, after converting and rounding: a
    * drum digit is 0 to 10 wrapping at 10, a compass 0 to 360 wrapping at 360.
@@ -229,7 +279,35 @@ export interface Span {
   label?: string;
   /** The label's colour, its own rather than the rule's. */
   label_colour?: string;
+  /**
+   * A selector whose position picks which of `cases` this piece draws.
+   *
+   * Everything else written on a switch is shared by its cases: a case piece
+   * that leaves an option unset takes the switch's, so `source` and
+   * `decimals` are written once and each case says only what is its own.
+   */
+  switch?: string;
+  /**
+   * What the selector reads at each end of its travel, so cases are written
+   * in a gauge's units: `"0..999"` lb of fuel rather than counts. Converted
+   * in a straight line and rounded to a whole number. Absent matches the
+   * position as sent, which is what a knob wants.
+   */
+  switch_reads?: [number, number];
+  /**
+   * What a switch draws at each position of its selector, keyed the way a
+   * value alias is (`"0"`, `"0,1"`, `"1..3"`) or `"else"`. A case is one piece
+   * or a chain of them, each written as only what differs from the switch.
+   */
+  cases?: Record<string, SpanPatch | SpanPatch[]>;
 }
+
+/**
+ * A piece inside a switch case, as written: only what differs from the
+ * switch. A key left out takes the switch's value, and `null` takes none,
+ * for the case that wants no wrap where every other case wraps.
+ */
+export type SpanPatch = { [K in keyof Span]?: Span[K] | null };
 
 /**
  * One field of a display, and the content that fills it.
@@ -315,7 +393,7 @@ export interface Readout {
   decimals?: number;
   /** The fewest digits before the point, made up with leading zeros: 001. */
   digits?: number;
-  round?: "down";
+  round?: "down" | "up";
   wrap?: number;
   /** Draw a converted reading without its sign. */
   abs?: boolean;
@@ -355,6 +433,8 @@ export type FlagView = { text: string } & (
   | { at: "branch"; binding: number; branch: number; index: number }
   /** A field on a page carries the page's id, and its index is into the page's fields. */
   | { at: "field"; readout: number; page?: string }
+  /** A lamp, through the stored signal it lights by. */
+  | { at: "signal"; binding: number }
 );
 
 /**
@@ -408,6 +488,50 @@ export interface PageUse {
   slot: number;
 }
 
+/**
+ * One DCS-BIOS signal in a stored signal, shaped the way a reading is, and
+ * the cells it takes.
+ */
+export type Term = Pick<
+  Span,
+  | "source"
+  | "reads"
+  | "conversions"
+  | "decimals"
+  | "digits"
+  | "round"
+  | "wrap"
+  | "abs"
+  | "width"
+  | "align"
+>;
+
+/**
+ * A number on one module worked out once and named, for any page there to
+ * draw: one DCS-BIOS signal shaped, or several laid side by side.
+ */
+export interface StoredSignal {
+  /** Fixed when it is made. What a piece points at. */
+  id: string;
+  /** What the window shows. Unique on its module. */
+  name: string;
+  note?: string;
+  /** A number's parts. Empty on lamp conditions. */
+  terms: Term[];
+  /**
+   * Lamp conditions, written as a lamp's are, for every lamp that lights by
+   * this signal. Empty on a number.
+   */
+  conditions: Condition[];
+  any_of?: Branch[];
+  pick?: "brightest" | "latest";
+  /**
+   * Whether `conditions` flash while they hold, for every lamp lit by this
+   * signal. Each alternative carries its own.
+   */
+  blink?: BlinkRate;
+}
+
 /** One module's pages, as the editor opens them with a profile. */
 export interface PagesView {
   pages: Page[];
@@ -416,6 +540,10 @@ export interface PagesView {
   used: PageUse[];
   /** The module's pages as they shipped. A page the user made is not here. */
   shipped: Page[];
+  /** The module's stored signals. */
+  signals: StoredSignal[];
+  /** The stored signals as they shipped. */
+  shipped_signals: StoredSignal[];
 }
 
 /**

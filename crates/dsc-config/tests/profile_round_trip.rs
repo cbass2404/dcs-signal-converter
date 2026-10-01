@@ -49,6 +49,8 @@ fn an_alias_with_no_colour_is_written_as_bare_characters() {
             text: "ON".into(),
             colour: None,
             inverse: false,
+            small: false,
+            reading: false,
         },
     );
     let written = serde_json::to_string(&built).expect("it serializes");
@@ -60,6 +62,8 @@ fn an_alias_with_no_colour_is_written_as_bare_characters() {
             text: "WARN".into(),
             colour: Some(Colour::Red),
             inverse: false,
+            small: false,
+            reading: false,
         },
     );
     let written = serde_json::to_string(&built).expect("it serializes");
@@ -74,6 +78,8 @@ fn an_alias_with_no_colour_is_written_as_bare_characters() {
             text: " ".into(),
             colour: None,
             inverse: true,
+            small: false,
+            reading: false,
         },
     );
     let written = serde_json::to_string(&built).expect("it serializes");

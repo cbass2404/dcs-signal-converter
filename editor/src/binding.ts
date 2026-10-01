@@ -9,8 +9,9 @@
 import { confirmAction } from "./confirm";
 import { flagSlot } from "./flags";
 import { noteEditor } from "./note";
+import { isLampSignal, storedSignal, storedSignals } from "./stored";
 import { hintFor, infoIcon, signalPicker } from "./typeahead";
-import type { Binding, Branch, Condition, Led, OnWhen, SignalView } from "./types";
+import type { Binding, BlinkRate, Branch, Condition, Led, OnWhen, SignalView } from "./types";
 
 type TestKind = "equals" | "in" | "gte" | "lte" | "between" | "scale";
 
@@ -233,6 +234,12 @@ export interface BindingEditorOptions {
   saved?: () => Binding | undefined;
   /** Hands over the editor's redraw, for a change made outside it: a save, or the lamp's output. */
   onRedraw?: (redraw: () => void) => void;
+  /**
+   * Conditions and alternatives only, for a stored signal of lamp conditions:
+   * no always on, no matching another lamp, no lamp of its own to reset, and
+   * its note is the signal's, shown by the signal.
+   */
+  conditionsOnly?: boolean;
   /** Called whenever the binding changes, so the window can mark itself dirty. */
   onChange: () => void;
   /**
@@ -256,9 +263,11 @@ function meaningfulPart(b: Binding): string {
     conditions: b.conditions,
     any_of: b.any_of ?? [],
     pick: b.pick ?? "brightest",
+    blink: b.blink ?? "steady",
     always: b.always ?? false,
     same_as: b.same_as ?? null,
     same_as_device: b.same_as_device ?? null,
+    signal: b.signal ?? null,
     on: b.on ?? null,
     off: b.off,
     note: b.note ?? "",
@@ -312,6 +321,19 @@ function groupsOf(binding: Binding): Branch[] {
 }
 
 /**
+ * Where a block's flash is kept: on the alternative, or for a lamp's own
+ * conditions, which are not a branch, on the lamp.
+ */
+function flashOf(binding: Binding, group: Branch): { blink?: BlinkRate } {
+  return binding.any_of && binding.any_of.length > 0 ? group : binding;
+}
+
+const FLASH_WORDS: Record<BlinkRate, string> = {
+  slow: "flashing slowly",
+  fast: "flashing fast",
+};
+
+/**
  * A whole lamp in words, a line per condition, for a question that has to say
  * what a change will do before it is made rather than leave the user to find
  * out after.
@@ -328,15 +350,22 @@ function describeBinding(
       ? `${c.source} ${describeTest(c.on_when, byId.get(c.source))}`
       : "an unfinished condition";
   if (b.always) lines.push("Always on, reading no signal");
-  else if (b.same_as) {
+  else if (b.signal) {
+    lines.push(`Lights by the shared conditions ${storedSignal(b.signal)?.name ?? b.signal}`);
+  } else if (b.same_as) {
     const elsewhere = b.same_as_device && b.same_as_device !== b.device;
     lines.push(`Matches ${b.same_as}${elsewhere ? ` on ${deviceName(b.same_as_device!)}` : ""}`);
   } else if (groups.length === 0) lines.push("Unassigned, so driven off");
-  else if (groups.length === 1) lines.push(groups[0]!.conditions.map(condition).join("\nand "));
-  else {
+  else if (groups.length === 1) {
+    lines.push(groups[0]!.conditions.map(condition).join("\nand "));
+    if (b.blink) lines.push(`Lit ${FLASH_WORDS[b.blink]}`);
+  } else {
     const how = b.pick === "latest" ? "the one that changed last wins" : "the brightest wins";
     lines.push(`Any of these, ${how}:`);
-    for (const g of groups) lines.push(`- ${g.conditions.map(condition).join(" and ")}`);
+    for (const g of groups) {
+      const flash = g.blink ? `, ${FLASH_WORDS[g.blink]}` : "";
+      lines.push(`- ${g.conditions.map(condition).join(" and ")}${flash}`);
+    }
   }
   if (b.on !== null) lines.push(`Lit at ${b.on}`);
   if (b.off !== 0) lines.push(`Off at ${b.off}`);
@@ -393,6 +422,10 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
     }
     if (branches.length === 1) {
       binding.conditions = branches[0]?.conditions ?? [];
+      // The survivor's flash goes with its conditions.
+      const blink = branches[0]?.blink;
+      if (blink) binding.blink = blink;
+      else delete binding.blink;
       binding.any_of = [];
     }
     // Choosing between alternatives means nothing without two of them, and
@@ -616,6 +649,50 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
     return row;
   }
 
+  /**
+   * This lamp lights by a stored signal of lamp conditions.
+   *
+   * A row of its own, like a mirror: the conditions are the signal's, edited
+   * in Stored Signals at the top of the profile, and this lamp brings only
+   * its own brightness.
+   */
+  function signalRow(id: string): HTMLElement {
+    const lamps = storedSignals().filter(isLampSignal);
+    const chosen = lamps.find((s) => s.id === id);
+    const text = el("div", { class: "grow" });
+    if (chosen) {
+      text.append(
+        el("span", { class: "desc" }, `Lights by ${chosen.name}`),
+        el(
+          "span",
+          { class: "sub" },
+          el("span", { class: "test" }, chosen.note || "shared conditions"),
+        ),
+      );
+    } else {
+      text.append(el("span", { class: "bad" }, `${id} is not among the shared conditions here`));
+    }
+    text.append(flagSlot(binding));
+    const row = el("div", { class: "condition-view always" }, text);
+    if (lamps.length > 1) {
+      const pick = el("select", { class: "test" });
+      for (const s of lamps) pick.append(el("option", { value: s.id }, s.name));
+      pick.value = id;
+      pick.addEventListener("change", () => {
+        binding.signal = pick.value;
+        committed();
+      });
+      row.append(pick);
+    }
+    row.append(
+      iconButton("cancel", "\u2715", "Stop lighting by the shared conditions", () => {
+        delete binding.signal;
+        committed();
+      }),
+    );
+    return row;
+  }
+
   /** The device is written only when it is another one, as the file has it. */
   function pointAt(t: MirrorTarget): void {
     binding.same_as = t.led.name;
@@ -639,8 +716,12 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
   function addAlternative(): void {
     const fresh: Condition = { source: "", on_when: defaultTest(undefined, led) };
     if (!binding.any_of || binding.any_of.length === 0) {
-      binding.any_of = [{ conditions: binding.conditions }, { conditions: [fresh] }];
+      // The lamp's flash goes with its conditions into the first alternative.
+      const first: Branch = { conditions: binding.conditions };
+      if (binding.blink) first.blink = binding.blink;
+      binding.any_of = [first, { conditions: [fresh] }];
       binding.conditions = [];
+      delete binding.blink;
     } else {
       binding.any_of.push({ conditions: [fresh] });
     }
@@ -664,7 +745,39 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
     add.title = "Another test that must also hold for this alternative to light the lamp.";
     add.addEventListener("click", () => addCondition(group));
     block.append(add);
+    if (group.conditions.length > 0) block.append(flashRow(flashOf(binding, group)));
     return block;
+  }
+
+  /**
+   * Steady or flashing, at the end of a block of conditions. On a stored
+   * signal's blocks it is the flash of every lamp lit by the signal.
+   */
+  function flashRow(holder: { blink?: BlinkRate }): HTMLElement {
+    const pick = el("select", { class: "test" });
+    pick.append(
+      el("option", { value: "" }, "steady"),
+      el("option", { value: "slow" }, "flashing slowly, twice a second"),
+      el("option", { value: "fast" }, "flashing fast, three times a second"),
+    );
+    pick.value = holder.blink ?? "";
+    pick.addEventListener("change", () => {
+      if (pick.value === "slow" || pick.value === "fast") holder.blink = pick.value;
+      else delete holder.blink;
+      committed();
+    });
+    return el(
+      "div",
+      { class: "meta with-info" },
+      "While this holds, the lamp is ",
+      pick,
+      infoIcon(
+        "About flashing",
+        "For a lamp DCS does not flash itself. Where the cockpit lamp flashes, its signal " +
+          "flashes too and the lamp already follows it; a flash set here on top beats " +
+          "against it and looks broken. Every lamp flashing at one rate flashes in step.",
+      ),
+    );
   }
 
   function render(): void {
@@ -692,15 +805,30 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
       return;
     }
 
+    if (binding.signal) {
+      host.append(signalRow(binding.signal));
+      appendFooter();
+      return;
+    }
+
     const groups = groupsOf(binding);
     const alternatives = groups.length > 1;
 
     if (groups.every((g) => g.conditions.length === 0)) {
       // An undecided lamp gets the two ways to start. Always-on is not offered
       // on a configured lamp, where choosing it would discard existing work.
-      const assign = el("button", { class: "add", type: "button" }, "Assign a signal");
+      const assign = el(
+        "button",
+        { class: "add", type: "button" },
+        opts.conditionsOnly ? "+ Add condition" : "Assign a signal",
+      );
       const first = groups[0] ?? { conditions: binding.conditions };
       assign.addEventListener("click", () => addCondition(first));
+      // A stored signal's conditions have nothing but conditions to offer.
+      if (opts.conditionsOnly) {
+        host.append(el("div", { class: "choices" }, assign));
+        return;
+      }
       const on = el("button", { class: "add", type: "button" }, "Always on");
       on.title = "Light this lamp whenever the aircraft is loaded, with no signal behind it.";
       on.addEventListener("click", () => {
@@ -722,6 +850,19 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
           committed();
         });
         choices.append(match);
+      }
+
+      // One set of conditions for every lamp repeating a cockpit lamp,
+      // offered where the module has any.
+      const lamps = storedSignals().filter(isLampSignal);
+      if (lamps.length > 0) {
+        const use = el("button", { class: "add", type: "button" }, "Use shared conditions");
+        use.title = "Light by shared conditions, made once in Shared Conditions.";
+        use.addEventListener("click", () => {
+          binding.signal = lamps[0]?.id;
+          committed();
+        });
+        choices.append(use);
       }
 
       host.append(choices);
@@ -784,6 +925,7 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
    * most questions about.
    */
   function appendFooter(): void {
+    if (opts.conditionsOnly) return;
     // The note on the left, Reset alone in the corner. Reset is the only
     // control in this cell that throws work away, and it was sitting at the
     // bottom of the same stack as the buttons that add things, one slip from
@@ -839,7 +981,11 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
     binding.any_of = structuredClone(to.any_of ?? []);
     if (to.pick) binding.pick = to.pick;
     else delete binding.pick;
+    if (to.blink) binding.blink = to.blink;
+    else delete binding.blink;
     binding.always = to.always ?? false;
+    if (to.signal) binding.signal = to.signal;
+    else delete binding.signal;
     binding.same_as = to.same_as ?? null;
     if (to.same_as_device) binding.same_as_device = to.same_as_device;
     else delete binding.same_as_device;

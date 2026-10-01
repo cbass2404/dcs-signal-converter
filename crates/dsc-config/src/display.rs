@@ -22,9 +22,11 @@
 
 use std::collections::{BTreeMap, HashMap};
 use std::path::Path;
+use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 
+use crate::stored::{StoredCache, StoredSignal, StoredValue};
 use crate::{read_json, Error, Result};
 
 /// One character position on a display.
@@ -1213,7 +1215,17 @@ impl std::fmt::Display for ValueBand {
                 let written: Vec<String> = vs.iter().map(|v| v.to_string()).collect();
                 write!(f, "{}", written.join(","))
             }
-            ValueBand::Range { lo, hi } => write!(f, "{lo}..{hi}"),
+            ValueBand::Range { lo, hi } => {
+                // An open end is written as nothing, the way it is read.
+                let side = |v: &f64| {
+                    if v.is_finite() {
+                        v.to_string()
+                    } else {
+                        String::new()
+                    }
+                };
+                write!(f, "{}..{}", side(lo), side(hi))
+            }
         }
     }
 }
@@ -1224,7 +1236,7 @@ impl std::str::FromStr for ValueBand {
     fn from_str(s: &str) -> std::result::Result<Self, String> {
         let bad = || {
             format!(
-                "expected a reading like \"3\", a list like \"0,1,2\" or a band like \"-1.5..-0.1\", got {s:?}"
+                "expected a reading like \"3\", a list like \"0,1,2\", a band like \"-1.5..-0.1\", or an open band like \"1000..\" or \"..999\", got {s:?}"
             )
         };
         let one = |part: &str| -> std::result::Result<f64, String> {
@@ -1235,7 +1247,19 @@ impl std::str::FromStr for ValueBand {
         };
         let s = s.trim();
         if let Some((a, b)) = s.split_once("..").or_else(|| s.split_once(" to ")) {
-            let (lo, hi) = (one(a)?, one(b)?);
+            // An open end is at least or at most: `"1000.."` claims every
+            // reading from 1000 up, `"..999"` every one up to 999.
+            let end = |part: &str, open: f64| -> std::result::Result<f64, String> {
+                if part.trim().is_empty() {
+                    Ok(open)
+                } else {
+                    one(part)
+                }
+            };
+            if a.trim().is_empty() && b.trim().is_empty() {
+                return Err(bad());
+            }
+            let (lo, hi) = (end(a, f64::NEG_INFINITY)?, end(b, f64::INFINITY)?);
             if hi < lo {
                 return Err(format!("band {s:?} ends before it starts"));
             }
@@ -1280,6 +1304,18 @@ pub struct AliasDraw {
     pub text: String,
     pub colour: Option<Colour>,
     pub inverse: bool,
+    /// Draw this band in the small font. Text grids only, like a piece's own
+    /// `small`, and either asking is enough, the way a conversion row's is.
+    pub small: bool,
+    /// Draw the reading itself, in this band's colour or inverse, rather than
+    /// characters in its place.
+    ///
+    /// A band is also how a reading is styled: a needle past 120 is the same
+    /// number, and the point is that it draws red. An empty `text` cannot say
+    /// that, because a blank is already a thing a band draws on purpose, the
+    /// centre of a trim indicator worth a row of its own that draws nothing.
+    /// So it is said outright, and `problems` refuses it beside `text`.
+    pub reading: bool,
 }
 
 /// An alias as it is written on disk: bare characters, or an object once it
@@ -1289,11 +1325,18 @@ pub struct AliasDraw {
 enum AliasRepr {
     Text(String),
     Styled {
-        text: String,
+        // Absent only on a band that draws the reading, which has no
+        // characters of its own. Every other band writes it, blank or not.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        text: Option<String>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         colour: Option<Colour>,
         #[serde(default, skip_serializing_if = "is_false")]
         inverse: bool,
+        #[serde(default, skip_serializing_if = "is_false")]
+        small: bool,
+        #[serde(default, skip_serializing_if = "is_false")]
+        reading: bool,
     },
 }
 
@@ -1304,15 +1347,21 @@ impl From<AliasRepr> for AliasDraw {
                 text,
                 colour: None,
                 inverse: false,
+                small: false,
+                reading: false,
             },
             AliasRepr::Styled {
                 text,
                 colour,
                 inverse,
+                small,
+                reading,
             } => AliasDraw {
-                text,
+                text: text.unwrap_or_default(),
                 colour,
                 inverse,
+                small,
+                reading,
             },
         }
     }
@@ -1327,14 +1376,19 @@ impl From<AliasDraw> for AliasRepr {
     /// back in a different shape would make every aliased row in every profile
     /// read as one the user had edited, and those rows are never updated
     /// again.
+    ///
+    /// A band drawing the reading has no characters, and writes none: `text`
+    /// beside `reading` would be two answers to one question.
     fn from(a: AliasDraw) -> Self {
-        if a.colour.is_none() && !a.inverse {
+        if a.colour.is_none() && !a.inverse && !a.small && !a.reading {
             return AliasRepr::Text(a.text);
         }
         AliasRepr::Styled {
-            text: a.text,
+            text: (!a.reading || !a.text.is_empty()).then_some(a.text),
             colour: a.colour,
             inverse: a.inverse,
+            small: a.small,
+            reading: a.reading,
         }
     }
 }
@@ -1351,6 +1405,8 @@ impl From<String> for AliasDraw {
             text,
             colour: None,
             inverse: false,
+            small: false,
+            reading: false,
         }
     }
 }
@@ -1425,6 +1481,9 @@ pub enum Round {
     Nearest,
     /// Down, which is what a drum or anything else that clicks over wants.
     Down,
+    /// Up, for a count that shows the next step as soon as it has started
+    /// towards it.
+    Up,
 }
 
 /// Which end of a cell run the text is anchored to.
@@ -1454,7 +1513,7 @@ impl Align {
     /// One place rather than three, because a box, a field and a rule's label
     /// all have to put the odd cell on the same side or the screen stops
     /// lining up with itself.
-    fn pad_before(&self, len: usize, width: usize) -> usize {
+    pub(crate) fn pad_before(&self, len: usize, width: usize) -> usize {
         let spare = width.saturating_sub(len);
         match self {
             Align::Left => 0,
@@ -1569,6 +1628,55 @@ pub struct Span {
     /// finished yet, which `problems` says so about.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub source: String,
+    /// A stored signal's id, on a piece that draws one. Empty on every other
+    /// piece.
+    ///
+    /// A third answer to what a piece draws, beside `text` and `source`. The
+    /// signal says what the number is; the piece says only how it looks, so
+    /// nothing here that shapes a number applies, and its bands, colour and
+    /// size do.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub signal: String,
+    /// The stored signal `signal` names, attached when the page file loads.
+    /// Never written. None where the page file has no such signal, which the
+    /// checks refuse.
+    #[serde(skip)]
+    pub stored: Option<Arc<StoredSignal>>,
+    /// A selector whose position picks which of `cases` this piece draws.
+    /// Empty on every piece that is not a switch.
+    ///
+    /// DCS-BIOS reports some readings in units another knob decides. The
+    /// Huey's ADF needle runs 0 to 65535 whichever band is selected, and the
+    /// band switch is what says whether that is 190 to 400 kHz or 850 to
+    /// 1750. One piece cannot say both, and three fields on one run of cells
+    /// would be three owners for it.
+    ///
+    /// Everything else written on a switch is shared by its cases: a case
+    /// piece that leaves an option unset takes the switch's. So `source`,
+    /// `decimals` and a colour are written once, and each case says only
+    /// what is its own.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub switch: String,
+    /// A stored signal's id, deciding the cases in place of `switch`, so a
+    /// label can colour by the fuel drums' total. Its number is already
+    /// shaped, so cases are written in its units and nothing converts it.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub switch_signal: String,
+    /// The stored signal `switch_signal` names, attached when the page file
+    /// loads. Never written.
+    #[serde(skip)]
+    pub switch_stored: Option<Arc<StoredSignal>>,
+    /// What the selector reads at each end of its travel, so cases can be
+    /// written in the units a gauge is marked with rather than in counts.
+    ///
+    /// A switch is usually a knob, whose positions are the numbers its cases
+    /// name. Read off a gauge instead, it turns a label red below 1000 lb of
+    /// fuel, and `"0..999"` says that where `"0..5957"` would not. Converted
+    /// in a straight line like `reads`, then rounded to a whole number, so
+    /// `"0..999"` and `"1000..2999"` leave nothing between them. None matches
+    /// the position as sent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub switch_reads: Option<[f64; 2]>,
     /// Draw nothing, and take whatever cells the rest of the chain leaves.
     ///
     /// How content reaches both ends of a line. A CDU page puts a label at the
@@ -1767,12 +1875,470 @@ pub struct Span {
     /// and value is one character.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub replace: BTreeMap<String, String>,
+    /// What a switch draws at each position of its selector. Empty on every
+    /// piece that is not a switch.
+    #[serde(default, skip_serializing_if = "Cases::is_empty")]
+    pub cases: Cases,
+}
+
+/// One option on a piece inside a switch case: left to the switch, cleared, or
+/// set.
+///
+/// Three states rather than an `Option`, because absent and cleared mean
+/// different things here. Absent takes the switch's value, which is the whole
+/// point of writing shared options once. `null` takes none, for the case that
+/// wants no wrap where every other case wraps at 360.
+#[derive(Debug, Clone)]
+pub enum Tri<T> {
+    Inherit,
+    Clear,
+    Set(T),
+}
+
+// By hand, because the derive would ask every `T` for a default it never
+// uses, and `ColourSource` has none.
+#[allow(clippy::derivable_impls)]
+impl<T> Default for Tri<T> {
+    fn default() -> Self {
+        Tri::Inherit
+    }
+}
+
+impl<T> Tri<T> {
+    pub fn is_inherit(&self) -> bool {
+        matches!(self, Tri::Inherit)
+    }
+}
+
+impl<T: Clone> Tri<T> {
+    /// The same as [`pick`](Self::pick) for an option that is absent rather
+    /// than empty when unset.
+    fn pick_opt(&self, inherits: bool, shared: &Option<T>) -> Option<T> {
+        match self {
+            Tri::Set(v) => Some(v.clone()),
+            Tri::Clear => None,
+            Tri::Inherit if inherits => shared.clone(),
+            Tri::Inherit => None,
+        }
+    }
+}
+
+impl<T: Clone + Default> Tri<T> {
+    /// The value a piece ends up with, given what the switch shares and
+    /// whether this kind of piece takes it at all.
+    fn pick(&self, inherits: bool, shared: &T) -> T {
+        match self {
+            Tri::Set(v) => v.clone(),
+            Tri::Clear => T::default(),
+            Tri::Inherit if inherits => shared.clone(),
+            Tri::Inherit => T::default(),
+        }
+    }
+}
+
+impl<T: Serialize> Serialize for Tri<T> {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> std::result::Result<S::Ok, S::Error> {
+        match self {
+            // Never written: every field of this type skips it.
+            Tri::Inherit | Tri::Clear => s.serialize_none(),
+            Tri::Set(v) => v.serialize(s),
+        }
+    }
+}
+
+impl<'de, T: Deserialize<'de>> Deserialize<'de> for Tri<T> {
+    /// Only ever called for a key that is present, absent ones taking the
+    /// default, so `null` here is the user clearing the option.
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> std::result::Result<Self, D::Error> {
+        Ok(Option::<T>::deserialize(d)?.map_or(Tri::Clear, Tri::Set))
+    }
+}
+
+fn is_inherit<T>(t: &Tri<T>) -> bool {
+    t.is_inherit()
+}
+
+/// A piece as a switch case writes it: only what differs from the switch.
+///
+/// The same keys as [`Span`], in the same order so a case reads like any
+/// other piece in the file. What a piece draws and where it sits (`text`,
+/// `gap`, a rule and its label, a box) is never shared, since a switch has
+/// none of its own to share; everything that shapes or styles a value is.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct SpanPatch {
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub text: String,
+    #[serde(default, skip_serializing_if = "is_inherit")]
+    pub source: Tri<String>,
+    /// A stored signal, never shared: like characters, it is what one case
+    /// draws rather than how every case reads.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub signal: String,
+    /// Kept only so that a switch inside a case can be refused by name
+    /// rather than silently dropped.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub switch: String,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub gap: bool,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub rule: bool,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub label: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label_colour: Option<Colour>,
+    #[serde(default, skip_serializing_if = "is_zero_usize")]
+    pub width: usize,
+    #[serde(default, skip_serializing_if = "is_left")]
+    pub align: Align,
+    #[serde(default, skip_serializing_if = "is_inherit")]
+    pub reads: Tri<[f64; 2]>,
+    #[serde(default, skip_serializing_if = "is_inherit")]
+    pub conversions: Tri<Vec<Conversion>>,
+    #[serde(default, skip_serializing_if = "is_inherit")]
+    pub decimals: Tri<u8>,
+    #[serde(default, skip_serializing_if = "is_inherit")]
+    pub digits: Tri<u8>,
+    #[serde(default, skip_serializing_if = "is_inherit")]
+    pub round: Tri<Round>,
+    #[serde(default, skip_serializing_if = "is_inherit")]
+    pub wrap: Tri<f64>,
+    #[serde(default, skip_serializing_if = "is_inherit")]
+    pub value_aliases: Tri<BTreeMap<ValueBand, AliasDraw>>,
+    #[serde(default, skip_serializing_if = "is_inherit")]
+    pub abs: Tri<bool>,
+    #[serde(default, skip_serializing_if = "is_inherit")]
+    pub aliases: Tri<BTreeMap<String, String>>,
+    #[serde(default, skip_serializing_if = "is_inherit")]
+    pub format: Tri<String>,
+    #[serde(default, skip_serializing_if = "is_inherit")]
+    pub colour: Tri<Colour>,
+    #[serde(default, skip_serializing_if = "is_inherit")]
+    pub small: Tri<bool>,
+    #[serde(default, skip_serializing_if = "is_inherit")]
+    pub inverse: Tri<bool>,
+    #[serde(default, skip_serializing_if = "is_inherit")]
+    pub colours: Tri<ColourSource>,
+    #[serde(default, skip_serializing_if = "is_inherit")]
+    pub replace: Tri<BTreeMap<String, String>>,
+}
+
+impl SpanPatch {
+    /// The piece this draws, with what it leaves unset taken from `shared`.
+    ///
+    /// Each kind of piece takes only what applies to it. Characters typed into
+    /// a case take the switch's colour, size, inverse and replacements, and
+    /// never its `decimals`; a gap takes only the styling a rule draws in.
+    ///
+    /// `reads` and `conversions` are one choice made two ways, so a case that
+    /// makes it either way, or clears it, takes neither from the switch. A
+    /// case converting by stretches would otherwise inherit a range beside
+    /// them and be refused for converting twice.
+    fn resolve(&self, shared: &Span) -> Span {
+        let reading = !self.gap && self.text.is_empty() && self.signal.is_empty();
+        let typed = !self.gap;
+        let converts = reading && self.reads.is_inherit() && self.conversions.is_inherit();
+        Span {
+            text: self.text.clone(),
+            source: self.source.pick(reading, &shared.source),
+            signal: self.signal.clone(),
+            stored: None,
+            switch: self.switch.clone(),
+            switch_signal: String::new(),
+            switch_stored: None,
+            switch_reads: None,
+            gap: self.gap,
+            rule: self.rule,
+            label: self.label.clone(),
+            label_colour: self.label_colour,
+            width: self.width,
+            align: self.align,
+            reads: self.reads.pick_opt(converts, &shared.reads),
+            conversions: self.conversions.pick(converts, &shared.conversions),
+            decimals: self.decimals.pick(reading, &shared.decimals),
+            digits: self.digits.pick(reading, &shared.digits),
+            round: self.round.pick(reading, &shared.round),
+            wrap: self.wrap.pick_opt(reading, &shared.wrap),
+            value_aliases: self.value_aliases.pick(reading, &shared.value_aliases),
+            abs: self.abs.pick(reading, &shared.abs),
+            aliases: self.aliases.pick(reading, &shared.aliases),
+            format: self.format.pick_opt(reading, &shared.format),
+            colour: self.colour.pick_opt(true, &shared.colour),
+            small: self.small.pick(true, &shared.small),
+            inverse: self.inverse.pick(true, &shared.inverse),
+            colours: self.colours.pick_opt(reading, &shared.colours),
+            replace: self.replace.pick(typed, &shared.replace),
+            cases: Cases::default(),
+        }
+    }
+}
+
+/// Which selector positions a case claims: a band in the `value_aliases`
+/// spelling, or every position no band claims.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum CaseKey {
+    Band(ValueBand),
+    /// Written `"else"`. Sorts after every band, which is where it is read.
+    Else,
+}
+
+impl std::fmt::Display for CaseKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CaseKey::Band(band) => band.fmt(f),
+            CaseKey::Else => f.write_str("else"),
+        }
+    }
+}
+
+impl std::str::FromStr for CaseKey {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, String> {
+        if s.trim() == "else" {
+            return Ok(CaseKey::Else);
+        }
+        s.parse().map(CaseKey::Band)
+    }
+}
+
+/// A case as written: one piece, or a chain of them.
+///
+/// The shape is kept so a file round trips as it was written: a case that
+/// draws one reading is an object, and only a case that needs a label or a
+/// unit beside it is an array.
+#[derive(Debug, Clone)]
+pub enum CaseWritten {
+    One(Box<SpanPatch>),
+    Chain(Vec<SpanPatch>),
+}
+
+impl CaseWritten {
+    pub fn patches(&self) -> &[SpanPatch] {
+        match self {
+            CaseWritten::One(p) => std::slice::from_ref(&**p),
+            CaseWritten::Chain(ps) => ps,
+        }
+    }
+
+    pub fn patches_mut(&mut self) -> &mut [SpanPatch] {
+        match self {
+            CaseWritten::One(p) => std::slice::from_mut(&mut **p),
+            CaseWritten::Chain(ps) => ps,
+        }
+    }
+}
+
+/// One position or band of a switch's selector, and what it draws.
+#[derive(Debug, Clone)]
+pub struct Case {
+    pub when: CaseKey,
+    pub written: CaseWritten,
+    /// The pieces this case draws, with the switch's shared options filled
+    /// in. Worked out once, when the field is loaded, rather than every
+    /// frame: see [`Span::resolve_cases`].
+    pub pieces: Vec<Span>,
+}
+
+/// A switch's cases, in the order they are matched: bands by where they start,
+/// then `else`.
+///
+/// Held in that order whatever order they were written in, the same bargain
+/// `value_aliases` makes, so two cases claiming one position settle the same
+/// way on every machine: the lower one draws.
+#[derive(Debug, Clone, Default)]
+pub struct Cases(pub Vec<Case>);
+
+impl Cases {
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+}
+
+impl Serialize for Cases {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> std::result::Result<S::Ok, S::Error> {
+        use serde::ser::SerializeMap;
+        let mut map = s.serialize_map(Some(self.0.len()))?;
+        for case in &self.0 {
+            let key = case.when.to_string();
+            match &case.written {
+                CaseWritten::One(p) => map.serialize_entry(&key, p)?,
+                CaseWritten::Chain(ps) => map.serialize_entry(&key, ps)?,
+            }
+        }
+        map.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for Cases {
+    /// Read through JSON values rather than an untagged enum, so a mistake
+    /// inside a case is reported as itself, with the case it is in, and not
+    /// as "data did not match any variant".
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> std::result::Result<Self, D::Error> {
+        use serde::de::Error as _;
+        let raw = BTreeMap::<String, serde_json::Value>::deserialize(d)?;
+        let mut cases = Vec::with_capacity(raw.len());
+        for (key, value) in raw {
+            let when: CaseKey = key.parse().map_err(D::Error::custom)?;
+            let bad = |e: serde_json::Error| D::Error::custom(format!("case {key:?}: {e}"));
+            let written = if value.is_array() {
+                CaseWritten::Chain(serde_json::from_value(value).map_err(bad)?)
+            } else {
+                CaseWritten::One(serde_json::from_value(value).map_err(bad)?)
+            };
+            cases.push(Case {
+                when,
+                written,
+                pieces: Vec::new(),
+            });
+        }
+        cases.sort_by(|a, b| a.when.cmp(&b.when));
+        Ok(Cases(cases))
+    }
+}
+
+/// How close a selector's position has to be to a case's edge to count as
+/// inside it. A selector sends whole positions and a case names them, so
+/// this only absorbs a key written as `1.0` rather than `1`.
+const SELECTOR_TOL: f64 = 1e-9;
+
+/// What a switch draws in the current frame.
+pub enum Picked<'a> {
+    /// The selector has not arrived, so nothing is known to draw yet.
+    Waiting,
+    /// The case its position falls in, or None where no case claims it and
+    /// there is no `else`: the switch then draws nothing.
+    Case(Option<&'a Case>),
 }
 
 impl Span {
     /// Whether this part reads a signal rather than drawing what it was given.
     pub fn is_signal(&self) -> bool {
         !self.source.is_empty()
+    }
+
+    /// Whether this part draws a stored signal.
+    pub fn is_stored(&self) -> bool {
+        !self.signal.is_empty()
+    }
+
+    /// Whether this part draws something that arrives, rather than what it
+    /// was given: a DCS-BIOS signal or a stored one.
+    pub fn reads(&self) -> bool {
+        self.is_signal() || self.is_stored()
+    }
+
+    /// Whether this piece picks what it draws by a selector's position.
+    pub fn is_switch(&self) -> bool {
+        !self.switch.is_empty() || !self.switch_signal.is_empty()
+    }
+
+    /// What decides a switch, as the checks name it: the stored signal's
+    /// name, or the DCS-BIOS signal.
+    pub fn switch_name(&self) -> String {
+        match &self.switch_stored {
+            Some(s) => s.name.clone(),
+            None if !self.switch_signal.is_empty() => self.switch_signal.clone(),
+            None => self.switch.clone(),
+        }
+    }
+
+    /// Fill in each case's pieces from what it wrote and what the switch
+    /// shares.
+    ///
+    /// Done once when a field is loaded, because a frame is the wrong place
+    /// to be merging options, and because `compose` hands out references to
+    /// the pieces it draws, which have to live as long as the field does.
+    /// Anything that changes a switch's shared options after loading calls
+    /// this again.
+    pub fn resolve_cases(&mut self) {
+        let mut cases = std::mem::take(&mut self.cases);
+        for case in &mut cases.0 {
+            case.pieces = case
+                .written
+                .patches()
+                .iter()
+                .map(|p| p.resolve(self))
+                .collect();
+        }
+        self.cases = cases;
+    }
+
+    /// The case a selector reading falls in: the lowest band claiming it,
+    /// and failing that `else`.
+    pub fn case_for(&self, position: f64) -> Option<&Case> {
+        self.cases
+            .0
+            .iter()
+            .find(|c| matches!(&c.when, CaseKey::Band(b) if b.matches(position, SELECTOR_TOL)))
+            .or_else(|| self.cases.0.iter().find(|c| c.when == CaseKey::Else))
+    }
+
+    /// Where a selector sending `value` of `max` is, in the units its cases
+    /// are written in: as sent, or converted by `switch_reads` and rounded
+    /// to a whole number.
+    pub fn switch_position(&self, value: u16, max: u16) -> f64 {
+        let Some([low, high]) = self.switch_reads else {
+            return f64::from(value);
+        };
+        if max == 0 {
+            return low.round();
+        }
+        (low + f64::from(value) / f64::from(max) * (high - low)).round()
+    }
+
+    /// The whole positions a selector can be at, lowest first: 0 to its
+    /// maximum as sent, or every whole number `switch_reads` runs between.
+    pub fn switch_span(&self, max: u16) -> (f64, f64) {
+        match self.switch_reads {
+            None => (0.0, f64::from(max)),
+            Some([a, b]) => (a.min(b).round(), a.max(b).round()),
+        }
+    }
+
+    /// What this switch draws given how signals read right now.
+    pub fn pick<F>(&self, read: &F) -> Picked<'_>
+    where
+        F: Fn(&str) -> Option<Reading>,
+    {
+        self.pick_cached(read, &StoredCache::default(), &mut |_, _, _| {})
+    }
+
+    /// [`pick`](Self::pick), taking a stored signal that decides it from
+    /// `cache`. Its number is matched as it is, already shaped; characters
+    /// that are not a number leave only `else` to claim them.
+    pub fn pick_cached<'a, F, S>(
+        &'a self,
+        read: &F,
+        cache: &StoredCache,
+        seen: &mut S,
+    ) -> Picked<'a>
+    where
+        F: Fn(&str) -> Option<Reading>,
+        S: FnMut(&'a str, u16, &str),
+    {
+        if !self.switch_signal.is_empty() {
+            let Some(stored) = &self.switch_stored else {
+                return Picked::Case(None);
+            };
+            return match cache.get(stored, read, seen) {
+                None => Picked::Waiting,
+                Some(v) => Picked::Case(match v.number {
+                    Some(n) => self.case_for(n),
+                    None => self.cases.0.iter().find(|c| c.when == CaseKey::Else),
+                }),
+            };
+        }
+        match read(&self.switch) {
+            None => Picked::Waiting,
+            Some(Reading::Number { value, max }) => {
+                Picked::Case(self.case_for(self.switch_position(value, max)))
+            }
+            // A selector that reports characters has no position to match,
+            // and `problems` says so. Only `else` can claim it.
+            Some(Reading::Text(_)) => {
+                Picked::Case(self.cases.0.iter().find(|c| c.when == CaseKey::Else))
+            }
+        }
     }
 
     /// Whether anything here says how to draw a number: a range, decimal
@@ -1798,18 +2364,30 @@ impl Span {
     /// An empty part is unfinished work rather than a mistake, but it still
     /// stops the profile loading, so it is said plainly and in those terms. A
     /// gap is finished the moment it exists: drawing nothing is the whole of
-    /// what it does.
+    /// what it does. A switch is finished once it names a selector: whether
+    /// its cases are is asked of each case.
     pub fn is_empty(&self) -> bool {
-        self.text.is_empty() && self.source.is_empty() && !self.gap
+        self.text.is_empty()
+            && self.source.is_empty()
+            && self.signal.is_empty()
+            && !self.gap
+            && !self.is_switch()
     }
 
     /// Whether this part carries something the flat shape has nowhere to put.
     ///
     /// The flat shape's `align`, `label` and `label_colour` are the field's,
     /// so a part with its own has to be written as a chain of one rather than
-    /// quietly handing its setting to the field.
+    /// quietly handing its setting to the field. A switch has no flat
+    /// spelling at all: no field written before switches has one, so nothing
+    /// is lost by writing it as a chain.
     pub fn needs_chain(&self) -> bool {
-        self.width > 0 || self.align != Align::Left || self.rule || !self.label.is_empty()
+        self.width > 0
+            || self.align != Align::Left
+            || self.rule
+            || !self.label.is_empty()
+            || self.is_switch()
+            || !self.cases.is_empty()
     }
 
     /// Turn a raw signal value into the characters this part should show.
@@ -1835,14 +2413,58 @@ impl Span {
     /// Only if none does is the number drawn, and only then is the sign
     /// dropped for `abs`, so a band written for negative readings still
     /// matches on a piece that draws magnitudes.
+    ///
+    /// A band that draws the reading claims it for its style alone: the
+    /// number is drawn exactly as if no band had matched, and the band is
+    /// still handed back for its colour and inverse.
     pub fn format_reading(&self, value: u16, max: u16) -> (String, Option<&AliasDraw>) {
         let (reading, half_step) = self.convert(value, max);
         let reading = self.settle(reading, half_step);
-        if let Some(drawn) = self.band_for(reading) {
+        let band = self.band_for(reading);
+        if let Some(drawn) = band.filter(|b| !b.reading) {
             return (drawn.text.clone(), Some(drawn));
         }
         let shown = if self.abs { reading.abs() } else { reading };
-        (self.format_number_at(shown), None)
+        (self.format_number_at(shown), band)
+    }
+
+    /// The characters this part draws for a stored signal's value, and the
+    /// band it landed in, the way [`format_reading`](Self::format_reading)
+    /// does for a reading.
+    ///
+    /// The signal has already shaped the number, so all that is left is the
+    /// bands: matched against the value read as a number, to the places it
+    /// shows. Characters that are not a number draw as they are.
+    pub fn format_stored(&self, value: &StoredValue) -> (String, Option<&AliasDraw>) {
+        let tol = value.tolerance();
+        let band = value.number.and_then(|n| {
+            self.value_aliases
+                .iter()
+                .find(|(band, _)| band.matches(n, tol))
+                .map(|(_, drawn)| drawn)
+        });
+        if let Some(drawn) = band.filter(|b| !b.reading) {
+            return (drawn.text.clone(), Some(drawn));
+        }
+        (value.text.clone(), band)
+    }
+
+    /// Characters held to this part's box, where it has one: padded on the
+    /// side `align` says, cropped from the end it anchors away from. The text
+    /// half of what [`box_fit`](Self::box_fit) does to glyphs, for a stored
+    /// signal's terms, which are characters until a field draws them.
+    pub fn fit_text(&self, text: &str) -> String {
+        let len = text.chars().count();
+        if self.width == 0 || len == self.width {
+            return text.to_string();
+        }
+        if len > self.width {
+            let front = self.align.pad_before(self.width, len);
+            return text.chars().skip(front).take(self.width).collect();
+        }
+        let before = self.align.pad_before(len, self.width);
+        let after = self.width - len - before;
+        format!("{}{text}{}", " ".repeat(before), " ".repeat(after))
     }
 
     /// What the dial reads at a raw count, before rounding, and half of one
@@ -1951,9 +2573,13 @@ impl Span {
         let (lo, hi) = (low.min(high), low.max(high));
         let step = 10f64.powi(-i32::from(self.decimals));
         let tol = self.tolerance();
+        // A band drawing the reading leaves the number to be drawn, so it
+        // covers nothing.
         let mut spans: Vec<(f64, f64)> = self
             .value_aliases
-            .keys()
+            .iter()
+            .filter(|(_, drawn)| !drawn.reading)
+            .map(|(band, _)| band)
             .flat_map(|band| match band {
                 ValueBand::Range { lo, hi } => vec![(*lo, *hi)],
                 other => other.values().into_iter().map(|v| (v, v)).collect(),
@@ -2002,6 +2628,12 @@ impl Span {
             Round::Down => {
                 let scale = 10f64.powi(i32::from(self.decimals));
                 ((reading + half_step) * scale).floor() / scale
+            }
+            // The same allowance the other way: a drum a hair past its 7 has
+            // not started towards the 8.
+            Round::Up => {
+                let scale = 10f64.powi(i32::from(self.decimals));
+                ((reading - half_step) * scale).ceil() / scale
             }
         };
         let wrapped = match self.wrap {
@@ -2069,6 +2701,7 @@ impl Span {
         let longest_alias = self
             .value_aliases
             .values()
+            .filter(|a| !a.reading)
             .map(|a| a.text.chars().count())
             .max()
             .unwrap_or(0);
@@ -2213,7 +2846,7 @@ impl Glyph {
 ///
 /// The engine looks it up; everything done with it afterwards is policy and
 /// belongs here, so a field composes the same way in a test as on the glass.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Reading {
     Text(String),
     Number { value: u16, max: u16 },
@@ -2318,6 +2951,8 @@ struct ReadoutRepr {
     text: String,
     #[serde(default, skip_serializing_if = "String::is_empty")]
     source: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    signal: String,
     #[serde(default, skip_serializing_if = "is_false")]
     gap: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2370,12 +3005,13 @@ impl From<ReadoutRepr> for Readout {
         // either the chain it was written with, or the one part the flat shape
         // describes, which is also what an unfinished field gets: one empty
         // part, so there is a row for the user to finish rather than nothing.
-        let content = if !r.content.is_empty() {
+        let mut content = if !r.content.is_empty() {
             r.content
         } else {
             vec![Span {
                 text: r.text,
                 source: r.source,
+                signal: r.signal,
                 gap: r.gap,
                 reads: r.reads,
                 conversions: r.conversions,
@@ -2398,6 +3034,11 @@ impl From<ReadoutRepr> for Readout {
                 ..Span::default()
             }]
         };
+        // Every way a field arrives, from a file or from the editor, comes
+        // through here, so this is where a switch's cases are filled in.
+        for span in &mut content {
+            span.resolve_cases();
+        }
         Readout {
             device: r.device,
             display: r.display,
@@ -2449,6 +3090,7 @@ impl From<Readout> for ReadoutRepr {
             divider: r.divider,
             text: span.text,
             source: span.source,
+            signal: span.signal,
             gap: span.gap,
             seat: r.seat,
             reads: span.reads,
@@ -2521,19 +3163,19 @@ impl Readout {
     }
 }
 
-fn is_zero_u8(n: &u8) -> bool {
+pub(crate) fn is_zero_u8(n: &u8) -> bool {
     *n == 0
 }
 
-fn is_zero_usize(n: &usize) -> bool {
+pub(crate) fn is_zero_usize(n: &usize) -> bool {
     *n == 0
 }
 
-fn is_left(a: &Align) -> bool {
+pub(crate) fn is_left(a: &Align) -> bool {
     *a == Align::Left
 }
 
-fn is_nearest(r: &Round) -> bool {
+pub(crate) fn is_nearest(r: &Round) -> bool {
     *r == Round::Nearest
 }
 
@@ -2543,11 +3185,27 @@ impl Readout {
     /// Includes the second signals, `format` and `colours`, because a profile
     /// that names one the module does not have is as broken as one that names
     /// a missing source.
+    ///
+    /// A switch's selector is here as well as everything its cases read,
+    /// because the engine repaints a field only when something in this list
+    /// changes, and turning the selector is a change the field has to show.
+    /// So is every signal a stored signal reads, for the same reason.
     pub fn sources(&self) -> Vec<&str> {
         let mut out = Vec::new();
         for span in &self.content {
+            if !span.switch.is_empty() {
+                out.push(span.switch.as_str());
+            }
+            if let Some(stored) = &span.switch_stored {
+                out.extend(stored.sources());
+            }
+        }
+        for span in self.pieces() {
             if span.is_signal() {
                 out.push(span.source.as_str());
+            }
+            if let Some(stored) = &span.stored {
+                out.extend(stored.sources());
             }
             if let Some(f) = &span.format {
                 out.push(f.as_str());
@@ -2561,7 +3219,68 @@ impl Readout {
 
     /// Whether anything here reads a signal at all.
     pub fn reads_anything(&self) -> bool {
-        self.content.iter().any(Span::is_signal)
+        self.content.iter().any(Span::is_switch) || self.pieces().any(Span::reads)
+    }
+
+    /// Whether any piece of this field is a switch.
+    pub fn has_switch(&self) -> bool {
+        self.content.iter().any(Span::is_switch)
+    }
+
+    /// Every piece this field can draw: its own, with each switch standing
+    /// for the pieces of all its cases.
+    pub fn pieces(&self) -> impl Iterator<Item = &Span> {
+        self.content.iter().flat_map(|span| {
+            let own = (!span.is_switch()).then_some(span);
+            let cased = span
+                .cases
+                .0
+                .iter()
+                .filter(move |_| span.is_switch())
+                .flat_map(|c| c.pieces.iter());
+            own.into_iter().chain(cased)
+        })
+    }
+
+    /// This field once for each way its switches can fall, every switch
+    /// replaced by the pieces of one case.
+    ///
+    /// What the checks run on. A switch draws exactly one case at a time, so
+    /// a field is as wide as its widest case and as wrong as any case is,
+    /// and asking the plain field's questions of each variant answers both
+    /// without the checks having to know switches exist. A field without one
+    /// is its own single variant.
+    ///
+    /// A switch with no cases stands for nothing, which is what it draws. A
+    /// switch inside a case is left out, since it is refused on its own.
+    pub fn variants(&self) -> Vec<Readout> {
+        let mut out = vec![Readout {
+            content: Vec::new(),
+            ..self.clone()
+        }];
+        for span in &self.content {
+            if !span.is_switch() {
+                for v in &mut out {
+                    v.content.push(span.clone());
+                }
+                continue;
+            }
+            if span.cases.is_empty() {
+                continue;
+            }
+            out = out
+                .into_iter()
+                .flat_map(|v| {
+                    span.cases.0.iter().map(move |case| {
+                        let mut v = v.clone();
+                        v.content
+                            .extend(case.pieces.iter().filter(|p| !p.is_switch()).cloned());
+                        v
+                    })
+                })
+                .collect();
+        }
+        out
     }
 
     /// The rule this divider draws, one glyph per cell, its label marked.
@@ -2611,7 +3330,8 @@ impl Readout {
         if span.width > 0 {
             return Some(span.width);
         }
-        if span.gap {
+        // A switch is as wide as whichever case is drawing.
+        if span.gap || span.is_switch() {
             return None;
         }
         // A one cell run takes a piece's whole value as a single glyph, the
@@ -2619,7 +3339,7 @@ impl Readout {
         if self.cells.len() == 1 {
             return Some(1);
         }
-        (!span.is_signal()).then(|| span.text.chars().count())
+        (!span.reads()).then(|| span.text.chars().count())
     }
 
     /// The glyphs this field draws right now, one per cell, or None while it
@@ -2640,7 +3360,23 @@ impl Readout {
     /// the count it arrived as, and the characters it became, before aliases
     /// and replacements. What the converter logs, so the log says what the
     /// glass was given rather than working it out a second time.
-    pub fn compose_seen<'a, F, S>(&'a self, read: F, mut seen: S) -> Option<Vec<Glyph>>
+    pub fn compose_seen<'a, F, S>(&'a self, read: F, seen: S) -> Option<Vec<Glyph>>
+    where
+        F: Fn(&str) -> Option<Reading>,
+        S: FnMut(&'a str, u16, &str),
+    {
+        self.compose_cached(read, &StoredCache::default(), seen)
+    }
+
+    /// [`compose_seen`](Self::compose_seen), taking stored signals from
+    /// `cache`, so a paint works each one out once however many fields draw
+    /// it. A signal's terms are told to `seen` the first time only.
+    pub fn compose_cached<'a, F, S>(
+        &'a self,
+        read: F,
+        cache: &StoredCache,
+        mut seen: S,
+    ) -> Option<Vec<Glyph>>
     where
         F: Fn(&str) -> Option<Reading>,
         S: FnMut(&'a str, u16, &str),
@@ -2663,13 +3399,30 @@ impl Readout {
             );
         }
         let width = self.cells.len();
+        let mut waiting = false;
+        // The chain this frame draws: each switch replaced by the pieces of
+        // the case its selector is in, so everything below lays out one plain
+        // chain and a case's gaps share the line with the pieces around the
+        // switch. A selector still to arrive draws nothing yet, like any
+        // other signal.
+        let mut chain: Vec<&'a Span> = Vec::with_capacity(self.content.len());
+        for span in &self.content {
+            if !span.is_switch() {
+                chain.push(span);
+                continue;
+            }
+            match span.pick_cached(&read, cache, &mut seen) {
+                Picked::Waiting => waiting = true,
+                Picked::Case(Some(case)) => chain.extend(&case.pieces),
+                Picked::Case(None) => {}
+            }
+        }
         // One group per piece rather than one flat run, because a gap cannot
         // be measured until everything that is not a gap has been laid out.
         let mut groups: Vec<Vec<Glyph>> = Vec::new();
         let mut gaps: Vec<usize> = Vec::new();
-        let mut waiting = false;
         let mut drew = false;
-        for span in &self.content {
+        for &span in &chain {
             if span.gap {
                 // A boxed gap knows how wide it is before anything else is
                 // laid out, so it is filled here and never asks for a share of
@@ -2698,7 +3451,27 @@ impl Readout {
             // and asking for small is enough whoever asks.
             let mut stretched: Option<Colour> = None;
             let mut small = span.small;
-            let value = if span.is_signal() {
+            let value = if let Some(stored) = &span.stored {
+                match cache.get(stored, &read, &mut seen) {
+                    Some(v) => {
+                        let (text, band) = span.format_stored(&v);
+                        banded = band.and_then(|b| b.colour);
+                        band_inverse = band.is_some_and(|b| b.inverse);
+                        small |= band.is_some_and(|b| b.small);
+                        text
+                    }
+                    None => {
+                        waiting = true;
+                        groups.push(span.box_fit(glyphs));
+                        continue;
+                    }
+                }
+            } else if span.is_stored() {
+                // A signal the page file does not have, which the checks
+                // refuse. Nothing to draw, and nothing coming.
+                groups.push(span.box_fit(glyphs));
+                continue;
+            } else if span.is_signal() {
                 match read(&span.source) {
                     Some(Reading::Text(t)) => t,
                     Some(Reading::Number { value, max }) => {
@@ -2706,6 +3479,7 @@ impl Readout {
                         seen(&span.source, value, &text);
                         banded = band.and_then(|b| b.colour);
                         band_inverse = band.is_some_and(|b| b.inverse);
+                        small |= band.is_some_and(|b| b.small);
                         if let Some(stretch) = span.conversion_for(value) {
                             stretched = stretch.colour;
                             small |= stretch.small;
@@ -2812,7 +3586,7 @@ impl Readout {
                 // One group per piece, pushed in order, so a gap's group index
                 // is its index in the chain: the piece that says whether this
                 // is blanks or a rule, and what the rule is labelled.
-                let span = &self.content[at];
+                let span = chain[at];
                 drew |= span.rule && take > 0;
                 groups[at] = span.fill(take);
             }

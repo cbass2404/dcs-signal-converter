@@ -307,15 +307,41 @@ otherwise it would be written once by the sweep and then never follow anything.
 
 `same_as` is mutually exclusive with `conditions`, `any_of` and `always`.
 
-## Blink comes from the source
+## Blink
 
 Where a DCS lamp flashes F/A-18 gear in transit, for instance the module's own
-argument is oscillating, and mirroring it reproduces the flash. There is no blink
-setting to configure for those cases, and none should be offered, or users will
-apply it on top of an already-blinking source and get a beat frequency.
+argument is oscillating, and mirroring it reproduces the flash. A blink set on
+top of that beats against it, so the editor says to flash only a lamp DCS keeps
+steady.
 
-A synthetic blink belongs only where DCS does not already express one. It is a
-later addition, not part of v1.
+For those, `blink` is set per block of conditions: a lamp's own `conditions`
+take it on the row, each alternative in `any_of` carries its own, and a stored
+signal of lamp conditions carries it the same way, as the one source of truth
+for every lamp lit by it. A lamp lit by a stored signal flashes as the signal
+says and its own `blink` is set aside.
+
+```jsonc
+{ "led": "HOOK",
+  "any_of": [
+    { "conditions": [ { "source": "LAMP_TEST", "on_when": { "equals": 1 } } ] },
+    { "conditions": [ { "source": "HOOK_WARN", "on_when": { "equals": 1 } } ],
+      "blink": "fast" } ] }
+```
+
+`"slow"` is twice a second and `"fast"` three times, each lit for exactly the
+first half of its flash. Absent is steady and steady is never written, so no
+profile changed when this arrived. A flashing block in its dark half counts as
+not holding, so the lamp falls to its `off`, or to another alternative that
+does hold: steady wins over flashing while both hold.
+
+One clock serves every lamp, started with the stream, so every lamp at one
+rate flashes in step: a cockpit lamp and its repeater on another panel. Each
+turn is worked out from the clock's start rather than added up, so a third of
+a second never drifts. The engine re-resolves only the flashing lamps on a
+turn, outside the frame cap, and tells the daemon how long until the next one,
+which waits no longer than that for a datagram. Held to the 40 ms frame grid,
+each turn would land up to a frame late by a different amount and the flash
+would look uneven.
 
 ## The editor window
 
@@ -884,7 +910,7 @@ brightness, a field asks "which cells, fed by what" and resolves to characters.
     "reads": [0, 750],       // what the dial is marked with, numbers only
     "decimals": 0,
     "digits": 3,             // pad with leading zeros: 001
-    "round": "down",         // absent rounds to the nearest
+    "round": "down",         // or "up"; absent rounds to the nearest
     "wrap": 360,             // start again from 0 every this many
     "abs": true,             // draw the reading without its sign
     "value_aliases": {       // what to draw instead of the number
@@ -895,6 +921,7 @@ brightness, a field asks "which cells, fed by what" and resolves to characters.
     "seat": 0,               // only where the module reports one
     "aliases": { "--": "_" },
     "format": "DED_L1_FORMAT", // text marking inverse cells, where the glass has them
+    // "switch" and "cases": see "A switch" under Content
     "note": "",
   },
 ]
@@ -922,8 +949,10 @@ conversion, and giving it a range is an error rather than a no-op.
 **`round` and `wrap` are for readings that click over or go round.** The
 conversion is still a straight line from 0 to 65535 onto `reads`. After it,
 the number is rounded to `decimals` places, to the nearest unless `round` is
-`"down"`, and then `wrap` takes the remainder, so the reading starts again
-from 0 every `wrap`. Rounding comes first, so a compass at 359.7 draws 0
+`"down"` or `"up"`, and then `wrap` takes the remainder, so the reading
+starts again from 0 every `wrap`. Up shows the next step as soon as the
+reading has started towards it, with the same allowance for DCS-BIOS
+rounding the position that down has. Rounding comes first, so a compass at 359.7 draws 0
 rather than 360.
 
 - One odometer drum digit, such as each of the F-16's `FUELTOTALIZER_*`
@@ -1005,6 +1034,19 @@ of its own:
   at all; anywhere else the profile is refused, as for an inverse piece. It is
   the colour of a screen with none, such as the DED, and a blank drawn inverse
   is a solid block.
+- `{ "text": "LOW", "small": true }` draws in the small font, on a text grid
+  only, as a piece's own `small` does. Either asking is enough, and a band
+  drawn small is checked against the small alphabet, which is the smaller
+  one.
+- `{ "reading": true, "colour": "red" }` draws the number itself, in the
+  band's colour or inverse, rather than characters in its place: a radar
+  altimeter that turns red below 50. The number is drawn exactly as it would
+  be with no band, `decimals`, `digits` and `abs` included. It is said
+  outright rather than by leaving `text` out, because a blank is already a
+  thing a band draws on purpose. A band with `reading` and `text` both is
+  refused, and so is one with no colour, inverse or small font, which would
+  change nothing. It hides no number, so the width check measures the number
+  beside it.
 
 **Two keys claiming one reading is a caution, and the lower one draws.** Keys
 are held in order of where they start, so which one draws is settled and does
@@ -1230,6 +1272,101 @@ draws a plain rule, so the label comes and goes with the reading beside it.
 That is a caution on the field and not a refusal: the rule draws either way,
 only the user knows how wide their readings really get, and a `width` on the
 rule is the fix where it bites.
+
+#### A switch: a reading another knob decides
+
+Some readings only mean something beside a knob. The Huey's ADF needle,
+`ADF_FREQ`, runs 0 to 65535 whichever band is selected, and `ADF_BAND` says
+whether that is 190 to 400 kHz, 400 to 850 or 850 to 1750. One `reads` cannot
+say all three, and three fields on one run of cells would be three owners for
+it. A switch is one piece that picks how it draws by another signal's
+position:
+
+```jsonc
+{
+  "cells": "0-9",
+  "content": [
+    { "text": "ADF ", "small": true },
+    {
+      "switch": "ADF_BAND",  // the selector whose position decides
+      "source": "ADF_FREQ",  // shared by every case
+      "colour": "green",
+      "cases": {
+        "0": { "reads": [190, 400] },
+        "1": { "reads": [400, 850] },
+        "2": { "reads": [850, 1750], "colour": "amber" },
+      },
+    },
+  ],
+}
+```
+
+**Each case is what the switch draws in those positions.** Its key is written
+the way a `value_aliases` key is, `"1"`, `"0,2"` or `"1..3"`, and matched
+against the position the selector sends, or `"else"`, which claims every
+position no other case does. A case is one piece, written as an object, or a
+chain of them written as an array, so a case can carry a label or a unit of its
+own. Only the case the selector is in draws, and its pieces take the switch's
+place in the line, so a gap in a case shares the line with the pieces around
+the switch.
+
+**`switch_reads` reads the selector off a gauge.** A knob's positions are
+what its cases name, but a selector can be any number, and a gauge sends
+counts. With `switch_reads` the selector is converted the way `reads`
+converts a reading, then rounded to a whole number, and cases are written in
+the dial's units. That is how typed text changes colour by a reading's range:
+
+```jsonc
+{
+  "switch": "FUEL_TOTAL",
+  "switch_reads": [0, 11000], // pounds, as the gauge is marked
+  "cases": {
+    "0..999": { "text": "FUEL", "colour": "red" },
+    "1000..2999": { "text": "FUEL", "colour": "amber" },
+    "else": { "text": "FUEL", "colour": "green" },
+  },
+}
+```
+
+Rounding is what lets `"0..999"` and `"1000..2999"` meet: 999.6 lb is 1000,
+and nothing falls between them. The position checks below are made in the
+same units. `switch_reads` on a piece that is not a switch is refused.
+
+**Everything else on the switch is shared by its cases.** A case piece that
+leaves an option unset takes the switch's, so the source, the decimals and the
+colour are written once and each case says only what is its own. A case
+setting an option replaces the switch's whole: a case with `value_aliases` of
+its own does not merge them with the switch's. Each kind of piece takes only
+what applies to it: typed text takes the switch's `colour`, `small`, `inverse`
+and `replace`, and never its `decimals`; a gap takes only the styling a rule
+draws in.
+
+- `reads` and `conversions` are one choice made two ways, so a case that
+  makes it either way, or clears it, takes neither from the switch.
+- `null` clears an option for one case: `"wrap": null` draws that case with no
+  wrap where every other case wraps at 360. In the editor a shared wrap,
+  padding or set of words is turned off by a checkbox under the case, and
+  emptying the box hands the option back to the switch instead.
+- Shared options stay on the switch when the file is saved. They are never
+  copied into the cases, so changing one later changes every case that did
+  not set its own.
+
+A switch carries no `text`, `gap`, rule, label or `width` of its own, and is
+refused with one: those belong to a piece inside a case. A switch with no
+cases is refused, and so is a switch inside a case. A field holding a switch is
+always written as `content`, since no field written before switches has one.
+
+**The field is checked as each of its cases would draw it.** Every check a
+plain field gets is asked of each case in turn, and a fault several cases
+share is said once. The width warning measures the widest case, never the
+cases added up. The selector's positions are cautions, like alias bands: two
+cases claiming one position draw the lower, a case past the most the selector
+sends never draws, positions no case claims draw nothing where there is no
+`else`, and a selector DCS-BIOS reports as characters has no position to match,
+so only `else` could draw.
+
+The selector is read like any other signal: until it arrives the switch draws
+nothing and leaves its cells alone, and turning it repaints the field.
 
 ### Text grids
 
@@ -1577,6 +1714,132 @@ hand, since saving would write over it.
   deleted never takes a screen dark that nobody chose to. A start slot that
   goes moves to the first slot still in use.
 
+### Stored signals
+
+Built 2026-10-01. A number worked out once and named, for any page on the
+module to draw. The editor calls a number made of parts a shared result,
+in Shared Results, and lamp conditions shared conditions, in Shared
+Conditions, so the two kinds read apart; the code and the files keep the
+stored name for both. Kept in the module's page file beside its pages:
+
+```jsonc
+// data/pages/f-16c-50.json
+{
+  "module": "F-16C_50",
+  "pages": [
+    {
+      "id": "k3f9x2",
+      "name": "Fuel",
+      "display": "MCDU",
+      "fields": [
+        { "cells": "0-5", "signal": "q7m2ra", "colour": "green" },
+      ],
+    },
+  ],
+  "signals": [
+    {
+      "id": "q7m2ra", // fixed when it is made, unique with the page ids
+      "name": "Fuel total", // unique on the module
+      "note": "Totalizer drums, hundreds of pounds",
+      "terms": [
+        { "source": "FUELTOTALIZER_10K", "reads": [0, 10], "round": "down", "wrap": 10, "width": 1 },
+        { "source": "FUELTOTALIZER_1K", "reads": [0, 10], "round": "down", "wrap": 10, "width": 1 },
+        { "source": "FUELTOTALIZER_100", "reads": [0, 10], "round": "down", "wrap": 10, "width": 1 },
+      ],
+    },
+  ],
+}
+```
+
+- **Parts laid side by side, not added.** Each term is one DCS-BIOS signal
+  with the keys that shape a reading (`reads` or `conversions`, `decimals`,
+  `digits`, `round`, `wrap`, `abs`) and a box (`width`, `align`), and is
+  worked out exactly as a reading is. The characters are joined in order. A
+  drum that is rolling is already partway to its next digit, so adding the
+  drums would count that twice; settling each one on its own first, rounded
+  down and wrapped, is what keeps them agreeing. One term is the plain case:
+  a reading named so several pages can draw it.
+- **The number is the signal's, the look is the piece's.** A piece draws one
+  with `signal`, its id, instead of `text` or `source`. It takes bands,
+  colour, small, inverse and a box; anything that shapes a number on it is
+  refused, since the signal already says, and so is one that also has text or
+  a source. Bands match the joined characters read as a number, to the places
+  they show. Characters that are not a number draw as they are.
+- **Nothing draws until every term has arrived.** A number missing a digit is
+  a different number. A label beside it in the chain still draws.
+- **Worked out once a paint.** The engine keeps one answer per signal for each
+  paint, however many fields draw it, and a field repaints when any term's
+  address moves, as it does for its own signals. A field is checked for every
+  term's signal as if it read it itself: one this DCS-BIOS lacks is flagged
+  and the field turned off.
+- **Checked as a reading is.** A term with no signal chosen and a colour or
+  size on a conversion are refused; a range on characters is a caution.
+  Each signal a profile's fields draw is checked once when the profile loads.
+  A piece naming a signal the page file does not have is refused.
+- **Saved on its own**, like a page, from the **Stored Signals** section at
+  the top of the profile, above the panels. Every profile on the module
+  shares it. One a saved page draws cannot be deleted until it is taken off;
+  the editor names the pages.
+- **The page file attaches the definitions when it loads**, so everything
+  downstream (`with_pages`, the checks, a frame) reads a field exactly as it
+  always has. A file without `signals` is as it was, and an older release
+  ignores the key, though a piece drawing one reads to it as unfinished.
+- **Worked out again only when a part moves.** The engine keeps each number's
+  last inputs and result between paints, and hands back the result while the
+  parts read what they read last time. It starts afresh whenever it takes a
+  profile, since an edited signal keeps its id.
+- **A switch can be decided by one**, with `switch_signal` in place of
+  `switch`. The number is already shaped, so cases are written in its units and
+  `switch_reads` is refused beside it. Only overlapping cases are checked: a
+  stored number has no positions to walk.
+
+**Cases and bands can be open at one end.** `"1000.."` claims every reading
+from 1000 up and `"..999"` every one up to 999, for a case or an alias band
+alike. The editor asks for a case as a test, in a lamp's words: is exactly, is
+one of, is between, is at least, is at most, or is anything else (`else`).
+
+#### Lamp conditions
+
+The second kind of stored signal is a lamp's whole logic, written once:
+`conditions`, or `any_of` and `pick`, exactly as a lamp row has them, in place
+of `terms`. A lamp row points at it with `signal` and keeps only its own `on`
+and `off`:
+
+```jsonc
+// in the page file's "signals"
+{
+  "id": "mc4k2p",
+  "name": "Master caution",
+  "note": "Whichever seat you are in",
+  "any_of": [
+    { "conditions": [ { "source": "SEAT_POSITION", "on_when": { "equals": 0 } },
+                      { "source": "PLT_MASTER_CAUTION", "on_when": { "equals": 1 } } ] },
+    { "conditions": [ { "source": "SEAT_POSITION", "on_when": { "equals": 1 } },
+                      { "source": "CPLT_MASTER_CAUTION", "on_when": { "equals": 1 } } ] },
+  ],
+}
+// in a profile's "bindings"
+{ "device": "TAKEOFF_PLANEL_2", "led": "Landing_gear_lights", "signal": "mc4k2p", "on": 60 }
+```
+
+- **The lamp lights exactly as if the logic were its own**, against its own
+  `on` and `off`: a test lights it or leaves it off, and a scale dims it. So
+  every lamp repeating one cockpit lamp, on any device, behaves identically
+  and each is as bright as it should be.
+- **Signals never contain signals.** A signal's conditions name DCS-BIOS
+  signals only, so there is nothing to loop.
+- **A lamp lit by a signal has nothing else**: conditions of its own, always
+  on or a lamp to match beside `signal` are refused. A number signal on a lamp
+  and lamp conditions on a screen are refused too.
+- **Checked against the library, not the attachment.** The daemon validates a
+  profile before it runs it with its pages, so a lamp's signal is looked up in
+  the page file; the run attaches it. The engine indexes the lamp under every
+  address the signal reads, so it is re-checked when one moves, as its own
+  conditions would be. A signal reading something this DCS-BIOS lacks is
+  flagged on each lamp it lights, and that lamp's copy drops the chain holding
+  it, by the same rule as a lamp's own.
+- **Deleting one** is refused while any saved profile's lamp lights by it.
+
 ### Updates: pages and profiles apart
 
 An update reconciles pages and profiles as two separate checks. Neither reads
@@ -1601,6 +1864,11 @@ release shipped them:
   added, as on import.
 - **A page the release no longer ships** goes only while it is still exactly
   as the snapshot has it, name and fields both. One the user changed stays.
+- **Stored signals** go by the same rules a whole signal at a time: a new one
+  comes in, renamed with a number if its name is taken; one still as the
+  snapshot has it follows the release; one the user changed or deleted is
+  left as they left it; one the release no longer ships goes only while it is
+  untouched and no page draws it.
 
 **Profiles**, against `data/defaults-previous` as now. A device's slots are
 reconciled with the profile's display fields, keyed on device and slot
@@ -1649,6 +1917,11 @@ pairs of folders:
   imported profile's slots following it. So does one whose id a page on
   another module has. **A name already taken** gets a number added, which the
   preview shows and can be changed there.
+- **Stored signals travel with the pages that draw them**, in `signals`
+  beside `pages`. One already here reading the same is used as it is, one not
+  here comes in, renamed with a number if its name is taken, and one whose id
+  a different signal has comes in under a new id, the pages arriving with it
+  following.
 - **Merge from... offers slots on every screen**: slot n of
   the source replaces slot n of the target, and brings its page into the
   library if it is not there.

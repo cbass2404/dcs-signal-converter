@@ -88,14 +88,8 @@
     {
       "device": "MCDU_Captain",
       "led": "Fail",
-      "conditions": [
-        {
-          "source": "LIGHT_MASTER_CAUTION",
-          "on_when": {
-            "equals": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "zdq52f"
     },
     {
       "device": "MCDU_Captain",
@@ -137,14 +131,8 @@
     {
       "device": "MCDU_Captain",
       "led": "STATUS",
-      "conditions": [
-        {
-          "source": "LIGHT_ECM",
-          "on_when": {
-            "equals": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "6e1lp3"
     },
     {
       "device": "MCDU_Captain",
@@ -366,32 +354,14 @@
     {
       "device": "PFP3N_Captain",
       "led": "FAIL",
-      "conditions": [
-        {
-          "source": "LIGHT_MASTER_CAUTION",
-          "on_when": {
-            "equals": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "zdq52f"
     },
     {
       "device": "PFP3N_Captain",
       "led": "MSG",
-      "conditions": [
-        {
-          "source": "COMM1_MODE_KNB",
-          "on_when": {
-            "gte": 1
-          }
-        },
-        {
-          "source": "COMM2_MODE_KNB",
-          "on_when": {
-            "gte": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "gxjlfp"
     },
     {
       "device": "PFP3N_Captain",
@@ -401,14 +371,8 @@
     {
       "device": "PFP3N_Captain",
       "led": "EXEC",
-      "conditions": [
-        {
-          "source": "LIGHT_ECM",
-          "on_when": {
-            "equals": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "6e1lp3"
     },
     {
       "device": "PFP3N_CoPilot",
@@ -540,32 +504,14 @@
     {
       "device": "PFP4_Captain",
       "led": "FAIL",
-      "conditions": [
-        {
-          "source": "LIGHT_MASTER_CAUTION",
-          "on_when": {
-            "equals": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "zdq52f"
     },
     {
       "device": "PFP4_Captain",
       "led": "MSG",
-      "conditions": [
-        {
-          "source": "COMM1_MODE_KNB",
-          "on_when": {
-            "gte": 1
-          }
-        },
-        {
-          "source": "COMM2_MODE_KNB",
-          "on_when": {
-            "gte": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "gxjlfp"
     },
     {
       "device": "PFP4_Captain",
@@ -575,14 +521,8 @@
     {
       "device": "PFP4_Captain",
       "led": "EXEC",
-      "conditions": [
-        {
-          "source": "LIGHT_ECM",
-          "on_when": {
-            "equals": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "6e1lp3"
     },
     {
       "device": "PFP4_CoPilot",
@@ -714,32 +654,14 @@
     {
       "device": "PFP7_Captain",
       "led": "FAIL",
-      "conditions": [
-        {
-          "source": "LIGHT_MASTER_CAUTION",
-          "on_when": {
-            "equals": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "zdq52f"
     },
     {
       "device": "PFP7_Captain",
       "led": "MSG",
-      "conditions": [
-        {
-          "source": "COMM1_MODE_KNB",
-          "on_when": {
-            "gte": 1
-          }
-        },
-        {
-          "source": "COMM2_MODE_KNB",
-          "on_when": {
-            "gte": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "gxjlfp"
     },
     {
       "device": "PFP7_Captain",
@@ -749,14 +671,8 @@
     {
       "device": "PFP7_Captain",
       "led": "EXEC",
-      "conditions": [
-        {
-          "source": "LIGHT_ECM",
-          "on_when": {
-            "equals": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "6e1lp3"
     },
     {
       "device": "PFP7_CoPilot",
@@ -896,14 +812,8 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "Master_Caution",
-      "conditions": [
-        {
-          "source": "LIGHT_MASTER_CAUTION",
-          "on_when": {
-            "equals": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "zdq52f"
     },
     {
       "device": "TAKEOFF_PLANEL_2",

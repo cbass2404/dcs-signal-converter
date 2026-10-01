@@ -326,6 +326,7 @@ fn a_page_on_another_module_is_refused() {
         PageFile {
             module: "OTHER".into(),
             pages: vec![page("cccccc", "Elsewhere", vec![field("0-1", "CHAN")])],
+            signals: Vec::new(),
         },
     );
     let mut p = profile("");

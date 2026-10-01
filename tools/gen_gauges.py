@@ -35,7 +35,7 @@ BIOS_SAVED = os.path.join(os.path.expanduser("~"), "Saved Games", "DCS", "Script
                           "lib", "modules", "aircraft_modules")
 MODS_SAVED = os.path.join(os.path.expanduser("~"), "Saved Games", "DCS", "Mods", "aircraft")
 
-# DCS module folder: (name on the page, DCS-BIOS module file). A-10C_2 is the
+# DCS module folder: (name on the page, DCS-BIOS module). A-10C_2 is the
 # A-10C II; its gauges are the A-10C's. Folders are looked for in DCS's
 # Mods/aircraft, then in Saved Games for mods installed there.
 MODULES = {
@@ -61,7 +61,7 @@ MODULES = {
     "Mi-8MTV2": ("Mi-8MTV2", "Mi-8MT"),
     "MiG-15bis": ("MiG-15bis", "MiG-15bis"),
     "MIG-21bis": ("MiG-21bis", "MiG-21Bis"),
-    "MiG-29-Fulcrum": ("MiG-29 Fulcrum", "MiG-29A"),
+    "MiG-29-Fulcrum": ("MiG-29 Fulcrum", "MiG-29 Fulcrum"),
     "MosquitoFBMkVI": ("Mosquito FB VI", "Mosquito"),
     "OH-58D": ("OH-58D", "OH-58D"),
     "P-47D-30": ("P-47D", "P-47D"),
@@ -70,6 +70,12 @@ MODULES = {
     "SpitfireLFMkIX": ("Spitfire LF Mk IX", "SpitfireLFMkIX"),
     "Uh-1H": ("UH-1H", "UH-1H"),
     "Yak-52": ("Yak-52", "Yak-52"),
+}
+
+# DCS-BIOS modules whose Lua file is named otherwise. The module's own name is
+# the signal catalogue's, which the editor matches a profile's tables by.
+BIOS_FILES = {
+    "MiG-29 Fulcrum": "MiG-29A",
 }
 
 # Installed modules this can't read, with the reason the page gives. The
@@ -524,7 +530,7 @@ def collect(roots, bios_dir):
         print("warning: %s is installed but in neither MODULES nor NOT_COVERED" % folder)
     for folder, (title, bios_name) in MODULES.items():
         mainpanel = find_mainpanel(roots, folder)
-        bios_path = os.path.join(bios_dir, bios_name + ".lua")
+        bios_path = os.path.join(bios_dir, BIOS_FILES.get(bios_name, bios_name) + ".lua")
         if not mainpanel or not os.path.exists(bios_path):
             missing.append(bios_name)
             continue
@@ -573,7 +579,7 @@ def collect(roots, bios_dir):
     not_covered = [{"aircraft": title, "why": why} for folder, (title, _, why) in NOT_COVERED.items()
                    if folder in have]
     # DCS-BIOS modules for aircraft not installed where this ran, so not read.
-    known = {b for _, b in MODULES.values()} | {b for _, b, _ in NOT_COVERED.values() if b}
+    known = {BIOS_FILES.get(b, b) for _, b in MODULES.values()} | {b for _, b, _ in NOT_COVERED.values() if b}
     others = {os.path.splitext(f)[0] for f in os.listdir(bios_dir) if f.endswith(".lua")}
     missing += sorted(others - known - NOT_AIRCRAFT)
     missing += [b for folder, (_, b, _) in NOT_COVERED.items() if b and folder not in have]

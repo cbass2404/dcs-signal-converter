@@ -26,7 +26,7 @@ use std::path::{Path, PathBuf};
 use dsc_config::bundle::{self, Bundle, PagePlan, PageTake};
 use dsc_config::merge::{self, Change, Parts, Pick};
 use dsc_config::paths::Paths;
-use dsc_config::{DeviceInventory, Page, PageLibrary, Profile};
+use dsc_config::{DeviceInventory, Page, PageLibrary, Profile, StoredSignal};
 use serde::{Deserialize, Serialize};
 use tauri_plugin_dialog::DialogExt;
 
@@ -98,6 +98,7 @@ impl Source {
                     schema_version: profile.schema_version,
                     profile,
                     pages: Vec::new(),
+                    signals: Vec::new(),
                 })
             }
         }
@@ -121,17 +122,35 @@ fn arriving(
     lib: &PageLibrary,
     profile: &Profile,
     pages: &[Page],
+    signals: &[StoredSignal],
     take: &[PageTake],
-) -> Result<(Profile, Vec<Page>, PageLibrary), String> {
+) -> Result<(Profile, Arrived, PageLibrary), String> {
     let mut profile = profile.clone();
-    let added = bundle::bring_in(lib, &mut profile, pages, take)?;
-    let lib = bundle::with_added(lib, &profile.module, &added);
-    Ok((profile, added, lib))
+    let mut added = bundle::bring_in(lib, &mut profile, pages, take)?;
+    // The pages' stored signals settle against the library as it was, and
+    // the pages follow any that take a new id before they are added.
+    let signals = bundle::bring_in_signals(lib, &profile.module, signals, &mut added);
+    let lib = bundle::with_signals(lib, &profile.module, &signals);
+    let lib = bundle::with_added(&lib, &profile.module, &added);
+    Ok((
+        profile,
+        Arrived {
+            pages: added,
+            signals,
+        },
+        lib,
+    ))
 }
 
-/// Write `added` into the library's file for `module`.
-fn write_pages(paths: &Paths, module: &str, added: &[Page]) -> Result<(), String> {
-    if added.is_empty() {
+/// What an import adds to the module's page file.
+pub struct Arrived {
+    pub pages: Vec<Page>,
+    pub signals: Vec<StoredSignal>,
+}
+
+/// Write what arrived into the library's file for `module`.
+fn write_pages(paths: &Paths, module: &str, added: &Arrived) -> Result<(), String> {
+    if added.pages.is_empty() && added.signals.is_empty() {
         return Ok(());
     }
     let lib = paths.pages.library();
@@ -140,7 +159,8 @@ fn write_pages(paths: &Paths, module: &str, added: &[Page]) -> Result<(), String
             "the page file for {module} would not load, so no page could be added to it: {why}"
         ));
     }
-    bundle::with_added(&lib, module, added)
+    let lib = bundle::with_signals(&lib, module, &added.signals);
+    bundle::with_added(&lib, module, &added.pages)
         .save_module(&paths.pages.active, module)
         .map_err(|e| format!("writing the pages for {module}: {e}"))
 }
@@ -182,7 +202,13 @@ fn read(paths: &Paths, cache: &Cache, path: &Path) -> Result<Bundle, String> {
         ));
     }
     let lib = paths.pages.library();
-    let (arrived, _, lib) = arriving(&lib, profile, &bundle.pages, &take_all(&lib, &bundle))?;
+    let (arrived, _, lib) = arriving(
+        &lib,
+        profile,
+        &bundle.pages,
+        &bundle.signals,
+        &take_all(&lib, &bundle),
+    )?;
     let problems = cache.problems(paths, &arrived, &lib);
     if !problems.is_empty() {
         return Err(format!(
@@ -306,6 +332,7 @@ pub async fn import_pick(
         &saved,
         &bundle.profile,
         &bundle.pages,
+        &bundle.signals,
         &take_all(&saved, &bundle),
     )?;
     let (flags, _) = cache.flags(&paths, &profile, &lib);
@@ -357,6 +384,7 @@ pub fn import_profile(
         &paths.pages.library(),
         &bundle.profile,
         &bundle.pages,
+        &bundle.signals,
         &pages,
     )?;
     let problems = cache.problems(&paths, &profile, &lib);
@@ -433,7 +461,13 @@ pub fn merge_profile(
         .into_iter()
         .filter(|t| wanted.contains(&t.id))
         .collect();
-    let (source, added, lib) = arriving(&saved, &source.profile, &source.pages, &take)?;
+    let (source, added, lib) = arriving(
+        &saved,
+        &source.profile,
+        &source.pages,
+        &source.signals,
+        &take,
+    )?;
     let merged = merge::merge(&target, &source, &pick, &devices)?;
     let problems = cache.problems(&paths, &merged.profile, &lib);
     if !problems.is_empty() {

@@ -8,10 +8,13 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::hash::{BuildHasher, Hasher};
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{DeviceInventory, DisplayCatalogue, Error, Module, Profile, Readout, Result};
+use crate::{
+    DeviceInventory, DisplayCatalogue, Error, Module, Profile, Readout, Result, StoredSignal,
+};
 
 /// One slot in use: the page it shows, or a blank screen.
 ///
@@ -186,6 +189,11 @@ pub struct PageFile {
     pub module: String,
     #[serde(default)]
     pub pages: Vec<Page>,
+    /// Numbers worked out once and named, for any page here to draw. Here
+    /// rather than in a profile because pages are what draw them, and every
+    /// profile on the module shares its pages. See [`crate::stored`].
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub signals: Vec<StoredSignal>,
 }
 
 impl PageFile {
@@ -199,7 +207,31 @@ impl PageFile {
                 f.device.clear();
             }
         }
+        file.attach_signals();
         Ok(file)
+    }
+
+    /// Give every field piece that draws a stored signal its definition, so
+    /// a frame and the checks read it without looking it up. Again after
+    /// anything changes a signal or a page.
+    pub fn attach_signals(&mut self) {
+        let signals = self.signal_map();
+        for page in &mut self.pages {
+            crate::stored::attach(&mut page.fields, &signals);
+        }
+    }
+
+    /// The same for a page that is not in the file yet: one the editor is
+    /// about to save.
+    pub fn attach_to(&self, page: &mut Page) {
+        crate::stored::attach(&mut page.fields, &self.signal_map());
+    }
+
+    fn signal_map(&self) -> BTreeMap<String, Arc<StoredSignal>> {
+        self.signals
+            .iter()
+            .map(|s| (s.id.clone(), Arc::new(s.clone())))
+            .collect()
     }
 
     /// Write the file in one step, CRLF, as [`Profile::save`] does and for
@@ -305,9 +337,73 @@ impl PageLibrary {
             PageFile {
                 module: module.to_string(),
                 pages,
+                signals: Vec::new(),
             },
         );
         lib
+    }
+
+    /// [`of`](Self::of), with stored signals the pages can draw.
+    pub fn with_signals(module: &str, pages: Vec<Page>, signals: Vec<StoredSignal>) -> Self {
+        let mut file = PageFile {
+            module: module.to_string(),
+            pages,
+            signals,
+        };
+        file.attach_signals();
+        let mut lib = PageLibrary::default();
+        lib.files.insert(module.to_string(), file);
+        lib
+    }
+
+    /// The stored signals on one module, in file order.
+    pub fn signals_on(&self, module: &str) -> &[StoredSignal] {
+        self.files.get(module).map_or(&[][..], |f| &f.signals[..])
+    }
+
+    /// A stored signal by id, wherever it is, with the module it is on.
+    pub fn find_signal(&self, id: &str) -> Option<(&str, &StoredSignal)> {
+        self.files.iter().find_map(|(m, f)| {
+            f.signals
+                .iter()
+                .find(|s| s.id == id)
+                .map(|s| (m.as_str(), s))
+        })
+    }
+
+    /// Why a stored signal cannot be saved on `module`, if it cannot: what
+    /// is wrong with it in itself, and a name another signal there has.
+    pub fn signal_problems(&self, signal: &StoredSignal, module: &Module) -> Vec<Error> {
+        let mut out = signal.problems(module);
+        if self
+            .signals_on(&module.module)
+            .iter()
+            .any(|s| s.id != signal.id && same_name(&s.name, &signal.name))
+        {
+            out.push(Error::StoredNameTaken(
+                signal.name.trim().to_string(),
+                module.module.clone(),
+            ));
+        }
+        out.retain(|e| !e.is_advisory());
+        out
+    }
+
+    /// A name on `module` that no stored signal but `except` has.
+    pub fn free_signal_name(&self, module: &str, name: &str, except: Option<&str>) -> String {
+        let taken = |n: &str| {
+            self.signals_on(module)
+                .iter()
+                .any(|s| Some(s.id.as_str()) != except && same_name(&s.name, n))
+        };
+        let base = name.trim();
+        if !taken(base) {
+            return base.to_string();
+        }
+        (2..)
+            .map(|k| format!("{base} {k}"))
+            .find(|n| !taken(n))
+            .expect("some number is free")
     }
 
     /// The pages on one module, in file order.
@@ -359,6 +455,22 @@ impl PageLibrary {
                 }
                 names.push(&p.name);
             }
+            let mut names: Vec<&str> = Vec::new();
+            for s in &file.signals {
+                if let Some(other) = ids.insert(&s.id, module) {
+                    out.push(format!(
+                        "shared result or conditions id {:?} is used on {other} and again on {module}",
+                        s.id
+                    ));
+                }
+                if names.iter().any(|n| same_name(n, &s.name)) {
+                    out.push(format!(
+                        "two shared results or conditions on {module} go by {:?}",
+                        s.name.trim()
+                    ));
+                }
+                names.push(&s.name);
+            }
         }
         out
     }
@@ -392,7 +504,7 @@ impl PageLibrary {
                     c
                 })
                 .collect();
-            if self.find(&id).is_none() && !also.contains(&id) {
+            if self.find(&id).is_none() && self.find_signal(&id).is_none() && !also.contains(&id) {
                 return id;
             }
         }
@@ -476,6 +588,7 @@ impl PageLibrary {
         let file = self.files.get(module).cloned().unwrap_or_else(|| PageFile {
             module: module.to_string(),
             pages: Vec::new(),
+            signals: Vec::new(),
         });
         file.save(&dir.join(page_file_name(module)))
     }
@@ -618,6 +731,11 @@ impl Pages {
     /// * A module whose file [`seed`](Self::seed) renamed has no snapshot, since
     ///   its file is older than the one there: every shipped page it lacks
     ///   comes in, and a page it has gains the fields it lacks.
+    /// * Stored signals go by the same rules as pages, a whole signal at a
+    ///   time: new ones come in, one still as the snapshot has it follows the
+    ///   release, one the user changed or deleted is left as they left it, and
+    ///   one the release no longer ships goes only while it is untouched and
+    ///   no page draws it.
     ///
     /// Once per version, recorded in the library folder, and never in a
     /// development checkout, where the shipped pages are the library.
@@ -717,7 +835,14 @@ impl Pages {
                     retired += 1;
                 }
             }
-            if pages + added + updated + removed + renamed + retired == 0 {
+            let signals = merge_signals(
+                &mut lib,
+                module,
+                file,
+                &was,
+                fresh.contains(module.as_str()),
+            );
+            if pages + added + updated + removed + renamed + retired + signals.total() == 0 {
                 continue;
             }
             lib.save_module(&self.active, module)?;
@@ -729,6 +854,15 @@ impl Pages {
                 (removed, "field(s) removed that the pages no longer ship"),
                 (renamed, "unchanged page name(s) updated"),
                 (retired, "unchanged page(s) removed that no longer ship"),
+                (signals.added, "new shared result(s) or conditions added"),
+                (
+                    signals.updated,
+                    "unchanged shared result(s) or conditions updated",
+                ),
+                (
+                    signals.retired,
+                    "unchanged shared result(s) or conditions removed that no longer ship",
+                ),
             ] {
                 if n > 0 {
                     what.push(format!("{n} {text}"));
@@ -743,6 +877,101 @@ impl Pages {
 }
 
 /// A caution about one of a profile's slots, worded to sit on the slot.
+/// What [`merge_signals`] did to one module's stored signals.
+#[derive(Default)]
+struct SignalWork {
+    added: usize,
+    updated: usize,
+    retired: usize,
+}
+
+impl SignalWork {
+    fn total(&self) -> usize {
+        self.added + self.updated + self.retired
+    }
+}
+
+/// Whether two stored signals are the same in every respect, the name and
+/// note included: what decides that the user has not touched one.
+fn same_stored(a: &StoredSignal, b: &StoredSignal) -> bool {
+    serde_json::to_value(a).ok() == serde_json::to_value(b).ok()
+}
+
+/// Bring one module's stored signals up to `shipped`'s, against the snapshot
+/// in `was`, for [`Pages::merge_new`]. `fresh` is a file with no snapshot to
+/// go by, which gains what it lacks and keeps everything it has.
+fn merge_signals(
+    lib: &mut PageLibrary,
+    module: &str,
+    shipped: &PageFile,
+    was: &PageLibrary,
+    fresh: bool,
+) -> SignalWork {
+    let mut work = SignalWork::default();
+    let before = |id: &str| -> Option<&StoredSignal> {
+        if fresh {
+            return None;
+        }
+        was.signals_on(module).iter().find(|s| s.id == id)
+    };
+    for s in &shipped.signals {
+        let at = lib.signals_on(module).iter().position(|m| m.id == s.id);
+        match (at, before(&s.id)) {
+            (None, None) => {
+                if lib.find_signal(&s.id).is_some() {
+                    continue;
+                }
+                let name = lib.free_signal_name(module, &s.name, None);
+                if let Some(f) = lib.files.get_mut(module) {
+                    f.signals.push(StoredSignal { name, ..s.clone() });
+                }
+                work.added += 1;
+            }
+            // Shipped before and gone from here: the user deleted it.
+            (None, Some(_)) => {}
+            (Some(i), w) => {
+                let mine = &lib.signals_on(module)[i];
+                let untouched = w.is_some_and(|w| same_stored(mine, w));
+                if !untouched || same_stored(mine, s) {
+                    continue;
+                }
+                // A shipped name another signal here has since taken keeps
+                // the name it had.
+                let name = if lib
+                    .signals_on(module)
+                    .iter()
+                    .any(|o| o.id != s.id && same_name(&o.name, &s.name))
+                {
+                    mine.name.clone()
+                } else {
+                    s.name.clone()
+                };
+                if let Some(f) = lib.files.get_mut(module) {
+                    f.signals[i] = StoredSignal { name, ..s.clone() };
+                }
+                work.updated += 1;
+            }
+        }
+    }
+    let drawn = crate::bundle::signals_named(lib.on_module(module));
+    for w in was.signals_on(module) {
+        if fresh || shipped.signals.iter().any(|s| s.id == w.id) || drawn.contains(&w.id) {
+            continue;
+        }
+        let untouched = lib
+            .signals_on(module)
+            .iter()
+            .any(|m| m.id == w.id && same_stored(m, w));
+        if untouched {
+            if let Some(f) = lib.files.get_mut(module) {
+                f.signals.retain(|m| m.id != w.id);
+            }
+            work.retired += 1;
+        }
+    }
+    work
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct SlotNote {
     pub device: String,
@@ -769,6 +998,7 @@ impl Profile {
     /// load is empty; see [`slot_notes`](Self::slot_notes) for what to say.
     pub fn with_pages(&self, lib: &PageLibrary) -> Profile {
         let mut p = self.clone();
+        p.attach_signals(lib);
         p.screens.clear();
         for (device, slots) in &self.screens {
             if self.follows.contains_key(device) {
@@ -824,6 +1054,22 @@ impl Profile {
     ///
     /// Only fields a page put on the device are taken off, so nothing a
     /// profile holds of its own is touched.
+    /// Give every lamp lit by a stored signal its definition from the
+    /// module's page file, so it is read and resolved without looking it up.
+    /// A lamp naming one the file lacks is left without, which the checks
+    /// refuse and which lights nothing.
+    pub fn attach_signals(&mut self, lib: &PageLibrary) {
+        let signals = lib.signals_on(&self.module);
+        for b in &mut self.bindings {
+            b.stored = b.signal.as_ref().and_then(|id| {
+                signals
+                    .iter()
+                    .find(|s| &s.id == id)
+                    .map(|s| Arc::new(s.clone()))
+            });
+        }
+    }
+
     pub fn show_slot(&mut self, device: &str, slot: usize) -> bool {
         let Some(run) = self.page_runs.get_mut(device) else {
             return false;

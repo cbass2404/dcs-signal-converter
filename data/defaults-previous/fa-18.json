@@ -84,14 +84,8 @@
     {
       "device": "MCDU_Captain",
       "led": "Fail",
-      "conditions": [
-        {
-          "source": "MASTER_CAUTION_LT",
-          "on_when": {
-            "equals": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "91w501"
     },
     {
       "device": "MCDU_Captain",
@@ -367,14 +361,8 @@
     {
       "device": "PFP3N_Captain",
       "led": "FAIL",
-      "conditions": [
-        {
-          "source": "MASTER_CAUTION_LT",
-          "on_when": {
-            "equals": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "91w501"
     },
     {
       "device": "PFP3N_Captain",
@@ -523,14 +511,8 @@
     {
       "device": "PFP4_Captain",
       "led": "FAIL",
-      "conditions": [
-        {
-          "source": "MASTER_CAUTION_LT",
-          "on_when": {
-            "equals": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "91w501"
     },
     {
       "device": "PFP4_Captain",
@@ -679,14 +661,8 @@
     {
       "device": "PFP7_Captain",
       "led": "FAIL",
-      "conditions": [
-        {
-          "source": "MASTER_CAUTION_LT",
-          "on_when": {
-            "equals": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "91w501"
     },
     {
       "device": "PFP7_Captain",
@@ -843,14 +819,8 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "Master_Caution",
-      "conditions": [
-        {
-          "source": "MASTER_CAUTION_LT",
-          "on_when": {
-            "equals": 1
-          }
-        }
-      ],
+      "conditions": [],
+      "signal": "91w501",
       "note": "MASTER CAUTION (yellow)."
     },
     {

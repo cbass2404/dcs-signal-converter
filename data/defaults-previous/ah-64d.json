@@ -148,40 +148,7 @@
       "device": "MCDU_Captain",
       "led": "STATUS",
       "conditions": [],
-      "any_of": [
-        {
-          "conditions": [
-            {
-              "source": "CPG_MASTER_WARNING_L",
-              "on_when": {
-                "equals": 1
-              }
-            },
-            {
-              "source": "SEAT_POSITION",
-              "on_when": {
-                "equals": 1
-              }
-            }
-          ]
-        },
-        {
-          "conditions": [
-            {
-              "source": "PLT_MASTER_WARNING_L",
-              "on_when": {
-                "equals": 1
-              }
-            },
-            {
-              "source": "SEAT_POSITION",
-              "on_when": {
-                "equals": 0
-              }
-            }
-          ]
-        }
-      ]
+      "signal": "jtwz6y"
     },
     {
       "device": "MCDU_Captain",
@@ -411,79 +378,13 @@
       "device": "PFP3N_Captain",
       "led": "FAIL",
       "conditions": [],
-      "any_of": [
-        {
-          "conditions": [
-            {
-              "source": "CPG_MASTER_CAUTION_L",
-              "on_when": {
-                "equals": 1
-              }
-            },
-            {
-              "source": "SEAT_POSITION",
-              "on_when": {
-                "equals": 1
-              }
-            }
-          ]
-        },
-        {
-          "conditions": [
-            {
-              "source": "PLT_MASTER_CAUTION_L",
-              "on_when": {
-                "equals": 1
-              }
-            },
-            {
-              "source": "SEAT_POSITION",
-              "on_when": {
-                "equals": 0
-              }
-            }
-          ]
-        }
-      ]
+      "signal": "v4tomr"
     },
     {
       "device": "PFP3N_Captain",
       "led": "MSG",
       "conditions": [],
-      "any_of": [
-        {
-          "conditions": [
-            {
-              "source": "CPG_MASTER_WARNING_L",
-              "on_when": {
-                "equals": 1
-              }
-            },
-            {
-              "source": "SEAT_POSITION",
-              "on_when": {
-                "equals": 1
-              }
-            }
-          ]
-        },
-        {
-          "conditions": [
-            {
-              "source": "PLT_MASTER_WARNING_L",
-              "on_when": {
-                "equals": 1
-              }
-            },
-            {
-              "source": "SEAT_POSITION",
-              "on_when": {
-                "equals": 0
-              }
-            }
-          ]
-        }
-      ]
+      "signal": "jtwz6y"
     },
     {
       "device": "PFP3N_Captain",
@@ -626,79 +527,13 @@
       "device": "PFP4_Captain",
       "led": "FAIL",
       "conditions": [],
-      "any_of": [
-        {
-          "conditions": [
-            {
-              "source": "CPG_MASTER_CAUTION_L",
-              "on_when": {
-                "equals": 1
-              }
-            },
-            {
-              "source": "SEAT_POSITION",
-              "on_when": {
-                "equals": 1
-              }
-            }
-          ]
-        },
-        {
-          "conditions": [
-            {
-              "source": "PLT_MASTER_CAUTION_L",
-              "on_when": {
-                "equals": 1
-              }
-            },
-            {
-              "source": "SEAT_POSITION",
-              "on_when": {
-                "equals": 0
-              }
-            }
-          ]
-        }
-      ]
+      "signal": "v4tomr"
     },
     {
       "device": "PFP4_Captain",
       "led": "MSG",
       "conditions": [],
-      "any_of": [
-        {
-          "conditions": [
-            {
-              "source": "CPG_MASTER_WARNING_L",
-              "on_when": {
-                "equals": 1
-              }
-            },
-            {
-              "source": "SEAT_POSITION",
-              "on_when": {
-                "equals": 1
-              }
-            }
-          ]
-        },
-        {
-          "conditions": [
-            {
-              "source": "PLT_MASTER_WARNING_L",
-              "on_when": {
-                "equals": 1
-              }
-            },
-            {
-              "source": "SEAT_POSITION",
-              "on_when": {
-                "equals": 0
-              }
-            }
-          ]
-        }
-      ]
+      "signal": "jtwz6y"
     },
     {
       "device": "PFP4_Captain",
@@ -841,79 +676,13 @@
       "device": "PFP7_Captain",
       "led": "FAIL",
       "conditions": [],
-      "any_of": [
-        {
-          "conditions": [
-            {
-              "source": "CPG_MASTER_CAUTION_L",
-              "on_when": {
-                "equals": 1
-              }
-            },
-            {
-              "source": "SEAT_POSITION",
-              "on_when": {
-                "equals": 1
-              }
-            }
-          ]
-        },
-        {
-          "conditions": [
-            {
-              "source": "PLT_MASTER_CAUTION_L",
-              "on_when": {
-                "equals": 1
-              }
-            },
-            {
-              "source": "SEAT_POSITION",
-              "on_when": {
-                "equals": 0
-              }
-            }
-          ]
-        }
-      ]
+      "signal": "v4tomr"
     },
     {
       "device": "PFP7_Captain",
       "led": "MSG",
       "conditions": [],
-      "any_of": [
-        {
-          "conditions": [
-            {
-              "source": "CPG_MASTER_WARNING_L",
-              "on_when": {
-                "equals": 1
-              }
-            },
-            {
-              "source": "SEAT_POSITION",
-              "on_when": {
-                "equals": 1
-              }
-            }
-          ]
-        },
-        {
-          "conditions": [
-            {
-              "source": "PLT_MASTER_WARNING_L",
-              "on_when": {
-                "equals": 1
-              }
-            },
-            {
-              "source": "SEAT_POSITION",
-              "on_when": {
-                "equals": 0
-              }
-            }
-          ]
-        }
-      ]
+      "signal": "jtwz6y"
     },
     {
       "device": "PFP7_Captain",

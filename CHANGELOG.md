@@ -65,6 +65,19 @@ Both profiles carry the same rows.
 - **New DED Backup page** for the ICP, now its starting page: the same
   readings, with each FIRE handle drawn inverse while it is lit.
 
+#### AH-64D
+
+- **PTO2:** LEFT, RIGHT and NOSE light while the left, right and tail
+  wheels carry weight.
+- **MCDU:** FAIL follows the Master Caution of the seat you are in, and
+  STATUS that seat's Master Warning.
+- **PFP-3N, PFP-4 and PFP-7:** FAIL follows the Master Caution of the
+  seat you are in, and MSG that seat's Master Warning.
+- **New UFC Backup page** for the UFC, now its starting page: barometric
+  altitude, airspeed, and the flare and chaff counts.
+- **New DED Backup page** for the ICP, now its starting page: the same
+  readings, labelled.
+
 ### Fixes
 
 - The converter no longer stops with "Overlapped I/O operation is in

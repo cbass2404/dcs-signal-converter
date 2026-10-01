@@ -11,14 +11,14 @@
           "source": "RIO_CDNU_LINE1",
           "colour": "green",
           "replace": {
+            "\u0013": "□",
+            "©": "◀",
+            "»": "→",
+            "{": "↑",
             "«": "←",
             "®": "Δ",
-            "»": "→",
-            "©": "◀",
-            "_": "⬡",
             "}": "↓",
-            "\u0013": "□",
-            "{": "↑"
+            "_": "⬡"
           },
           "note": "CDNU line 1. The eight 22-character CDNU lines sit on the bottom eight rows, 7 to 14, one column in so they are centred across (the WCtrlDcsBiosBridge uses rows 3 to 10). The F-14 reports no seat and only the RIO has a CDNU, so every MCDU shows the RIO's CDNU from either seat. The replace map turns the module's stand-ins into the font's glyphs: the font files a double-headed vertical arrow under Δ, a horizontal one under ◀, the scratchpad diamond under □ (it arrives as control code 0x13) and the cursor block under ⬡, because its underscore slot draws a cross."
         },
@@ -27,14 +27,14 @@
           "source": "RIO_CDNU_LINE2",
           "colour": "green",
           "replace": {
-            "_": "⬡",
-            "\u0013": "□",
-            "®": "Δ",
-            "»": "→",
             "{": "↑",
+            "\u0013": "□",
+            "_": "⬡",
             "«": "←",
+            "»": "→",
+            "©": "◀",
             "}": "↓",
-            "©": "◀"
+            "®": "Δ"
           }
         },
         {
@@ -42,14 +42,14 @@
           "source": "RIO_CDNU_LINE3",
           "colour": "green",
           "replace": {
-            "«": "←",
-            "{": "↑",
             "\u0013": "□",
             "_": "⬡",
             "»": "→",
-            "}": "↓",
             "®": "Δ",
-            "©": "◀"
+            "{": "↑",
+            "}": "↓",
+            "©": "◀",
+            "«": "←"
           }
         },
         {
@@ -58,13 +58,13 @@
           "colour": "green",
           "replace": {
             "©": "◀",
-            "}": "↓",
-            "»": "→",
             "®": "Δ",
-            "«": "←",
             "\u0013": "□",
             "{": "↑",
-            "_": "⬡"
+            "}": "↓",
+            "»": "→",
+            "_": "⬡",
+            "«": "←"
           }
         },
         {
@@ -72,14 +72,14 @@
           "source": "RIO_CDNU_LINE5",
           "colour": "green",
           "replace": {
-            "«": "←",
+            "®": "Δ",
+            "_": "⬡",
             "»": "→",
             "}": "↓",
-            "{": "↑",
-            "®": "Δ",
             "©": "◀",
-            "_": "⬡",
-            "\u0013": "□"
+            "«": "←",
+            "\u0013": "□",
+            "{": "↑"
           }
         },
         {
@@ -87,14 +87,14 @@
           "source": "RIO_CDNU_LINE6",
           "colour": "green",
           "replace": {
-            "®": "Δ",
-            "{": "↑",
-            "_": "⬡",
-            "\u0013": "□",
             "}": "↓",
             "©": "◀",
             "»": "→",
-            "«": "←"
+            "«": "←",
+            "®": "Δ",
+            "{": "↑",
+            "_": "⬡",
+            "\u0013": "□"
           }
         },
         {
@@ -102,14 +102,14 @@
           "source": "RIO_CDNU_LINE7",
           "colour": "green",
           "replace": {
-            "{": "↑",
-            "\u0013": "□",
-            "»": "→",
-            "«": "←",
-            "©": "◀",
-            "_": "⬡",
             "}": "↓",
-            "®": "Δ"
+            "_": "⬡",
+            "©": "◀",
+            "«": "←",
+            "{": "↑",
+            "®": "Δ",
+            "\u0013": "□",
+            "»": "→"
           }
         },
         {
@@ -117,15 +117,31 @@
           "source": "RIO_CDNU_LINE8",
           "colour": "green",
           "replace": {
-            "}": "↓",
-            "«": "←",
-            "\u0013": "□",
-            "»": "→",
-            "®": "Δ",
+            "_": "⬡",
             "©": "◀",
+            "»": "→",
+            "«": "←",
+            "}": "↓",
             "{": "↑",
-            "_": "⬡"
+            "\u0013": "□",
+            "®": "Δ"
           }
+        }
+      ]
+    },
+    {
+      "id": "ukrrci",
+      "name": "UFC Flight",
+      "display": "UFC1",
+      "fields": [
+        {
+          "cells": "34",
+          "source": "PLT_UHF_REMOTE_DISP"
+        },
+        {
+          "cells": "35",
+          "source": "PLT_VUHF_REMOTE_DISP",
+          "note": "this field can only display up to the number 20, therefore it goes blank from 21-30"
         }
       ]
     }

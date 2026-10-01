@@ -3,7 +3,7 @@
   "pages": [
     {
       "id": "f16-flight",
-      "name": "Flight",
+      "name": "CDU Flight",
       "display": "MCDU",
       "fields": [
         {
@@ -69,17 +69,18 @@
             },
             {
               "source": "FUELTOTALIZER_100",
-              "width": 1,
+              "width": 2,
               "reads": [
                 0.0,
-                10.0
+                100.0
               ],
+              "digits": 2,
               "round": "down",
-              "wrap": 10.0,
+              "wrap": 100.0,
               "colour": "amber"
             },
             {
-              "text": "00",
+              "text": "0",
               "colour": "amber"
             },
             {
@@ -273,6 +274,7 @@
                 1.5
               ],
               "decimals": 1,
+              "round": "down",
               "abs": true,
               "colour": "amber"
             },
@@ -285,6 +287,7 @@
                 1.5
               ],
               "decimals": 1,
+              "round": "down",
               "value_aliases": {
                 "-1.5..-0.1": "ND",
                 "0": "",
@@ -303,6 +306,7 @@
                 3.0
               ],
               "decimals": 1,
+              "round": "down",
               "abs": true,
               "colour": "amber"
             },
@@ -314,6 +318,7 @@
                 3.0
               ],
               "decimals": 1,
+              "round": "down",
               "value_aliases": {
                 "-3..-0.1": "RWD",
                 "0": "",
@@ -331,6 +336,7 @@
                 5.0
               ],
               "decimals": 1,
+              "round": "down",
               "abs": true,
               "colour": "amber"
             },
@@ -342,6 +348,7 @@
                 5.0
               ],
               "decimals": 1,
+              "round": "down",
               "value_aliases": {
                 "-5..-0.1": "L",
                 "0": "",
@@ -383,6 +390,135 @@
           "cells": "96-119",
           "source": "DED_L5",
           "format": "DED_L5_FORMAT"
+        }
+      ]
+    },
+    {
+      "id": "khj513",
+      "name": "UFC Flight",
+      "display": "UFC1",
+      "fields": [
+        {
+          "cells": "0",
+          "text": "F"
+        },
+        {
+          "cells": "1",
+          "text": "L"
+        },
+        {
+          "cells": "2-8",
+          "content": [
+            {
+              "source": "FUELTOTALIZER_10K",
+              "width": 2,
+              "reads": [
+                0.0,
+                10.0
+              ],
+              "digits": 2,
+              "round": "down",
+              "wrap": 10.0
+            },
+            {
+              "source": "FUELTOTALIZER_1K",
+              "width": 1,
+              "reads": [
+                0.0,
+                10.0
+              ],
+              "digits": 1,
+              "round": "down",
+              "wrap": 10.0
+            },
+            {
+              "source": "FUELTOTALIZER_100",
+              "width": 2,
+              "reads": [
+                0.0,
+                100.0
+              ],
+              "digits": 2,
+              "round": "down",
+              "wrap": 100.0
+            },
+            {
+              "text": "0"
+            }
+          ]
+        },
+        {
+          "cells": "10-13",
+          "content": [
+            {
+              "text": "H"
+            },
+            {
+              "source": "STANDBY_COMPASS_HEADING",
+              "width": 3,
+              "align": "right",
+              "reads": [
+                0.0,
+                360.0
+              ],
+              "digits": 3,
+              "round": "down",
+              "wrap": 360.0
+            }
+          ]
+        },
+        {
+          "cells": "15-18",
+          "content": [
+            {
+              "text": "C"
+            },
+            {
+              "source": "EHSI_COURSE",
+              "width": 3,
+              "align": "right"
+            }
+          ]
+        },
+        {
+          "cells": "20-23",
+          "content": [
+            {
+              "source": "PITCHTRIMIND",
+              "width": 4,
+              "reads": [
+                -1.5,
+                1.5
+              ],
+              "decimals": 1,
+              "round": "down"
+            }
+          ]
+        },
+        {
+          "cells": "25-28",
+          "content": [
+            {
+              "source": "ROLLTRIMIND",
+              "width": 4,
+              "reads": [
+                -3.0,
+                3.0
+              ],
+              "decimals": 1,
+              "round": "down"
+            }
+          ]
+        },
+        {
+          "cells": "30-33",
+          "source": "YAW_TRIM",
+          "reads": [
+            -5.0,
+            5.0
+          ],
+          "decimals": 1,
+          "round": "down"
         }
       ]
     }

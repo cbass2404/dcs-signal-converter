@@ -18,10 +18,10 @@
 import { deleteSignal, newPageId, savePage, saveSignal } from "./api";
 import { bindingEditor, iconButton } from "./binding";
 import { confirmAction } from "./confirm";
-import { consolidated, dismiss, dismissed, duplicates, pagesOf } from "./duplicates";
+import { dismiss, dismissed, duplicates, pagesIn, pagesOf, placeOf, repoint } from "./duplicates";
 import type { Duplicate } from "./duplicates";
 import { noteEditor } from "./note";
-import { signalsChanged } from "./pages";
+import { signalsChanged, whereShown } from "./pages";
 import type { PageBook } from "./pages";
 import { termControls } from "./readout";
 import { isLampSignal } from "./stored";
@@ -52,8 +52,10 @@ export interface SignalContext {
   changed: () => void;
   /** The profile open here, whose lamps may light by a signal. */
   profile: () => Profile;
-  /** A device with this display, which a page is checked against when it is saved. */
-  deviceFor: (display: string) => string | undefined;
+  /** Every device with this display, whose screen a page can be checked on. */
+  devicesFor: (display: string) => string[];
+  /** A device's name as the window shows it. */
+  nameOf: (key: string) => string;
 }
 
 /** One signal as the window holds it while it is being edited. */
@@ -411,9 +413,9 @@ export function signalSection(ctx: SignalContext): {
   const groupRow = (d: Duplicate): HTMLElement => {
     const source = d.term.source ?? "";
     const named = ctx.signals.find((s) => s.id === source)?.description;
-    const open = pagesOf(d).filter((name) =>
-      [...book.editing.values()].some((e) => e.page.name === name),
-    );
+    const open = pagesIn(d)
+      .filter((p) => [...book.editing.values()].some((e) => e.page.id === p.id))
+      .map((p) => p.name);
     const make = el("button", { class: "add small" }, "Make a shared signal");
     if (open.length > 0) {
       make.disabled = true;
@@ -421,10 +423,9 @@ export function signalSection(ctx: SignalContext): {
     }
     make.addEventListener("click", () => {
       make.disabled = true;
-      void consolidate(d, named ?? source).catch((e: unknown) => {
-        ctx.fail("Making the shared signal", e);
-        make.disabled = false;
-      });
+      void consolidate(d, named ?? source)
+        .catch((e: unknown) => ctx.fail("Making the shared signal", e))
+        .finally(() => (make.disabled = false));
     });
     return el(
       "div",
@@ -436,8 +437,34 @@ export function signalSection(ctx: SignalContext): {
     );
   };
 
-  /** Save `d` as a shared signal, then every page with one of its readings pointed at it. */
+  /**
+   * Make `d` one shared signal once the user confirms, listing every reading
+   * it changes and every slot showing its pages, which is where to look.
+   * The signal is saved first, since a page drawing it cannot pass its check
+   * until it is.
+   */
   const consolidate = async (d: Duplicate, name: string): Promise<void> => {
+    const pages = pagesIn(d);
+    // Each page with the readings on it that change, and every slot showing
+    // it: a page is shared, so those are all the places to look after.
+    const where = pages.map((p) => {
+      const shown = whereShown(book, ctx.profile(), ctx.nameOf, p.id);
+      const head =
+        shown.length > 0
+          ? `${p.name} page, on ${shown.join("; ")}:`
+          : `${p.name} page, for the ${p.display}, not on any panel yet:`;
+      const readings = d.uses.filter((u) => u.page.id === p.id).map((u) => `- ${placeOf(u)}`);
+      return [head, ...readings].join("\n");
+    });
+    const ok = await confirmAction(
+      `Make ${name} one shared signal?` +
+        `\n\nIt is saved as a shared signal, and these ${d.uses.length} readings draw it instead, each as it does now:` +
+        `\n\n${where.join("\n\n")}` +
+        "\n\nThe pages are saved too, which changes them in every slot above.",
+      "Confirm",
+    );
+    if (!ok) return;
+
     const id = await newPageId(avoid());
     const signal: StoredSignal = {
       id,
@@ -446,19 +473,42 @@ export function signalSection(ctx: SignalContext): {
       conditions: [],
     };
     let view = await saveSignal(module, signal);
-    for (const page of consolidated(d, id)) {
-      const device = ctx.deviceFor(page.display);
-      if (!device)
+
+    // All or nothing: a page its check refuses puts back the ones already
+    // saved and takes the signal away again, so nothing is left half done.
+    const saved: { page: Page; device: string }[] = [];
+    try {
+      for (const page of pages) {
+        const device = ctx.devicesFor(page.display)[0];
+        if (!device)
+          throw new Error(
+            `no panel here draws the ${page.display}, so ${page.name} cannot be checked`,
+          );
+        const changed = structuredClone(page);
+        repoint(d, id, changed);
+        view = await savePage(ctx.profile(), changed, device);
+        saved.push({ page, device });
+      }
+    } catch (e) {
+      try {
+        for (const s of saved) view = await savePage(ctx.profile(), s.page, s.device);
+        view = await deleteSignal(module, id);
+      } catch (undo) {
+        signalsChanged(book, view);
+        redraw();
         throw new Error(
-          `no panel here draws the ${page.display}, so ${page.name} cannot be checked`,
+          `${e instanceof Error ? e.message : String(e)}\n\nPutting back what was already saved failed too: ${undo instanceof Error ? undo.message : String(undo)}`,
         );
-      view = await savePage(ctx.profile(), page, device);
+      }
+      signalsChanged(book, view);
+      redraw();
+      throw new Error(`${e instanceof Error ? e.message : String(e)}\n\nNothing was changed.`);
     }
     signalsChanged(book, view);
     redraw();
     ctx.changed();
     ctx.tell(
-      `Made ${signal.name}, a shared signal, and pointed ${d.uses.length} readings on ${pagesOf(d).join(", ")} at it.`,
+      `Made ${signal.name}, a shared signal, and saved ${pagesOf(d).join(", ")} with ${d.uses.length} readings drawing it.`,
     );
   };
 

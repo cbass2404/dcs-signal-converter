@@ -83,16 +83,27 @@ export function pagesOf(d: Duplicate): string[] {
   return [...new Set(d.uses.map((u) => u.page.name))];
 }
 
+/** Where one reading sits on its page: its cells, and which piece where there are several. */
+export function placeOf(use: Use): string {
+  const field = use.page.fields[use.field];
+  const pieces = field ? contentOf(field).length : 1;
+  const piece = pieces > 1 ? `, piece ${use.piece + 1} of ${pieces}` : "";
+  return `cells ${field?.cells ?? "?"}${piece}`;
+}
+
+/** The pages a group's readings are on, once each, as they stood when it was found. */
+export function pagesIn(d: Duplicate): Page[] {
+  return [...new Map(d.uses.map((u) => [u.page.id, u.page])).values()];
+}
+
 /**
- * Point every reading in `d` at the shared signal `id`, on copies of their
- * pages, which are returned for saving. Each piece keeps everything that
- * says how it draws.
+ * Point every reading in `d` on `page` at the shared signal `id`, in place.
+ * `page` is the page the group was found on or a copy of it, so the fields
+ * sit where they did. Each piece keeps everything that says how it draws.
  */
-export function consolidated(d: Duplicate, id: string): Page[] {
-  const copies = new Map<string, Page>();
+export function repoint(d: Duplicate, id: string, page: Page): void {
   for (const use of d.uses) {
-    const page = copies.get(use.page.id) ?? structuredClone(use.page);
-    copies.set(page.id, page);
+    if (use.page.id !== page.id) continue;
     const readout = page.fields[use.field];
     if (!readout) continue;
     const spans = contentOf(readout);
@@ -105,7 +116,6 @@ export function consolidated(d: Duplicate, id: string): Page[] {
     // and the backend writes a chain of one back flat where it can.
     setContent(readout, spans);
   }
-  return [...copies.values()];
 }
 
 /** Groups put away with their × on `module`, kept for this viewer only. */

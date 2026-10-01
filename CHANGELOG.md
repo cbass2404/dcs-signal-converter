@@ -78,6 +78,8 @@ unless this says what moved.
   When one signal is shaped the same way in two or more readings on the
   aircraft's pages, a banner at the top of Shared Signals offers to make it
   one shared signal and point every one of them at it. Each reading keeps
-  its own words, colour and box. The banner goes once they are made one,
-  or when you close it with its ×.
+  its own words, colour and box. It asks first, listing every reading and
+  every slot it changes, then saves the signal and the pages together, or
+  none of them. The banner goes once they are made one, or when you close
+  it with its ×.
 - **A shared number is worked out only when one of its parts moves.**

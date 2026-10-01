@@ -261,16 +261,29 @@ function storeSlots(profile: Profile, device: string, s: PageSlots): void {
 
 /** Where a page is shown, this profile's slots read as they stand. */
 function shownAt(ctx: PageContext, id: string): string[] {
+  return whereShown(ctx.book, ctx.profile, ctx.nameOf, id);
+}
+
+/**
+ * Every slot showing page `id`: `profile`'s as they stand, then every other
+ * saved profile's on the module. A device's name as `nameOf` gives it.
+ */
+export function whereShown(
+  book: PageBook,
+  profile: Profile,
+  nameOf: (key: string) => string,
+  id: string,
+): string[] {
   const here: string[] = [];
-  for (const [device, s] of Object.entries(ctx.profile.screens ?? {})) {
-    if (ctx.profile.follows?.[device]) continue;
+  for (const [device, s] of Object.entries(profile.screens ?? {})) {
+    if (profile.follows?.[device]) continue;
     s.slots.forEach((slot, i) => {
-      if (slot?.page === id) here.push(`${ctx.nameOf(device)} slot ${i + 1} here`);
+      if (slot?.page === id) here.push(`${nameOf(device)} slot ${i + 1} here`);
     });
   }
-  const there = ctx.book.used
+  const there = book.used
     .filter((u) => u.page === id)
-    .map((u) => `${u.profile}, ${ctx.nameOf(u.device)} slot ${u.slot}`);
+    .map((u) => `${u.profile}, ${nameOf(u.device)} slot ${u.slot}`);
   return [...here, ...there];
 }
 

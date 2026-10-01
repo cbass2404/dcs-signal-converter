@@ -1797,7 +1797,15 @@ async function showProfile(file: string): Promise<void> {
     fail: showError,
     changed: () => session.recheck(),
     profile: () => session.profile,
-    deviceFor: (display) => devices.find((d) => d.displays.some((x) => x.key === display))?.key,
+    // The panels this profile drives first.
+    devicesFor: (display) => {
+      const off = session.profile.disabled_devices ?? [];
+      return devices
+        .filter((d) => d.displays.some((x) => x.key === display))
+        .map((d) => d.key)
+        .sort((a, b) => Number(off.includes(a)) - Number(off.includes(b)));
+    },
+    nameOf: (key) => devices.find((d) => d.key === key)?.display_name ?? key,
   });
   // A page or a stored signal open with changes is unsaved work too, though
   // Save does not write either.

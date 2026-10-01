@@ -3570,27 +3570,30 @@ const readsLine = (text: string): HTMLElement =>
 
 /** What a field reads, a line per signal, for a row that is not open. */
 function fieldReads(readout: Readout, signals: SignalView[]): HTMLElement[] {
-  // A switch reads its selector and whatever its cases read.
+  // A DCS-BIOS signal by its id, a shared signal as "shared:" and its id, so
+  // one named both ways is listed both ways and each only once.
+  const of = (p: Span): string[] =>
+    kindOf(p) === "signal"
+      ? [p.source ?? ""]
+      : kindOf(p) === "stored"
+        ? [`shared:${p.signal ?? ""}`]
+        : [];
+  // A switch reads what decides it and whatever its cases read.
   const ids = [
     ...new Set(
       contentOf(readout).flatMap((s) =>
         kindOf(s) === "switch"
           ? [
-              s.switch ?? "",
-              ...caseKeys(s).flatMap((key) =>
-                casePieces(s, key)
-                  .filter((p) => kindOf(p) === "signal")
-                  .map((p) => p.source ?? ""),
-              ),
+              s.switch_signal ? `shared:${s.switch_signal}` : (s.switch ?? ""),
+              ...caseKeys(s).flatMap((key) => casePieces(s, key).flatMap(of)),
             ]
-          : kindOf(s) === "signal"
-            ? [s.source ?? ""]
-            : [],
+          : of(s),
       ),
     ),
   ];
   if (ids.length === 0) return [readsLine("Typed text only. It reads no signal.")];
   return ids.map((id) => {
+    if (id.startsWith("shared:")) return sharedReads(id.slice("shared:".length));
     if (id === "") return el("span", { class: "bad" }, "A reading with no signal chosen yet");
     const signal = signals.find((s) => s.id === id);
     if (!signal) return el("span", { class: "bad" }, `${id} is not a signal in this module`);
@@ -3601,6 +3604,24 @@ function fieldReads(readout: Readout, signals: SignalView[]): HTMLElement[] {
       el("span", { class: "test" }, signal.description),
     );
   });
+}
+
+/** A shared signal a field draws, by name, with what it reads. */
+function sharedReads(id: string): HTMLElement {
+  if (id === "") return el("span", { class: "bad" }, "A shared signal nobody has chosen yet");
+  const shared = storedSignal(id);
+  if (!shared) return el("span", { class: "bad" }, `${id} is not a shared signal here`);
+  const parts = shared.terms.map((t) => t.source || "a part with no signal yet");
+  return el(
+    "span",
+    { class: "sub" },
+    el("code", {}, shared.name),
+    el(
+      "span",
+      { class: "test" },
+      parts.length > 0 ? `shared signal, reads ${parts.join(", then ")}` : "shared signal",
+    ),
+  );
 }
 
 /**
@@ -3700,7 +3721,7 @@ function describeField(readout: Readout, display: DisplayInfo): string {
     }
     if (kindOf(s) === "stored") {
       const named = storedSignal(s.signal ?? "")?.name;
-      return `${named ? `the stored signal ${named}` : "a shared signal nobody has chosen yet"}${held}`;
+      return `${named ? `the shared signal ${named}` : "a shared signal nobody has chosen yet"}${held}`;
     }
     if (kindOf(s) === "signal") {
       // How it draws the number, so a reset that only changes that says so

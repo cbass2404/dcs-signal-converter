@@ -59,8 +59,7 @@
       "device": "MCDU_Captain",
       "led": "Backlight",
       "conditions": [],
-      "same_as": "INST_PNL_Backlight",
-      "same_as_device": "CarrierAce_MFD_C"
+      "always": true
     },
     {
       "device": "MCDU_Captain",
@@ -82,7 +81,29 @@
     {
       "device": "MCDU_Captain",
       "led": "Fail",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "PLT_MASTER_CAUTION",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "RIO_MASTERCAUTION_LIGHT",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "MCDU_Captain",
@@ -318,8 +339,7 @@
       "device": "PFP3N_Captain",
       "led": "Backlight",
       "conditions": [],
-      "same_as": "INST_PNL_Backlight",
-      "same_as_device": "CarrierAce_MFD_C"
+      "always": true
     },
     {
       "device": "PFP3N_Captain",
@@ -346,7 +366,29 @@
     {
       "device": "PFP3N_Captain",
       "led": "FAIL",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "PLT_MASTER_CAUTION",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "RIO_MASTERCAUTION_LIGHT",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "PFP3N_Captain",
@@ -465,8 +507,7 @@
       "device": "PFP4_Captain",
       "led": "Backlight",
       "conditions": [],
-      "same_as": "INST_PNL_Backlight",
-      "same_as_device": "CarrierAce_MFD_C"
+      "always": true
     },
     {
       "device": "PFP4_Captain",
@@ -493,7 +534,29 @@
     {
       "device": "PFP4_Captain",
       "led": "FAIL",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "PLT_MASTER_CAUTION",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "RIO_MASTERCAUTION_LIGHT",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "PFP4_Captain",
@@ -612,8 +675,7 @@
       "device": "PFP7_Captain",
       "led": "Backlight",
       "conditions": [],
-      "same_as": "INST_PNL_Backlight",
-      "same_as_device": "CarrierAce_MFD_C"
+      "always": true
     },
     {
       "device": "PFP7_Captain",
@@ -640,7 +702,29 @@
     {
       "device": "PFP7_Captain",
       "led": "FAIL",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "PLT_MASTER_CAUTION",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "RIO_MASTERCAUTION_LIGHT",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "PFP7_Captain",
@@ -827,27 +911,62 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "CTR",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "PLT_NAV_STEER_TACAN",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "LI",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "PLT_NAV_STEER_DEST",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "LO",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "PLT_NAV_STEER_VECTOR",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "RO",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "PLT_NAV_STEER_MAN",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "RI",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "PLT_NAV_STEER_AWL",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
@@ -969,10 +1088,13 @@
       "start": 1,
       "slots": [
         {
+          "page": "ukrrci",
+          "key": null
+        },
+        {
           "page": null,
           "key": null
         },
-        null,
         null,
         null,
         null,

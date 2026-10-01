@@ -12,11 +12,11 @@
           "seat": 0,
           "colour": "green",
           "replace": {
-            "~": "█",
-            "<": "◀",
             "#": "█",
+            "<": "◀",
             "=": "■",
-            ">": "▶"
+            ">": "▶",
+            "~": "█"
           },
           "note": "KU scratchpad. The seat's own keyboard unit line, 22 characters, sits on the bottom row, 14, the MCDU's scratchpad row, one column in so it is centred across. SEAT_POSITION picks the pilot's KU (0) or the CPG's (1). The replace map follows the WCtrlDcsBiosBridge's AH-64D listener: ~ and # draw the block cursor, < and > the arrows, = a square."
         },
@@ -26,11 +26,11 @@
           "seat": 1,
           "colour": "green",
           "replace": {
-            "<": "◀",
-            "~": "█",
             "#": "█",
+            "<": "◀",
             "=": "■",
-            ">": "▶"
+            ">": "▶",
+            "~": "█"
           }
         },
         {
@@ -498,6 +498,564 @@
             {
               "text": "Z",
               "small": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "coqxi1",
+      "name": "UFC Backup",
+      "display": "UFC1",
+      "fields": [
+        {
+          "cells": "2-8",
+          "content": [
+            {
+              "gap": true
+            },
+            {
+              "source": "PLT_ALT_10000",
+              "reads": [
+                0.0,
+                10.0
+              ],
+              "round": "down",
+              "wrap": 10.0
+            },
+            {
+              "source": "PLT_ALT_1000",
+              "width": 3,
+              "reads": [
+                0.0,
+                1000.0
+              ],
+              "digits": 3,
+              "round": "down",
+              "wrap": 1000.0
+            },
+            {
+              "text": "0"
+            }
+          ]
+        },
+        {
+          "cells": "0",
+          "text": "B"
+        },
+        {
+          "cells": "1",
+          "text": "A"
+        },
+        {
+          "cells": "10-13",
+          "content": [
+            {
+              "source": "PLT_IAS_NEEDLE",
+              "width": 3,
+              "conversions": [
+                {
+                  "raw": [
+                    0,
+                    1180
+                  ],
+                  "reads": [
+                    0.0,
+                    20.0
+                  ]
+                },
+                {
+                  "raw": [
+                    1181,
+                    3277
+                  ],
+                  "reads": [
+                    20.0,
+                    30.0
+                  ]
+                },
+                {
+                  "raw": [
+                    3278,
+                    5898
+                  ],
+                  "reads": [
+                    30.0,
+                    40.0
+                  ]
+                },
+                {
+                  "raw": [
+                    5899,
+                    9306
+                  ],
+                  "reads": [
+                    40.0,
+                    50.0
+                  ]
+                },
+                {
+                  "raw": [
+                    9307,
+                    13107
+                  ],
+                  "reads": [
+                    50.0,
+                    60.0
+                  ]
+                },
+                {
+                  "raw": [
+                    13108,
+                    17694
+                  ],
+                  "reads": [
+                    60.0,
+                    70.0
+                  ]
+                },
+                {
+                  "raw": [
+                    17695,
+                    22610
+                  ],
+                  "reads": [
+                    70.0,
+                    80.0
+                  ]
+                },
+                {
+                  "raw": [
+                    22611,
+                    25821
+                  ],
+                  "reads": [
+                    80.0,
+                    90.0
+                  ]
+                },
+                {
+                  "raw": [
+                    25822,
+                    28311
+                  ],
+                  "reads": [
+                    90.0,
+                    100.0
+                  ]
+                },
+                {
+                  "raw": [
+                    28312,
+                    30474
+                  ],
+                  "reads": [
+                    100.0,
+                    110.0
+                  ]
+                },
+                {
+                  "raw": [
+                    30475,
+                    33095
+                  ],
+                  "reads": [
+                    110.0,
+                    120.0
+                  ]
+                },
+                {
+                  "raw": [
+                    33096,
+                    35586
+                  ],
+                  "reads": [
+                    120.0,
+                    130.0
+                  ]
+                },
+                {
+                  "raw": [
+                    35587,
+                    38076
+                  ],
+                  "reads": [
+                    130.0,
+                    140.0
+                  ]
+                },
+                {
+                  "raw": [
+                    38077,
+                    40828
+                  ],
+                  "reads": [
+                    140.0,
+                    150.0
+                  ]
+                },
+                {
+                  "raw": [
+                    40829,
+                    51707
+                  ],
+                  "reads": [
+                    150.0,
+                    200.0
+                  ]
+                },
+                {
+                  "raw": [
+                    51708,
+                    58719
+                  ],
+                  "reads": [
+                    200.0,
+                    230.0
+                  ]
+                },
+                {
+                  "raw": [
+                    58720,
+                    61210
+                  ],
+                  "reads": [
+                    230.0,
+                    240.0
+                  ]
+                },
+                {
+                  "raw": [
+                    61211,
+                    65535
+                  ],
+                  "reads": [
+                    240.0,
+                    250.0
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "cells": "25-28",
+          "content": [
+            {
+              "text": "F"
+            },
+            {
+              "source": "PLT_CMWS_FLARE_COUNT"
+            }
+          ]
+        },
+        {
+          "cells": "30-33",
+          "content": [
+            {
+              "text": "C",
+              "width": 1
+            },
+            {
+              "source": "PLT_CMWS_CHAFF_COUNT"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "kkwii7",
+      "name": "DED Backup",
+      "display": "DED",
+      "fields": [
+        {
+          "cells": "0-23",
+          "content": [
+            {
+              "gap": true,
+              "width": 5
+            },
+            {
+              "text": "IAS"
+            },
+            {
+              "gap": true,
+              "width": 7
+            },
+            {
+              "text": "BALT"
+            },
+            {
+              "gap": true
+            }
+          ]
+        },
+        {
+          "cells": "24-47",
+          "content": [
+            {
+              "gap": true
+            },
+            {
+              "source": "PLT_IAS_NEEDLE",
+              "width": 3,
+              "conversions": [
+                {
+                  "raw": [
+                    0,
+                    1180
+                  ],
+                  "reads": [
+                    0.0,
+                    20.0
+                  ]
+                },
+                {
+                  "raw": [
+                    1181,
+                    3277
+                  ],
+                  "reads": [
+                    20.0,
+                    30.0
+                  ]
+                },
+                {
+                  "raw": [
+                    3278,
+                    5898
+                  ],
+                  "reads": [
+                    30.0,
+                    40.0
+                  ]
+                },
+                {
+                  "raw": [
+                    5899,
+                    9306
+                  ],
+                  "reads": [
+                    40.0,
+                    50.0
+                  ]
+                },
+                {
+                  "raw": [
+                    9307,
+                    13107
+                  ],
+                  "reads": [
+                    50.0,
+                    60.0
+                  ]
+                },
+                {
+                  "raw": [
+                    13108,
+                    17694
+                  ],
+                  "reads": [
+                    60.0,
+                    70.0
+                  ]
+                },
+                {
+                  "raw": [
+                    17695,
+                    22610
+                  ],
+                  "reads": [
+                    70.0,
+                    80.0
+                  ]
+                },
+                {
+                  "raw": [
+                    22611,
+                    25821
+                  ],
+                  "reads": [
+                    80.0,
+                    90.0
+                  ]
+                },
+                {
+                  "raw": [
+                    25822,
+                    28311
+                  ],
+                  "reads": [
+                    90.0,
+                    100.0
+                  ]
+                },
+                {
+                  "raw": [
+                    28312,
+                    30474
+                  ],
+                  "reads": [
+                    100.0,
+                    110.0
+                  ]
+                },
+                {
+                  "raw": [
+                    30475,
+                    33095
+                  ],
+                  "reads": [
+                    110.0,
+                    120.0
+                  ]
+                },
+                {
+                  "raw": [
+                    33096,
+                    35586
+                  ],
+                  "reads": [
+                    120.0,
+                    130.0
+                  ]
+                },
+                {
+                  "raw": [
+                    35587,
+                    38076
+                  ],
+                  "reads": [
+                    130.0,
+                    140.0
+                  ]
+                },
+                {
+                  "raw": [
+                    38077,
+                    40828
+                  ],
+                  "reads": [
+                    140.0,
+                    150.0
+                  ]
+                },
+                {
+                  "raw": [
+                    40829,
+                    51707
+                  ],
+                  "reads": [
+                    150.0,
+                    200.0
+                  ]
+                },
+                {
+                  "raw": [
+                    51708,
+                    58719
+                  ],
+                  "reads": [
+                    200.0,
+                    230.0
+                  ]
+                },
+                {
+                  "raw": [
+                    58720,
+                    61210
+                  ],
+                  "reads": [
+                    230.0,
+                    240.0
+                  ]
+                },
+                {
+                  "raw": [
+                    61211,
+                    65535
+                  ],
+                  "reads": [
+                    240.0,
+                    250.0
+                  ]
+                }
+              ]
+            },
+            {
+              "gap": true,
+              "width": 7
+            },
+            {
+              "source": "PLT_ALT_10000",
+              "width": 1,
+              "reads": [
+                0.0,
+                10.0
+              ],
+              "round": "down",
+              "wrap": 10.0
+            },
+            {
+              "source": "PLT_ALT_1000",
+              "width": 3,
+              "reads": [
+                0.0,
+                1000.0
+              ],
+              "digits": 3,
+              "round": "down",
+              "wrap": 1000.0
+            },
+            {
+              "text": "0"
+            },
+            {
+              "gap": true
+            }
+          ]
+        },
+        {
+          "cells": "72-95",
+          "content": [
+            {
+              "gap": true
+            },
+            {
+              "text": "FLARE"
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "CHAFF"
+            },
+            {
+              "gap": true
+            }
+          ]
+        },
+        {
+          "cells": "96-119",
+          "content": [
+            {
+              "gap": true,
+              "width": 6
+            },
+            {
+              "source": "PLT_CMWS_FLARE_COUNT",
+              "width": 3
+            },
+            {
+              "gap": true,
+              "width": 7
+            },
+            {
+              "source": "PLT_CMWS_CHAFF_COUNT",
+              "width": 3
+            },
+            {
+              "gap": true
             }
           ]
         }

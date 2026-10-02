@@ -38,6 +38,8 @@ unless this says what moved.
 - **Profile cards name only the aircraft.** The DCS-BIOS module is
   gone from the line under each profile's name, where it repeated one of
   the aircraft.
+- **A lamp on shared conditions shows just their name,** with "shared
+  conditions" under it, instead of "Lights by" and the name.
 
 ### Fixes
 

@@ -662,7 +662,7 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
     const text = el("div", { class: "grow" });
     if (chosen) {
       text.append(
-        el("span", { class: "desc" }, `Lights by ${chosen.name}`),
+        el("span", { class: "desc" }, chosen.name),
         el(
           "span",
           { class: "sub" },

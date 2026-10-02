@@ -750,13 +750,14 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
   }
 
   /**
-   * Steady or flashing, at the end of a block of conditions. On a stored
-   * signal's blocks it is the flash of every lamp lit by the signal.
+   * As DCS shows it or flashing, at the end of a block of conditions. On a
+   * stored signal's blocks it is the flash of every lamp lit by the signal.
+   * No flash is not "steady": the lamp still follows a signal DCS flashes.
    */
   function flashRow(holder: { blink?: BlinkRate }): HTMLElement {
     const pick = el("select", { class: "test" });
     pick.append(
-      el("option", { value: "" }, "steady"),
+      el("option", { value: "" }, "as DCS shows it"),
       el("option", { value: "slow" }, "flashing slowly, twice a second"),
       el("option", { value: "fast" }, "flashing fast, three times a second"),
     );

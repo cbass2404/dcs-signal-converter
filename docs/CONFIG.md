@@ -329,10 +329,11 @@ says and its own `blink` is set aside.
 ```
 
 `"slow"` is twice a second and `"fast"` three times, each lit for exactly the
-first half of its flash. Absent is steady and steady is never written, so no
-profile changed when this arrived. A flashing block in its dark half counts as
-not holding, so the lamp falls to its `off`, or to another alternative that
-does hold: steady wins over flashing while both hold.
+first half of its flash. Absent adds no flash: the lamp follows its signal,
+which the editor calls "as DCS shows it". It is never written, so no profile
+changed when this arrived. A flashing block in its dark half counts as not
+holding, so the lamp falls to its `off`, or to another alternative that does
+hold: an unflashed block wins over a flashing one while both hold.
 
 One clock serves every lamp, started with the stream, so every lamp at one
 rate flashes in step: a cockpit lamp and its repeater on another panel. Each

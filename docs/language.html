@@ -1178,14 +1178,15 @@
                 lamps that means any one group is enough.
               </p>
               <p>
-                Each group ends with <span class="ed">While this holds, the lamp is</span>: steady,
-                <span class="ed">flashing slowly</span> (twice a second) or
-                <span class="ed">flashing fast</span> (three times a second). Every flash is lit for
-                exactly half its time, and every lamp flashing at one rate flashes in step. A
-                flashing group in its dark half counts as not holding, so a steady group that also
-                holds keeps the lamp lit. Flash only a lamp DCS keeps steady: where the cockpit lamp
-                already flashes, its signal does too and the lamp follows it, and a flash on top
-                beats against it.
+                Each group ends with <span class="ed">While this holds, the lamp is</span>:
+                <span class="ed">as DCS shows it</span>, <span class="ed">flashing slowly</span>
+                (twice a second) or <span class="ed">flashing fast</span> (three times a second).
+                As DCS shows it adds nothing: the lamp follows its signal, so it flashes wherever
+                the cockpit lamp does. Every flash is lit for exactly half its time, and every lamp
+                flashing at one rate flashes in step. A flashing group in its dark half counts as
+                not holding, so an unflashed group that also holds keeps the lamp lit. Flash only a
+                lamp DCS keeps steady: where the cockpit lamp already flashes, its signal does too
+                and the lamp follows it, and a flash on top beats against it.
               </p>
             </div>
 
@@ -1350,12 +1351,12 @@
                 <div class="controls">
                   <p class="say">
                     A hook lamp held steady by the lamp test, and flashing while a warning holds.
-                    Both lit, the steady group wins.
+                    Both lit, the unflashed group wins.
                   </p>
                   <div class="row">
                     <span class="lbl">Warning flashes</span>
                     <div class="seg" id="f-rate">
-                      <button type="button" data-v="" aria-pressed="false">steady</button>
+                      <button type="button" data-v="" aria-pressed="false">as DCS shows it</button>
                       <button type="button" data-v="slow" aria-pressed="false">slowly</button>
                       <button type="button" data-v="fast" aria-pressed="true">fast</button>
                     </div>
@@ -4044,7 +4045,7 @@
             "Flashing",
             'blink: "slow", "fast"',
             "Lamp, alternative, shared conditions",
-            "The group flashes while it holds: slowly is twice a second, fast three times, each lit for half its time and every lamp in step. Absent is steady. Only for a lamp DCS keeps steady.",
+            "The group flashes while it holds: slowly is twice a second, fast three times, each lit for half its time and every lamp in step. Absent, the lamp shows as DCS shows it, following its signal. Only for a lamp DCS keeps steady.",
             "combining",
           ],
           [

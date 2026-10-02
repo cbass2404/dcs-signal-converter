@@ -68,13 +68,13 @@ unless this says what moved.
   between, is at least, is at most, or is anything else. At least and at
   most work in alias bands too.
 - **Lamps can flash.** Each group of conditions ends with a choice of
-  steady, flashing slowly (twice a second) or flashing fast (three times a
-  second), on a lamp's own conditions, on each alternative, and on shared
-  conditions, where it applies to every lamp lit by them. Every lamp
-  at one rate flashes in step, lit and dark for equal halves. A steady
-  alternative that also holds keeps the lamp lit. Flash only a lamp DCS
-  keeps steady: where the cockpit lamp flashes, the panel already follows
-  it. Nothing changes until you set one.
+  as DCS shows it, flashing slowly (twice a second) or flashing fast
+  (three times a second), on a lamp's own conditions, on each alternative,
+  and on shared conditions, where it applies to every lamp lit by them.
+  Every lamp at one rate flashes in step, lit and dark for equal halves.
+  An alternative shown as DCS shows it that also holds keeps the lamp lit.
+  Flash only a lamp DCS keeps steady: where the cockpit lamp flashes, the
+  panel already follows it. Nothing changes until you set one.
 - **Readings shaped the same way twice are offered as one shared result.**
   When one signal is shaped the same way in two or more readings on the
   aircraft's pages, a banner at the top of Shared Results offers to make

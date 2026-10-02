@@ -1787,6 +1787,14 @@ stored name for both. Kept in the module's page file beside its pages:
   bands can match; anything else is refused, since words are the piece's.
   Places for a band's edge are counted from the last point, typed or a
   term's own.
+- **A number for each position.** A term reading a switch can give each
+  position its own number with a conversion of one count each:
+  `[{ "raw": [0, 0], "reads": [1, 1] }, { "raw": [1, 1], "reads": [5, 5] }]`
+  reads 1 and 5 for a switch sending 0 and 1. It is the ordinary conversion,
+  so nothing new is checked; the editor offers it as **a number for each
+  position** on any part whose signal the catalogue lists positions for, and
+  sets `decimals` and `digits` from what is typed, so `05` and `1.50` draw
+  as typed.
 - **The number is the signal's, the look is the piece's.** A piece draws one
   with `signal`, its id, instead of `text` or `source`. It takes bands,
   colour, small, inverse and a box; anything that shapes a number on it is

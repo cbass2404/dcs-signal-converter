@@ -1999,6 +1999,12 @@
                 stay a number its bands can match. Words stay with the piece drawing it.
               </p>
               <p>
+                A part reading a switch can give each position
+                <span class="ed">a number for each position</span>: a switch sending 0 and 1 can
+                read 1 and 5. Each number is drawn as typed, so 05 keeps its zero and 1.50 its two
+                places.
+              </p>
+              <p>
                 Rounding each drum on its own is the point. A drum that is rolling is already
                 partway to its next digit, so the thousands drum at 1.6 means 1, not 2. Rounded to
                 the nearest, it would show the next thousand while the drum beside it still reads 6.
@@ -4039,6 +4045,13 @@
             "text",
             "Shared result",
             "A part that reads nothing: digits, a point or a sign laid down as typed, such as the . between a radio's megahertz and hundredths. The result stays a number.",
+            "stored",
+          ],
+          [
+            "A number for each position",
+            "conversions",
+            "Shared result",
+            "A part reading a switch gives each position its own number, written as a conversion of one count each, so 0 and 1 can read 1 and 5.",
             "stored",
           ],
           [

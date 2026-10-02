@@ -54,6 +54,9 @@ unless this says what moved.
   part can be digits, a point or a sign, laid down as typed: a radio's
   megahertz, a ".", then its hundredths at two digits read 30.50. The
   result stays a number, so bands still match it.
+- **A shared result's part can give each switch position a number.**
+  Choose "a number for each position" on a part reading a switch, and a
+  switch sending 0 and 1 can read 1 and 5, each drawn exactly as typed.
 - **An always on lamp no longer has "Use a signal instead".** Clear it
   with its × and pick any of the choices, as on every other lamp.
 

@@ -194,11 +194,12 @@ function maxOf(signals: SignalView[], id: string): number {
  * conversion as well, and a knob's positions are named with no conversion at
  * all.
  */
-type ReadingKind = "sent" | "converted";
+type ReadingKind = "sent" | "converted" | "positions";
 
 const READING_LABELS: Record<ReadingKind, string> = {
   sent: "as sent",
   converted: "converted to",
+  positions: "a number for each position",
 };
 
 /**
@@ -300,18 +301,30 @@ function conversionRow(
   aliases = true,
 ): HTMLElement {
   const max = signal?.max_value ?? 65535;
+  // A number for each position is offered only where words are not: on a
+  // shared result's part, whose words are the drawing field's, and only for
+  // a switch whose positions the catalogue can list.
+  const offerPositions = !aliases && (signal?.values.length ?? 0) > 0;
+  const positions = offerPositions && isPositions(span, max);
   const select = el("select", { class: "test" });
   for (const kind of Object.keys(READING_LABELS) as ReadingKind[]) {
+    if (kind === "positions" && !offerPositions) continue;
     select.append(el("option", { value: kind }, READING_LABELS[kind]));
   }
-  select.value = isConverted(span) ? "converted" : "sent";
+  select.value = positions ? "positions" : isConverted(span) ? "converted" : "sent";
   select.addEventListener("change", () => {
     // Converting starts from the gauge's table where there is one. Otherwise
     // from the signal's own range, which draws exactly what as sent did, so
     // the choice changes nothing until a number is changed. Decimals mean
-    // nothing on a whole number sent as it is.
+    // nothing on a whole number sent as it is. Each position starts reading
+    // its own number, for the same reason.
     clearReading(span);
-    if (select.value === "converted") {
+    if (select.value === "positions") {
+      span.conversions = Array.from({ length: max + 1 }, (_, n) => ({
+        raw: [n, n] as [number, number],
+        reads: [n, n] as [number, number],
+      }));
+    } else if (select.value === "converted") {
       const table = signal ? gaugeTable(module, signal.id) : undefined;
       if (table) span.conversions = tableRows(table);
       else span.reads = [0, max];
@@ -352,6 +365,43 @@ function conversionRow(
   tableSelect.value = shown?.id ?? "";
 
   const stretches = el("div", { class: "alias-rows" });
+  // Each position and the number it reads, written as a stretch of one count
+  // each, so the engine converts it the way it converts any dial.
+  const numbered = el("div", { class: "alias-rows" });
+  if (positions) {
+    // Each box shows the number as the part draws it, and what is typed is
+    // what is drawn: the decimals and padding are worked out from the rows.
+    const rows = span.conversions ?? [];
+    const typed = rows.map((c) => drawnNumber(span, c.reads[0]));
+    for (const [i, c] of rows.entries()) {
+      const n = c.raw[0];
+      const label = signal?.values.find((v) => v.value === n)?.label ?? String(n);
+      const named = label === String(n) ? String(n) : `${label} (${n})`;
+      const box = el("input", {
+        type: "text",
+        class: "value",
+        inputmode: "decimal",
+        value: typed[i] ?? "",
+      });
+      box.addEventListener("input", () => {
+        if (!/^-?\d*\.?\d*$/.test(box.value)) box.value = typed[i] ?? "";
+        typed[i] = box.value;
+        const v = Number(box.value) || 0;
+        c.reads = [v, v];
+        shapeFromTyped(span, typed);
+        edited();
+      });
+      numbered.append(
+        el(
+          "div",
+          { class: "alias-row stretch" },
+          el("span", { class: "meta" }, named),
+          el("span", { class: "meta" }, "reads"),
+          box,
+        ),
+      );
+    }
+  }
   const offer = el("button", { class: "add small" });
   const values = el("span", { class: "values-row flow" });
   const converted = isConverted(span);
@@ -567,11 +617,16 @@ function conversionRow(
       "div",
       { class: "test-row" },
       select,
-      converted && tables.length > 0 ? tableSelect : "",
+      converted && !positions && tables.length > 0 ? tableSelect : "",
       infoIcon(
         "About converting the number",
-        converted
-          ? `DCS-BIOS sends the needle's position as 0 to ${max}. Each row says ` +
+        positions
+          ? "Each position of the switch reads the number you give it, so a " +
+              "switch sending 0 and 1 can read 1 and 5. It is drawn as typed, " +
+              "so 05 keeps its zero and 1.50 its two places, and stays a " +
+              "number the field's bands can match."
+          : converted
+            ? `DCS-BIOS sends the needle's position as 0 to ${max}. Each row says ` +
               "what the dial reads for part of that range. One row covering all of " +
               "it suits a dial with evenly spaced marks. If the marks bunch up, " +
               "like on some fuel gauges, use a row for each section between two " +
@@ -587,13 +642,14 @@ function conversionRow(
                   "tables on the site, and hides them while they are the " +
                   "table's. Choose custom to see and change them."
                 : "")
-          : `The number DCS-BIOS sends, 0 to ${max}, drawn as it is. Right for ` +
+            : `The number DCS-BIOS sends, 0 to ${max}, drawn as it is. Right for ` +
               "a count or a selector. A needle wants converting.",
       ),
     ),
-    converted && !shown ? stretches : "",
-    converted && !shown ? offer : "",
-    converted ? el("div", { class: "test-row" }, values) : "",
+    positions ? numbered : "",
+    converted && !positions && !shown ? stretches : "",
+    converted && !positions && !shown ? offer : "",
+    converted && !positions ? el("div", { class: "test-row" }, values) : "",
     aliases ? valueAliasEditor(span, signal, set, smallSet, colours, inverse, edited) : "",
   );
 }
@@ -601,6 +657,50 @@ function conversionRow(
 /** Whether a piece converts its number, by a range or by stretches. */
 function isConverted(span: Span): boolean {
   return span.reads !== undefined || (span.conversions?.length ?? 0) > 0;
+}
+
+/**
+ * Whether a piece's stretches give each of a switch's positions, 0 to `max`,
+ * a number of its own: one count each, in order, reading one number and
+ * styled no differently. What "a number for each position" writes.
+ */
+function isPositions(span: Span, max: number): boolean {
+  const rows = span.conversions ?? [];
+  return (
+    rows.length === max + 1 &&
+    rows.every(
+      (c, n) =>
+        c.raw[0] === n && c.raw[1] === n && c.reads[0] === c.reads[1] && !c.colour && !c.small,
+    )
+  );
+}
+
+/** A number as a piece with `span`'s decimals and digits draws it. */
+function drawnNumber(span: Span, n: number): string {
+  const magnitude = Math.abs(n).toFixed(span.decimals ?? 0);
+  const whole = magnitude.indexOf(".") < 0 ? magnitude.length : magnitude.indexOf(".");
+  const zeros = "0".repeat(Math.max(0, (span.digits ?? 0) - whole));
+  return `${n < 0 ? "-" : ""}${zeros}${magnitude}`;
+}
+
+/**
+ * The decimals and padding that draw each typed number as it was typed: as
+ * many places as the most any row has, and padded only where a row was typed
+ * with a leading zero. The engine pads every row alike, so one row's zero
+ * pads the others to the same width.
+ */
+function shapeFromTyped(span: Span, typed: string[]): void {
+  let places = 0;
+  let digits = 0;
+  for (const t of typed) {
+    const [whole = "", after = ""] = t.replace("-", "").split(".");
+    places = Math.max(places, after.length);
+    if (whole.length > 1 && whole.startsWith("0")) digits = Math.max(digits, whole.length);
+  }
+  if (places > 0) span.decimals = Math.min(places, 3);
+  else delete span.decimals;
+  if (digits > 0) span.digits = digits;
+  else delete span.digits;
 }
 
 /** One stretch of a dial while it is being typed in. */

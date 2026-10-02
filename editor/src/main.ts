@@ -38,6 +38,7 @@ import { manageConverter } from "./converter";
 import { loadTheme, showSettings } from "./settings";
 import { showFieldCautions, showFlags } from "./flags";
 import {
+  closeEditors,
   pageBook,
   pagesChecked,
   pageSection,
@@ -1845,7 +1846,13 @@ async function showProfile(file: string): Promise<void> {
     signals,
     tell: showBanner,
     fail: showError,
-    changed: () => session.recheck(),
+    // The pages redraw themselves when the library changes; the lamps do not,
+    // and a lamp lit by shared conditions shows their name and the others it
+    // could pick, so a rename or a new set has to reach them too.
+    changed: () => {
+      for (const redraw of session.afterSave) redraw();
+      session.recheck();
+    },
     profile: () => session.profile,
     // The panels this profile drives first.
     devicesFor: (display: string) => {
@@ -2078,8 +2085,16 @@ async function showProfile(file: string): Promise<void> {
     // button reading "Collapse all" expand everything as soon as one section
     // had been closed by hand.
     const expand = !offersCollapse;
-    for (const section of live()) section.open = expand;
-    syncToggle();
+    void (async () => {
+      // Collapsing closes the page editors too, one question for all of them.
+      if (!expand) {
+        const keys = devices.filter((_, i) => sections[i]?.open).map((d) => d.key);
+        if (!(await closeEditors(session.book, keys))) return;
+        session.recheck();
+      }
+      for (const section of live()) section.open = expand;
+      syncToggle();
+    })();
   });
 }
 
@@ -2254,7 +2269,21 @@ function deviceSection(
     );
   summary.append(el("label", { class: "drive meta" }, drive, " drive this panel"));
   summary.addEventListener("click", (e) => {
-    if (shut() && !(e.target as Element).closest("label")) e.preventDefault();
+    if ((e.target as Element).closest("label")) return;
+    if (shut()) {
+      e.preventDefault();
+      return;
+    }
+    // Collapsing closes a page editor open on this panel, so it is not left
+    // running out of sight. Held open until that is settled, since unsaved
+    // changes are asked about first and Cancel keeps both.
+    if (!section.open || !session.book.editing.has(device.key)) return;
+    e.preventDefault();
+    void (async () => {
+      if (!(await closeEditors(session.book, [device.key]))) return;
+      session.recheck();
+      section.open = false;
+    })();
   });
   // Anything that opens it some other way is closed again.
   //

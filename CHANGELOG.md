@@ -129,3 +129,6 @@ unless this says what moved.
 - **FC3 is last in the profile list,** after the aircraft with their own
   module, and "No aircraft" is no longer listed: it has nothing to edit,
   and still lights the panels when you are in no aircraft.
+- **Collapsing a panel closes its page editor.** With unsaved changes to
+  the page, you are asked first: Continue discards them, Cancel keeps the
+  panel and the editor open. Collapse all asks once for every page.

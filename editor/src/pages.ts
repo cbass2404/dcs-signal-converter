@@ -500,9 +500,7 @@ export function pageSection(device: Device, display: DisplayInfo, ctx: PageConte
   };
 
   const close = (): void => {
-    book.editing.delete(device.key);
-    book.problems.delete(device.key);
-    book.problemViews.delete(device.key);
+    drop(book, device.key);
     redrawAll(book);
     ctx.pageChanged();
   };
@@ -697,6 +695,41 @@ export function showPageProblems(
 ): void {
   book.problems = new Map(asked.map((w, i) => [w.device, problems[i] ?? []]));
   for (const view of book.problemViews.values()) view();
+}
+
+/** Forget the editor open on `device`, without redrawing. */
+function drop(book: PageBook, device: string): void {
+  book.editing.delete(device);
+  book.problems.delete(device);
+  book.problemViews.delete(device);
+}
+
+/**
+ * Close the page editors open on `devices`, for a screen section being
+ * collapsed. An editor with nothing unsaved closes without a word; otherwise
+ * one question covers every page that would lose changes. Answers whether
+ * they were closed. The caller rechecks, since the pages checked changed.
+ */
+export async function closeEditors(book: PageBook, devices: string[]): Promise<boolean> {
+  const open = devices.filter((d) => book.editing.has(d));
+  if (open.length === 0) return true;
+  const losing = open
+    .map((d) => book.editing.get(d))
+    .filter((e): e is Editing => e !== undefined && unsaved(e))
+    .map((e) => `- ${e.page.name.trim() || "an unnamed page"}`);
+  if (
+    losing.length > 0 &&
+    !(await confirmAction(
+      "Close the page editor with unsaved changes?" +
+        `\n\nContinuing will discard the unsaved changes to:\n${losing.join("\n")}`,
+      "Continue",
+      losing,
+    ))
+  )
+    return false;
+  for (const d of open) drop(book, d);
+  redrawAll(book);
+  return true;
 }
 
 /** The ids of pages open here and not saved yet, which a new id must avoid. */

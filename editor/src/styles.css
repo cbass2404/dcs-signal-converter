@@ -1160,6 +1160,13 @@ details.device.off table {
   margin: 0 0 8px;
 }
 
+/* Shared Results' and Shared Conditions' add button, off the last card the way
+   the other add buttons sit off what is above them. With no cards it collapses
+   into the lead's margin, so an empty section keeps its spacing. */
+.device-group > .chain-add {
+  margin-top: 8px;
+}
+
 .drive {
   margin-left: auto;
   display: flex;

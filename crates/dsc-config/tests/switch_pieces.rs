@@ -145,6 +145,35 @@ fn a_case_takes_what_it_leaves_unset_from_the_switch() {
 }
 
 #[test]
+fn a_switch_can_show_words_for_its_own_positions() {
+    // No second signal: the switch shares its selector as the source, and
+    // each case draws the selector's word, in its own colour where it has one.
+    let words = r#"{"switch": "BAND", "source": "BAND", "colour": "green",
+        "value_aliases": {"0": "OFF", "1": "ADF", "2": "ANT"},
+        "cases": {"0": {"colour": "amber"}, "else": {}}}"#;
+    let r = field(words);
+    assert_eq!(drawn(&r, Some(0), 0).as_deref(), Some("OFF"));
+    assert_eq!(drawn(&r, Some(1), 0).as_deref(), Some("ADF"));
+    assert_eq!(drawn(&r, Some(2), 0).as_deref(), Some("ANT"));
+    let colour = |band: u16| {
+        r.compose(|id| {
+            (id == "BAND").then_some(Reading::Number {
+                value: band,
+                max: 2,
+            })
+        })
+        .expect("draws")[0]
+            .colour
+    };
+    assert_eq!(colour(0), Some(Colour::Amber), "the case's own colour");
+    assert_eq!(colour(1), Some(Colour::Green), "the shared colour");
+    let p = profile(&format!(
+        r#"{{"device": "MCDU_Captain", "display": "MCDU", "cells": "0-9", "content": [{words}]}}"#
+    ));
+    assert_eq!(refusals(&p), Vec::<String>::new());
+}
+
+#[test]
 fn a_selector_still_to_arrive_leaves_the_cells_alone() {
     // The same as any other signal: writing blanks first would announce an
     // empty field and then fill it in.

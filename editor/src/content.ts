@@ -180,7 +180,7 @@ export function isLiteral(span: Span): boolean {
 const OWN = ["text", "signal", "gap", "rule", "label", "label_colour", "width", "align"] as const;
 
 /** What a reading takes from its switch where it leaves it unset. */
-const SHAPING = [
+export const SHAPING = [
   "source",
   "reads",
   "conversions",

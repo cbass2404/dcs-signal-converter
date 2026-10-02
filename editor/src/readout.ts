@@ -19,6 +19,7 @@ import { cellInk, dividerRule, fontGlyphs } from "./api";
 import { iconButton } from "./binding";
 import { confirmAction } from "./confirm";
 import {
+  SHAPING,
   SWITCHABLE_OFF,
   caseKeys,
   casePieces,
@@ -2610,6 +2611,7 @@ function switchEditor(
     signals,
     value: span.switch ?? "",
     onPick: (id) => {
+      const words = drawsWords(span);
       span.switch = id;
       const signal = signals.find((s) => s.id === id);
       // A full word is a gauge, whose counts mean nothing until they are
@@ -2620,6 +2622,9 @@ function switchEditor(
       } else {
         delete span.switch_reads;
       }
+      // Words name a selector's positions, so a new selector starts from the
+      // catalogue's names for its own.
+      if (words) wordsFor(span, signal);
       // A case for each position the catalogue names, each taking everything
       // from the switch, so choosing the selector is usually the only step
       // before saying what differs in each.
@@ -2643,6 +2648,8 @@ function switchEditor(
   from.value = byStored ? "stored" : "signal";
   from.addEventListener("change", () => {
     if (from.value === "stored") {
+      // Words are the selector's own, and a shared result has none.
+      if (drawsWords(span)) leaveWords(span);
       delete span.switch;
       delete span.switch_reads;
       span.switch_signal = numbers[0]?.id ?? "";
@@ -2684,17 +2691,60 @@ function switchEditor(
   );
   if (span.switch) wrap.append(selectorReading(span, signals, edited, rebuild));
 
-  wrap.append(
-    explained(
-      el("div", { class: "meta" }, "Every case reads this way unless it says otherwise:"),
-      "About shared settings",
-      "Set here once, and every case takes it. In a case, a grey value is " +
-        "one it takes from here: change it to give that case its own, and " +
-        "empty it to take this one again. Off turns a shared wrap, padding or " +
-        "set of words off for that case alone.",
-    ),
-    ...readingControls(span, opts, edited, rebuild),
-  );
+  // A switch whose cases show words for the selector's own positions needs
+  // no second signal: the selector is what they read.
+  const words = drawsWords(span);
+  if (!byStored) {
+    const shows = el("select", { class: "test" });
+    shows.append(
+      el("option", { value: "reading" }, "a reading"),
+      el("option", { value: "words" }, "words for its positions"),
+    );
+    shows.value = words ? "words" : "reading";
+    shows.addEventListener("change", () => {
+      if (shows.value === "words") {
+        enterWords(
+          span,
+          signals.find((s) => s.id === span.switch),
+        );
+      } else {
+        leaveWords(span);
+      }
+      rebuild();
+    });
+    wrap.append(
+      el(
+        "div",
+        { class: "test-row" },
+        explained(
+          el("span", { class: "meta" }, "each case shows"),
+          "About what the cases show",
+          "A reading of another signal, such as a frequency the band switch " +
+            "decides, or words for the positions of the switch itself, such " +
+            "as OFF, ADF and ANT. Words need no second signal: each case draws " +
+            "the word for the position the switch is in, in its own colour if " +
+            "it has one.",
+        ),
+        shows,
+      ),
+    );
+  }
+
+  if (words) {
+    wrap.append(...wordControls(span, opts, edited));
+  } else {
+    wrap.append(
+      explained(
+        el("div", { class: "meta" }, "Every case reads this way unless it says otherwise:"),
+        "About shared settings",
+        "Set here once, and every case takes it. In a case, a grey value is " +
+          "one it takes from here: change it to give that case its own, and " +
+          "empty it to take this one again. Off turns a shared wrap, padding or " +
+          "set of words off for that case alone.",
+      ),
+      ...readingControls(span, opts, edited, rebuild),
+    );
+  }
 
   for (const key of caseKeys(span)) {
     wrap.append(caseEditor(spans, index, key, opts, redraw, refresh, save));
@@ -2753,6 +2803,7 @@ function selectorReading(
     // sent did, so the choice moves no case until a number is changed.
     if (select.value === "converted") span.switch_reads = [0, max];
     else delete span.switch_reads;
+    matchWords(span);
     rebuild();
   });
   const row = el("div", { class: "test-row" }, select);
@@ -2762,6 +2813,7 @@ function selectorReading(
     const high = el("input", { type: "number", class: "value", value: String(hi) });
     const sync = (): void => {
       span.switch_reads = [Number(low.value) || 0, Number(high.value) || 0];
+      matchWords(span);
       edited();
     };
     low.addEventListener("input", sync);
@@ -2779,6 +2831,119 @@ function selectorReading(
     ),
   );
   return row;
+}
+
+/**
+ * Switches set to show words before a selector is picked. Once one is, the
+ * file says it: a switch whose shared source is its own selector.
+ */
+const WORDING = new WeakSet<Span>();
+
+/**
+ * Whether a switch's cases show words for its selector's positions rather
+ * than a reading of another signal. Written as the switch sharing its own
+ * selector as the source, with the words on it, so the cases read the
+ * selector the way any reading reads a signal and the engine needs nothing
+ * new to draw them.
+ */
+function drawsWords(span: Span): boolean {
+  if (span.switch === undefined) return false;
+  return span.switch === "" ? WORDING.has(span) : span.source === span.switch;
+}
+
+/**
+ * Make a switch's cases show words. Whatever the switch shared about reading
+ * another signal goes, since there is no other signal, and a reading in a
+ * case keeps only how it looks, so it draws the word in its colour.
+ */
+function enterWords(span: Span, selector: SignalView | undefined): void {
+  for (const key of SHAPING) delete span[key];
+  WORDING.add(span);
+  wordsFor(span, selector);
+  const cases: Record<string, SpanPatch | SpanPatch[]> = {};
+  for (const [key, written] of Object.entries(span.cases ?? {})) {
+    const pieces = patchesOf(written).map((p) => {
+      if (p.gap || "text" in p || "signal" in p) return p;
+      const kept: SpanPatch = {};
+      for (const k of ["colour", "small", "inverse", "width", "align"] as const) {
+        if (p[k] !== undefined) (kept as Record<string, unknown>)[k] = p[k];
+      }
+      return kept;
+    });
+    cases[key] = Array.isArray(written) ? pieces : (pieces[0] ?? {});
+  }
+  span.cases = cases;
+}
+
+/** Back to cases that read another signal, which the user then picks. */
+function leaveWords(span: Span): void {
+  WORDING.delete(span);
+  for (const key of SHAPING) delete span[key];
+  span.source = "";
+}
+
+/**
+ * Point a words switch at its selector, starting from the catalogue's names
+ * for its positions, the same start a reading of it gets.
+ */
+function wordsFor(span: Span, selector: SignalView | undefined): void {
+  span.source = span.switch ?? "";
+  delete span.value_aliases;
+  const named = namedPositions(selector);
+  if (Object.keys(named).length > 0) span.value_aliases = named;
+  matchWords(span);
+}
+
+/**
+ * A words switch reads its selector the way its cases are matched, so a
+ * selector read off a gauge has its words written in the dial's units too.
+ */
+function matchWords(span: Span): void {
+  if (!drawsWords(span)) return;
+  delete span.conversions;
+  if (span.switch_reads) span.reads = [span.switch_reads[0], span.switch_reads[1]];
+  else delete span.reads;
+}
+
+/**
+ * The words a switch's positions show, edited with the same rows a reading's
+ * words have. Required: a switch with none would draw the bare position.
+ */
+function wordControls(span: Span, opts: RowOptions, edited: () => void): HTMLElement[] {
+  const { display, profile, signals } = opts;
+  const trouble = el("div", { class: "meta" });
+  const check = (): void => {
+    const none = !span.value_aliases || Object.keys(span.value_aliases).length === 0;
+    trouble.classList.toggle("bad", none);
+    trouble.textContent = none
+      ? "Give the positions words. Without them every case shows the position's number."
+      : "";
+  };
+  check();
+  const editor = valueAliasEditor(
+    span,
+    signals.find((s) => s.id === span.switch),
+    alphabet(display, profile, span.small ?? false),
+    alphabet(display, profile, true),
+    display.text_grid ? display.colours : [],
+    display.draws_inverse,
+    () => {
+      check();
+      edited();
+    },
+  );
+  return [
+    explained(
+      el("div", { class: "meta" }, "Every case shows these words unless it says otherwise:"),
+      "About the words",
+      "The word for each position of the switch. A case draws the word for " +
+        "the position the switch is in, so one case for else can show them " +
+        "all, and a case of its own is only needed for a position that looks " +
+        "different, in another colour or with words of its own.",
+    ),
+    tagged(editor, "value_aliases"),
+    trouble,
+  ];
 }
 
 /** The tests a case can make, in the words a lamp's tests use. */
@@ -2954,13 +3119,13 @@ function caseEditor(
       class: "icon",
       title: showing ? "This case is in the preview" : "Show this case in the preview",
     },
-    showing ? "â—‰" : "â—‹",
+    showing ? "◉" : "○",
   );
   show.addEventListener("click", () => {
     PREVIEWING.set(span, key);
     redraw();
   });
-  const drop = el("button", { class: "icon danger", title: "Remove this case" }, "Ã—");
+  const drop = el("button", { class: "icon danger", title: "Remove this case" }, "×");
   drop.addEventListener("click", () => {
     const cases = { ...(span.cases ?? {}) };
     delete cases[key];

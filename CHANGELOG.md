@@ -42,6 +42,12 @@ unless this says what moved.
   conditions" under it, instead of "Lights by" and the name.
 - **A lamp that follows another shows just that lamp,** with "lit the
   same as that lamp" under it, instead of "Matches" and "follows it".
+- **A switch can show words for its own positions.** Set "each case
+  shows" to "words for its positions" and the switch reads its selector
+  itself, no second signal needed: give each position a word, such as
+  OFF, ADF and ANT, and a case only says what differs, such as a colour.
+  The words start from the positions' names, and the editor asks for them
+  while there are none.
 - **An always on lamp no longer has "Use a signal instead".** Clear it
   with its × and pick any of the choices, as on every other lamp.
 

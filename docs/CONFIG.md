@@ -1333,6 +1333,30 @@ Rounding is what lets `"0..999"` and `"1000..2999"` meet: 999.6 lb is 1000,
 and nothing falls between them. The position checks below are made in the
 same units. `switch_reads` on a piece that is not a switch is refused.
 
+**A switch can show words for its own positions.** With the selector as
+the switch's `source` too, every case reads the selector itself, and the
+switch's `value_aliases` say what each position shows. No second signal is
+needed, and a case only says what differs, such as a colour:
+
+```jsonc
+{
+  "switch": "ADF_MODE",
+  "source": "ADF_MODE", // the selector reads itself
+  "colour": "green",
+  "value_aliases": { "0": "OFF", "1": "ADF", "2": "ANT" },
+  "cases": {
+    "0": { "colour": "amber" },
+    "else": {},
+  },
+}
+```
+
+In the editor this is "each case shows words for its positions". It starts
+from the catalogue's names for the positions, and asks for words while
+there are none, since without them each case draws the bare position. With
+`switch_reads` the words are written in the dial's units, because the
+editor gives the switch the same `reads`.
+
 **Everything else on the switch is shared by its cases.** A case piece that
 leaves an option unset takes the switch's, so the source, the decimals and the
 colour are written once and each case says only what is its own. A case

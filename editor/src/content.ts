@@ -367,25 +367,6 @@ export function patchOf(view: Span, shared: Span, was: SpanPatch): SpanPatch {
   return out;
 }
 
-/**
- * Whether a case piece takes `key` from its switch rather than setting it,
- * which is what greys its control out.
- */
-export function inherits(view: Span, patch: SpanPatch, shared: Span, key: string): boolean {
-  const kind = viewKind(view, shared);
-  if (key === "reads" || key === "conversions") {
-    return (
-      kind === "signal" &&
-      patch.reads === undefined &&
-      patch.conversions === undefined &&
-      (shared.reads !== undefined || shared.conversions !== undefined)
-    );
-  }
-  if (!(SHARED as readonly string[]).includes(key)) return false;
-  const k = key as SharedKey;
-  return patch[k] === undefined && takes(kind, k) && shared[k] !== undefined;
-}
-
 /** The positions a case key claims, asked one at a time. `else` claims none itself. */
 export function keyClaims(key: string, position: number): boolean {
   const s = key.trim();
@@ -431,24 +412,23 @@ export function caseKeys(span: Span): string[] {
 }
 
 /**
- * Move what a switch shares about reading a signal into its cases, so each
- * case says the whole of what it draws. The editor offers no shared reading,
- * so a switch written with one, by hand or by an earlier editor, is opened
- * this way and draws exactly as it did. Styling stays on the switch, where
- * its style row edits it. True when anything moved.
+ * Move everything a switch shares into its cases, so each case says the
+ * whole of what it draws. The editor offers nothing shared, so a switch
+ * written sharing something, by hand or by an earlier editor, is opened this
+ * way and draws exactly as it did. True when anything moved.
  */
 export function foldShared(span: Span): boolean {
-  const shares = SHAPING.some((k) => span[k] !== undefined) || span.signal !== undefined;
+  const shares = SHARED.some((k) => span[k] !== undefined) || span.signal !== undefined;
   if (!shares) return false;
   const own: Span = { ...span };
-  for (const key of SHAPING) delete own[key];
+  for (const key of SHARED) delete own[key];
   delete own.signal;
   const cases: Record<string, SpanPatch | SpanPatch[]> = {};
   for (const [key, written] of Object.entries(span.cases ?? {})) {
     const pieces = patchesOf(written).map((p) => patchOf(resolvePiece(p, span), own, p));
     cases[key] = Array.isArray(written) ? pieces : (pieces[0] ?? {});
   }
-  for (const key of SHAPING) delete span[key];
+  for (const key of SHARED) delete span[key];
   delete span.signal;
   span.cases = cases;
   return true;

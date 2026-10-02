@@ -1881,8 +1881,7 @@
               </p>
               <p>
                 Each case builds what it draws from the same pieces a field has: a reading, a shared
-                result, text or a gap. Only the switch's colour, size and inverse are shared, shown
-                in grey in each case until it picks its own.
+                result, text or a gap, each in its own colour.
               </p>
               <p>
                 A position no case names draws nothing, unless there is an
@@ -3672,16 +3671,16 @@
           $("s-say").innerHTML =
             `The band switch is at <b>${at}</b>, so case <b>${at}</b> draws: ` +
             `${raw} of 65535 reads <b>${value}</b> on a ${lo} to ${hi} dial` +
-            (at === 2 && amber ? ", in its own colour." : ", in the colour every case shares.");
+            `, in ${colour}.`;
           const cases = bands.map(([a, b], i) =>
             i === 2 && amber
               ? `"${i}": { "source": "ADF_FREQ", "reads": [${a}, ${b}], "colour": "amber" }`
-              : `"${i}": { "source": "ADF_FREQ", "reads": [${a}, ${b}] }`,
+              : `"${i}": { "source": "ADF_FREQ", "reads": [${a}, ${b}], "colour": "green" }`,
           );
           $("s-json").textContent =
             `"content": [\n` +
             `  { "text": "ADF ", "small": true },\n` +
-            `  { "switch": "ADF_BAND", "colour": "green",\n` +
+            `  { "switch": "ADF_BAND",\n` +
             `    "cases": {\n      ${cases.join(",\n      ")}\n    } }\n]`;
         }
         draw();
@@ -4033,7 +4032,7 @@
             "Switch",
             "switch",
             "Piece",
-            "A piece whose reading another signal decides, such as an ADF needle read by band. Each case builds what it draws from pieces; the switch's colour is shared by every case.",
+            "A piece whose reading another signal decides, such as an ADF needle read by band. Each case builds what it draws from pieces of its own.",
             "switches",
           ],
           [

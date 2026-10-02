@@ -42,15 +42,22 @@ unless this says what moved.
   conditions" under it, instead of "Lights by" and the name.
 - **A lamp that follows another shows just that lamp,** with "lit the
   same as that lamp" under it, instead of "Matches" and "follows it".
-- **A switch no longer has a reading shared by its cases.** Each case
+- **A switch no longer has settings shared by its cases.** Each case
   builds what it draws from its own pieces, a reading, a shared result or
-  text, so the reading under the switch is gone. A switch that had one
-  opens with it copied into each case and draws the same. Its colour is
-  still shared.
+  text, each with its own colour, so the reading and the colour under the
+  switch are gone. A switch that had them opens with them copied into
+  each case and draws the same.
+- **A switch offers an else case only while a position has none.** Once
+  every position has a case, else could never draw, so it is no longer
+  offered.
 - **An always on lamp no longer has "Use a signal instead".** Clear it
   with its × and pick any of the choices, as on every other lamp.
 
 ### Fixes
+
+- **A failed save no longer lingers.** Once a profile, page or shared
+  result saves, the error from its last failed attempt goes, and trying
+  again replaces the error rather than adding another.
 
 - **Lamp rows see shared conditions as soon as they change.** A lamp lit
   by shared conditions now shows a renamed set by its new name, and a new

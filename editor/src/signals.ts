@@ -57,8 +57,10 @@ export interface SignalContext {
   signals: SignalView[];
   /** Say something that happened, such as a save. */
   tell: (text: string) => void;
-  /** Say something failed. */
-  fail: (where: string, e: unknown) => void;
+  /** Say something failed, kept under `key` until it works. */
+  fail: (where: string, e: unknown, key?: string) => void;
+  /** It worked, so the failure kept under `key` goes. */
+  cleared: (key: string) => void;
   /** The library changed, so the profile's pages want checking again. */
   changed: () => void;
   /** The profile open here, whose lamps may light by a signal. */
@@ -342,6 +344,7 @@ export function signalSection(
       save.addEventListener("click", () => {
         void saveSignal(module, w.signal).then(
           (view) => {
+            ctx.cleared(`signal ${w.signal.id}`);
             w.baseline = JSON.stringify(w.signal);
             w.fresh = false;
             opened.delete(w.signal.id);
@@ -352,7 +355,7 @@ export function signalSection(
               `Saved ${w.signal.name.trim()}. ${lamp ? "Every lamp lit by it follows" : "Every page drawing it draws"} the change.`,
             );
           },
-          (e: unknown) => ctx.fail("Saving the signal", e),
+          (e: unknown) => ctx.fail("Saving the signal", e, `signal ${w.signal.id}`),
         );
       });
       undo.onclick = (): void => {

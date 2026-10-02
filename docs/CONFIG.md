@@ -1368,10 +1368,9 @@ draws in.
   copied into the cases, so changing one later changes every case that did
   not set its own.
 
-The editor shares only `colour`, `small` and `inverse`: each case builds
-what it draws from pieces of its own. A switch sharing anything else is
-opened with it copied into each case, which draws the same, and saved that
-way.
+The editor shares nothing, not even the colour: each case builds what it
+draws from pieces of its own. A switch sharing anything is opened with it
+copied into each case, which draws the same, and saved that way.
 
 A switch carries no `text`, `gap`, rule, label or `width` of its own, and is
 refused with one: those belong to a piece inside a case. A switch with no

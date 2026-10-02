@@ -1499,15 +1499,6 @@ button.add.small {
   flex: 1;
 }
 
-/* A setting a case takes from its switch, shown so the case reads whole but
-   set back so what the case says for itself stands out. */
-.inherited,
-.inherited input,
-.inherited select {
-  color: var(--muted);
-  font-style: italic;
-}
-
 .span-head {
   display: flex;
   align-items: center;

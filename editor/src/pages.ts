@@ -127,8 +127,10 @@ export interface PageContext {
   nameOf: (key: string) => string;
   /** Say something that happened, such as a save. */
   tell: (text: string) => void;
-  /** Say something failed. */
-  fail: (where: string, e: unknown) => void;
+  /** Say something failed, kept under `key` until it works. */
+  fail: (where: string, e: unknown, key?: string) => void;
+  /** It worked, so the failure kept under `key` goes. */
+  cleared: (key: string) => void;
 }
 
 export function pageBook(module: string, file: string, view: PagesView): PageBook {
@@ -565,10 +567,11 @@ export function pageSection(device: Device, display: DisplayInfo, ctx: PageConte
         try {
           page.name = page.name.trim();
           update(book, await savePage(ctx.profile, page, device.key));
+          ctx.cleared(`page ${page.id}`);
           ctx.tell(`Saved page ${page.name}.`);
           saved(page);
         } catch (err) {
-          ctx.fail("Saving the page", err);
+          ctx.fail("Saving the page", err, `page ${page.id}`);
         }
       })();
     });
@@ -582,10 +585,11 @@ export function pageSection(device: Device, display: DisplayInfo, ctx: PageConte
           const id = await newPageId(freshIds(book));
           const copy: Page = { ...structuredClone(page), id, name: freeName(book, page.name) };
           update(book, await savePage(ctx.profile, copy, device.key));
+          ctx.cleared(`page ${page.id}`);
           ctx.tell(`Saved as a new page, ${copy.name}. Pick it in a slot to show it.`);
           saved(copy);
         } catch (err) {
-          ctx.fail("Saving the page", err);
+          ctx.fail("Saving the page", err, `page ${page.id}`);
         }
       })();
     });

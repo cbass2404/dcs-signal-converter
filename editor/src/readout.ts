@@ -24,7 +24,6 @@ import {
   contentOf,
   expandSwitches,
   foldShared,
-  inherits,
   isLiteral,
   keyClaims,
   kindOf,
@@ -306,7 +305,6 @@ function conversionRow(
     select.append(el("option", { value: kind }, READING_LABELS[kind]));
   }
   select.value = isConverted(span) ? "converted" : "sent";
-  select.dataset.opt = "reads";
   select.addEventListener("change", () => {
     // Converting starts from the gauge's table where there is one. Otherwise
     // from the signal's own range, which draws exactly what as sent did, so
@@ -329,7 +327,6 @@ function conversionRow(
   const tables = gaugeTables(module);
   const shown = CUSTOMISING.has(span) ? undefined : matchingTable(module, span.conversions ?? []);
   const tableSelect = el("select", { class: "test" });
-  tableSelect.dataset.opt = "reads";
   tableSelect.append(el("option", { value: "" }, "custom"));
   for (const g of tables) {
     const own = g.id === signal?.id ? ", this signal" : "";
@@ -354,7 +351,7 @@ function conversionRow(
   });
   tableSelect.value = shown?.id ?? "";
 
-  const stretches = el("div", { class: "alias-rows", "data-opt": "reads" });
+  const stretches = el("div", { class: "alias-rows" });
   const offer = el("button", { class: "add small" });
   const values = el("span", { class: "values-row flow" });
   const converted = isConverted(span);
@@ -533,11 +530,6 @@ function conversionRow(
       el("option", { value: "up" }, "up"),
     );
     round.value = span.round ?? "nearest";
-    dp.dataset.opt = "decimals";
-    digits.dataset.opt = "digits";
-    wrap.dataset.opt = "wrap";
-    round.dataset.opt = "round";
-    unsign.dataset.opt = "abs";
     const sync = (): void => {
       const places = Number(dp.value) || 0;
       if (places > 0) span.decimals = places;
@@ -602,19 +594,8 @@ function conversionRow(
     converted && !shown ? stretches : "",
     converted && !shown ? offer : "",
     converted ? el("div", { class: "test-row" }, values) : "",
-    aliases
-      ? tagged(
-          valueAliasEditor(span, signal, set, smallSet, colours, inverse, edited),
-          "value_aliases",
-        )
-      : "",
+    aliases ? valueAliasEditor(span, signal, set, smallSet, colours, inverse, edited) : "",
   );
-}
-
-/** Mark a control with the option it edits, which a switch case greys out while it inherits it. */
-function tagged(node: HTMLElement, opt: string): HTMLElement {
-  node.dataset.opt = opt;
-  return node;
 }
 
 /** Whether a piece converts its number, by a range or by stretches. */
@@ -2315,22 +2296,13 @@ function spanEditor(
     const next = kind.value as SpanKind;
     const was = kindOf(span);
     if (next === "switch" && was === "signal") {
-      const { colour, small, inverse, ...reading } = span;
-      spans[index] = { switch: "", colour, small, inverse, cases: { else: reading } };
+      spans[index] = { switch: "", cases: { else: { ...span } } };
     } else if (next === "signal" && was === "switch") {
       const key = previewedCase(span);
       const first = key === undefined ? undefined : casePieces(span, key)[0];
-      spans[index] =
-        first && kindOf(first) === "signal"
-          ? first
-          : { colour: span.colour, small: span.small, inverse: span.inverse, source: "" };
+      spans[index] = first && kindOf(first) === "signal" ? first : newSpan("signal");
     } else if (next === "switch") {
-      spans[index] = {
-        ...newSpan("switch"),
-        colour: span.colour,
-        small: span.small,
-        inverse: span.inverse,
-      };
+      spans[index] = newSpan("switch");
     } else if (next === "gap" || next === "rule") {
       spans[index] = newSpan(next);
     } else if (next === "stored") {
@@ -2419,16 +2391,18 @@ function spanEditor(
   }
 
   // --- how it looks --------------------------------------------------------
+  // Not for a switch, which draws nothing itself: each piece in its cases
+  // says how it looks.
   const style = el("div", { class: "span-style" });
+  const isSwitch = kindOf(span) === "switch";
 
   // A plain gap draws nothing and so has nothing to colour. A rule does: it
   // is the user's own addition rather than something the cockpit decided, so
   // its colour is theirs to pick, exactly as a divider's is.
-  if (display.text_grid && (!span.gap || span.rule)) {
+  if (display.text_grid && !isSwitch && (!span.gap || span.rule)) {
     const colour = el("select", { class: "colour" });
     for (const name of display.colours) colour.append(el("option", { value: name }, name));
     colour.value = span.colour ?? "white";
-    colour.dataset.opt = "colour";
     colour.addEventListener("change", () => {
       span.colour = colour.value;
       edited();
@@ -2449,7 +2423,7 @@ function spanEditor(
     });
     style.append(
       explained(
-        el("label", { class: "meta", "data-opt": "small" }, small, " small"),
+        el("label", { class: "meta" }, small, " small"),
         "About the small font",
         "The grid's small font, which a CDU uses for its labels. It draws " +
           "fewer characters than the large one, so a character that was fine " +
@@ -2460,10 +2434,7 @@ function spanEditor(
 
   // Typed text and a reading alike: a reading the user put on the glass has no
   // highlighting signal of its own to ask, so this is the only way to mark it.
-  if (
-    display.draws_inverse &&
-    (isLiteral(span) || ["signal", "stored", "switch"].includes(kindOf(span)))
-  ) {
+  if (display.draws_inverse && (isLiteral(span) || ["signal", "stored"].includes(kindOf(span)))) {
     const flip = el("input", { type: "checkbox" });
     flip.checked = span.inverse === true;
     flip.addEventListener("change", () => {
@@ -2475,7 +2446,7 @@ function spanEditor(
       redraw();
       onChange();
     });
-    style.append(el("label", { class: "meta", "data-opt": "inverse" }, flip, " inverse"));
+    style.append(el("label", { class: "meta" }, flip, " inverse"));
   }
 
   // A highlighting signal marks characters, so it means nothing over a number,
@@ -2489,7 +2460,7 @@ function spanEditor(
     span.source &&
     (isText(signals, span.source) || span.format !== undefined)
   ) {
-    style.append(tagged(spanFormatChooser(span, signals, edited), "format"));
+    style.append(spanFormatChooser(span, signals, edited));
   }
 
   // Last in the style row, because it is about where the piece sits rather
@@ -2497,7 +2468,7 @@ function spanEditor(
   // is a spacer of exactly that many blanks, and on a rule it is what lets it
   // carry a label. Not a switch, whose cases each draw at their own width:
   // a box goes on the piece inside the case.
-  if (kindOf(span) !== "switch") {
+  if (!isSwitch) {
     style.append(boxControls(span, cellCount(readout.cells), edited));
   }
 
@@ -2533,8 +2504,8 @@ function spanEditor(
   wrap.append(
     el("div", { class: "span-head" }, kind, el("span", { class: "spacer" }), up, down, drop),
     body,
-    style,
   );
+  if (!isSwitch) wrap.append(style);
   return wrap;
 }
 
@@ -2561,16 +2532,9 @@ function previewedCase(span: Span): string | undefined {
 }
 
 /**
- * What each case piece on screen wrote last, so an option it turned off stays
- * off when something else in it is edited. Keyed by the piece the window
- * edits, which keeps its identity through a move.
- */
-const WRITTEN = new WeakMap<Span, SpanPatch>();
-
-/**
  * A switch: the signal that decides, and the cases. Each case builds what it
  * draws from pieces of its own, so nothing about reading a signal is set on
- * the switch; only its style row is shared, greyed out in the cases.
+ * the switch, not even how it looks.
  */
 function switchEditor(
   spans: Span[],
@@ -2676,30 +2640,39 @@ function switchEditor(
     wrap.append(caseEditor(spans, index, key, opts, redraw, refresh, save));
   }
 
-  // The next position nothing claims yet, and else once every one is taken.
-  // In the units the cases are written in, which a converted selector makes
-  // the dial's.
-  // A stored number can read anything, so its next case is just the next
-  // whole number nothing claims.
-  const max = byStored ? 100000 : (signals.find((s) => s.id === span.switch)?.max_value ?? 0);
+  // The next position nothing claims yet, in the units the cases are
+  // written in, which a converted selector makes the dial's. A stored number
+  // can read anything, so its next case is just the next whole number
+  // nothing claims. Else is offered beside it, for every position left, and
+  // not once every position has a case, when it could never draw. A selector
+  // that sends characters has no positions, so else is all it can have.
+  const selected = signals.find((s) => s.id === span.switch);
+  const max = byStored ? 100000 : (selected?.max_value ?? 0);
   const [lowest, highest] = span.switch_reads
     ? [Math.round(Math.min(...span.switch_reads)), Math.round(Math.max(...span.switch_reads))]
     : [0, max];
   const keys = caseKeys(span);
+  const textual = !byStored && selected?.text === true;
   let next: string | undefined;
-  for (let v = lowest; v <= Math.min(highest, lowest + 100000) && next === undefined; v += 1) {
-    if (!keys.some((k) => keyClaims(k, v))) next = String(v);
+  if (!textual) {
+    for (let v = lowest; v <= Math.min(highest, lowest + 100000) && next === undefined; v += 1) {
+      if (!keys.some((k) => keyClaims(k, v))) next = String(v);
+    }
   }
-  if (next === undefined && !keys.includes("else")) next = "else";
-  const add = el("button", { class: "add small" }, next ? `+ a case for ${next}` : "+ a case");
-  add.disabled = next === undefined;
-  add.title = next === undefined ? "Every position has a case, and so does else." : "";
-  add.addEventListener("click", () => {
-    if (next === undefined) return;
-    span.cases = { ...(span.cases ?? {}), [next]: {} };
-    rebuild();
-  });
-  wrap.append(el("div", { class: "chain-add" }, add));
+  const offered = next === undefined ? [] : [next];
+  if ((next !== undefined || textual) && !keys.includes("else")) offered.push("else");
+  if (offered.length > 0) {
+    const add = el("div", { class: "chain-add" });
+    for (const position of offered) {
+      const button = el("button", { class: "add small" }, `+ a case for ${position}`);
+      button.addEventListener("click", () => {
+        span.cases = { ...(span.cases ?? {}), [position]: {} };
+        rebuild();
+      });
+      add.append(button);
+    }
+    wrap.append(add);
+  }
   return wrap;
 }
 
@@ -2868,30 +2841,12 @@ function caseEditor(
   const written = span.cases?.[key] ?? {};
   const patches = patchesOf(written);
   const views = patches.map((p) => resolvePiece(p, span));
-  views.forEach((v, i) => WRITTEN.set(v, patches[i] ?? {}));
-  const nodes: HTMLElement[] = [];
 
-  const greyOut = (): void => {
-    views.forEach((view, i) => {
-      const node = nodes[i];
-      if (!node) return;
-      const patch = WRITTEN.get(view) ?? {};
-      for (const control of node.querySelectorAll<HTMLElement>("[data-opt]")) {
-        const opt = control.dataset.opt ?? "";
-        control.classList.toggle("inherited", inherits(view, patch, span, opt));
-      }
-    });
-  };
   const commit = (): void => {
-    const next = views.map((view) => {
-      const patch = patchOf(view, span, WRITTEN.get(view) ?? {});
-      WRITTEN.set(view, patch);
-      return patch;
-    });
+    const next = views.map((view) => patchOf(view, span, {}));
     const one = next.length === 1 && !Array.isArray(span.cases?.[key]);
     span.cases = { ...(span.cases ?? {}), [key]: one ? (next[0] as SpanPatch) : next };
     saveAll();
-    greyOut();
   };
 
   // --- which positions -------------------------------------------------------
@@ -2966,19 +2921,14 @@ function caseEditor(
   // --- what it draws ---------------------------------------------------------
   const pieces = el("div", { class: "chain" });
   views.forEach((_, i) => {
-    const node = spanEditor(views, i, opts, redraw, refresh, { save: commit, nested: true });
-    nodes.push(node);
-    pieces.append(node);
+    pieces.append(spanEditor(views, i, opts, redraw, refresh, { save: commit, nested: true }));
   });
-  greyOut();
 
   const add = el("div", { class: "chain-add" });
   const addOne = (patch: SpanPatch, label: string): HTMLElement => {
     const button = el("button", { class: "add small" }, label);
     button.addEventListener("click", () => {
-      const view = resolvePiece(patch, span);
-      WRITTEN.set(view, patch);
-      views.push(view);
+      views.push(resolvePiece(patch, span));
       commit();
       redraw();
       onChange();
@@ -3007,7 +2957,6 @@ function storedControls(
   // Lamp conditions have no number to draw.
   const all = storedSignals().filter((s) => !isLampSignal(s));
   const pick = el("select", { class: "test" });
-  pick.dataset.opt = "signal";
   pick.append(el("option", { value: "" }, all.length ? "choose one" : "none on this module yet"));
   for (const s of all) pick.append(el("option", { value: s.id }, s.name));
   // One the module no longer has stays listed, so the menu says what the
@@ -3038,17 +2987,14 @@ function storedControls(
   if (chosen?.note) parts.push(el("div", { class: "meta block" }, chosen.note));
   if (chosen) {
     parts.push(
-      tagged(
-        valueAliasEditor(
-          span,
-          undefined,
-          alphabet(display, profile, span.small ?? false),
-          alphabet(display, profile, true),
-          display.text_grid ? display.colours : [],
-          display.draws_inverse,
-          edited,
-        ),
-        "value_aliases",
+      valueAliasEditor(
+        span,
+        undefined,
+        alphabet(display, profile, span.small ?? false),
+        alphabet(display, profile, true),
+        display.text_grid ? display.colours : [],
+        display.draws_inverse,
+        edited,
       ),
     );
   }
@@ -3150,7 +3096,6 @@ function readingControls(
       rebuild();
     },
   });
-  picker.dataset.opt = "source";
   parts.push(picker);
 
   if (span.source) {
@@ -3182,7 +3127,6 @@ function readingControls(
     // A substitution is about what this signal sends, so it belongs to the
     // piece that reads it rather than to the field around it.
     const substitutions = aliasEditor(span, edited);
-    substitutions.dataset.opt = "aliases";
     parts.push(substitutions);
   }
   return parts;

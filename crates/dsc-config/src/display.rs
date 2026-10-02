@@ -2033,14 +2033,29 @@ impl SpanPatch {
     /// makes it either way, or clears it, takes neither from the switch. A
     /// case converting by stretches would otherwise inherit a range beside
     /// them and be refused for converting twice.
+    ///
+    /// A switch sharing a stored signal rather than a source hands it to a
+    /// case that draws nothing else, with its words: that is a switch showing
+    /// words for the positions of the stored number deciding it.
     fn resolve(&self, shared: &Span) -> Span {
-        let reading = !self.gap && self.text.is_empty() && self.signal.is_empty();
+        let shares_stored = !self.gap
+            && self.text.is_empty()
+            && self.signal.is_empty()
+            && self.source.is_inherit()
+            && shared.source.is_empty()
+            && !shared.signal.is_empty();
+        let signal = if shares_stored {
+            shared.signal.clone()
+        } else {
+            self.signal.clone()
+        };
+        let reading = !self.gap && self.text.is_empty() && signal.is_empty();
         let typed = !self.gap;
         let converts = reading && self.reads.is_inherit() && self.conversions.is_inherit();
         Span {
             text: self.text.clone(),
             source: self.source.pick(reading, &shared.source),
-            signal: self.signal.clone(),
+            signal,
             stored: None,
             switch: self.switch.clone(),
             switch_signal: String::new(),
@@ -2058,7 +2073,9 @@ impl SpanPatch {
             digits: self.digits.pick(reading, &shared.digits),
             round: self.round.pick(reading, &shared.round),
             wrap: self.wrap.pick_opt(reading, &shared.wrap),
-            value_aliases: self.value_aliases.pick(reading, &shared.value_aliases),
+            value_aliases: self
+                .value_aliases
+                .pick(reading || shares_stored, &shared.value_aliases),
             abs: self.abs.pick(reading, &shared.abs),
             aliases: self.aliases.pick(reading, &shared.aliases),
             format: self.format.pick_opt(reading, &shared.format),

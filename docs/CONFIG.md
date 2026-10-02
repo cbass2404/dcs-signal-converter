@@ -1817,6 +1817,21 @@ stored name for both. Kept in the module's page file beside its pages:
   `switch`. The number is already shaped, so cases are written in its units and
   `switch_reads` is refused beside it. Only overlapping cases are checked: a
   stored number has no positions to walk.
+- **A switch can show words for it**, the way one decided by a signal shows
+  words for its positions. With the same id as the switch's `signal` too, and
+  no `source`, every case that draws nothing else draws the stored number,
+  with the switch's `value_aliases`. A case naming a `signal` of its own
+  draws that one instead, and takes only the switch's styling:
+
+  ```jsonc
+  {
+    "switch_signal": "fuel01",
+    "signal": "fuel01",
+    "colour": "green",
+    "value_aliases": { "..999": "LOW", "1000..": "FUEL" },
+    "cases": { "..999": { "colour": "amber" }, "else": {} },
+  }
+  ```
 
 **Cases and bands can be open at one end.** `"1000.."` claims every reading
 from 1000 up and `"..999"` every one up to 999, for a case or an alias band

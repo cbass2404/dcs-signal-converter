@@ -2647,15 +2647,19 @@ function switchEditor(
   }
   from.value = byStored ? "stored" : "signal";
   from.addEventListener("change", () => {
+    // Words stay words, for whatever decides the switch now.
+    const words = drawsWords(span);
     if (from.value === "stored") {
-      // Words are the selector's own, and a shared result has none.
-      if (drawsWords(span)) leaveWords(span);
       delete span.switch;
       delete span.switch_reads;
       span.switch_signal = numbers[0]?.id ?? "";
     } else {
       delete span.switch_signal;
       span.switch = "";
+    }
+    if (words) {
+      WORDING.add(span);
+      wordsFor(span, undefined);
     }
     rebuild();
   });
@@ -2670,7 +2674,10 @@ function switchEditor(
     }
     pick.value = span.switch_signal ?? "";
     pick.addEventListener("change", () => {
+      const words = drawsWords(span);
       span.switch_signal = pick.value;
+      // Words named the old result's readings, not this one's.
+      if (words) wordsFor(span, undefined);
       rebuild();
     });
     decider = pick;
@@ -2691,44 +2698,43 @@ function switchEditor(
   );
   if (span.switch) wrap.append(selectorReading(span, signals, edited, rebuild));
 
-  // A switch whose cases show words for the selector's own positions needs
-  // no second signal: the selector is what they read.
+  // A switch whose cases show words for the positions of what decides it
+  // needs no second signal: the selector, or the shared result, is what
+  // they read.
   const words = drawsWords(span);
-  if (!byStored) {
-    const shows = el("select", { class: "test" });
-    shows.append(
-      el("option", { value: "reading" }, "a reading"),
-      el("option", { value: "words" }, "words for its positions"),
-    );
-    shows.value = words ? "words" : "reading";
-    shows.addEventListener("change", () => {
-      if (shows.value === "words") {
-        enterWords(
-          span,
-          signals.find((s) => s.id === span.switch),
-        );
-      } else {
-        leaveWords(span);
-      }
-      rebuild();
-    });
-    wrap.append(
-      el(
-        "div",
-        { class: "test-row" },
-        explained(
-          el("span", { class: "meta" }, "each case shows"),
-          "About what the cases show",
-          "A reading of another signal, such as a frequency the band switch " +
-            "decides, or words for the positions of the switch itself, such " +
-            "as OFF, ADF and ANT. Words need no second signal: each case draws " +
-            "the word for the position the switch is in, in its own colour if " +
-            "it has one.",
-        ),
-        shows,
+  const shows = el("select", { class: "test" });
+  shows.append(
+    el("option", { value: "reading" }, "a reading"),
+    el("option", { value: "words" }, "words for its positions"),
+  );
+  shows.value = words ? "words" : "reading";
+  shows.addEventListener("change", () => {
+    if (shows.value === "words") {
+      enterWords(
+        span,
+        signals.find((s) => s.id === span.switch),
+      );
+    } else {
+      leaveWords(span);
+    }
+    rebuild();
+  });
+  wrap.append(
+    el(
+      "div",
+      { class: "test-row" },
+      explained(
+        el("span", { class: "meta" }, "each case shows"),
+        "About what the cases show",
+        "A reading of another signal, such as a frequency the band switch " +
+          "decides, or words for the positions of whatever decides the " +
+          "switch, such as OFF, ADF and ANT, or LOW below 1000 lb of a " +
+          "shared fuel total. Words need no second signal: each case draws " +
+          "the word for where the switch is, in its own colour if it has one.",
       ),
-    );
-  }
+      shows,
+    ),
+  );
 
   if (words) {
     wrap.append(...wordControls(span, opts, edited));
@@ -2840,13 +2846,18 @@ function selectorReading(
 const WORDING = new WeakSet<Span>();
 
 /**
- * Whether a switch's cases show words for its selector's positions rather
- * than a reading of another signal. Written as the switch sharing its own
- * selector as the source, with the words on it, so the cases read the
- * selector the way any reading reads a signal and the engine needs nothing
- * new to draw them.
+ * Whether a switch's cases show words for the positions of what decides it
+ * rather than a reading of another signal. Written as the switch sharing
+ * what decides it, its selector as the source or its shared result as the
+ * signal, with the words on it, so the cases draw it the way any piece
+ * draws a signal.
  */
 function drawsWords(span: Span): boolean {
+  if (span.switch_signal !== undefined) {
+    return span.switch_signal === ""
+      ? WORDING.has(span)
+      : span.signal === span.switch_signal && !span.source;
+  }
   if (span.switch === undefined) return false;
   return span.switch === "" ? WORDING.has(span) : span.source === span.switch;
 }
@@ -2857,7 +2868,6 @@ function drawsWords(span: Span): boolean {
  * case keeps only how it looks, so it draws the word in its colour.
  */
 function enterWords(span: Span, selector: SignalView | undefined): void {
-  for (const key of SHAPING) delete span[key];
   WORDING.add(span);
   wordsFor(span, selector);
   const cases: Record<string, SpanPatch | SpanPatch[]> = {};
@@ -2879,16 +2889,23 @@ function enterWords(span: Span, selector: SignalView | undefined): void {
 function leaveWords(span: Span): void {
   WORDING.delete(span);
   for (const key of SHAPING) delete span[key];
+  delete span.signal;
   span.source = "";
 }
 
 /**
- * Point a words switch at its selector, starting from the catalogue's names
- * for its positions, the same start a reading of it gets.
+ * Point a words switch at what decides it, starting from the catalogue's
+ * names for a selector's positions, the same start a reading of it gets. A
+ * shared result's readings have no names, so its words start empty.
  */
 function wordsFor(span: Span, selector: SignalView | undefined): void {
+  for (const key of SHAPING) delete span[key];
+  delete span.signal;
+  if (span.switch_signal !== undefined) {
+    span.signal = span.switch_signal;
+    return;
+  }
   span.source = span.switch ?? "";
-  delete span.value_aliases;
   const named = namedPositions(selector);
   if (Object.keys(named).length > 0) span.value_aliases = named;
   matchWords(span);

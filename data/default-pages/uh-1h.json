@@ -1,0 +1,1382 @@
+{
+  "module": "UH-1H",
+  "pages": [
+    {
+      "id": "j2v3qy",
+      "name": "CDU Radios",
+      "display": "MCDU",
+      "fields": [
+        {
+          "cells": "288-311",
+          "content": [
+            {
+              "switch": "ADF_BAND",
+              "cases": {
+                "0": {
+                  "signal": "meu61u",
+                  "colour": "green"
+                },
+                "1": {
+                  "signal": "7g6udp",
+                  "colour": "green"
+                },
+                "2": {
+                  "signal": "613eej",
+                  "colour": "green"
+                }
+              }
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "signal": "mndtg1",
+              "width": 5,
+              "value_aliases": {
+                "0": {
+                  "text": "[",
+                  "colour": "red"
+                },
+                "1": {
+                  "text": " ",
+                  "colour": "red",
+                  "inverse": true
+                },
+                "2": {
+                  "text": "  ",
+                  "colour": "amber",
+                  "inverse": true
+                },
+                "3": {
+                  "text": "   ",
+                  "colour": "amber",
+                  "inverse": true
+                },
+                "4": {
+                  "text": "    ",
+                  "colour": "green",
+                  "inverse": true
+                },
+                "5": {
+                  "text": "     ",
+                  "colour": "green",
+                  "inverse": true
+                }
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "source": "ADF_BAND",
+              "width": 8,
+              "value_aliases": {
+                "0": "190-400",
+                "1": "400-850",
+                "2": "850-1750"
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "ADF_GAIN",
+              "width": 4,
+              "reads": [
+                0.0,
+                4.0
+              ],
+              "value_aliases": {
+                "0": {
+                  "text": "[",
+                  "colour": "red"
+                },
+                "1": {
+                  "text": " ",
+                  "colour": "red",
+                  "inverse": true
+                },
+                "2": {
+                  "text": "  ",
+                  "colour": "amber",
+                  "inverse": true
+                },
+                "3": {
+                  "text": "   ",
+                  "colour": "yellow",
+                  "inverse": true
+                },
+                "4": {
+                  "text": "    ",
+                  "colour": "green",
+                  "inverse": true
+                }
+              }
+            }
+          ]
+        },
+        {
+          "cells": "264-287",
+          "content": [
+            {
+              "text": "FREQ",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "text": "STR",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 3
+            },
+            {
+              "text": "FRQ-RNG",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "VOL",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            }
+          ]
+        },
+        {
+          "cells": "48-71",
+          "content": [
+            {
+              "source": "UHF_FREQ",
+              "width": 6,
+              "colour": "green"
+            },
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "source": "UHF_FUNCTION",
+              "width": 4,
+              "value_aliases": {
+                "0": {
+                  "text": "OFF",
+                  "colour": "red"
+                },
+                "1": "TR",
+                "2": "TR+G",
+                "3": "ADF"
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true,
+              "width": 3
+            },
+            {
+              "switch": "UHF_MODE",
+              "cases": {
+                "0": [
+                  {
+                    "source": "UHF_PRESET",
+                    "width": 2,
+                    "reads": [
+                      1.0,
+                      20.0
+                    ],
+                    "colour": "green"
+                  }
+                ],
+                "else": {
+                  "text": "  ",
+                  "width": 2
+                }
+              }
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "UHF_VOL",
+              "width": 4,
+              "reads": [
+                4.0,
+                0.0
+              ],
+              "value_aliases": {
+                "0": {
+                  "text": "[",
+                  "colour": "red"
+                },
+                "1": {
+                  "text": " ",
+                  "colour": "red",
+                  "inverse": true
+                },
+                "2": {
+                  "text": "  ",
+                  "colour": "amber",
+                  "inverse": true
+                },
+                "3": {
+                  "text": "   ",
+                  "colour": "yellow",
+                  "inverse": true
+                },
+                "4": {
+                  "text": "    ",
+                  "colour": "green",
+                  "inverse": true
+                }
+              }
+            }
+          ]
+        },
+        {
+          "cells": "24-47",
+          "content": [
+            {
+              "text": "UHF",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 5
+            },
+            {
+              "text": "PWR",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 4
+            },
+            {
+              "text": "PRE",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "VOL",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            }
+          ]
+        },
+        {
+          "cells": "96-119",
+          "content": [
+            {
+              "source": "VHFCOMM_FREQ",
+              "width": 7,
+              "colour": "green"
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "source": "VHFCOMM_PWR",
+              "width": 3,
+              "value_aliases": {
+                "0": {
+                  "text": "OFF",
+                  "colour": "red"
+                },
+                "1": "ON"
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "VHFCOMM_VOL",
+              "width": 4,
+              "reads": [
+                0.0,
+                4.0
+              ],
+              "value_aliases": {
+                "0": {
+                  "text": "[",
+                  "colour": "red"
+                },
+                "1": {
+                  "text": " ",
+                  "colour": "red",
+                  "inverse": true
+                },
+                "2": {
+                  "text": "  ",
+                  "colour": "amber",
+                  "inverse": true
+                },
+                "3": {
+                  "text": "   ",
+                  "colour": "yellow",
+                  "inverse": true
+                },
+                "4": {
+                  "text": "    ",
+                  "colour": "green",
+                  "inverse": true
+                }
+              }
+            }
+          ]
+        },
+        {
+          "cells": "72-95",
+          "content": [
+            {
+              "text": "VHF AM",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "text": "PWR",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "VOL",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            }
+          ]
+        },
+        {
+          "cells": "168-191",
+          "content": [
+            {
+              "gap": true,
+              "rule": true,
+              "label": "NAV",
+              "label_colour": "white",
+              "colour": "amber",
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "192-215",
+          "content": [
+            {
+              "text": "FREQ",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 4
+            },
+            {
+              "text": "PWR",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "VOL",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            }
+          ]
+        },
+        {
+          "cells": "216-239",
+          "content": [
+            {
+              "source": "VHFNAV_FREQ",
+              "width": 6,
+              "colour": "green"
+            },
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "source": "VHFNAV_PWR",
+              "value_aliases": {
+                "0": {
+                  "text": "OFF",
+                  "colour": "red"
+                },
+                "1": "ON",
+                "2": {
+                  "text": "TEST",
+                  "colour": "amber"
+                }
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "VHFNAV_VOL",
+              "width": 4,
+              "reads": [
+                0.0,
+                4.0
+              ],
+              "value_aliases": {
+                "0": {
+                  "text": "[",
+                  "colour": "red"
+                },
+                "1": {
+                  "text": " ",
+                  "colour": "red",
+                  "inverse": true
+                },
+                "2": {
+                  "text": "  ",
+                  "colour": "amber",
+                  "inverse": true
+                },
+                "3": {
+                  "text": "   ",
+                  "colour": "yellow",
+                  "inverse": true
+                },
+                "4": {
+                  "text": "    ",
+                  "colour": "green",
+                  "inverse": true
+                }
+              }
+            }
+          ]
+        },
+        {
+          "cells": "240-263",
+          "content": [
+            {
+              "gap": true,
+              "rule": true,
+              "label": "ADF",
+              "label_colour": "white",
+              "colour": "amber",
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "120-143",
+          "content": [
+            {
+              "text": "VHF FM",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "text": "PWR",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "VOL",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            }
+          ]
+        },
+        {
+          "cells": "144-167",
+          "content": [
+            {
+              "signal": "igy02x",
+              "width": 5,
+              "colour": "green"
+            },
+            {
+              "gap": true,
+              "width": 3
+            },
+            {
+              "source": "VHFFM_MODE",
+              "width": 6,
+              "value_aliases": {
+                "0": {
+                  "text": "OFF",
+                  "colour": "red"
+                },
+                "1": "T/R",
+                "2": "RETRAN",
+                "3": "HOME"
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "VHFFM_VOL",
+              "width": 4,
+              "reads": [
+                4.0,
+                0.0
+              ],
+              "value_aliases": {
+                "0": {
+                  "text": "[",
+                  "colour": "red"
+                },
+                "1": {
+                  "text": " ",
+                  "colour": "red",
+                  "inverse": true
+                },
+                "2": {
+                  "text": "  ",
+                  "colour": "amber",
+                  "inverse": true
+                },
+                "3": {
+                  "text": "   ",
+                  "colour": "yellow",
+                  "inverse": true
+                },
+                "4": {
+                  "text": "    ",
+                  "colour": "green",
+                  "inverse": true
+                }
+              }
+            }
+          ]
+        },
+        {
+          "cells": "0-23",
+          "content": [
+            {
+              "gap": true,
+              "rule": true,
+              "colour": "amber"
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "text": "MODE ",
+              "small": true
+            },
+            {
+              "source": "INT_MODE",
+              "width": 3,
+              "value_aliases": {
+                "0": "PVT",
+                "1": "INT",
+                "2": "FM",
+                "3": "UHF",
+                "4": "AM",
+                "5": {
+                  "text": "DIS",
+                  "colour": "red"
+                }
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "gap": true,
+              "rule": true,
+              "colour": "amber"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ev5wiw",
+      "name": "UFC Flight",
+      "display": "UFC1",
+      "fields": []
+    },
+    {
+      "id": "ooc6ko",
+      "name": "DED Flight",
+      "display": "DED",
+      "fields": []
+    }
+  ],
+  "signals": [
+    {
+      "id": "4bj0m3",
+      "name": "MASTER CAUTION",
+      "conditions": [
+        {
+          "source": "MASTER_CAUTION_IND",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "meu61u",
+      "name": "ADF 190-400",
+      "terms": [
+        {
+          "source": "ADF_FREQ",
+          "conversions": [
+            {
+              "raw": [
+                0,
+                2853
+              ],
+              "reads": [
+                190.0,
+                195.0
+              ]
+            },
+            {
+              "raw": [
+                2854,
+                5509
+              ],
+              "reads": [
+                195.0,
+                200.0
+              ]
+            },
+            {
+              "raw": [
+                5510,
+                8658
+              ],
+              "reads": [
+                200.0,
+                210.0
+              ]
+            },
+            {
+              "raw": [
+                8659,
+                11708
+              ],
+              "reads": [
+                210.0,
+                220.0
+              ]
+            },
+            {
+              "raw": [
+                11709,
+                14857
+              ],
+              "reads": [
+                220.0,
+                230.0
+              ]
+            },
+            {
+              "raw": [
+                14858,
+                17710
+              ],
+              "reads": [
+                230.0,
+                240.0
+              ]
+            },
+            {
+              "raw": [
+                17711,
+                20760
+              ],
+              "reads": [
+                240.0,
+                250.0
+              ]
+            },
+            {
+              "raw": [
+                20761,
+                23712
+              ],
+              "reads": [
+                250.0,
+                260.0
+              ]
+            },
+            {
+              "raw": [
+                23713,
+                26762
+              ],
+              "reads": [
+                260.0,
+                270.0
+              ]
+            },
+            {
+              "raw": [
+                26763,
+                29615
+              ],
+              "reads": [
+                270.0,
+                280.0
+              ]
+            },
+            {
+              "raw": [
+                29616,
+                32567
+              ],
+              "reads": [
+                280.0,
+                290.0
+              ]
+            },
+            {
+              "raw": [
+                32568,
+                35519
+              ],
+              "reads": [
+                290.0,
+                300.0
+              ]
+            },
+            {
+              "raw": [
+                35520,
+                38570
+              ],
+              "reads": [
+                300.0,
+                310.0
+              ]
+            },
+            {
+              "raw": [
+                38571,
+                41423
+              ],
+              "reads": [
+                310.0,
+                320.0
+              ]
+            },
+            {
+              "raw": [
+                41424,
+                44571
+              ],
+              "reads": [
+                320.0,
+                330.0
+              ]
+            },
+            {
+              "raw": [
+                44572,
+                47523
+              ],
+              "reads": [
+                330.0,
+                340.0
+              ]
+            },
+            {
+              "raw": [
+                47524,
+                50573
+              ],
+              "reads": [
+                340.0,
+                350.0
+              ]
+            },
+            {
+              "raw": [
+                50574,
+                53426
+              ],
+              "reads": [
+                350.0,
+                360.0
+              ]
+            },
+            {
+              "raw": [
+                53427,
+                56476
+              ],
+              "reads": [
+                360.0,
+                370.0
+              ]
+            },
+            {
+              "raw": [
+                56477,
+                59428
+              ],
+              "reads": [
+                370.0,
+                380.0
+              ]
+            },
+            {
+              "raw": [
+                59429,
+                62576
+              ],
+              "reads": [
+                380.0,
+                390.0
+              ]
+            },
+            {
+              "raw": [
+                62577,
+                65535
+              ],
+              "reads": [
+                390.0,
+                400.0
+              ]
+            }
+          ],
+          "round": "down",
+          "width": 4
+        }
+      ]
+    },
+    {
+      "id": "7g6udp",
+      "name": "ADF 400-850",
+      "terms": [
+        {
+          "source": "ADF_FREQ",
+          "conversions": [
+            {
+              "raw": [
+                0,
+                3050
+              ],
+              "reads": [
+                400.0,
+                410.0
+              ]
+            },
+            {
+              "raw": [
+                3051,
+                6199
+              ],
+              "reads": [
+                410.0,
+                420.0
+              ]
+            },
+            {
+              "raw": [
+                6200,
+                9544
+              ],
+              "reads": [
+                420.0,
+                435.0
+              ]
+            },
+            {
+              "raw": [
+                9545,
+                12987
+              ],
+              "reads": [
+                435.0,
+                450.0
+              ]
+            },
+            {
+              "raw": [
+                12988,
+                16234
+              ],
+              "reads": [
+                450.0,
+                475.0
+              ]
+            },
+            {
+              "raw": [
+                16235,
+                19481
+              ],
+              "reads": [
+                475.0,
+                500.0
+              ]
+            },
+            {
+              "raw": [
+                19482,
+                22728
+              ],
+              "reads": [
+                500.0,
+                525.0
+              ]
+            },
+            {
+              "raw": [
+                22729,
+                26270
+              ],
+              "reads": [
+                525.0,
+                550.0
+              ]
+            },
+            {
+              "raw": [
+                26271,
+                29518
+              ],
+              "reads": [
+                550.0,
+                575.0
+              ]
+            },
+            {
+              "raw": [
+                29519,
+                32666
+              ],
+              "reads": [
+                575.0,
+                600.0
+              ]
+            },
+            {
+              "raw": [
+                32667,
+                35913
+              ],
+              "reads": [
+                600.0,
+                625.0
+              ]
+            },
+            {
+              "raw": [
+                35914,
+                38963
+              ],
+              "reads": [
+                625.0,
+                650.0
+              ]
+            },
+            {
+              "raw": [
+                38964,
+                42505
+              ],
+              "reads": [
+                650.0,
+                675.0
+              ]
+            },
+            {
+              "raw": [
+                42506,
+                45850
+              ],
+              "reads": [
+                675.0,
+                700.0
+              ]
+            },
+            {
+              "raw": [
+                45851,
+                49392
+              ],
+              "reads": [
+                700.0,
+                725.0
+              ]
+            },
+            {
+              "raw": [
+                49393,
+                52442
+              ],
+              "reads": [
+                725.0,
+                750.0
+              ]
+            },
+            {
+              "raw": [
+                52443,
+                55688
+              ],
+              "reads": [
+                750.0,
+                775.0
+              ]
+            },
+            {
+              "raw": [
+                55689,
+                58837
+              ],
+              "reads": [
+                775.0,
+                800.0
+              ]
+            },
+            {
+              "raw": [
+                58838,
+                62378
+              ],
+              "reads": [
+                800.0,
+                825.0
+              ]
+            },
+            {
+              "raw": [
+                62379,
+                65535
+              ],
+              "reads": [
+                825.0,
+                850.0
+              ]
+            }
+          ],
+          "round": "down",
+          "width": 4
+        }
+      ]
+    },
+    {
+      "id": "613eej",
+      "name": "ADF 850-1750",
+      "terms": [
+        {
+          "source": "ADF_FREQ",
+          "conversions": [
+            {
+              "raw": [
+                0,
+                2852
+              ],
+              "reads": [
+                850.0,
+                875.0
+              ]
+            },
+            {
+              "raw": [
+                2853,
+                6197
+              ],
+              "reads": [
+                875.0,
+                900.0
+              ]
+            },
+            {
+              "raw": [
+                6198,
+                9543
+              ],
+              "reads": [
+                900.0,
+                950.0
+              ]
+            },
+            {
+              "raw": [
+                9544,
+                12987
+              ],
+              "reads": [
+                950.0,
+                1000.0
+              ]
+            },
+            {
+              "raw": [
+                12988,
+                16332
+              ],
+              "reads": [
+                1000.0,
+                1050.0
+              ]
+            },
+            {
+              "raw": [
+                16333,
+                19480
+              ],
+              "reads": [
+                1050.0,
+                1100.0
+              ]
+            },
+            {
+              "raw": [
+                19481,
+                22825
+              ],
+              "reads": [
+                1100.0,
+                1150.0
+              ]
+            },
+            {
+              "raw": [
+                22826,
+                26170
+              ],
+              "reads": [
+                1150.0,
+                1200.0
+              ]
+            },
+            {
+              "raw": [
+                26171,
+                29417
+              ],
+              "reads": [
+                1200.0,
+                1250.0
+              ]
+            },
+            {
+              "raw": [
+                29418,
+                32566
+              ],
+              "reads": [
+                1250.0,
+                1300.0
+              ]
+            },
+            {
+              "raw": [
+                32567,
+                35911
+              ],
+              "reads": [
+                1300.0,
+                1350.0
+              ]
+            },
+            {
+              "raw": [
+                35912,
+                39157
+              ],
+              "reads": [
+                1350.0,
+                1400.0
+              ]
+            },
+            {
+              "raw": [
+                39158,
+                42404
+              ],
+              "reads": [
+                1400.0,
+                1450.0
+              ]
+            },
+            {
+              "raw": [
+                42405,
+                45847
+              ],
+              "reads": [
+                1450.0,
+                1500.0
+              ]
+            },
+            {
+              "raw": [
+                45848,
+                49192
+              ],
+              "reads": [
+                1500.0,
+                1550.0
+              ]
+            },
+            {
+              "raw": [
+                49193,
+                52439
+              ],
+              "reads": [
+                1550.0,
+                1600.0
+              ]
+            },
+            {
+              "raw": [
+                52440,
+                55685
+              ],
+              "reads": [
+                1600.0,
+                1650.0
+              ]
+            },
+            {
+              "raw": [
+                55686,
+                59031
+              ],
+              "reads": [
+                1650.0,
+                1700.0
+              ]
+            },
+            {
+              "raw": [
+                59032,
+                62376
+              ],
+              "reads": [
+                1700.0,
+                1750.0
+              ]
+            },
+            {
+              "raw": [
+                62377,
+                65535
+              ],
+              "reads": [
+                1750.0,
+                1800.0
+              ]
+            }
+          ],
+          "round": "down",
+          "width": 4
+        }
+      ]
+    },
+    {
+      "id": "mndtg1",
+      "name": "ADF Signal STR",
+      "terms": [
+        {
+          "source": "ADF_SIGNAL",
+          "reads": [
+            0.0,
+            5.0
+          ]
+        }
+      ]
+    },
+    {
+      "id": "igy02x",
+      "name": "VHF FM FREQ",
+      "terms": [
+        {
+          "source": "VHFFM_FREQ1",
+          "reads": [
+            3.0,
+            7.0
+          ],
+          "width": 1
+        },
+        {
+          "source": "VHFFM_FREQ2",
+          "width": 1
+        },
+        {
+          "text": "."
+        },
+        {
+          "source": "VHFFM_FREQ3",
+          "width": 1
+        },
+        {
+          "source": "VHFFM_FREQ4",
+          "conversions": [
+            {
+              "raw": [
+                0,
+                0
+              ],
+              "reads": [
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "raw": [
+                1,
+                1
+              ],
+              "reads": [
+                5.0,
+                5.0
+              ]
+            }
+          ],
+          "width": 1
+        }
+      ]
+    }
+  ]
+}

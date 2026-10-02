@@ -28,6 +28,30 @@ unless this says what moved.
   - **No screen pages.** The module sends no gauge, radio or engine
     readings worth showing, so the MCDU, UFC and ICP are left blank.
 
+- **New profile for the UH-1H**, which also loads for the Bell 47:
+  - **Backlights:** every panel's backlight is lit whenever you are in the
+    aircraft.
+  - **Master Caution:** FAIL on the MCDU, PFP-3N, PFP-4 and PFP-7, and
+    Master Caution on the PTO2, all from one set of shared conditions,
+    MASTER CAUTION.
+  - **MCDU and PFPs:** RDY on the MCDU and DSPY on the PFPs light while
+    the radar altimeter is powered.
+  - **PTO2:** NOSE, LEFT and RIGHT light with weight on the skids, JETT
+    while the jettison cover is open, and HOOK with the cargo release
+    safety switch.
+  - **Orion Throttle Base II:** A/A lights with master arm ARMED and the
+    7.62 guns selected, A/G with master arm ARMED, 2.75 rockets selected
+    and a rocket pair set.
+  - **MCDU page, CDU Radios:** the intercom mode, then UHF, VHF AM, VHF
+    FM, VHF NAV and ADF, each with its frequency, power and volume. UHF
+    adds its preset, and the ADF its band and a signal strength bar.
+  - **No UFC or ICP pages yet.** Their slots hold empty pages.
+
+- **F-16C: the fuel totalizer on the CDU Flight page is coloured by
+  fuel left,** red at 2,000 lbs or less, amber up to 3,000 lbs and green
+  above. It used to be amber throughout. Changed: the totalizer and the
+  trailing 0 beside it on the CDU Flight page.
+
 ### Editor
 
 - **The flash choice "steady" is now "as DCS shows it".** It never held a

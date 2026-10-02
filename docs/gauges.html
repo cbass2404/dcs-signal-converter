@@ -494,6 +494,7 @@
               <thead>
                 <tr>
                   <th>Aircraft</th>
+                  <th>DCS-BIOS module</th>
                   <th>Why</th>
                 </tr>
               </thead>
@@ -678,7 +679,15 @@
           $("even").textContent =
             `Every gauge even, so nothing to list: ${data.none_found.join(", ")}.`;
         for (const u of data.not_covered || []) {
-          $("uncovered").append(h("tr", {}, h("td", {}, u.aircraft), h("td", {}, u.why)));
+          $("uncovered").append(
+            h(
+              "tr",
+              {},
+              h("td", {}, u.aircraft),
+              h("td", {}, u.bios_module ? h("code", {}, u.bios_module) : "None"),
+              h("td", {}, u.why),
+            ),
+          );
         }
         if (data.not_installed?.length)
           $("absent").textContent =

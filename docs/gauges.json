@@ -1,5 +1,5 @@
 {
-  "dcs": "2.9.29.27468",
+  "dcs": "2.9.30.28536",
   "dcs_bios": "2026.09.18-nightly",
   "aircraft": [
     {
@@ -3925,50 +3925,62 @@
   "not_covered": [
     {
       "aircraft": "C-101",
+      "bios_module": "C-101",
       "why": "works its gauges out in compiled code, so no Lua file holds their marks"
     },
     {
       "aircraft": "F-4E Phantom II",
+      "bios_module": "F-4E",
       "why": "works its gauges out in compiled code, so no Lua file holds their marks"
     },
     {
       "aircraft": "F-14A / F-14B / F-14BU",
+      "bios_module": "F-14",
       "why": "works its gauges out in compiled code, so no Lua file holds their marks"
     },
     {
       "aircraft": "I-16",
+      "bios_module": "I-16",
       "why": "works its gauges out in compiled code, so no Lua file holds their marks"
     },
     {
       "aircraft": "JF-17",
+      "bios_module": "JF-17",
       "why": "works its gauges out in compiled code, so no Lua file holds their marks"
     },
     {
       "aircraft": "Mirage F1",
+      "bios_module": "MirageF1",
       "why": "works its gauges out in compiled code, so no Lua file holds their marks"
     },
     {
       "aircraft": "UH-60L community mod",
-      "why": "DCS-BIOS runs it under the MH-60R module, which sends no gauges"
+      "bios_module": "MH-60R",
+      "why": "DCS-BIOS runs it under the MH-60R module, which sends its switches and knobs but no gauge needles"
     },
     {
       "aircraft": "F-100D",
+      "bios_module": null,
       "why": "DCS-BIOS has no module for it"
     },
     {
       "aircraft": "La-7",
+      "bios_module": null,
       "why": "DCS-BIOS has no module for it"
     },
     {
       "aircraft": "F-15C",
+      "bios_module": "FC3",
       "why": "DCS-BIOS sends Flaming Cliffs aircraft's readings in real units, so they need no rows"
     },
     {
       "aircraft": "Su-25T",
+      "bios_module": "FC3",
       "why": "DCS-BIOS sends Flaming Cliffs aircraft's readings in real units, so they need no rows"
     },
     {
       "aircraft": "Su-33",
+      "bios_module": "FC3",
       "why": "DCS-BIOS sends Flaming Cliffs aircraft's readings in real units, so they need no rows"
     }
   ],

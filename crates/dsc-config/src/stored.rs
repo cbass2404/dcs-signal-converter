@@ -64,7 +64,8 @@ pub struct StoredSignal {
     pub blink: Blink,
 }
 
-/// One DCS-BIOS signal in a stored signal, and how it is shaped.
+/// One DCS-BIOS signal in a stored signal, and how it is shaped, or
+/// characters typed in.
 ///
 /// Held as a [`Span`] so the arithmetic is the one a reading does, to the
 /// digit. Written with only the keys that shape a number and the box it
@@ -74,9 +75,26 @@ pub struct StoredSignal {
 #[serde(from = "TermRepr", into = "TermRepr")]
 pub struct Term(pub Span);
 
+impl Term {
+    /// Whether this part is symbols typed in, reading nothing: the `.`
+    /// between two drums that makes `12` and `3` read as `12.3`, still a
+    /// number a band can match.
+    pub fn is_text(&self) -> bool {
+        !self.0.text.is_empty()
+    }
+}
+
+/// Whether `c` may be typed into a symbol part: what a number is written
+/// with, so the result stays one. Words are the field's that draws it.
+pub fn is_number_symbol(c: char) -> bool {
+    c.is_ascii_digit() || matches!(c, '.' | '-' | '+')
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct TermRepr {
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    text: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
     source: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     reads: Option<[f64; 2]>,
@@ -101,6 +119,7 @@ struct TermRepr {
 impl From<TermRepr> for Term {
     fn from(r: TermRepr) -> Self {
         Term(Span {
+            text: r.text,
             source: r.source,
             reads: r.reads,
             conversions: r.conversions,
@@ -120,6 +139,7 @@ impl From<Term> for TermRepr {
     fn from(t: Term) -> Self {
         let s = t.0;
         TermRepr {
+            text: s.text,
             source: s.source,
             reads: s.reads,
             conversions: s.conversions,
@@ -169,14 +189,19 @@ impl StoredSignal {
         !self.conditions.is_empty() || !self.any_of.is_empty()
     }
 
-    /// Every DCS-BIOS signal this reads: its parts, or its conditions.
+    /// Every DCS-BIOS signal this reads: its parts, or its conditions. A part
+    /// of typed characters reads nothing.
     pub fn sources(&self) -> impl Iterator<Item = &str> {
-        self.terms.iter().map(|t| t.0.source.as_str()).chain(
-            self.conditions
-                .iter()
-                .chain(self.any_of.iter().flat_map(|b| b.conditions.iter()))
-                .map(|c| c.source.as_str()),
-        )
+        self.terms
+            .iter()
+            .filter(|t| !t.is_text())
+            .map(|t| t.0.source.as_str())
+            .chain(
+                self.conditions
+                    .iter()
+                    .chain(self.any_of.iter().flat_map(|b| b.conditions.iter()))
+                    .map(|c| c.source.as_str()),
+            )
     }
 
     /// What each term's signal reads right now, in term order, or None until
@@ -189,7 +214,16 @@ impl StoredSignal {
     where
         F: Fn(&str) -> Option<Reading>,
     {
-        self.terms.iter().map(|t| read(&t.0.source)).collect()
+        self.terms
+            .iter()
+            .map(|t| {
+                if t.is_text() {
+                    Some(Reading::Text(t.0.text.clone()))
+                } else {
+                    read(&t.0.source)
+                }
+            })
+            .collect()
     }
 
     /// What this reads given how signals read right now, or None until every

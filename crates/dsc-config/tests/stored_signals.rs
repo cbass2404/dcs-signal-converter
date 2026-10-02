@@ -34,6 +34,8 @@ fn module() -> Module {
              "outputs": [{"address": 402, "mask": 65535, "shift": 0, "max_value": 65535, "max_length": null}]},
             {"id": "D100", "control_type": "analog_gauge",
              "outputs": [{"address": 404, "mask": 65535, "shift": 0, "max_value": 65535, "max_length": null}]},
+            {"id": "SW", "control_type": "selector",
+             "outputs": [{"address": 406, "mask": 1, "shift": 0, "max_value": 1, "max_length": null}]},
             {"id": "CHAN", "control_type": "display",
              "outputs": [{"address": 200, "mask": null, "max_value": null, "max_length": 2, "type": "string"}]}
           ]
@@ -326,6 +328,88 @@ fn a_signal_is_held_to_what_a_reading_is() {
         found.iter().any(|e| e.contains("colour or size")),
         "{found:?}"
     );
+}
+
+/// A radio frequency: whole megahertz, a typed point, then hundredths kept
+/// at two digits so 5 reads 05.
+fn radio() -> StoredSignal {
+    serde_json::from_str(&format!(
+        r#"{{"id": "radio1", "name": "Radio",
+             "terms": [{}, {}, {{"text": "."}},
+                       {{"source": "D100", "reads": [0, 100], "round": "down", "digits": 2}}]}}"#,
+        drum("D10K"),
+        drum("D1K"),
+    ))
+    .expect("the fixture signal parses")
+}
+
+#[test]
+fn a_symbol_part_is_laid_down_between_the_readings() {
+    let file = page_file(r#"{"cells": "0-5", "signal": "radio1"}"#, &[radio()]);
+    let field = &fields(&file)[0];
+    assert_eq!(
+        drawn(field, [Some(3.0), Some(0.0), Some(5.0)]).as_deref(),
+        Some("30.50")
+    );
+    assert_eq!(
+        drawn(field, [Some(3.0), Some(0.0), Some(0.5)]).as_deref(),
+        Some("30.05")
+    );
+    // It reads nothing, so nothing waits on it.
+    assert_eq!(fields(&file)[0].sources(), vec!["D10K", "D1K", "D100"]);
+}
+
+#[test]
+fn a_symbol_part_keeps_the_result_a_number() {
+    let file = page_file(
+        r#"{"cells": "0-5", "signal": "radio1", "value_aliases": {"30.5": "GUARD"}}"#,
+        &[radio()],
+    );
+    let field = &fields(&file)[0];
+    assert_eq!(
+        drawn(field, [Some(3.0), Some(0.0), Some(5.0)]).as_deref(),
+        Some("GUARD")
+    );
+    assert_eq!(radio().tolerance(), 0.005);
+    // Hundredths read 0 to 100, so the widest is three digits after the point.
+    assert_eq!(radio().widest(&module()), Some(6));
+    assert!(radio().problems(&module()).is_empty());
+}
+
+#[test]
+fn a_symbol_part_takes_only_what_a_number_is_written_with() {
+    let mut bad = radio();
+    bad.terms[2].0.text = "MHZ".into();
+    let found: Vec<String> = bad
+        .problems(&module())
+        .iter()
+        .map(|e| e.to_string())
+        .collect();
+    assert!(found.iter().any(|e| e.contains("symbol part")), "{found:?}");
+}
+
+#[test]
+fn a_part_gives_each_position_its_own_number() {
+    // What "a number for each position" writes: a stretch of one count each.
+    let signal: StoredSignal = serde_json::from_str(
+        r#"{"id": "sw01", "name": "Switch",
+            "terms": [{"source": "SW", "conversions": [
+                {"raw": [0, 0], "reads": [1, 1]},
+                {"raw": [1, 1], "reads": [5, 5]}]}]}"#,
+    )
+    .expect("the fixture signal parses");
+    let at = |value: u16| {
+        signal
+            .evaluate(
+                &|id: &str| (id == "SW").then_some(Reading::Number { value, max: 1 }),
+                &mut |_: &str, _: u16, _: &str| {},
+            )
+            .expect("the switch has arrived")
+    };
+    assert_eq!(at(0).text, "1");
+    assert_eq!(at(1).number, Some(5.0));
+    assert_eq!(signal.widest(&module()), Some(1));
+    assert!(signal.problems(&module()).is_empty());
 }
 
 #[test]

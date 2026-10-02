@@ -38,6 +38,7 @@ import { manageConverter } from "./converter";
 import { loadTheme, showSettings } from "./settings";
 import { showFieldCautions, showFlags } from "./flags";
 import {
+  closeEditors,
   pageBook,
   pagesChecked,
   pageSection,
@@ -425,10 +426,26 @@ function showBanner(text: string): void {
   bannerTimer = window.setTimeout(() => banner.remove(), 10_000);
 }
 
-/** Failures are shown in the window, never swallowed and never only in a console. */
-function showError(where: string, e: unknown): void {
+/**
+ * Failures are shown in the window, never swallowed and never only in a console.
+ *
+ * Each is kept under `key`, what failed: trying it again replaces it rather
+ * than stacking another, and `clearError` takes it away once it works, so an
+ * old failure never sits above a save that has since gone through.
+ */
+function showError(where: string, e: unknown, key = where): void {
   const message = e instanceof Error ? e.message : String(e);
-  app.prepend(el("div", { class: "error" }, `${where}: ${message}`));
+  clearError(key);
+  const box = el("div", { class: "error" }, `${where}: ${message}`);
+  box.dataset.key = key;
+  app.prepend(box);
+}
+
+/** Take away the failure kept under `key`, now that it has worked. */
+function clearError(key: string): void {
+  for (const box of app.querySelectorAll<HTMLElement>(":scope > .error")) {
+    if (box.dataset.key === key) box.remove();
+  }
 }
 
 // ------------------------------------------------------------------- library
@@ -596,7 +613,9 @@ async function showLibrary(): Promise<void> {
       : el(
           "span",
           { class: "meta", ...aircraft.title },
-          `${row.module} · ${aircraft.text} · ${row.bound} of ${row.total} lamps assigned`,
+          // The aircraft only: the DCS-BIOS module is nearly always one of
+          // them, and printing both repeated it.
+          `${aircraft.text || "no aircraft"} · ${row.bound} of ${row.total} lamps assigned`,
         );
 
     const actions = el("div", { class: "actions" });
@@ -1845,7 +1864,14 @@ async function showProfile(file: string): Promise<void> {
     signals,
     tell: showBanner,
     fail: showError,
-    changed: () => session.recheck(),
+    cleared: clearError,
+    // The pages redraw themselves when the library changes; the lamps do not,
+    // and a lamp lit by shared conditions shows their name and the others it
+    // could pick, so a rename or a new set has to reach them too.
+    changed: () => {
+      for (const redraw of session.afterSave) redraw();
+      session.recheck();
+    },
     profile: () => session.profile,
     // The panels this profile drives first.
     devicesFor: (display: string) => {
@@ -1886,6 +1912,7 @@ async function showProfile(file: string): Promise<void> {
     void (async () => {
       try {
         await saveProfile(session.file, session.profile);
+        clearError("Saving the profile");
         markSaved(session);
         for (const redraw of session.afterSave) redraw();
         session.dirty = false;
@@ -2078,8 +2105,16 @@ async function showProfile(file: string): Promise<void> {
     // button reading "Collapse all" expand everything as soon as one section
     // had been closed by hand.
     const expand = !offersCollapse;
-    for (const section of live()) section.open = expand;
-    syncToggle();
+    void (async () => {
+      // Collapsing closes the page editors too, one question for all of them.
+      if (!expand) {
+        const keys = devices.filter((_, i) => sections[i]?.open).map((d) => d.key);
+        if (!(await closeEditors(session.book, keys))) return;
+        session.recheck();
+      }
+      for (const section of live()) section.open = expand;
+      syncToggle();
+    })();
   });
 }
 
@@ -2254,7 +2289,21 @@ function deviceSection(
     );
   summary.append(el("label", { class: "drive meta" }, drive, " drive this panel"));
   summary.addEventListener("click", (e) => {
-    if (shut() && !(e.target as Element).closest("label")) e.preventDefault();
+    if ((e.target as Element).closest("label")) return;
+    if (shut()) {
+      e.preventDefault();
+      return;
+    }
+    // Collapsing closes a page editor open on this panel, so it is not left
+    // running out of sight. Held open until that is settled, since unsaved
+    // changes are asked about first and Cancel keeps both.
+    if (!section.open || !session.book.editing.has(device.key)) return;
+    e.preventDefault();
+    void (async () => {
+      if (!(await closeEditors(session.book, [device.key]))) return;
+      session.recheck();
+      section.open = false;
+    })();
   });
   // Anything that opens it some other way is closed again.
   //
@@ -2298,6 +2347,7 @@ function deviceSection(
         nameOf,
         tell: session.tell,
         fail: showError,
+        cleared: clearError,
       }),
     );
   }

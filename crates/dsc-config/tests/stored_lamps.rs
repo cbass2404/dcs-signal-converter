@@ -246,6 +246,40 @@ fn a_stored_number_decides_a_switch_in_its_own_units() {
 }
 
 #[test]
+fn a_switch_can_show_words_for_the_stored_number_deciding_it() {
+    // No second signal: the switch shares the stored number it is decided by,
+    // and each case draws its word, in its own colour where it has one.
+    let field = switch_field(
+        r#"{"switch_signal": "fuel01", "signal": "fuel01", "colour": "green",
+            "value_aliases": {"..999": "LOW", "1000..": "FUEL"},
+            "cases": {"..999": {"colour": "amber"}, "else": {}}}"#,
+    );
+    assert_eq!(drawn(&field, 6000), "LOW", "about 915 lb");
+    assert_eq!(drawn(&field, 30000), "FUEL", "about 4578 lb");
+    let colour = |fuel: u16| {
+        field
+            .compose(|id| {
+                (id == "FUEL").then_some(Reading::Number {
+                    value: fuel,
+                    max: 65535,
+                })
+            })
+            .unwrap()[0]
+            .colour
+    };
+    assert_eq!(colour(6000), Some(dsc_config::Colour::Amber));
+    assert_eq!(colour(30000), Some(dsc_config::Colour::Green));
+    let mut field = field;
+    field.device = "MCDU_Captain".into();
+    field.display = "MCDU".into();
+    field.page = Some("page01".into());
+    let mut p = profile("");
+    p.font = Some("../mcdu/f14bu-font-21x31.json".into());
+    p.readouts = vec![field];
+    assert_eq!(refusals(&p, &lib(Vec::new())), Vec::<String>::new());
+}
+
+#[test]
 fn a_switch_on_a_signal_of_lamp_conditions_is_refused() {
     let field = switch_field(
         r#"{"switch_signal": "mc0001", "cases": {"1": {"text": "MC"}, "else": {"text": ""}}}"#,

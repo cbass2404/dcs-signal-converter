@@ -1178,14 +1178,16 @@
                 lamps that means any one group is enough.
               </p>
               <p>
-                Each group ends with <span class="ed">While this holds, the lamp is</span>: steady,
+                Each group ends with <span class="ed">While this holds, the lamp is</span>:
+                <span class="ed">as DCS shows it</span>,
                 <span class="ed">flashing slowly</span> (twice a second) or
-                <span class="ed">flashing fast</span> (three times a second). Every flash is lit for
-                exactly half its time, and every lamp flashing at one rate flashes in step. A
-                flashing group in its dark half counts as not holding, so a steady group that also
-                holds keeps the lamp lit. Flash only a lamp DCS keeps steady: where the cockpit lamp
-                already flashes, its signal does too and the lamp follows it, and a flash on top
-                beats against it.
+                <span class="ed">flashing fast</span> (three times a second). As DCS shows it adds
+                nothing: the lamp follows its signal, so it flashes wherever the cockpit lamp does.
+                Every flash is lit for exactly half its time, and every lamp flashing at one rate
+                flashes in step. A flashing group in its dark half counts as not holding, so an
+                unflashed group that also holds keeps the lamp lit. Flash only a lamp DCS keeps
+                steady: where the cockpit lamp already flashes, its signal does too and the lamp
+                follows it, and a flash on top beats against it.
               </p>
             </div>
 
@@ -1350,12 +1352,12 @@
                 <div class="controls">
                   <p class="say">
                     A hook lamp held steady by the lamp test, and flashing while a warning holds.
-                    Both lit, the steady group wins.
+                    Both lit, the unflashed group wins.
                   </p>
                   <div class="row">
                     <span class="lbl">Warning flashes</span>
                     <div class="seg" id="f-rate">
-                      <button type="button" data-v="" aria-pressed="false">steady</button>
+                      <button type="button" data-v="" aria-pressed="false">as DCS shows it</button>
                       <button type="button" data-v="slow" aria-pressed="false">slowly</button>
                       <button type="button" data-v="fast" aria-pressed="true">fast</button>
                     </div>
@@ -1746,7 +1748,9 @@
                       ends included. Each may take a colour, small text, or inverse. Tick
                       <span class="ed">the reading</span> to keep the number and only colour it,
                       such as a radar altimeter turning red below 50:
-                      <code>{"reading": true, "colour": "red"}</code>.
+                      <code>{"reading": true, "colour": "red"}</code>. A blank drawn inverse is a
+                      solid block, so steps one blank wider each draw a bar: the Huey's ADF signal
+                      strength, red to green.
                     </td>
                   </tr>
                   <tr>
@@ -1879,11 +1883,8 @@
                 uneven dial, words, colours. Only one case draws at a time.
               </p>
               <p>
-                What every case has in common is set once, on the switch itself: the signal, the
-                decimals, the colour. A case only says what is different, and in the editor the
-                settings it takes from the switch are shown in grey. Change one to give that case
-                its own; empty it to take the switch's again. A wrap, padding or set of words the
-                switch shares can be turned <span class="ed">off</span> for one case.
+                Each case builds what it draws from the same pieces a field has: a reading, a shared
+                result, text or a gap, each in its own colour.
               </p>
               <p>
                 A position no case names draws nothing, unless there is an
@@ -1897,6 +1898,10 @@
                 the dial's units, which is how a label turns amber below 3000 lb of fuel and red
                 below 1000: <code>"0..999"</code>, <code>"1000..2999"</code> and <code>else</code>,
                 each a piece of text in its own colour.
+              </p>
+              <p>
+                A case can be just text, with no second signal at all: OFF in amber, ADF and ANT in
+                green.
               </p>
             </div>
 
@@ -1989,6 +1994,18 @@
                 given a fixed number of cells. The parts are laid side by side as characters. Three
                 fuel drums, each converted to 0 to 10, rounded down and wrapped at 10, read as one
                 number.
+              </p>
+              <p>
+                A part can also be a <span class="ed">symbol</span>, which reads nothing and is laid
+                down as typed: digits, a point, or a sign. A radio's megahertz, a
+                <span class="ed">.</span>, then its hundredths padded to two digits read 30.50, and
+                stay a number its bands can match. Words stay with the piece drawing it.
+              </p>
+              <p>
+                A part reading a switch can give each position
+                <span class="ed">a number for each position</span>: a switch sending 0 and 1 can
+                read 1 and 5. Each number is drawn as typed, so 05 keeps its zero and 1.50 its two
+                places.
               </p>
               <p>
                 Rounding each drum on its own is the point. A drum that is rolling is already
@@ -2150,8 +2167,9 @@
                 Three kinds of screen take pages. The MCDU and the PFPs share a
                 <strong>text grid</strong> that draws from a font, in colour and in two sizes. The
                 UFC is a <strong>segment display</strong>, and the ICP's DED a
-                <strong>pixel screen</strong> that can draw inverse. Some settings mean something on
-                only one of them, and the check refuses them elsewhere rather than drawing nothing.
+                <strong>pixel screen</strong>. Both the text grid and the DED draw inverse. Some
+                settings mean something on only one of them, and the check refuses them elsewhere
+                rather than drawing nothing.
               </p>
             </div>
             <div class="cards">
@@ -2209,7 +2227,7 @@
                   piece that way, typed text or a reading. <code>format</code> names a second text
                   signal marking which cells, as the F-16 DED sends <code>DED_L1_FORMAT</code>.
                 </p>
-                <p class="use"><b>Glass that draws inverse</b>, which today is the DED.</p>
+                <p class="use"><b>Glass that draws inverse</b>: the MCDU, the PFPs and the DED.</p>
               </div>
               <div class="card">
                 <h3>Seat</h3>
@@ -3263,6 +3281,25 @@
               ["5", "BYP", ""],
             ],
           },
+          // Blanks drawn inverse are solid blocks, so each step one wider
+          // draws a bar. The field is 5 wide, so the bar grows from the left.
+          "Signal strength as a bar (UH-1H)": {
+            id: "ADF_SIGNAL",
+            max: 65535,
+            raw: 39321,
+            reads: [0, 5],
+            dp: 0,
+            round: "nearest",
+            width: 5,
+            aliases: [
+              ["0", "[", "red"],
+              ["1", " ", "red", false, false, true],
+              ["2", "  ", "amber", false, false, true],
+              ["3", "   ", "amber", false, false, true],
+              ["4", "    ", "green", false, false, true],
+              ["5", "     ", "green", false, false, true],
+            ],
+          },
         };
         let cfg;
         const converted = () => !!(cfg.reads || cfg.stretches);
@@ -3392,6 +3429,9 @@
             const small = h("input", { type: "checkbox", "aria-label": "small" });
             small.checked = !!a[4];
             small.addEventListener("change", () => ((a[4] = small.checked), draw()));
+            const inv = h("input", { type: "checkbox", "aria-label": "inverse" });
+            inv.checked = !!a[5];
+            inv.addEventListener("change", () => ((a[5] = inv.checked), draw()));
             host.append(
               h(
                 "div",
@@ -3402,6 +3442,7 @@
                 h("label", {}, shows, " the reading"),
                 col,
                 h("label", {}, small, " small"),
+                h("label", {}, inv, " inverse"),
                 h(
                   "button",
                   {
@@ -3418,7 +3459,7 @@
           draw();
         }
         $("r-addalias").addEventListener("click", () => {
-          cfg.aliases.push(["", "", "", false, false]);
+          cfg.aliases.push(["", "", "", false, false, false]);
           aliases();
         });
         // A line becomes stretches the moment a second one is wanted: the
@@ -3598,16 +3639,18 @@
           pipe.append(
             step(
               "Screen draws",
-              `"${drawn}"${stretch && stretch[4] && !(hit && hit.a[2]) ? ` in ${stretch[4]}, the stretch's colour` : ""}`,
+              `"${drawn}"${hit && hit.a[5] ? ", inverse" : ""}${stretch && stretch[4] && !(hit && hit.a[2]) ? ` in ${stretch[4]}, the stretch's colour` : ""}`,
             ),
           );
 
           const small = !!(hit && hit.a[4]);
-          const glyphs = fitTo(
-            [...drawn].map((ch) => ({ ch, colour, small })),
-            8,
-            "right",
-          );
+          const inv = !!(hit && hit.a[5]);
+          const chars = [...drawn].map((ch) => ({ ch, colour, small, inv }));
+          // A piece with a width is padded to it from the left, as the
+          // engine does, and sits at the start of the line.
+          const glyphs = cfg.width
+            ? fitTo(fitTo(chars, cfg.width, "left"), 8, "left")
+            : fitTo(chars, 8, "right");
           paint($("r-cells"), glyphs, 8);
 
           const span = { source: cfg.id };
@@ -3624,14 +3667,16 @@
             if (every > 0) span.wrap = every;
             if (signed && cfg.abs) span.abs = true;
           }
+          if (cfg.width) span.width = cfg.width;
           const va = {};
-          for (const [b, t, c, r, s] of cfg.aliases) {
+          for (const [b, t, c, r, s, i] of cfg.aliases) {
             if (!b.trim()) continue;
             const drawn = r ? {} : { text: t };
             if (c) drawn.colour = c;
             if (s) drawn.small = true;
+            if (i) drawn.inverse = true;
             if (r) drawn.reading = true;
-            va[b.trim()] = !r && !c && !s ? t : drawn;
+            va[b.trim()] = !r && !c && !s && !i ? t : drawn;
           }
           if (Object.keys(va).length) span.value_aliases = va;
           span.colour = "amber";
@@ -3669,16 +3714,16 @@
           $("s-say").innerHTML =
             `The band switch is at <b>${at}</b>, so case <b>${at}</b> draws: ` +
             `${raw} of 65535 reads <b>${value}</b> on a ${lo} to ${hi} dial` +
-            (at === 2 && amber ? ", in its own colour." : ", in the colour every case shares.");
+            `, in ${colour}.`;
           const cases = bands.map(([a, b], i) =>
             i === 2 && amber
-              ? `"${i}": { "reads": [${a}, ${b}], "colour": "amber" }`
-              : `"${i}": { "reads": [${a}, ${b}] }`,
+              ? `"${i}": { "source": "ADF_FREQ", "reads": [${a}, ${b}], "colour": "amber" }`
+              : `"${i}": { "source": "ADF_FREQ", "reads": [${a}, ${b}], "colour": "green" }`,
           );
           $("s-json").textContent =
             `"content": [\n` +
             `  { "text": "ADF ", "small": true },\n` +
-            `  { "switch": "ADF_BAND", "source": "ADF_FREQ", "colour": "green",\n` +
+            `  { "switch": "ADF_BAND",\n` +
             `    "cases": {\n      ${cases.join(",\n      ")}\n    } }\n]`;
         }
         draw();
@@ -4027,10 +4072,24 @@
             "stored",
           ],
           [
+            "Symbol part",
+            "text",
+            "Shared result",
+            "A part that reads nothing: digits, a point or a sign laid down as typed, such as the . between a radio's megahertz and hundredths. The result stays a number.",
+            "stored",
+          ],
+          [
+            "A number for each position",
+            "conversions",
+            "Shared result",
+            "A part reading a switch gives each position its own number, written as a conversion of one count each, so 0 and 1 can read 1 and 5.",
+            "stored",
+          ],
+          [
             "Switch",
             "switch",
             "Piece",
-            "A piece whose reading another signal decides, such as an ADF needle read by band. Settings on the switch are shared by every case.",
+            "A piece whose reading another signal decides, such as an ADF needle read by band. Each case builds what it draws from pieces of its own.",
             "switches",
           ],
           [
@@ -4044,7 +4103,7 @@
             "Flashing",
             'blink: "slow", "fast"',
             "Lamp, alternative, shared conditions",
-            "The group flashes while it holds: slowly is twice a second, fast three times, each lit for half its time and every lamp in step. Absent is steady. Only for a lamp DCS keeps steady.",
+            "The group flashes while it holds: slowly is twice a second, fast three times, each lit for half its time and every lamp in step. Absent, the lamp shows as DCS shows it, following its signal. Only for a lamp DCS keeps steady.",
             "combining",
           ],
           [
@@ -4219,7 +4278,7 @@
             "Inverse",
             "inverse, format",
             "Piece",
-            "A filled box with the character knocked out, on glass that draws it: the DED. format names a signal marking which cells.",
+            "A filled box with the character knocked out, on glass that draws it: the MCDU, the PFPs and the DED. format names a signal marking which cells.",
             "glass",
           ],
           [

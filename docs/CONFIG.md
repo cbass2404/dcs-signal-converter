@@ -329,10 +329,11 @@ says and its own `blink` is set aside.
 ```
 
 `"slow"` is twice a second and `"fast"` three times, each lit for exactly the
-first half of its flash. Absent is steady and steady is never written, so no
-profile changed when this arrived. A flashing block in its dark half counts as
-not holding, so the lamp falls to its `off`, or to another alternative that
-does hold: steady wins over flashing while both hold.
+first half of its flash. Absent adds no flash: the lamp follows its signal,
+which the editor calls "as DCS shows it". It is never written, so no profile
+changed when this arrived. A flashing block in its dark half counts as not
+holding, so the lamp falls to its `off`, or to another alternative that does
+hold: an unflashed block wins over a flashing one while both hold.
 
 One clock serves every lamp, started with the stream, so every lamp at one
 rate flashes in step: a cockpit lamp and its repeater on another panel. Each
@@ -1091,7 +1092,7 @@ laid out across the run the same way as `source`, and a cell whose mark is `i`
 is drawn as a filled box with the character knocked out. The F-16 DED is the
 case: DCS-BIOS sends each line as `DED_Ln` and its highlighting as
 `DED_Ln_FORMAT`. Only a display that can draw inverse accepts it, which today
-is the ICP's DED, and any other mark draws normally.
+is the MCDU, the PFPs and the ICP's DED, and any other mark draws normally.
 
 ### Content: what fills a field
 
@@ -1332,6 +1333,24 @@ Rounding is what lets `"0..999"` and `"1000..2999"` meet: 999.6 lb is 1000,
 and nothing falls between them. The position checks below are made in the
 same units. `switch_reads` on a piece that is not a switch is refused.
 
+**A switch can show words for its own positions.** With the selector as
+the switch's `source` too, every case reads the selector itself, and the
+switch's `value_aliases` say what each position shows. No second signal is
+needed, and a case only says what differs, such as a colour:
+
+```jsonc
+{
+  "switch": "ADF_MODE",
+  "source": "ADF_MODE", // the selector reads itself
+  "colour": "green",
+  "value_aliases": { "0": "OFF", "1": "ADF", "2": "ANT" },
+  "cases": {
+    "0": { "colour": "amber" },
+    "else": {},
+  },
+}
+```
+
 **Everything else on the switch is shared by its cases.** A case piece that
 leaves an option unset takes the switch's, so the source, the decimals and the
 colour are written once and each case says only what is its own. A case
@@ -1344,12 +1363,14 @@ draws in.
 - `reads` and `conversions` are one choice made two ways, so a case that
   makes it either way, or clears it, takes neither from the switch.
 - `null` clears an option for one case: `"wrap": null` draws that case with no
-  wrap where every other case wraps at 360. In the editor a shared wrap,
-  padding or set of words is turned off by a checkbox under the case, and
-  emptying the box hands the option back to the switch instead.
+  wrap where every other case wraps at 360.
 - Shared options stay on the switch when the file is saved. They are never
   copied into the cases, so changing one later changes every case that did
   not set its own.
+
+The editor shares nothing, not even the colour: each case builds what it
+draws from pieces of its own. A switch sharing anything is opened with it
+copied into each case, which draws the same, and saved that way.
 
 A switch carries no `text`, `gap`, rule, label or `width` of its own, and is
 refused with one: those belong to a piece inside a case. A switch with no
@@ -1759,6 +1780,21 @@ stored name for both. Kept in the module's page file beside its pages:
   drums would count that twice; settling each one on its own first, rounded
   down and wrapped, is what keeps them agreeing. One term is the plain case:
   a reading named so several pages can draw it.
+- **A symbol part reads nothing.** A term with `text` instead of `source` is
+  laid down as it is: `{ "text": "." }` between a radio's megahertz and its
+  hundredths, the hundredths with `"digits": 2`, reads `30.50` and `30.05`.
+  It takes only digits, `.`, `-` and `+`, so the result stays a number its
+  bands can match; anything else is refused, since words are the piece's.
+  Places for a band's edge are counted from the last point, typed or a
+  term's own.
+- **A number for each position.** A term reading a switch can give each
+  position its own number with a conversion of one count each:
+  `[{ "raw": [0, 0], "reads": [1, 1] }, { "raw": [1, 1], "reads": [5, 5] }]`
+  reads 1 and 5 for a switch sending 0 and 1. It is the ordinary conversion,
+  so nothing new is checked; the editor offers it as **a number for each
+  position** on any part whose signal the catalogue lists positions for, and
+  sets `decimals` and `digits` from what is typed, so `05` and `1.50` draw
+  as typed.
 - **The number is the signal's, the look is the piece's.** A piece draws one
   with `signal`, its id, instead of `text` or `source`. It takes bands,
   colour, small, inverse and a box; anything that shapes a number on it is
@@ -1772,8 +1808,9 @@ stored name for both. Kept in the module's page file beside its pages:
   address moves, as it does for its own signals. A field is checked for every
   term's signal as if it read it itself: one this DCS-BIOS lacks is flagged
   and the field turned off.
-- **Checked as a reading is.** A term with no signal chosen and a colour or
-  size on a conversion are refused; a range on characters is a caution.
+- **Checked as a reading is.** A term with no signal chosen, a symbol part
+  with anything but a number's symbols, and a colour or size on a conversion
+  are refused; a range on characters is a caution.
   Each signal a profile's fields draw is checked once when the profile loads.
   A piece naming a signal the page file does not have is refused.
 - **Saved on its own**, like a page, from the **Stored Signals** section at
@@ -1792,6 +1829,21 @@ stored name for both. Kept in the module's page file beside its pages:
   `switch`. The number is already shaped, so cases are written in its units and
   `switch_reads` is refused beside it. Only overlapping cases are checked: a
   stored number has no positions to walk.
+- **A switch can show words for it**, the way one decided by a signal shows
+  words for its positions. With the same id as the switch's `signal` too, and
+  no `source`, every case that draws nothing else draws the stored number,
+  with the switch's `value_aliases`. A case naming a `signal` of its own
+  draws that one instead, and takes only the switch's styling:
+
+  ```jsonc
+  {
+    "switch_signal": "fuel01",
+    "signal": "fuel01",
+    "colour": "green",
+    "value_aliases": { "..999": "LOW", "1000..": "FUEL" },
+    "cases": { "..999": { "colour": "amber" }, "else": {} },
+  }
+  ```
 
 **Cases and bands can be open at one end.** `"1000.."` claims every reading
 from 1000 up and `"..999"` every one up to 999, for a case or an alias band

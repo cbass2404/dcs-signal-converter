@@ -1160,6 +1160,13 @@ details.device.off table {
   margin: 0 0 8px;
 }
 
+/* Shared Results' and Shared Conditions' add button, off the last card the way
+   the other add buttons sit off what is above them. With no cards it collapses
+   into the lead's margin, so an empty section keeps its spacing. */
+.device-group > .chain-add {
+  margin-top: 8px;
+}
+
 .drive {
   margin-left: auto;
   display: flex;
@@ -1490,15 +1497,6 @@ button.add.small {
 
 .case-head .spacer {
   flex: 1;
-}
-
-/* A setting a case takes from its switch, shown so the case reads whole but
-   set back so what the case says for itself stands out. */
-.inherited,
-.inherited input,
-.inherited select {
-  color: var(--muted);
-  font-style: italic;
 }
 
 .span-head {

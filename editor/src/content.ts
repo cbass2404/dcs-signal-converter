@@ -102,7 +102,7 @@ export function ruleFromDivider(readout: Readout): void {
 export function newSpan(kind: SpanKind): Span {
   if (kind === "rule") return { gap: true, rule: true };
   if (kind === "gap") return { gap: true };
-  if (kind === "switch") return { switch: "", source: "", cases: {} };
+  if (kind === "switch") return { switch: "", cases: {} };
   if (kind === "stored") return { signal: "" };
   return kind === "text" ? { text: "" } : { source: "" };
 }
@@ -180,7 +180,7 @@ export function isLiteral(span: Span): boolean {
 const OWN = ["text", "signal", "gap", "rule", "label", "label_colour", "width", "align"] as const;
 
 /** What a reading takes from its switch where it leaves it unset. */
-const SHAPING = [
+export const SHAPING = [
   "source",
   "reads",
   "conversions",
@@ -219,23 +219,42 @@ const CHOSEN_BY_ABSENCE = new Set<string>([
   "source",
 ]);
 
-/** The options a switch shares that a case can turn off with its toggle. */
-export const SWITCHABLE_OFF = ["wrap", "digits", "value_aliases"] as const;
+/**
+ * What a case piece can be. A stored signal is drawn, not shaped, so it takes
+ * styling only. `shared` is the stored signal its switch shares, which it
+ * draws with the switch's words.
+ */
+type PieceKind = "gap" | "text" | "signal" | "stored" | "shared";
 
-/** What a case piece can be. A stored signal is drawn, not shaped, so it takes styling only. */
-type PieceKind = "gap" | "text" | "signal" | "stored";
+/**
+ * Whether a switch hands its stored signal to every case that draws nothing
+ * else, as a switch showing words for a shared result does.
+ */
+function sharesStored(shared: Span): boolean {
+  return !shared.source && !!shared.signal;
+}
 
 /** The kind a case piece is, read the way `kindOf` reads a piece. */
-function patchKind(patch: SpanPatch): PieceKind {
+function patchKind(patch: SpanPatch, shared: Span): PieceKind {
   if (patch.gap) return "gap";
   if ("text" in patch) return "text";
-  return "signal" in patch ? "stored" : "signal";
+  if ("signal" in patch) return "stored";
+  return patch.source === undefined && sharesStored(shared) ? "shared" : "signal";
+}
+
+/** The kind the window's piece `view` is, inside the switch `shared`. */
+function viewKind(view: Span, shared: Span): PieceKind {
+  if (view.gap) return "gap";
+  if ("text" in view) return "text";
+  if (!("signal" in view)) return "signal";
+  return sharesStored(shared) && view.signal === shared.signal ? "shared" : "stored";
 }
 
 /** Whether a piece of this kind takes `key` from its switch. */
 function takes(kind: PieceKind, key: SharedKey): boolean {
   if ((STYLING as readonly string[]).includes(key)) return true;
   if (key === "replace") return kind !== "gap";
+  if (kind === "shared") return key === "value_aliases";
   return kind === "signal";
 }
 
@@ -262,7 +281,7 @@ function same(a: unknown, b: unknown): boolean {
  * case that makes it either way, or clears it, takes neither from the switch.
  */
 export function resolvePiece(patch: SpanPatch, shared: Span): Span {
-  const kind = patchKind(patch);
+  const kind = patchKind(patch, shared);
   const converts =
     kind === "signal" && patch.reads === undefined && patch.conversions === undefined;
   const out: Record<string, unknown> = {};
@@ -283,6 +302,7 @@ export function resolvePiece(patch: SpanPatch, shared: Span): Span {
   }
   // A reading with nothing chosen is still a reading, so the menu says so.
   if (kind === "signal" && out.source === undefined) out.source = "";
+  if (kind === "shared") out.signal = shared.signal;
   return out as Span;
 }
 
@@ -297,19 +317,15 @@ export function resolvePiece(patch: SpanPatch, shared: Span): Span {
  * into it.
  */
 export function patchOf(view: Span, shared: Span, was: SpanPatch): SpanPatch {
-  const kind: PieceKind = view.gap
-    ? "gap"
-    : "text" in view
-      ? "text"
-      : "signal" in view
-        ? "stored"
-        : "signal";
+  const kind = viewKind(view, shared);
   const out: SpanPatch = {};
   const write = out as Record<string, unknown>;
   for (const key of OWN) {
     const v = view[key];
     if (key === "text" ? "text" in view : v !== undefined) write[key] = v;
   }
+  // The switch's own stored signal is not written: the case takes it.
+  if (kind === "shared") delete write.signal;
   // What this kind of piece would take if it set nothing.
   const base = resolvePiece(
     kind === "gap"
@@ -349,25 +365,6 @@ export function patchOf(view: Span, shared: Span, was: SpanPatch): SpanPatch {
   // A source left as the switch's is not written. An empty one never is.
   if (write.source === "") delete write.source;
   return out;
-}
-
-/**
- * Whether a case piece takes `key` from its switch rather than setting it,
- * which is what greys its control out.
- */
-export function inherits(view: Span, patch: SpanPatch, shared: Span, key: string): boolean {
-  const kind = view.gap ? "gap" : "text" in view ? "text" : "signal";
-  if (key === "reads" || key === "conversions") {
-    return (
-      kind === "signal" &&
-      patch.reads === undefined &&
-      patch.conversions === undefined &&
-      (shared.reads !== undefined || shared.conversions !== undefined)
-    );
-  }
-  if (!(SHARED as readonly string[]).includes(key)) return false;
-  const k = key as SharedKey;
-  return patch[k] === undefined && takes(kind, k) && shared[k] !== undefined;
 }
 
 /** The positions a case key claims, asked one at a time. `else` claims none itself. */
@@ -412,6 +409,29 @@ export function caseKeys(span: Span): string[] {
     if (b.trim() === "else") return -1;
     return a.localeCompare(b);
   });
+}
+
+/**
+ * Move everything a switch shares into its cases, so each case says the
+ * whole of what it draws. The editor offers nothing shared, so a switch
+ * written sharing something, by hand or by an earlier editor, is opened this
+ * way and draws exactly as it did. True when anything moved.
+ */
+export function foldShared(span: Span): boolean {
+  const shares = SHARED.some((k) => span[k] !== undefined) || span.signal !== undefined;
+  if (!shares) return false;
+  const own: Span = { ...span };
+  for (const key of SHARED) delete own[key];
+  delete own.signal;
+  const cases: Record<string, SpanPatch | SpanPatch[]> = {};
+  for (const [key, written] of Object.entries(span.cases ?? {})) {
+    const pieces = patchesOf(written).map((p) => patchOf(resolvePiece(p, span), own, p));
+    cases[key] = Array.isArray(written) ? pieces : (pieces[0] ?? {});
+  }
+  for (const key of SHARED) delete span[key];
+  delete span.signal;
+  span.cases = cases;
+  return true;
 }
 
 /** The pieces one case of a switch draws. */

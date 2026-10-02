@@ -604,8 +604,8 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
     const text = el("div", { class: "grow" });
     if (known) {
       text.append(
-        el("span", { class: "desc" }, `Matches ${target}${where}`),
-        el("span", { class: "sub" }, el("span", { class: "test" }, "follows it")),
+        el("span", { class: "desc" }, `${target}${where}`),
+        el("span", { class: "sub" }, el("span", { class: "test" }, "lit the same as that lamp")),
       );
     } else {
       text.append(
@@ -662,7 +662,7 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
     const text = el("div", { class: "grow" });
     if (chosen) {
       text.append(
-        el("span", { class: "desc" }, `Lights by ${chosen.name}`),
+        el("span", { class: "desc" }, chosen.name),
         el(
           "span",
           { class: "sub" },
@@ -750,13 +750,14 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
   }
 
   /**
-   * Steady or flashing, at the end of a block of conditions. On a stored
-   * signal's blocks it is the flash of every lamp lit by the signal.
+   * As DCS shows it or flashing, at the end of a block of conditions. On a
+   * stored signal's blocks it is the flash of every lamp lit by the signal.
+   * No flash is not "steady": the lamp still follows a signal DCS flashes.
    */
   function flashRow(holder: { blink?: BlinkRate }): HTMLElement {
     const pick = el("select", { class: "test" });
     pick.append(
-      el("option", { value: "" }, "steady"),
+      el("option", { value: "" }, "as DCS shows it"),
       el("option", { value: "slow" }, "flashing slowly, twice a second"),
       el("option", { value: "fast" }, "flashing fast, three times a second"),
     );
@@ -788,13 +789,6 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
     // which one is in force.
     if (binding.always) {
       host.append(alwaysRow());
-      const swap = el("button", { class: "add", type: "button" }, "Use a signal instead");
-      swap.addEventListener("click", () => {
-        binding.always = false;
-        opts.onCommit();
-        addCondition({ conditions: binding.conditions });
-      });
-      host.append(swap);
       appendFooter();
       return;
     }

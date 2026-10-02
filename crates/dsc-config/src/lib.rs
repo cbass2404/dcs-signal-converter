@@ -270,6 +270,8 @@ pub enum Error {
     StoredWithoutTerms(String),
     #[error("the shared result {0:?} has a part with no signal chosen yet; pick one or take the part out")]
     StoredTermUnfinished(String),
+    #[error("the shared result {0:?} has a symbol part with {1:?} in it; a symbol part takes only digits, '.', '-' and '+', since words belong to the field drawing it")]
+    StoredTermNotNumber(String, String),
     #[error("the shared result {0:?} gives a conversion a colour or size; how it draws belongs to the field drawing it, as a band")]
     StoredTermStyled(String),
     #[error("{0:?} has both parts and lamp conditions; it is a shared result or shared conditions, not both")]
@@ -3245,6 +3247,17 @@ impl StoredSignal {
             {
                 out.push(Error::StoredTermStyled(name.clone()));
             }
+            if term.is_text() {
+                let odd: String = span
+                    .text
+                    .chars()
+                    .filter(|c| !stored::is_number_symbol(*c))
+                    .collect();
+                if !odd.is_empty() {
+                    out.push(Error::StoredTermNotNumber(name.clone(), odd));
+                }
+                continue;
+            }
             if span.source.is_empty() {
                 if !unfinished {
                     unfinished = true;
@@ -3295,6 +3308,10 @@ impl StoredSignal {
                 total += span.width;
                 continue;
             }
+            if term.is_text() {
+                total += span.text.chars().count();
+                continue;
+            }
             let Some(output) = module.signal(&span.source).and_then(|s| s.primary()) else {
                 continue;
             };
@@ -3305,11 +3322,34 @@ impl StoredSignal {
     }
 
     /// How close a reading has to be to a band's edge to count as inside it:
-    /// half the last place the last term shows, which is where the
-    /// characters end.
+    /// half the last place it shows, which is where the characters end.
+    ///
+    /// The places are counted from the last decimal point: a term's own, or
+    /// one typed as a part between two drums, after which every digit a later
+    /// term shows is one more place. A term that may grow is counted at the
+    /// fewest it shows, so a band is never held to finer than it can be.
     pub fn tolerance(&self) -> f64 {
-        let places = self.terms.last().map_or(0, |t| t.0.decimals);
-        10f64.powi(-i32::from(places)) / 2.0
+        let mut places: Option<usize> = None;
+        for term in &self.terms {
+            let span = &term.0;
+            if term.is_text() {
+                places = match span.text.rsplit_once('.') {
+                    Some((_, after)) => Some(after.chars().count()),
+                    None => places.map(|p| p + span.text.chars().count()),
+                };
+            } else if span.decimals > 0 {
+                places = Some(usize::from(span.decimals));
+            } else if let Some(p) = places {
+                let shown = if span.width > 0 {
+                    span.width
+                } else {
+                    usize::from(span.digits).max(1)
+                };
+                places = Some(p + shown);
+            }
+        }
+        let places = i32::try_from(places.unwrap_or(0)).unwrap_or(i32::MAX);
+        10f64.powi(-places) / 2.0
     }
 }
 

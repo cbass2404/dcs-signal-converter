@@ -35,9 +35,9 @@ import { noteEditor } from "./note";
 import { signalsChanged, whereShown } from "./pages";
 import type { PageBook } from "./pages";
 import { termControls } from "./readout";
-import { isLampSignal } from "./stored";
+import { isLampSignal, isSymbolPart, NUMBER_SYMBOLS, partName } from "./stored";
 import { infoIcon } from "./typeahead";
-import type { Binding, Led, Page, Profile, SignalView, Span, StoredSignal } from "./types";
+import type { Binding, Led, Page, Profile, SignalView, Span, StoredSignal, Term } from "./types";
 
 function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -57,8 +57,10 @@ export interface SignalContext {
   signals: SignalView[];
   /** Say something that happened, such as a save. */
   tell: (text: string) => void;
-  /** Say something failed. */
-  fail: (where: string, e: unknown) => void;
+  /** Say something failed, kept under `key` until it works. */
+  fail: (where: string, e: unknown, key?: string) => void;
+  /** It worked, so the failure kept under `key` goes. */
+  cleared: (key: string) => void;
   /** The library changed, so the profile's pages want checking again. */
   changed: () => void;
   /** The profile open here, whose lamps may light by a signal. */
@@ -194,9 +196,7 @@ export function signalSection(
           ),
         ),
       ];
-      const sources = w.lamp
-        ? tested
-        : w.signal.terms.map((t) => t.source || "a part with no signal yet");
+      const sources = w.lamp ? tested : w.signal.terms.map(partName);
       const reads = w.lamp ? `tests ${sources.join(", ")}` : `reads ${sources.join(", then ")}`;
       const edit = iconButton("pencil", "\u270E", "Edit this signal", () => {
         opened.add(w.signal.id);
@@ -259,8 +259,10 @@ export function signalSection(
                   "signal and shapes it the way a reading does, and the parts are " +
                   "laid side by side, so three fuel drums, each rounded down and " +
                   "wrapped at 10, read as one number. Rounding each drum on its own " +
-                  "is what stops a drum that is rolling counting twice. Words and " +
-                  "colours belong to the piece that draws it.",
+                  "is what stops a drum that is rolling counting twice. A symbol " +
+                  "part lays down a point or a sign between them, so a radio's " +
+                  "30 and 50 read 30.50. Words and colours belong to the piece " +
+                  "that draws it.",
               ),
         ),
       );
@@ -280,6 +282,26 @@ export function signalSection(
           noteEditor(w.signal, "signal", edited, true),
         );
       }
+
+      // A point or a sign typed in. Anything else is turned away as it is
+      // typed, so the result stays a number.
+      const symbolControls = (term: Term): HTMLElement[] => {
+        const box = el("input", {
+          type: "text",
+          class: "span-text",
+          value: term.text ?? "",
+          placeholder: ".",
+        });
+        box.addEventListener("input", () => {
+          if (!NUMBER_SYMBOLS.test(box.value)) box.value = term.text ?? "";
+          term.text = box.value;
+          edited();
+        });
+        return [
+          el("label", { class: "meta" }, "symbols ", box),
+          el("span", { class: "meta" }, "digits, . - or +"),
+        ];
+      };
 
       const chain = el("div", { class: "chain" });
       w.signal.terms.forEach((term, i) => {
@@ -318,21 +340,28 @@ export function signalSection(
             el(
               "div",
               { class: "span-body" },
-              ...termControls(span, ctx.signals, module, edited, draw),
+              ...(isSymbolPart(term)
+                ? symbolControls(term)
+                : termControls(span, ctx.signals, module, edited, draw)),
             ),
           ),
         );
       });
-      const more = el("button", { class: "add small" }, "+ a part");
+      const more = el("button", { class: "add small" }, "+ a reading");
       more.addEventListener("click", () => {
         w.signal.terms.push({ source: "" });
+        draw();
+      });
+      const symbol = el("button", { class: "add small" }, "+ a symbol");
+      symbol.addEventListener("click", () => {
+        w.signal.terms.push({ text: "." });
         draw();
       });
       // Last, after the parts, so it reads as the summary of what they make.
       if (!w.lamp) {
         body.append(
           chain,
-          el("div", { class: "chain-add" }, more),
+          el("div", { class: "chain-add" }, more, symbol),
           noteEditor(w.signal, "signal", edited, true),
         );
       }
@@ -342,6 +371,7 @@ export function signalSection(
       save.addEventListener("click", () => {
         void saveSignal(module, w.signal).then(
           (view) => {
+            ctx.cleared(`signal ${w.signal.id}`);
             w.baseline = JSON.stringify(w.signal);
             w.fresh = false;
             opened.delete(w.signal.id);
@@ -352,7 +382,7 @@ export function signalSection(
               `Saved ${w.signal.name.trim()}. ${lamp ? "Every lamp lit by it follows" : "Every page drawing it draws"} the change.`,
             );
           },
-          (e: unknown) => ctx.fail("Saving the signal", e),
+          (e: unknown) => ctx.fail("Saving the signal", e, `signal ${w.signal.id}`),
         );
       });
       undo.onclick = (): void => {

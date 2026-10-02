@@ -1,0 +1,18 @@
+{
+  "module": "MH-60R",
+  "pages": [],
+  "signals": [
+    {
+      "id": "6ppf0i",
+      "name": "Master Caution Light",
+      "conditions": [
+        {
+          "source": "MST_CAUTION",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
+    }
+  ]
+}

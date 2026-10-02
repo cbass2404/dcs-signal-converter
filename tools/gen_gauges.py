@@ -88,7 +88,7 @@ NOT_COVERED = {
     "I-16": ("I-16", "I-16", COMPILED),
     "JF-17": ("JF-17", "JF-17", COMPILED),
     "Mirage-F1": ("Mirage F1", "MirageF1", COMPILED),
-    "uh60l": ("UH-60L community mod", "MH-60R", "DCS-BIOS runs it under the MH-60R module, which sends no gauges"),
+    "uh60l": ("UH-60L community mod", "MH-60R", "DCS-BIOS runs it under the MH-60R module, which sends its switches and knobs but no gauge needles"),
     "F-100D": ("F-100D", None, "DCS-BIOS has no module for it"),
     "La-7": ("La-7", None, "DCS-BIOS has no module for it"),
     "F-15C": ("F-15C", "FC3", "DCS-BIOS sends Flaming Cliffs aircraft's readings in real units, so they need no rows"),
@@ -576,7 +576,8 @@ def collect(roots, bios_dir):
             found.append({"aircraft": title, "bios_module": bios_name, "gauges": gauges})
         else:
             empty.append(title)
-    not_covered = [{"aircraft": title, "why": why} for folder, (title, _, why) in NOT_COVERED.items()
+    not_covered = [{"aircraft": title, "bios_module": bios, "why": why}
+                   for folder, (title, bios, why) in NOT_COVERED.items()
                    if folder in have]
     # DCS-BIOS modules for aircraft not installed where this ran, so not read.
     known = {BIOS_FILES.get(b, b) for _, b in MODULES.values()} | {b for _, b, _ in NOT_COVERED.values() if b}

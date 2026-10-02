@@ -127,8 +127,10 @@ export interface PageContext {
   nameOf: (key: string) => string;
   /** Say something that happened, such as a save. */
   tell: (text: string) => void;
-  /** Say something failed. */
-  fail: (where: string, e: unknown) => void;
+  /** Say something failed, kept under `key` until it works. */
+  fail: (where: string, e: unknown, key?: string) => void;
+  /** It worked, so the failure kept under `key` goes. */
+  cleared: (key: string) => void;
 }
 
 export function pageBook(module: string, file: string, view: PagesView): PageBook {
@@ -500,9 +502,7 @@ export function pageSection(device: Device, display: DisplayInfo, ctx: PageConte
   };
 
   const close = (): void => {
-    book.editing.delete(device.key);
-    book.problems.delete(device.key);
-    book.problemViews.delete(device.key);
+    drop(book, device.key);
     redrawAll(book);
     ctx.pageChanged();
   };
@@ -567,10 +567,11 @@ export function pageSection(device: Device, display: DisplayInfo, ctx: PageConte
         try {
           page.name = page.name.trim();
           update(book, await savePage(ctx.profile, page, device.key));
+          ctx.cleared(`page ${page.id}`);
           ctx.tell(`Saved page ${page.name}.`);
           saved(page);
         } catch (err) {
-          ctx.fail("Saving the page", err);
+          ctx.fail("Saving the page", err, `page ${page.id}`);
         }
       })();
     });
@@ -584,10 +585,11 @@ export function pageSection(device: Device, display: DisplayInfo, ctx: PageConte
           const id = await newPageId(freshIds(book));
           const copy: Page = { ...structuredClone(page), id, name: freeName(book, page.name) };
           update(book, await savePage(ctx.profile, copy, device.key));
+          ctx.cleared(`page ${page.id}`);
           ctx.tell(`Saved as a new page, ${copy.name}. Pick it in a slot to show it.`);
           saved(copy);
         } catch (err) {
-          ctx.fail("Saving the page", err);
+          ctx.fail("Saving the page", err, `page ${page.id}`);
         }
       })();
     });
@@ -697,6 +699,41 @@ export function showPageProblems(
 ): void {
   book.problems = new Map(asked.map((w, i) => [w.device, problems[i] ?? []]));
   for (const view of book.problemViews.values()) view();
+}
+
+/** Forget the editor open on `device`, without redrawing. */
+function drop(book: PageBook, device: string): void {
+  book.editing.delete(device);
+  book.problems.delete(device);
+  book.problemViews.delete(device);
+}
+
+/**
+ * Close the page editors open on `devices`, for a screen section being
+ * collapsed. An editor with nothing unsaved closes without a word; otherwise
+ * one question covers every page that would lose changes. Answers whether
+ * they were closed. The caller rechecks, since the pages checked changed.
+ */
+export async function closeEditors(book: PageBook, devices: string[]): Promise<boolean> {
+  const open = devices.filter((d) => book.editing.has(d));
+  if (open.length === 0) return true;
+  const losing = open
+    .map((d) => book.editing.get(d))
+    .filter((e): e is Editing => e !== undefined && unsaved(e))
+    .map((e) => `- ${e.page.name.trim() || "an unnamed page"}`);
+  if (
+    losing.length > 0 &&
+    !(await confirmAction(
+      "Close the page editor with unsaved changes?" +
+        `\n\nContinuing will discard the unsaved changes to:\n${losing.join("\n")}`,
+      "Continue",
+      losing,
+    ))
+  )
+    return false;
+  for (const d of open) drop(book, d);
+  redrawAll(book);
+  return true;
 }
 
 /** The ids of pages open here and not saved yet, which a new id must avoid. */

@@ -604,8 +604,8 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
     const text = el("div", { class: "grow" });
     if (known) {
       text.append(
-        el("span", { class: "desc" }, `Matches ${target}${where}`),
-        el("span", { class: "sub" }, el("span", { class: "test" }, "follows it")),
+        el("span", { class: "desc" }, `${target}${where}`),
+        el("span", { class: "sub" }, el("span", { class: "test" }, "lit the same as that lamp")),
       );
     } else {
       text.append(
@@ -789,13 +789,6 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
     // which one is in force.
     if (binding.always) {
       host.append(alwaysRow());
-      const swap = el("button", { class: "add", type: "button" }, "Use a signal instead");
-      swap.addEventListener("click", () => {
-        binding.always = false;
-        opts.onCommit();
-        addCondition({ conditions: binding.conditions });
-      });
-      host.append(swap);
       appendFooter();
       return;
     }

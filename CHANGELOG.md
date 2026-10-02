@@ -40,6 +40,10 @@ unless this says what moved.
   the aircraft.
 - **A lamp on shared conditions shows just their name,** with "shared
   conditions" under it, instead of "Lights by" and the name.
+- **A lamp that follows another shows just that lamp,** with "lit the
+  same as that lamp" under it, instead of "Matches" and "follows it".
+- **An always on lamp no longer has "Use a signal instead".** Clear it
+  with its × and pick any of the choices, as on every other lamp.
 
 ### Fixes
 

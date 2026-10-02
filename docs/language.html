@@ -1179,14 +1179,15 @@
               </p>
               <p>
                 Each group ends with <span class="ed">While this holds, the lamp is</span>:
-                <span class="ed">as DCS shows it</span>, <span class="ed">flashing slowly</span>
-                (twice a second) or <span class="ed">flashing fast</span> (three times a second).
-                As DCS shows it adds nothing: the lamp follows its signal, so it flashes wherever
-                the cockpit lamp does. Every flash is lit for exactly half its time, and every lamp
-                flashing at one rate flashes in step. A flashing group in its dark half counts as
-                not holding, so an unflashed group that also holds keeps the lamp lit. Flash only a
-                lamp DCS keeps steady: where the cockpit lamp already flashes, its signal does too
-                and the lamp follows it, and a flash on top beats against it.
+                <span class="ed">as DCS shows it</span>,
+                <span class="ed">flashing slowly</span> (twice a second) or
+                <span class="ed">flashing fast</span> (three times a second). As DCS shows it adds
+                nothing: the lamp follows its signal, so it flashes wherever the cockpit lamp does.
+                Every flash is lit for exactly half its time, and every lamp flashing at one rate
+                flashes in step. A flashing group in its dark half counts as not holding, so an
+                unflashed group that also holds keeps the lamp lit. Flash only a lamp DCS keeps
+                steady: where the cockpit lamp already flashes, its signal does too and the lamp
+                follows it, and a flash on top beats against it.
               </p>
             </div>
 
@@ -1747,7 +1748,9 @@
                       ends included. Each may take a colour, small text, or inverse. Tick
                       <span class="ed">the reading</span> to keep the number and only colour it,
                       such as a radar altimeter turning red below 50:
-                      <code>{"reading": true, "colour": "red"}</code>.
+                      <code>{"reading": true, "colour": "red"}</code>. A blank drawn inverse is a
+                      solid block, so steps one blank wider each draw a bar: the Huey's ADF signal
+                      strength, red to green.
                     </td>
                   </tr>
                   <tr>
@@ -2164,8 +2167,9 @@
                 Three kinds of screen take pages. The MCDU and the PFPs share a
                 <strong>text grid</strong> that draws from a font, in colour and in two sizes. The
                 UFC is a <strong>segment display</strong>, and the ICP's DED a
-                <strong>pixel screen</strong> that can draw inverse. Some settings mean something on
-                only one of them, and the check refuses them elsewhere rather than drawing nothing.
+                <strong>pixel screen</strong>. Both the text grid and the DED draw inverse. Some
+                settings mean something on only one of them, and the check refuses them elsewhere
+                rather than drawing nothing.
               </p>
             </div>
             <div class="cards">
@@ -2223,7 +2227,7 @@
                   piece that way, typed text or a reading. <code>format</code> names a second text
                   signal marking which cells, as the F-16 DED sends <code>DED_L1_FORMAT</code>.
                 </p>
-                <p class="use"><b>Glass that draws inverse</b>, which today is the DED.</p>
+                <p class="use"><b>Glass that draws inverse</b>: the MCDU, the PFPs and the DED.</p>
               </div>
               <div class="card">
                 <h3>Seat</h3>
@@ -3277,6 +3281,25 @@
               ["5", "BYP", ""],
             ],
           },
+          // Blanks drawn inverse are solid blocks, so each step one wider
+          // draws a bar. The field is 5 wide, so the bar grows from the left.
+          "Signal strength as a bar (UH-1H)": {
+            id: "ADF_SIGNAL",
+            max: 65535,
+            raw: 39321,
+            reads: [0, 5],
+            dp: 0,
+            round: "nearest",
+            width: 5,
+            aliases: [
+              ["0", "[", "red"],
+              ["1", " ", "red", false, false, true],
+              ["2", "  ", "amber", false, false, true],
+              ["3", "   ", "amber", false, false, true],
+              ["4", "    ", "green", false, false, true],
+              ["5", "     ", "green", false, false, true],
+            ],
+          },
         };
         let cfg;
         const converted = () => !!(cfg.reads || cfg.stretches);
@@ -3406,6 +3429,9 @@
             const small = h("input", { type: "checkbox", "aria-label": "small" });
             small.checked = !!a[4];
             small.addEventListener("change", () => ((a[4] = small.checked), draw()));
+            const inv = h("input", { type: "checkbox", "aria-label": "inverse" });
+            inv.checked = !!a[5];
+            inv.addEventListener("change", () => ((a[5] = inv.checked), draw()));
             host.append(
               h(
                 "div",
@@ -3416,6 +3442,7 @@
                 h("label", {}, shows, " the reading"),
                 col,
                 h("label", {}, small, " small"),
+                h("label", {}, inv, " inverse"),
                 h(
                   "button",
                   {
@@ -3432,7 +3459,7 @@
           draw();
         }
         $("r-addalias").addEventListener("click", () => {
-          cfg.aliases.push(["", "", "", false, false]);
+          cfg.aliases.push(["", "", "", false, false, false]);
           aliases();
         });
         // A line becomes stretches the moment a second one is wanted: the
@@ -3612,16 +3639,18 @@
           pipe.append(
             step(
               "Screen draws",
-              `"${drawn}"${stretch && stretch[4] && !(hit && hit.a[2]) ? ` in ${stretch[4]}, the stretch's colour` : ""}`,
+              `"${drawn}"${hit && hit.a[5] ? ", inverse" : ""}${stretch && stretch[4] && !(hit && hit.a[2]) ? ` in ${stretch[4]}, the stretch's colour` : ""}`,
             ),
           );
 
           const small = !!(hit && hit.a[4]);
-          const glyphs = fitTo(
-            [...drawn].map((ch) => ({ ch, colour, small })),
-            8,
-            "right",
-          );
+          const inv = !!(hit && hit.a[5]);
+          const chars = [...drawn].map((ch) => ({ ch, colour, small, inv }));
+          // A piece with a width is padded to it from the left, as the
+          // engine does, and sits at the start of the line.
+          const glyphs = cfg.width
+            ? fitTo(fitTo(chars, cfg.width, "left"), 8, "left")
+            : fitTo(chars, 8, "right");
           paint($("r-cells"), glyphs, 8);
 
           const span = { source: cfg.id };
@@ -3638,14 +3667,16 @@
             if (every > 0) span.wrap = every;
             if (signed && cfg.abs) span.abs = true;
           }
+          if (cfg.width) span.width = cfg.width;
           const va = {};
-          for (const [b, t, c, r, s] of cfg.aliases) {
+          for (const [b, t, c, r, s, i] of cfg.aliases) {
             if (!b.trim()) continue;
             const drawn = r ? {} : { text: t };
             if (c) drawn.colour = c;
             if (s) drawn.small = true;
+            if (i) drawn.inverse = true;
             if (r) drawn.reading = true;
-            va[b.trim()] = !r && !c && !s ? t : drawn;
+            va[b.trim()] = !r && !c && !s && !i ? t : drawn;
           }
           if (Object.keys(va).length) span.value_aliases = va;
           span.colour = "amber";
@@ -4247,7 +4278,7 @@
             "Inverse",
             "inverse, format",
             "Piece",
-            "A filled box with the character knocked out, on glass that draws it: the DED. format names a signal marking which cells.",
+            "A filled box with the character knocked out, on glass that draws it: the MCDU, the PFPs and the DED. format names a signal marking which cells.",
             "glass",
           ],
           [

@@ -1092,7 +1092,7 @@ laid out across the run the same way as `source`, and a cell whose mark is `i`
 is drawn as a filled box with the character knocked out. The F-16 DED is the
 case: DCS-BIOS sends each line as `DED_Ln` and its highlighting as
 `DED_Ln_FORMAT`. Only a display that can draw inverse accepts it, which today
-is the ICP's DED, and any other mark draws normally.
+is the MCDU, the PFPs and the ICP's DED, and any other mark draws normally.
 
 ### Content: what fills a field
 

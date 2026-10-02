@@ -42,9 +42,10 @@ unless this says what moved.
   - **Orion Throttle Base II:** A/A lights with master arm ARMED and the
     7.62 guns selected, A/G with master arm ARMED, 2.75 rockets selected
     and a rocket pair set.
-  - **MCDU page, CDU Radios:** the intercom mode, then UHF, VHF AM, VHF
-    FM, VHF NAV and ADF, each with its frequency, power and volume. UHF
-    adds its preset, and the ADF its band and a signal strength bar.
+  - **MCDU page, CDU Radios:** the transmit selector, which picks the
+    radio you talk on, then UHF, VHF AM, VHF FM, VHF NAV and ADF, each
+    with its frequency, power and volume. UHF adds its preset, and the ADF
+    its band and a signal strength bar.
   - **No UFC or ICP pages yet.** Their slots hold empty pages.
 
 - **F-16C: the fuel totalizer on the CDU Flight page is coloured by

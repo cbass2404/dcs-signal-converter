@@ -36,6 +36,7 @@ function el<K extends keyof HTMLElementTagNameMap>(
  * carry eighteen lamps and a textarea on each would push the ones with
  * conditions off the screen. Opening it writes nothing: an empty note is not
  * a note, and storing one would mark the profile unsaved for a stray click.
+ * Left empty, it closes back to the button once focus moves off the note.
  */
 export function noteEditor(
   row: Annotated,
@@ -92,6 +93,16 @@ export function noteEditor(
       box,
     );
   };
+
+  // Focus moving to the note's own info icon is still on the note, so only
+  // focus leaving it altogether closes an empty box.
+  wrap.addEventListener("focusout", (e) => {
+    const box = wrap.querySelector("textarea");
+    if (always || !box || box.value.trim() !== "") return;
+    if (wrap.contains(e.relatedTarget as Node | null)) return;
+    open = false;
+    draw();
+  });
 
   draw();
   return wrap;

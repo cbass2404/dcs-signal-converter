@@ -50,3 +50,6 @@ unless this says what moved.
 - **Lamp rows see shared conditions as soon as they change.** A lamp lit
   by shared conditions now shows a renamed set by its new name, and a new
   set is offered in its menu, without reopening the profile.
+- **An empty note closes again.** Opened with "Add a note" and left
+  empty, the box goes back to the button once you click elsewhere,
+  instead of staying open until the profile is reopened.

@@ -50,6 +50,10 @@ unless this says what moved.
 - **A switch offers an else case only while a position has none.** Once
   every position has a case, else could never draw, so it is no longer
   offered.
+- **A shared result can have symbol parts.** Beside its readings, a
+  part can be digits, a point or a sign, laid down as typed: a radio's
+  megahertz, a ".", then its hundredths at two digits read 30.50. The
+  result stays a number, so bands still match it.
 - **An always on lamp no longer has "Use a signal instead".** Clear it
   with its × and pick any of the choices, as on every other lamp.
 

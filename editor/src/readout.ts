@@ -38,7 +38,7 @@ import type { SpanKind } from "./content";
 import { cautionSlot, flagSlot } from "./flags";
 import { gaugeTable, gaugeTables, matchingTable, tableRows } from "./gauges";
 import { noteEditor } from "./note";
-import { isLampSignal, storedSignal, storedSignals } from "./stored";
+import { isLampSignal, partName, storedSignal, storedSignals } from "./stored";
 import { infoIcon, signalPicker } from "./typeahead";
 import {
   aliasColour,
@@ -3468,7 +3468,7 @@ function sharedReads(id: string): HTMLElement {
   if (id === "") return el("span", { class: "bad" }, "A shared result nobody has chosen yet");
   const shared = storedSignal(id);
   if (!shared) return el("span", { class: "bad" }, `${id} is not a shared result here`);
-  const parts = shared.terms.map((t) => t.source || "a part with no signal yet");
+  const parts = shared.terms.map(partName);
   return el(
     "span",
     { class: "sub" },

@@ -1780,6 +1780,13 @@ stored name for both. Kept in the module's page file beside its pages:
   drums would count that twice; settling each one on its own first, rounded
   down and wrapped, is what keeps them agreeing. One term is the plain case:
   a reading named so several pages can draw it.
+- **A symbol part reads nothing.** A term with `text` instead of `source` is
+  laid down as it is: `{ "text": "." }` between a radio's megahertz and its
+  hundredths, the hundredths with `"digits": 2`, reads `30.50` and `30.05`.
+  It takes only digits, `.`, `-` and `+`, so the result stays a number its
+  bands can match; anything else is refused, since words are the piece's.
+  Places for a band's edge are counted from the last point, typed or a
+  term's own.
 - **The number is the signal's, the look is the piece's.** A piece draws one
   with `signal`, its id, instead of `text` or `source`. It takes bands,
   colour, small, inverse and a box; anything that shapes a number on it is
@@ -1793,8 +1800,9 @@ stored name for both. Kept in the module's page file beside its pages:
   address moves, as it does for its own signals. A field is checked for every
   term's signal as if it read it itself: one this DCS-BIOS lacks is flagged
   and the field turned off.
-- **Checked as a reading is.** A term with no signal chosen and a colour or
-  size on a conversion are refused; a range on characters is a caution.
+- **Checked as a reading is.** A term with no signal chosen, a symbol part
+  with anything but a number's symbols, and a colour or size on a conversion
+  are refused; a range on characters is a caution.
   Each signal a profile's fields draw is checked once when the profile loads.
   A piece naming a signal the page file does not have is refused.
 - **Saved on its own**, like a page, from the **Stored Signals** section at

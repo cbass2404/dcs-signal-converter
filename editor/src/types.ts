@@ -494,6 +494,7 @@ export interface PageUse {
  */
 export type Term = Pick<
   Span,
+  | "text"
   | "source"
   | "reads"
   | "conversions"

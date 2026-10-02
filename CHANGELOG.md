@@ -42,13 +42,11 @@ unless this says what moved.
   conditions" under it, instead of "Lights by" and the name.
 - **A lamp that follows another shows just that lamp,** with "lit the
   same as that lamp" under it, instead of "Matches" and "follows it".
-- **A switch can show words for its own positions.** Set "each case
-  shows" to "words for its positions" and the switch reads what decides
-  it, no second signal needed: give each position a word, such as OFF,
-  ADF and ANT, and a case only says what differs, such as a colour. It
-  works for a switch decided by a shared result too, such as LOW below
-  1000 lb of fuel. A selector's words start from its positions' names,
-  and the editor asks for them while there are none.
+- **A switch no longer has a reading shared by its cases.** Each case
+  builds what it draws from its own pieces, a reading, a shared result or
+  text, so the reading under the switch is gone. A switch that had one
+  opens with it copied into each case and draws the same. Its colour is
+  still shared.
 - **An always on lamp no longer has "Use a signal instead".** Clear it
   with its × and pick any of the choices, as on every other lamp.
 

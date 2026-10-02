@@ -102,7 +102,7 @@ export function ruleFromDivider(readout: Readout): void {
 export function newSpan(kind: SpanKind): Span {
   if (kind === "rule") return { gap: true, rule: true };
   if (kind === "gap") return { gap: true };
-  if (kind === "switch") return { switch: "", source: "", cases: {} };
+  if (kind === "switch") return { switch: "", cases: {} };
   if (kind === "stored") return { signal: "" };
   return kind === "text" ? { text: "" } : { source: "" };
 }
@@ -218,9 +218,6 @@ const CHOSEN_BY_ABSENCE = new Set<string>([
   "format",
   "source",
 ]);
-
-/** The options a switch shares that a case can turn off with its toggle. */
-export const SWITCHABLE_OFF = ["wrap", "digits", "value_aliases"] as const;
 
 /**
  * What a case piece can be. A stored signal is drawn, not shaped, so it takes
@@ -431,6 +428,30 @@ export function caseKeys(span: Span): string[] {
     if (b.trim() === "else") return -1;
     return a.localeCompare(b);
   });
+}
+
+/**
+ * Move what a switch shares about reading a signal into its cases, so each
+ * case says the whole of what it draws. The editor offers no shared reading,
+ * so a switch written with one, by hand or by an earlier editor, is opened
+ * this way and draws exactly as it did. Styling stays on the switch, where
+ * its style row edits it. True when anything moved.
+ */
+export function foldShared(span: Span): boolean {
+  const shares = SHAPING.some((k) => span[k] !== undefined) || span.signal !== undefined;
+  if (!shares) return false;
+  const own: Span = { ...span };
+  for (const key of SHAPING) delete own[key];
+  delete own.signal;
+  const cases: Record<string, SpanPatch | SpanPatch[]> = {};
+  for (const [key, written] of Object.entries(span.cases ?? {})) {
+    const pieces = patchesOf(written).map((p) => patchOf(resolvePiece(p, span), own, p));
+    cases[key] = Array.isArray(written) ? pieces : (pieces[0] ?? {});
+  }
+  for (const key of SHAPING) delete span[key];
+  delete span.signal;
+  span.cases = cases;
+  return true;
 }
 
 /** The pieces one case of a switch draws. */

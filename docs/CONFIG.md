@@ -1351,12 +1351,6 @@ needed, and a case only says what differs, such as a colour:
 }
 ```
 
-In the editor this is "each case shows words for its positions". It starts
-from the catalogue's names for the positions, and asks for words while
-there are none, since without them each case draws the bare position. With
-`switch_reads` the words are written in the dial's units, because the
-editor gives the switch the same `reads`.
-
 **Everything else on the switch is shared by its cases.** A case piece that
 leaves an option unset takes the switch's, so the source, the decimals and the
 colour are written once and each case says only what is its own. A case
@@ -1369,12 +1363,15 @@ draws in.
 - `reads` and `conversions` are one choice made two ways, so a case that
   makes it either way, or clears it, takes neither from the switch.
 - `null` clears an option for one case: `"wrap": null` draws that case with no
-  wrap where every other case wraps at 360. In the editor a shared wrap,
-  padding or set of words is turned off by a checkbox under the case, and
-  emptying the box hands the option back to the switch instead.
+  wrap where every other case wraps at 360.
 - Shared options stay on the switch when the file is saved. They are never
   copied into the cases, so changing one later changes every case that did
   not set its own.
+
+The editor shares only `colour`, `small` and `inverse`: each case builds
+what it draws from pieces of its own. A switch sharing anything else is
+opened with it copied into each case, which draws the same, and saved that
+way.
 
 A switch carries no `text`, `gap`, rule, label or `width` of its own, and is
 refused with one: those belong to a piece inside a case. A switch with no

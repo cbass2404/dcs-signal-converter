@@ -1880,11 +1880,9 @@
                 uneven dial, words, colours. Only one case draws at a time.
               </p>
               <p>
-                What every case has in common is set once, on the switch itself: the signal, the
-                decimals, the colour. A case only says what is different, and in the editor the
-                settings it takes from the switch are shown in grey. Change one to give that case
-                its own; empty it to take the switch's again. A wrap, padding or set of words the
-                switch shares can be turned <span class="ed">off</span> for one case.
+                Each case builds what it draws from the same pieces a field has: a reading, a shared
+                result, text or a gap. Only the switch's colour, size and inverse are shared, shown
+                in grey in each case until it picks its own.
               </p>
               <p>
                 A position no case names draws nothing, unless there is an
@@ -1900,10 +1898,8 @@
                 each a piece of text in its own colour.
               </p>
               <p>
-                A switch can also show <span class="ed">words for its positions</span>, with no
-                second signal at all. The switch reads its own selector, you give each position a
-                word, OFF, ADF, ANT, and each case draws the word for where the switch is. A case is
-                then only needed where a position looks different, such as OFF in amber.
+                A case can be just text, with no second signal at all: OFF in amber, ADF and ANT in
+                green.
               </p>
             </div>
 
@@ -2069,11 +2065,6 @@
                 the words a lamp uses: is exactly, is one of, is between,
                 <span class="ed">is at least</span>, <span class="ed">is at most</span>, or is
                 anything else.
-              </p>
-              <p>
-                It can show <span class="ed">words for its positions</span> too, with no second
-                signal: give the shared result's readings words, LOW up to 999 and FUEL from 1000,
-                and each case draws the word for where the result is.
               </p>
               <p>
                 <span class="ed">Shared conditions</span>, in their own section under Shared
@@ -3684,13 +3675,13 @@
             (at === 2 && amber ? ", in its own colour." : ", in the colour every case shares.");
           const cases = bands.map(([a, b], i) =>
             i === 2 && amber
-              ? `"${i}": { "reads": [${a}, ${b}], "colour": "amber" }`
-              : `"${i}": { "reads": [${a}, ${b}] }`,
+              ? `"${i}": { "source": "ADF_FREQ", "reads": [${a}, ${b}], "colour": "amber" }`
+              : `"${i}": { "source": "ADF_FREQ", "reads": [${a}, ${b}] }`,
           );
           $("s-json").textContent =
             `"content": [\n` +
             `  { "text": "ADF ", "small": true },\n` +
-            `  { "switch": "ADF_BAND", "source": "ADF_FREQ", "colour": "green",\n` +
+            `  { "switch": "ADF_BAND", "colour": "green",\n` +
             `    "cases": {\n      ${cases.join(",\n      ")}\n    } }\n]`;
         }
         draw();
@@ -4042,7 +4033,7 @@
             "Switch",
             "switch",
             "Piece",
-            "A piece whose reading another signal decides, such as an ADF needle read by band. Settings on the switch are shared by every case.",
+            "A piece whose reading another signal decides, such as an ADF needle read by band. Each case builds what it draws from pieces; the switch's colour is shared by every case.",
             "switches",
           ],
           [

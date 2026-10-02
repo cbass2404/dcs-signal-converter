@@ -597,7 +597,9 @@ async function showLibrary(): Promise<void> {
       : el(
           "span",
           { class: "meta", ...aircraft.title },
-          `${row.module} · ${aircraft.text} · ${row.bound} of ${row.total} lamps assigned`,
+          // The aircraft only: the DCS-BIOS module is nearly always one of
+          // them, and printing both repeated it.
+          `${aircraft.text || "no aircraft"} · ${row.bound} of ${row.total} lamps assigned`,
         );
 
     const actions = el("div", { class: "actions" });

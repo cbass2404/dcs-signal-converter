@@ -36,7 +36,7 @@ import {
 } from "./content";
 import type { SpanKind } from "./content";
 import { cautionSlot, flagSlot } from "./flags";
-import { gaugeTable, gaugeTables, matchingTable, tableRows } from "./gauges";
+import { fillFromGauge, gaugeNote, gaugeTables, matchingTable, tableRows } from "./gauges";
 import { noteEditor } from "./note";
 import { isLampSignal, isSymbolPart, partsSaid, storedSignal, storedSignals } from "./stored";
 import { infoIcon, signalPicker } from "./typeahead";
@@ -224,9 +224,9 @@ function namedPositions(signal: SignalView | undefined): Record<string, string> 
  *
  * A switch whose positions have names arrives aliased to them, ready to be
  * shortened. A full word is a needle's position rather than a quantity, and 0
- * to 65535 means nothing on a screen, so it arrives converted: by the gauge's
- * table where docs/gauges.json has one for it, or to a range the user then
- * sets from the dial. Anything else is a count or a selector whose value
+ * to 65535 means nothing on a screen, so it arrives converted the way the
+ * module's files say the gauge reads, or to a range the user then sets from
+ * the dial. Anything else is a count or a selector whose value
  * already is the number, and is shown as sent.
  */
 function startReading(span: Span, signal: SignalView | undefined, module: string): void {
@@ -243,13 +243,11 @@ function startReading(span: Span, signal: SignalView | undefined, module: string
 }
 
 /**
- * The conversion a needle starts from: its gauge's table where there is one,
- * since its marks are already worked out, and a plain range otherwise.
+ * The conversion a needle starts from: its gauge's rows or range where the
+ * module's files give one, and a plain range to set from the dial otherwise.
  */
 function startConverted(span: Span, signal: SignalView, module: string): void {
-  const table = gaugeTable(module, signal.id);
-  if (table) span.conversions = tableRows(table);
-  else span.reads = [0, 100];
+  if (!fillFromGauge(span, module, signal.id)) span.reads = [0, 100];
 }
 
 /**
@@ -314,9 +312,9 @@ function conversionRow(
   }
   select.value = positions ? "positions" : isConverted(span) ? "converted" : "sent";
   select.addEventListener("change", () => {
-    // Converting starts from the gauge's table where there is one. Otherwise
-    // from the signal's own range, which draws exactly what as sent did, so
-    // the choice changes nothing until a number is changed. Decimals mean
+    // Converting starts from the gauge's rows or range where there is one.
+    // Otherwise from the signal's own range, which draws exactly what as sent
+    // did, so the choice changes nothing until a number is changed. Decimals mean
     // nothing on a whole number sent as it is. Each position starts reading
     // its own number, for the same reason.
     clearReading(span);
@@ -326,14 +324,12 @@ function conversionRow(
         reads: [n, n] as [number, number],
       }));
     } else if (select.value === "converted") {
-      const table = signal ? gaugeTable(module, signal.id) : undefined;
-      if (table) span.conversions = tableRows(table);
-      else span.reads = [0, max];
+      if (!signal || !fillFromGauge(span, module, signal.id)) span.reads = [0, max];
     }
     rebuild();
   });
 
-  // The module's tables from docs/gauges.json, any of which can be copied in.
+  // The module's uneven gauges' rows, any of which can be copied in.
   // Not only this signal's: two needles on one aircraft often share a dial.
   // It shows the table while the rows are still it, with the rows hidden, and
   // custom with the rows open once custom is chosen or a row no longer
@@ -344,9 +340,8 @@ function conversionRow(
   tableSelect.append(el("option", { value: "" }, "custom"));
   for (const g of tables) {
     const own = g.id === signal?.id ? ", this signal" : "";
-    tableSelect.append(
-      el("option", { value: g.id }, `${g.description}, ${g.unit} (${g.id}${own})`),
-    );
+    const unit = g.unit ? `, ${g.unit}` : "";
+    tableSelect.append(el("option", { value: g.id }, `${g.description}${unit} (${g.id}${own})`));
   }
   tableSelect.addEventListener("change", () => {
     // Only the rows change: decimals, padding, rounding and wrap are about
@@ -405,6 +400,15 @@ function conversionRow(
   }
   const offer = el("button", { class: "add small" });
   const values = el("span", { class: "values-row flow" });
+  // Said while the numbers are still the ones filled in from the gauge, and
+  // gone once the user changes them: by then they have looked at the dial.
+  const filled = el("div", { class: "flag" });
+  const settleFilled = (): void => {
+    const note = gaugeNote(module, signal?.id, span);
+    filled.hidden = !note;
+    filled.textContent = note ?? "";
+  };
+  settleFilled();
   const converted = isConverted(span);
   if (converted) {
     const number = (value: number | string, attrs: Record<string, string> = {}): HTMLInputElement =>
@@ -511,6 +515,7 @@ function conversionRow(
         row.raw = [count(rawLo), count(rawHi)];
         row.reads = [Number(lo.value) || 0, Number(hi.value) || 0];
         store();
+        settleFilled();
         settleSign();
         offerRest();
         edited();
@@ -637,7 +642,9 @@ function conversionRow(
               "than 1. Round down for a drum or a counter, which only shows a " +
               "digit once it has clicked over. Wrap for anything that starts " +
               "again from 0: one drum digit is 0 to 10 wrapping at 10, and a " +
-              "compass is 0 to 360 wrapping at 360." +
+              "compass is 0 to 360 wrapping at 360. Picking a gauge's signal " +
+              "fills this in from the gauges page, which is parsed from DCS's " +
+              "files: check it against the dial." +
               (tables.length > 0
                 ? " The second menu copies in a gauge's rows from the gauge " +
                   "tables on the site, and hides them while they are the " +
@@ -651,6 +658,7 @@ function conversionRow(
     converted && !positions && !shown ? stretches : "",
     converted && !positions && !shown ? offer : "",
     converted && !positions ? el("div", { class: "test-row" }, values) : "",
+    converted && !positions ? filled : "",
     aliases ? valueAliasEditor(span, signal, set, smallSet, colours, inverse, edited) : "",
   );
 }

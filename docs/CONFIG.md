@@ -1001,8 +1001,9 @@ marks: the counts DCS-BIOS sends at each end, and what the dial reads there.
   after, exactly as they do after `reads`. The width check measures every
   row's ends.
 
-Rows for many DCS gauges, worked out from each module's own gauge tables, are
-on the [uneven gauges](gauges.html) page.
+What each DCS gauge reads, an even one's `reads` and an uneven one's rows,
+worked out from each module's own gauge tables, is on the [gauges](gauges.html)
+page. The editor fills a reading in from it when a gauge's signal is picked.
 
 **`digits` pads a number with leading zeros.** A 000 to 999 counter at 1
 reads `001`, since a drum shows a digit whatever it reads. It is the fewest

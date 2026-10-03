@@ -34,7 +34,7 @@
   const links = el("div", { class: "site-links", id: "site-links" });
   links.append(
     page("language", "language.html", "Profile language"),
-    page("gauges", "gauges.html", "Uneven gauges"),
+    page("gauges", "gauges.html", "Gauges"),
     el("a", { class: "cta", href: `${REPO}/releases/latest` }, "Download"),
     el(
       "a",

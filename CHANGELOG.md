@@ -52,6 +52,16 @@ unless this says what moved.
   angle on the card rather than the course: the heading plus that angle,
   wrapping at 360, is the course you set. A number part adds a fixed
   number, such as 180 for a reciprocal.
+- **Picking a gauge's signal fills in what it reads, for every gauge**, not
+  only uneven ones. An even dial arrives converted across its real range,
+  such as 0 to 10,000 m on the Mi-8's altimeter, instead of 0 to 100 for you
+  to set. The numbers are parsed from DCS's own files, so a line under them
+  says so and asks you to check them against the dial; where nobody has read
+  the unit off the dial, it says the unit is not checked. The line goes once
+  you change the numbers.
+- **41 more gauges get section rows**, ones that were wrongly taken for even
+  before: among them the A-10C's airspeed, the F/A-18C's pressure altimeter,
+  the Mi-8's radar altimeter and the MiG-21's fuel quantity.
 - **A piece drawing a shared result can draw it without its sign.** Offered
   when the result can go below zero. The result keeps its sign, so its
   aliases and conditions still tell left from right, and the screen shows

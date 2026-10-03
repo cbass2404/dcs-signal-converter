@@ -207,7 +207,22 @@ a screen of hex a second.
 daemon and a wedged one look alike otherwise, and which of the two it was is
 usually the whole question. `longest pass` is the slowest trip round the main
 loop in that minute: the loop reads the stream and decides what to send, so a
-long pass means the converter itself was slow to react.
+long pass means the converter itself was slow to react. After it come the time
+that pass ended and what it did:
+
+```text
+2026-10-02 21:38:47.472  INFO   status   1350 frame(s), 45735 word(s) in, 0 lamp write(s), 0 paint(s), longest pass 76 ms at 21:38:12.304 (frame + profile check)
+```
+
+`frame` is a batch from the stream, `profile check` the look for edited profiles
+twice a second, and `DCS check` the look for DCS itself once the stream has been
+quiet for a while; that one starts `tasklist` and takes 60 to 80 ms, which is
+harmless because nothing is arriving to react to. The rest are `profile reload`,
+`page key`, `aircraft change` and `catalogue rebuild`, and `no frame` is a pass
+with nothing from the stream, such as one that turned a flashing lamp. A slow pass with only `frame` in it usually
+means Windows held the converter back while something else had the machine,
+such as DCS stuttering; match the time against what was happening then. A
+minute whose longest pass was under a millisecond leaves the time off.
 
 Under it comes a line for each panel written to in that minute:
 

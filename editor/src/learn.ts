@@ -153,7 +153,11 @@ export function learnPanel(opts: PanelOptions): { node: HTMLElement; close: () =
       if (!signal) continue;
       const moved =
         `${show(change.from ?? "", change.text)} → ${show(change.to, change.text)}` +
-        (change.moves > 1 ? `   moved ${change.moves} times` : "");
+        (change.moves > 1 ? `   moved ${change.moves} times` : "") +
+        // A retired signal moves with its replacement, so both turn up here.
+        (signal.replaced
+          ? ` · replaced${signal.replaced.use_instead ? ` by ${signal.replaced.use_instead}` : ""}`
+          : "");
       const row = el(
         "button",
         { class: "result", type: "button" },

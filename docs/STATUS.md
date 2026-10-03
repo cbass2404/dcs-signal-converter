@@ -193,6 +193,13 @@ in [CONFIG.md](CONFIG.md) and `docs/language.html`.
   `editor/src/gauge-data.json`, a lean copy keyed by DCS-BIOS module that
   the editor bundles; picking a needle fills in from it, with a `.flag` line
   while the numbers are still the parsed ones.
+  Same day, the catalogue gained DCS-BIOS's `color` (lower-cased, about 500
+  lamps in F-14, C-130J, AH-64D, AJS37) and `deprecated` (`use_instead`,
+  `why`; 17 aircraft signals, some naming no replacement). The index carries
+  `format` (`FORMAT` in `catalogue_build.rs`); one missing or older is
+  rebuilt once, so a field added later only needs `FORMAT` raised. The
+  picker sorts retired signals last and flags one in use with a "Use X"
+  button. Colour is shown only: lamp bindings have no colour to prefill.
 - **Flown on the Mosquito**, the proof, which ships in this release: a new
   profile (`mosquitofbmkvi.json`) and its Flight page (`mosquito.json`), on
   every MCDU and PFP name. One field shows five fuel needles, each at the

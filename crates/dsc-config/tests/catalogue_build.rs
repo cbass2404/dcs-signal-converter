@@ -218,6 +218,62 @@ fn a_catalogue_from_the_python_builder_is_rebuilt_once() {
 }
 
 #[test]
+fn a_catalogue_from_an_older_builder_is_rebuilt_once() {
+    // Same version and files, but built before lamp colours and retired
+    // signals were kept, so it is rebuilt to gain them.
+    let install = Install::new("format");
+    ensure(&install.bios_json(), &install.catalogue()).unwrap();
+    let index = install.catalogue().join("index.json");
+    let mut doc: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&index).unwrap()).unwrap();
+    doc.as_object_mut().unwrap().remove("format");
+    fs::write(&index, doc.to_string()).unwrap();
+    assert!(built(
+        &ensure(&install.bios_json(), &install.catalogue()).unwrap()
+    ));
+    assert!(!built(
+        &ensure(&install.bios_json(), &install.catalogue()).unwrap()
+    ));
+}
+
+#[test]
+fn lamp_colours_and_retired_signals_are_kept() {
+    let install = Install::new("extras");
+    install.write(
+        "TestJet.json",
+        r#"{"Lamps": {
+            "GEAR_LT": {"category": "Lamps", "control_type": "led", "description": "Gear",
+                "color": "Green",
+                "outputs": [{"address": 4096, "mask": 1, "shift_by": 0, "max_value": 1,
+                              "type": "integer", "description": "0 if light is off, 1 if light is on"}]},
+            "OLD_LT": {"category": "Lamps", "control_type": "led", "description": "Old",
+                "deprecated": {"description": "lacks granular control", "since": "0.11.1",
+                               "use_instead": "GEAR_LT"},
+                "outputs": [{"address": 4096, "mask": 2, "shift_by": 1, "max_value": 1,
+                              "type": "integer", "description": "0 if light is off, 1 if light is on"}]},
+            "GONE_LT": {"category": "Lamps", "control_type": "led", "description": "Gone",
+                "deprecated": {"since": "0.11.6"},
+                "outputs": [{"address": 4096, "mask": 4, "shift_by": 2, "max_value": 1,
+                              "type": "integer", "description": "0 if light is off, 1 if light is on"}]}
+        }}"#,
+    );
+    ensure(&install.bios_json(), &install.catalogue()).unwrap();
+    let cat = Catalogue::load_dir(&install.catalogue()).unwrap();
+    let module = cat.module("TestJet").unwrap();
+    let get = |id: &str| module.signals.iter().find(|s| s.id == id).unwrap();
+
+    assert_eq!(get("GEAR_LT").color, "green");
+    assert!(get("GEAR_LT").deprecated.is_none());
+    let old = get("OLD_LT").deprecated.as_ref().unwrap();
+    assert_eq!(old.use_instead, "GEAR_LT");
+    assert_eq!(old.why, "lacks granular control");
+    // Retired with nothing named in its place.
+    let gone = get("GONE_LT").deprecated.as_ref().unwrap();
+    assert_eq!((gone.use_instead.as_str(), gone.why.as_str()), ("", ""));
+    assert_eq!(get("GONE_LT").color, "");
+}
+
+#[test]
 fn no_dcs_bios_says_so_and_keeps_what_is_there() {
     let install = Install::new("nobios");
     ensure(&install.bios_json(), &install.catalogue()).unwrap();

@@ -446,7 +446,23 @@ pub struct Signal {
     pub description: String,
     #[serde(default)]
     pub control_type: String,
+    /// A lamp's colour, where DCS-BIOS gives one. Empty otherwise.
+    #[serde(default)]
+    pub color: String,
+    /// Present when DCS-BIOS has retired this signal.
+    #[serde(default)]
+    pub deprecated: Option<Deprecated>,
     pub outputs: Vec<Output>,
+}
+
+/// Why DCS-BIOS retired a signal, and what it says to read instead. Either may
+/// be empty.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct Deprecated {
+    #[serde(default)]
+    pub use_instead: String,
+    #[serde(default)]
+    pub why: String,
 }
 
 impl Signal {

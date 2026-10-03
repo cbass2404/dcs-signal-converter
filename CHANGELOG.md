@@ -62,6 +62,13 @@ unless this says what moved.
 - **41 more gauges get section rows**, ones that were wrongly taken for even
   before: among them the A-10C's airspeed, the F/A-18C's pressure altimeter,
   the Mi-8's radar altimeter and the MiG-21's fuel quantity.
+- **Signals DCS-BIOS has retired are marked.** In the search list and in
+  Learn they are tagged "replaced by" the signal to use, and sort after the
+  rest. One in a row gets a line saying so, with a button that switches to
+  the replacement. It still works today; a later DCS-BIOS may drop it.
+- **A lamp's signal details show its colour** where DCS-BIOS gives one, as
+  it does for most F-14, C-130J and AH-64D lamps.
+- **The signal catalogue is rebuilt once on first start** to pick these up.
 - **A piece drawing a shared result can draw it without its sign.** Offered
   when the result can go below zero. The result keeps its sign, so its
   aliases and conditions still tell left from right, and the screen shows

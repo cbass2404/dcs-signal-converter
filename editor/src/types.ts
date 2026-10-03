@@ -930,6 +930,13 @@ export interface SignalView {
   reads: string;
   /** Non-empty for signals with few enough values to label individually. */
   values: ValueLabel[];
+  /** A lamp's colour as DCS-BIOS gives it, such as "green". Often empty. */
+  colour: string;
+  /**
+   * Set when DCS-BIOS has retired this signal: what it says to read instead,
+   * and why. Either may be empty.
+   */
+  replaced: { use_instead: string; why: string } | null;
 }
 
 /** What the editor found when it checked the catalogue against DCS-BIOS. */

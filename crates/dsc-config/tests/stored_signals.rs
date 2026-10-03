@@ -6,6 +6,10 @@
 //! draws the joined characters and only styles them, nothing draws until
 //! every term has arrived, a paint works each signal out once however many
 //! fields draw it, and sharing and updates carry the signals with the pages.
+//!
+//! A sum adds its terms instead: a course arrow on a turning compass card is
+//! sent as its angle from the top of the case, and the course is the card's
+//! heading plus that angle, wrapped at 360.
 
 use std::cell::Cell;
 use std::path::{Path, PathBuf};
@@ -450,6 +454,123 @@ fn a_part_gives_each_position_its_own_number() {
     assert_eq!(at(1).number, Some(5.0));
     assert_eq!(signal.widest(&module()), Some(1));
     assert!(signal.problems(&module()).is_empty());
+}
+
+/// A course from a turning card: the heading on D10K and the arrow's angle
+/// from the top of the case on D1K, each 0 to 360 across the needle, added
+/// and wrapped at 360, drawn to three digits.
+fn course() -> StoredSignal {
+    serde_json::from_str(
+        r#"{"id": "crs001", "name": "Course",
+            "terms": [{"source": "D10K", "reads": [0, 360]},
+                      {"source": "D1K", "reads": [0, 360]}],
+            "sum": {"wrap": 360, "digits": 3}}"#,
+    )
+    .expect("the fixture signal parses")
+}
+
+/// What `signal` reads with each gauge at the angle given, in degrees.
+fn reading(signal: &StoredSignal, angles: &[(&str, f64)]) -> dsc_config::StoredValue {
+    signal
+        .evaluate(
+            &|id: &str| {
+                let (_, deg) = angles.iter().find(|(name, _)| *name == id)?;
+                Some(Reading::Number {
+                    value: (deg / 360.0 * 65535.0).round() as u16,
+                    max: 65535,
+                })
+            },
+            &mut |_: &str, _: u16, _: &str| {},
+        )
+        .expect("every term has arrived")
+}
+
+#[test]
+fn a_sum_adds_its_parts_and_wraps_the_total() {
+    let at = |hdg, crs| reading(&course(), &[("D10K", hdg), ("D1K", crs)]);
+    assert_eq!(at(90.0, 0.0).text, "090");
+    // Past north it starts again from 0 rather than reading 370.
+    assert_eq!(at(350.0, 20.0).text, "010");
+    assert_eq!(at(350.0, 20.0).number, Some(10.0));
+    assert_eq!(course().widest(&module()), Some(3));
+    assert_eq!(course().tolerance(), 0.5);
+    assert!(course().problems(&module()).is_empty());
+}
+
+#[test]
+fn a_field_draws_a_sum_as_one_number() {
+    let file = page_file(r#"{"cells": "0-5", "signal": "crs001"}"#, &[course()]);
+    let field = &fields(&file)[0];
+    // 7.5 of 10 across the needle is 270 degrees, 2.5 is 90.
+    assert_eq!(
+        drawn(field, [Some(7.5), Some(2.5), None]).as_deref(),
+        Some("000")
+    );
+    assert_eq!(drawn(field, [Some(7.5), None, None]), None);
+}
+
+#[test]
+fn a_sum_adds_a_number_typed_in() {
+    // The reciprocal: the heading turned half way round.
+    let back: StoredSignal = serde_json::from_str(
+        r#"{"id": "rcp001", "name": "Reciprocal",
+            "terms": [{"source": "D10K", "reads": [0, 360]}, {"text": "180"}],
+            "sum": {"wrap": 360}}"#,
+    )
+    .unwrap();
+    assert_eq!(reading(&back, &[("D10K", 270.0)]).text, "90");
+    assert_eq!(reading(&back, &[("D10K", 90.0)]).text, "270");
+    assert!(back.problems(&module()).is_empty());
+}
+
+#[test]
+fn a_sum_is_drawn_to_the_most_places_a_part_shows() {
+    let mut fine = course();
+    fine.terms[1].0.decimals = 1;
+    assert_eq!(
+        reading(&fine, &[("D10K", 350.0), ("D1K", 20.0)]).text,
+        "010.0"
+    );
+    assert_eq!(fine.tolerance(), 0.05);
+}
+
+#[test]
+fn a_sum_adds_only_numbers() {
+    let mut bad = course();
+    bad.terms
+        .push(serde_json::from_str(r#"{"text": "."}"#).unwrap());
+    bad.terms
+        .push(serde_json::from_str(r#"{"source": "CHAN"}"#).unwrap());
+    let found: Vec<String> = bad
+        .problems(&module())
+        .iter()
+        .map(|e| e.to_string())
+        .collect();
+    assert!(
+        found.iter().any(|e| e.contains("not a number to add")),
+        "{found:?}"
+    );
+    assert!(
+        found.iter().any(|e| e.contains("CHAN sends characters")),
+        "{found:?}"
+    );
+}
+
+#[test]
+fn a_sum_with_nothing_set_still_adds() {
+    let plain: StoredSignal = serde_json::from_str(
+        r#"{"id": "s1", "name": "S", "terms": [{"source": "D10K", "reads": [0, 360]},
+            {"source": "D1K", "reads": [0, 360]}], "sum": {}}"#,
+    )
+    .unwrap();
+    assert_eq!(
+        reading(&plain, &[("D10K", 350.0), ("D1K", 20.0)]).text,
+        "370"
+    );
+    // Written back as it was read, the empty sum kept, since it is the switch.
+    let back = serde_json::to_value(&plain).unwrap();
+    assert_eq!(back["sum"], serde_json::json!({}));
+    assert_eq!(plain.widest(&module()), Some(3));
 }
 
 #[test]

@@ -508,8 +508,19 @@ export type Term = Pick<
 >;
 
 /**
+ * How the total of a shared result that adds its parts is drawn. Shown to the
+ * most places any part shows.
+ */
+export interface Sum {
+  /** Start again from 0 every this many: 360 for a course. */
+  wrap?: number;
+  /** Zeros in front to make this many whole digits. */
+  digits?: number;
+}
+
+/**
  * A number on one module worked out once and named, for any page there to
- * draw: one DCS-BIOS signal shaped, or several laid side by side.
+ * draw: one DCS-BIOS signal shaped, or several laid side by side or added.
  */
 export interface StoredSignal {
   /** Fixed when it is made. What a piece points at. */
@@ -519,6 +530,8 @@ export interface StoredSignal {
   note?: string;
   /** A number's parts. Empty on lamp conditions. */
   terms: Term[];
+  /** Present when the parts are added rather than laid side by side. */
+  sum?: Sum;
   /**
    * Lamp conditions, written as a lamp's are, for every lamp that lights by
    * this signal. Empty on a number.

@@ -11,10 +11,12 @@
 //
 // A shared result is a short chain of parts, each one DCS-BIOS signal shaped
 // exactly the way a reading is, laid side by side: the F-16's three fuel
-// drums, each rounded down and wrapped at 10, read as one number. How it is
-// drawn, its words and colours, is the piece's that draws it. Shared
-// conditions are tests written as a lamp's are, for every lamp that repeats
-// one cockpit lamp; each lamp keeps its own brightness.
+// drums, each rounded down and wrapped at 10, read as one number. Or added:
+// the Mi-8's heading and the course arrow's angle on the card make the
+// course, wrapped at 360. How it is drawn, its words and colours, is the
+// piece's that draws it. Shared conditions are tests written as a lamp's
+// are, for every lamp that repeats one cockpit lamp; each lamp keeps its own
+// brightness.
 
 import { deleteSignal, newPageId, savePage, saveSignal } from "./api";
 import { bindingEditor, iconButton } from "./binding";
@@ -35,9 +37,19 @@ import { noteEditor } from "./note";
 import { signalsChanged, whereShown } from "./pages";
 import type { PageBook } from "./pages";
 import { termControls } from "./readout";
-import { isLampSignal, isSymbolPart, NUMBER_SYMBOLS, partName } from "./stored";
+import { isLampSignal, isSymbolPart, NUMBER_SYMBOLS, partsSaid } from "./stored";
 import { infoIcon } from "./typeahead";
-import type { Binding, Led, Page, Profile, SignalView, Span, StoredSignal, Term } from "./types";
+import type {
+  Binding,
+  Led,
+  Page,
+  Profile,
+  SignalView,
+  Span,
+  StoredSignal,
+  Sum,
+  Term,
+} from "./types";
 
 function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -196,8 +208,7 @@ export function signalSection(
           ),
         ),
       ];
-      const sources = w.lamp ? tested : w.signal.terms.map(partName);
-      const reads = w.lamp ? `tests ${sources.join(", ")}` : `reads ${sources.join(", then ")}`;
+      const reads = w.lamp ? `tests ${tested.join(", ")}` : partsSaid(w.signal);
       const edit = iconButton("pencil", "\u270E", "Edit this signal", () => {
         opened.add(w.signal.id);
         redraw();
@@ -261,8 +272,11 @@ export function signalSection(
                   "wrapped at 10, read as one number. Rounding each drum on its own " +
                   "is what stops a drum that is rolling counting twice. A symbol " +
                   "part lays down a point or a sign between them, so a radio's " +
-                  "30 and 50 read 30.50. Words and colours belong to the piece " +
-                  "that draws it.",
+                  "30 and 50 read 30.50. Or add the parts: a course arrow on a " +
+                  "turning compass card is sent as its angle from the top of the " +
+                  "case, so the heading plus that angle, wrapping at 360, is the " +
+                  "course. A number part then adds a number, such as 180 for the " +
+                  "reciprocal. Words and colours belong to the piece that draws it.",
               ),
         ),
       );
@@ -283,24 +297,99 @@ export function signalSection(
         );
       }
 
-      // A point or a sign typed in. Anything else is turned away as it is
-      // typed, so the result stays a number.
+      const adding = w.signal.sum !== undefined;
+
+      // A point or a sign typed in, or a number to add. Anything else is
+      // turned away as it is typed, so the result stays a number.
       const symbolControls = (term: Term): HTMLElement[] => {
         const box = el("input", {
           type: "text",
           class: "span-text",
           value: term.text ?? "",
-          placeholder: ".",
+          placeholder: adding ? "180" : ".",
         });
         box.addEventListener("input", () => {
           if (!NUMBER_SYMBOLS.test(box.value)) box.value = term.text ?? "";
           term.text = box.value;
           edited();
         });
-        return [
-          el("label", { class: "meta" }, "symbols ", box),
-          el("span", { class: "meta" }, "digits, . - or +"),
-        ];
+        return adding
+          ? [
+              el("label", { class: "meta" }, "number ", box),
+              el("span", { class: "meta" }, "added to the total, such as 180 or -90"),
+            ]
+          : [
+              el("label", { class: "meta" }, "symbols ", box),
+              el("span", { class: "meta" }, "digits, . - or +"),
+            ];
+      };
+
+      // How the parts make one number: laid side by side, the way drums
+      // read, or added, the way a course arrow on a turning card does.
+      const how = el("select", { class: "test" });
+      how.append(
+        el("option", { value: "join" }, "laid side by side"),
+        el("option", { value: "sum" }, "added"),
+      );
+      how.value = adding ? "sum" : "join";
+      how.addEventListener("change", () => {
+        if (how.value === "sum") {
+          w.signal.sum = {};
+          // A box says where characters sit, and a total is one number, so
+          // the boxes go rather than staying in the file unseen.
+          for (const t of w.signal.terms) {
+            delete t.width;
+            delete t.align;
+          }
+        } else delete w.signal.sum;
+        edited();
+        draw();
+      });
+      const combine = el(
+        "div",
+        { class: "test-row" },
+        el("span", { class: "meta" }, "The parts are"),
+        how,
+      );
+
+      // The total's own shaping, once the parts are added: zeros in front
+      // and where it starts again from 0.
+      const totalControls = (sum: Sum): HTMLElement => {
+        const digits = el("input", {
+          type: "number",
+          class: "value",
+          min: "0",
+          max: "9",
+          value: sum.digits ? String(sum.digits) : "",
+          placeholder: "any",
+        });
+        // Empty rather than 0 when there is none, as on a reading.
+        const wrap = el("input", {
+          type: "number",
+          class: "value",
+          min: "0",
+          value: sum.wrap ? String(sum.wrap) : "",
+          placeholder: "never",
+        });
+        const sync = (): void => {
+          const whole = Math.round(Number(digits.value) || 0);
+          if (whole > 0) sum.digits = whole;
+          else delete sum.digits;
+          const every = Number(wrap.value);
+          if (Number.isFinite(every) && every > 0) sum.wrap = every;
+          else delete sum.wrap;
+          edited();
+        };
+        for (const box of [digits, wrap]) box.addEventListener("input", sync);
+        const sep = (text: string): HTMLElement => el("span", { class: "sep" }, text);
+        const phrase = (...parts: (Node | string)[]): HTMLElement =>
+          el("span", { class: "phrase" }, ...parts);
+        return el(
+          "div",
+          { class: "values-row flow" },
+          phrase(sep("The total with"), digits, sep("digits")),
+          phrase(sep("and wrapping at"), wrap),
+        );
       };
 
       const chain = el("div", { class: "chain" });
@@ -342,7 +431,7 @@ export function signalSection(
               { class: "span-body" },
               ...(isSymbolPart(term)
                 ? symbolControls(term)
-                : termControls(span, ctx.signals, module, edited, draw)),
+                : termControls(span, ctx.signals, module, edited, draw, !adding)),
             ),
           ),
         );
@@ -352,16 +441,18 @@ export function signalSection(
         w.signal.terms.push({ source: "" });
         draw();
       });
-      const symbol = el("button", { class: "add small" }, "+ a symbol");
+      const symbol = el("button", { class: "add small" }, adding ? "+ a number" : "+ a symbol");
       symbol.addEventListener("click", () => {
-        w.signal.terms.push({ text: "." });
+        w.signal.terms.push({ text: adding ? "0" : "." });
         draw();
       });
       // Last, after the parts, so it reads as the summary of what they make.
       if (!w.lamp) {
         body.append(
+          combine,
           chain,
           el("div", { class: "chain-add" }, more, symbol),
+          w.signal.sum ? totalControls(w.signal.sum) : "",
           noteEditor(w.signal, "signal", edited, true),
         );
       }

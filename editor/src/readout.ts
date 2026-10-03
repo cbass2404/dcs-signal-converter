@@ -38,7 +38,7 @@ import type { SpanKind } from "./content";
 import { cautionSlot, flagSlot } from "./flags";
 import { gaugeTable, gaugeTables, matchingTable, tableRows } from "./gauges";
 import { noteEditor } from "./note";
-import { isLampSignal, partName, storedSignal, storedSignals } from "./stored";
+import { isLampSignal, isSymbolPart, partsSaid, storedSignal, storedSignals } from "./stored";
 import { infoIcon, signalPicker } from "./typeahead";
 import {
   aliasColour,
@@ -63,6 +63,7 @@ import type {
   SignalView,
   Span,
   SpanPatch,
+  StoredSignal,
 } from "./types";
 
 /** The swatch beside each colour name, so the menu shows what it means. */
@@ -1637,12 +1638,14 @@ function spanWidth(span: Span, signals: SignalView[]): number {
   // can never be the reason content will not fit.
   if (span.gap) return 0;
   if (isLiteral(span)) return (span.text ?? "").length;
-  // A stored signal is as wide as its terms laid side by side, or the
-  // longest word drawn in its place.
+  // A stored signal is as wide as its terms laid side by side, or its
+  // total where it adds them, or the longest word drawn in its place.
   if (kindOf(span) === "stored") {
     const stored = storedSignal(span.signal ?? "");
     if (!stored) return 0;
-    const terms = stored.terms.reduce((n, t) => n + spanWidth(t, signals), 0);
+    const terms = stored.sum
+      ? sumWidth(stored, signals)
+      : stored.terms.reduce((n, t) => n + spanWidth(t, signals), 0);
     const words = Object.values(span.value_aliases ?? {})
       .filter((a) => !aliasShowsReading(a))
       .map((a) => [...aliasText(a)].length);
@@ -1694,6 +1697,50 @@ function spanWidth(span: Span, signals: SignalView[]): number {
     longest,
     ...ends.map((end) => numberText(shown(end), dp, span.digits ?? 0).length),
   );
+}
+
+/**
+ * The widest a shared result that adds its parts draws: each part's lowest
+ * and highest added, then measured as a reading running between them is. The
+ * same sum `StoredSignal::widest` does.
+ */
+function sumWidth(stored: StoredSignal, signals: SignalView[]): number {
+  let [lo, hi, dp] = [0, 0, 0];
+  for (const t of stored.terms) {
+    if (isSymbolPart(t)) {
+      const n = Number(t.text) || 0;
+      [lo, hi] = [lo + n, hi + n];
+      dp = Math.max(dp, (t.text ?? "").split(".")[1]?.length ?? 0);
+      continue;
+    }
+    const tdp = t.decimals ?? 0;
+    dp = Math.max(dp, tdp);
+    if (t.wrap && t.wrap > 0) {
+      hi += Math.max(0, t.wrap - 10 ** -tdp);
+      continue;
+    }
+    const ends = t.conversions?.length
+      ? t.conversions.flatMap((c: Conversion) => c.reads)
+      : (t.reads ?? [0, maxOf(signals, t.source ?? "")]);
+    let [a, b] = [Math.min(...ends), Math.max(...ends)];
+    if (t.abs)
+      [a, b] =
+        a <= 0 && b >= 0
+          ? [0, Math.max(-a, b)]
+          : [Math.min(Math.abs(a), Math.abs(b)), Math.max(Math.abs(a), Math.abs(b))];
+    [lo, hi] = [lo + a, hi + b];
+  }
+  const every = stored.sum?.wrap && stored.sum.wrap > 0 ? stored.sum.wrap : 0;
+  const settle = (end: number): number => {
+    const rounded = Number(end.toFixed(dp));
+    const wrapped = every ? ((rounded % every) + every) % every : rounded;
+    return wrapped === 0 ? 0 : wrapped;
+  };
+  const ends = [settle(lo), settle(hi)];
+  if (every && (hi - lo >= every || Math.floor(lo / every) !== Math.floor(hi / every))) {
+    ends.push(Math.max(0, every - 10 ** -dp));
+  }
+  return Math.max(...ends.map((end) => numberText(end, dp, stored.sum?.digits ?? 0).length));
 }
 
 /**
@@ -3100,12 +3147,15 @@ function storedControls(
     // Offered where the result can run below zero, as on a reading. The
     // result keeps its sign, so the bands above and every condition testing
     // it still see which way it points; only what is drawn loses it.
-    const signed = chosen.terms.some(
-      (t) =>
-        (t.text ?? "").includes("-") ||
-        (t.reads ?? []).some((end) => end < 0) ||
-        (t.conversions ?? []).some((c) => c.reads.some((end) => end < 0)),
-    );
+    // A total that wraps starts again from 0, so it never goes below.
+    const signed =
+      !chosen.sum?.wrap &&
+      chosen.terms.some(
+        (t) =>
+          (t.text ?? "").includes("-") ||
+          (t.reads ?? []).some((end) => end < 0) ||
+          (t.conversions ?? []).some((c) => c.reads.some((end) => end < 0)),
+      );
     if (signed || span.abs) {
       const abs = el("input", { type: "checkbox" });
       abs.checked = span.abs === true;
@@ -3139,6 +3189,7 @@ export function termControls(
   module: string,
   edited: () => void,
   rebuild: () => void,
+  boxed = true,
 ): HTMLElement[] {
   const picker = signalPicker({
     signals,
@@ -3179,7 +3230,8 @@ export function termControls(
       ),
     );
   }
-  parts.push(boxControls(term, null, edited));
+  // A part that is added is a number, not characters, so it takes no box.
+  if (boxed) parts.push(boxControls(term, null, edited));
   return parts;
 }
 
@@ -3594,7 +3646,6 @@ function sharedReads(id: string): HTMLElement {
   if (id === "") return el("span", { class: "bad" }, "A shared result nobody has chosen yet");
   const shared = storedSignal(id);
   if (!shared) return el("span", { class: "bad" }, `${id} is not a shared result here`);
-  const parts = shared.terms.map(partName);
   return el(
     "span",
     { class: "sub" },
@@ -3602,7 +3653,7 @@ function sharedReads(id: string): HTMLElement {
     el(
       "span",
       { class: "test" },
-      parts.length > 0 ? `shared result, reads ${parts.join(", then ")}` : "shared result",
+      shared.terms.length > 0 ? `shared result, ${partsSaid(shared)}` : "shared result",
     ),
   );
 }

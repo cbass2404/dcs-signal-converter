@@ -46,6 +46,12 @@ unless this says what moved.
 
 - **The profile header shows only the aircraft under the name**, as the
   profile cards already do. It no longer repeats the DCS-BIOS module.
+- **A shared result can add its parts** instead of laying them side by
+  side. Choose **The parts are: added**, then pad and wrap the total. The
+  Mi-8's course arrow turns with the compass card, so DCS-BIOS sends its
+  angle on the card rather than the course: the heading plus that angle,
+  wrapping at 360, is the course you set. A number part adds a fixed
+  number, such as 180 for a reciprocal.
 - **A piece drawing a shared result can draw it without its sign.** Offered
   when the result can go below zero. The result keeps its sign, so its
   aliases and conditions still tell left from right, and the screen shows

@@ -2002,6 +2002,16 @@
                 stay a number its bands can match. Words stay with the piece drawing it.
               </p>
               <p>
+                The parts can be <span class="ed">added</span> instead of laid side by side. The
+                Mi-8's course arrow rides on a compass card that turns with the heading, so DCS-BIOS
+                sends the arrow's angle from the top of the case, not the course. The heading plus
+                that angle is the course, and the total <span class="ed">wrapping at</span> 360
+                starts again from 0 past north. Each part is still shaped on its own first. The
+                total is drawn to the most decimal places any part shows, padded to its own
+                <span class="ed">digits</span>. A symbol part in a sum is a number to add, such as
+                180 for the reciprocal.
+              </p>
+              <p>
                 A part reading a switch can give each position
                 <span class="ed">a number for each position</span>: a switch sending 0 and 1 can
                 read 1 and 5. Each number is drawn as typed, so 05 keeps its zero and 1.50 its two
@@ -2068,6 +2078,43 @@
                   <div class="glass"><div class="cells" id="st-cells" style="--n: 10"></div></div>
                   <p class="say" id="st-say"></p>
                   <pre id="st-json"></pre>
+                </div>
+              </div>
+            </div>
+            <div class="demo" id="demo-sum">
+              <div class="demo-head">
+                <span class="t">A course on a turning card</span><span class="try">Try it</span>
+              </div>
+              <div class="demo-body">
+                <div class="controls">
+                  <div class="row">
+                    <span class="lbl">Heading</span
+                    ><input type="range" id="su-hdg" min="0" max="359" value="350" /><span
+                      class="mono"
+                      id="su-hdgtext"
+                    ></span>
+                  </div>
+                  <div class="row">
+                    <span class="lbl">Course set</span
+                    ><input type="range" id="su-crs" min="0" max="359" value="10" /><span
+                      class="mono"
+                      id="su-crstext"
+                    ></span>
+                  </div>
+                  <div class="row">
+                    <span class="lbl">The parts</span>
+                    <div class="seg" id="su-how">
+                      <button type="button" data-v="sum" aria-pressed="true">added</button>
+                      <button type="button" data-v="join" aria-pressed="false">
+                        laid side by side
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="out">
+                  <div class="glass"><div class="cells" id="su-cells" style="--n: 10"></div></div>
+                  <p class="say" id="su-say"></p>
+                  <pre id="su-json"></pre>
                 </div>
               </div>
             </div>
@@ -2150,9 +2197,11 @@
               are refused, since the result already says. It can draw it
               <span class="ed">without its sign</span>: the result keeps the sign, so its aliases
               still tell left from right, and only the screen loses it. A shared result the aircraft
-              doesn't have is refused too, and so is a part with no signal chosen. A lamp can't
-              light by a shared result, and a screen can't draw shared conditions. Either one, used
-              by a page or a lamp, can't be deleted until it is taken off.
+              doesn't have is refused too, and so is a part with no signal chosen. A result that
+              adds its parts refuses a symbol part that isn't a number, and a part reading
+              characters, since neither has a number to add. A lamp can't light by a shared result,
+              and a screen can't draw shared conditions. Either one, used by a page or a lamp, can't
+              be deleted until it is taken off.
             </p>
           </div>
         </section>
@@ -3823,6 +3872,64 @@
         draw();
       })();
 
+      /* ------------------------------------------------------ added parts */
+      (() => {
+        const how = seg("su-how", draw);
+        $("su-hdg").addEventListener("input", draw);
+        $("su-crs").addEventListener("input", draw);
+        const three = (n) => String(n).padStart(3, "0");
+        function draw() {
+          const hdg = Number($("su-hdg").value);
+          const crs = Number($("su-crs").value);
+          const sum = how.get() === "sum";
+          // What DCS-BIOS sends for the arrow: its angle from the top of the
+          // case, which is the course less the heading the card has turned to.
+          const arrow = (((crs - hdg) % 360) + 360) % 360;
+          $("su-hdgtext").textContent = `${three(hdg)}\u00b0`;
+          $("su-crstext").textContent = `${three(crs)}\u00b0`;
+          const value = sum ? three((hdg + arrow) % 360) : `${hdg}${arrow}`;
+          const text = `CRS ${value}`;
+          paint(
+            $("su-cells"),
+            fitTo(
+              [...text].map((ch, i) => ({
+                ch,
+                colour: i < 4 ? "white" : sum ? "green" : "red",
+                small: i < 4,
+              })),
+              10,
+              "left",
+            ),
+            10,
+          );
+          $("su-say").innerHTML =
+            `The card has turned to <b>${hdg}</b> and the arrow sits <b>${arrow}</b> clockwise from the top of the case. ` +
+            (sum
+              ? hdg + arrow >= 360
+                ? `Added they come to ${hdg + arrow}, and wrapping at 360 makes that <b>${three((hdg + arrow) % 360)}</b>, the course you set.`
+                : `Added they come to <b>${three(hdg + arrow)}</b>, the course you set.`
+              : "Laid side by side they make a run of digits that is no course at all. Drums want that; a needle on a card wants adding.");
+          const parts = sum
+            ? `    "terms": [\n` +
+              `      { "source": "UGR_4K_HEADING_L", "reads": [0, 360] },\n` +
+              `      { "source": "UGR_4K_COMMANDED_COURSE_L", "reads": [0, 360] }\n` +
+              `    ],\n` +
+              `    "sum": { "wrap": 360, "digits": 3 } }`
+            : `    "terms": [\n` +
+              `      { "source": "UGR_4K_HEADING_L", "reads": [0, 360] },\n` +
+              `      { "source": "UGR_4K_COMMANDED_COURSE_L", "reads": [0, 360] }\n` +
+              `    ] }`;
+          $("su-json").textContent =
+            `"signals": [\n` +
+            `  { "id": "c7rs2m", "name": "Course, pilot",\n` +
+            `${parts}\n]\n\n` +
+            `"content": [\n` +
+            `  { "text": "CRS ", "small": true },\n` +
+            `  { "signal": "c7rs2m", "colour": "green" }\n]`;
+        }
+        draw();
+      })();
+
       /* ------------------------------------------------ shared conditions */
       (() => {
         const seat = seg("sl-seat", draw);
@@ -4028,7 +4135,7 @@
             "Shared result",
             "signals",
             "Page file",
-            "A value made once and named, for any page on the aircraft to draw. One or more parts, laid side by side. Saved on its own, shared by every profile on the aircraft.",
+            "A value made once and named, for any page on the aircraft to draw. One or more parts, laid side by side or added. Saved on its own, shared by every profile on the aircraft.",
             "stored",
           ],
           [
@@ -4070,14 +4177,28 @@
             "Part",
             "terms",
             "Shared result",
-            "One DCS-BIOS signal in a shared result, converted, rounded, wrapped, padded and given its cells the way a reading is. The parts are laid side by side.",
+            "One DCS-BIOS signal in a shared result, converted, rounded, wrapped, padded and given its cells the way a reading is. The parts are laid side by side, or added.",
+            "stored",
+          ],
+          [
+            "The parts are added",
+            "sum",
+            "Shared result",
+            "Add the parts' numbers instead of laying their characters side by side, such as a heading and a course arrow's angle on a turning card. Each part is shaped first. The total is drawn to the most places any part shows.",
+            "stored",
+          ],
+          [
+            "The total with digits, wrapping at",
+            "sum: digits, wrap",
+            "Shared result",
+            "Pad the total with zeros to this many whole digits, and start it again from 0 every this many: 360 for a course.",
             "stored",
           ],
           [
             "Symbol part",
             "text",
             "Shared result",
-            "A part that reads nothing: digits, a point or a sign laid down as typed, such as the . between a radio's megahertz and hundredths. The result stays a number.",
+            "A part that reads nothing: digits, a point or a sign laid down as typed, such as the . between a radio's megahertz and hundredths. The result stays a number. In a result that adds its parts, a number to add, such as 180.",
             "stored",
           ],
           [

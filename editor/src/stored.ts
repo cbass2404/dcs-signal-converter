@@ -41,6 +41,15 @@ export function partName(t: Term): string {
   return t.source || "a part with no signal yet";
 }
 
+/** What a shared result does with its parts, as a summary line says it. */
+export function partsSaid(s: StoredSignal): string {
+  const parts = s.terms.map(partName);
+  if (!s.sum) return `reads ${parts.join(", then ")}`;
+  const last = parts.pop();
+  const added = parts.length > 0 ? `${parts.join(", ")} and ${last}` : (last ?? "");
+  return `adds ${added}` + (s.sum.wrap ? `, wrapping at ${s.sum.wrap}` : "");
+}
+
 /** One stored signal by id, where the module has it. */
 export function storedSignal(id: string): StoredSignal | undefined {
   return current.find((s) => s.id === id);

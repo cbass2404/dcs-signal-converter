@@ -10,6 +10,12 @@
 //! already partway to the next digit, and each one settled on its own is what
 //! keeps the one above it from counting that twice.
 //!
+//! A signal with a `sum` adds its terms instead. A course arrow drawn on a
+//! turning compass card is sent as its angle from the top of the case, so the
+//! course it points at is the card's heading plus that angle, wrapped at 360.
+//! Each term is still shaped on its own first; only the numbers they come to
+//! are added, and the total is wrapped and padded as the sum says.
+//!
 //! Only the number lives here. How it is drawn, its words, colour and size,
 //! is the field's, so two pages can draw one signal two ways.
 //!
@@ -43,6 +49,10 @@ pub struct StoredSignal {
     /// for a screen. Empty on a signal of lamp conditions.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub terms: Vec<Term>,
+    /// Present when the terms are added rather than laid side by side, and
+    /// how the total is drawn.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sum: Option<Sum>,
     /// Tests that must all hold, written as a lamp's are, for a signal a
     /// lamp draws: one set of conditions, many lamps. Each test lights the
     /// lamp at its own `on` or leaves it at its `off`, so the answer is on or
@@ -62,6 +72,46 @@ pub struct StoredSignal {
     /// here, not on each lamp. Each alternative carries its own.
     #[serde(default, skip_serializing_if = "Blink::is_steady")]
     pub blink: Blink,
+}
+
+/// How the total of a stored signal that adds its terms is drawn.
+///
+/// Shown to the most places any term shows, so a total never drops a digit
+/// a part was shaped to keep. A term's box says nothing here: the total is
+/// one number, not characters laid side by side.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct Sum {
+    /// Start again from 0 every this many: 360 for a course.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub wrap: Option<f64>,
+    /// Zeros in front to make this many whole digits: 3 draws 5 as 005.
+    #[serde(default, skip_serializing_if = "is_zero_u8")]
+    pub digits: u8,
+}
+
+impl Sum {
+    /// The total settled and drawn: wrapped, never -0, padded.
+    pub(crate) fn draw(&self, total: f64, places: u8) -> String {
+        self.shape(places).settled_text(total)
+    }
+
+    /// The total as a reading drawing it would be shaped, for the arithmetic
+    /// a reading already does: settling and padding, and its widest.
+    pub(crate) fn shape(&self, places: u8) -> Span {
+        Span {
+            decimals: places,
+            digits: self.digits,
+            wrap: self.wrap,
+            ..Span::default()
+        }
+    }
+}
+
+/// The places after the point in `text`, a drawn number.
+pub(crate) fn places_in(text: &str) -> u8 {
+    text.trim().split_once('.').map_or(0, |(_, after)| {
+        u8::try_from(after.chars().count()).unwrap_or(u8::MAX)
+    })
 }
 
 /// One DCS-BIOS signal in a stored signal, and how it is shaped, or
@@ -243,20 +293,39 @@ impl StoredSignal {
     where
         S: FnMut(&'a str, u16, &str),
     {
-        let mut text = String::new();
-        for (term, input) in self.terms.iter().zip(inputs) {
+        let drawn = self.terms.iter().zip(inputs).map(|(term, input)| {
             let span = &term.0;
-            let drawn = match input {
+            match input {
                 Reading::Text(t) => t.clone(),
                 Reading::Number { value, max } => {
                     let drawn = span.format_number(*value, *max);
                     seen(&span.source, *value, &drawn);
                     drawn
                 }
+            }
+        });
+        let Some(sum) = &self.sum else {
+            let text = self
+                .terms
+                .iter()
+                .zip(drawn)
+                .map(|(term, d)| term.0.fit_text(&d))
+                .collect();
+            return StoredValue::new(text);
+        };
+        // Each term as the number it draws, so a part rounded or wrapped on
+        // its own is added as it reads. Characters that are not a number
+        // leave nothing to add, and the checks refuse a part that can be one.
+        let mut total = 0.0;
+        let mut places = 0;
+        for d in drawn {
+            let Some(n) = d.trim().parse::<f64>().ok().filter(|n| n.is_finite()) else {
+                return StoredValue::new(String::new());
             };
-            text.push_str(&span.fit_text(&drawn));
+            total += n;
+            places = places.max(places_in(&d));
         }
-        StoredValue::new(text)
+        StoredValue::new(sum.draw(total, places))
     }
 }
 

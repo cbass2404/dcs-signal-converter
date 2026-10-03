@@ -15,6 +15,25 @@ unless this says what moved.
 
 ## 1.0.0-beta.008
 
+### Profiles
+
+- **New profile for the OH-58D Kiowa Warrior:**
+  - **Backlights:** every panel's backlight is lit whenever you are in the
+    aircraft.
+  - **MCDU:** RDY lights steady with the laser armed and blinks slowly with
+    it on but not armed. IND lights while the copilot fires the armed laser,
+    and STATUS with the MMS mode selector past its second position.
+  - **PTO2:** JETT lights while either pylon jettison guard is open, and
+    HOOK with the CMWS armed and on, or with the IR jammer on and
+    transmitting.
+  - **Orion Throttle Base II:** A/A lights with the master switch at ARM
+    and the ARMED lamp lit, A/G with the gun switch at its middle position
+    and the ARMED lamp lit.
+  - **ICP page, DED Radio:** the Remote Frequency Indicator's five radios,
+    each with its channel, a C while it ciphers, its frequency, and an
+    arrow marking the radio each seat has selected.
+  - **No MCDU or UFC pages yet.** Their slots hold empty pages.
+
 ### Log
 
 - **The minute status line says when its slowest pass happened and what it

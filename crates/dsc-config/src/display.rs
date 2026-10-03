@@ -2076,7 +2076,7 @@ impl SpanPatch {
             value_aliases: self
                 .value_aliases
                 .pick(reading || shares_stored, &shared.value_aliases),
-            abs: self.abs.pick(reading, &shared.abs),
+            abs: self.abs.pick(reading || shares_stored, &shared.abs),
             aliases: self.aliases.pick(reading, &shared.aliases),
             format: self.format.pick_opt(reading, &shared.format),
             colour: self.colour.pick_opt(true, &shared.colour),
@@ -2361,13 +2361,20 @@ impl Span {
     /// Whether anything here says how to draw a number: a range, decimal
     /// places, rounding, a wrap or a dropped sign.
     pub fn shapes_a_number(&self) -> bool {
+        self.works_out_a_number() || self.abs
+    }
+
+    /// Whether anything here works the number out, rather than only drawing
+    /// it without its sign: everything [`shapes_a_number`](Self::shapes_a_number)
+    /// asks but `abs`. A piece drawing a shared result may drop the sign,
+    /// since the result keeps it for the conditions and bands that test it.
+    pub fn works_out_a_number(&self) -> bool {
         self.reads.is_some()
             || !self.conversions.is_empty()
             || self.decimals != 0
             || self.digits != 0
             || self.round != Round::Nearest
             || self.wrap.is_some()
-            || self.abs
     }
 
     /// Half of the last decimal place a reading is shown to, which is how
@@ -2451,7 +2458,9 @@ impl Span {
     ///
     /// The signal has already shaped the number, so all that is left is the
     /// bands: matched against the value read as a number, to the places it
-    /// shows. Characters that are not a number draw as they are.
+    /// shows. Characters that are not a number draw as they are. A number no
+    /// band claims loses its sign for `abs`, after the bands, as a reading's
+    /// does.
     pub fn format_stored(&self, value: &StoredValue) -> (String, Option<&AliasDraw>) {
         let tol = value.tolerance();
         let band = value.number.and_then(|n| {
@@ -2462,6 +2471,9 @@ impl Span {
         });
         if let Some(drawn) = band.filter(|b| !b.reading) {
             return (drawn.text.clone(), Some(drawn));
+        }
+        if self.abs && value.number.is_some() {
+            return (value.text.replacen('-', "", 1), band);
         }
         (value.text.clone(), band)
     }

@@ -2740,7 +2740,7 @@ impl Profile {
                     out.push(Error::StoredNotANumber(stored.name.clone()));
                     continue;
                 }
-                if span.shapes_a_number() {
+                if span.works_out_a_number() {
                     out.push(Error::ShapingOnStored(
                         r.display.clone(),
                         r.cells.to_string(),

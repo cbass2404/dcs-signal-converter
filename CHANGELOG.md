@@ -46,3 +46,7 @@ unless this says what moved.
 
 - **The profile header shows only the aircraft under the name**, as the
   profile cards already do. It no longer repeats the DCS-BIOS module.
+- **A piece drawing a shared result can draw it without its sign.** Offered
+  when the result can go below zero. The result keeps its sign, so its
+  aliases and conditions still tell left from right, and the screen shows
+  only the size: a drift of -12.5 draws as 12.5.

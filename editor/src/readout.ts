@@ -3097,6 +3097,32 @@ function storedControls(
         edited,
       ),
     );
+    // Offered where the result can run below zero, as on a reading. The
+    // result keeps its sign, so the bands above and every condition testing
+    // it still see which way it points; only what is drawn loses it.
+    const signed = chosen.terms.some(
+      (t) =>
+        (t.text ?? "").includes("-") ||
+        (t.reads ?? []).some((end) => end < 0) ||
+        (t.conversions ?? []).some((c) => c.reads.some((end) => end < 0)),
+    );
+    if (signed || span.abs) {
+      const abs = el("input", { type: "checkbox" });
+      abs.checked = span.abs === true;
+      abs.addEventListener("change", () => {
+        if (abs.checked) span.abs = true;
+        else delete span.abs;
+        edited();
+      });
+      parts.push(
+        explained(
+          el("label", { class: "meta" }, abs, " without its sign"),
+          "About drawing without the sign",
+          "Draws -12.5 as 12.5. The shared result still reads -12.5, so an " +
+            "alias or a condition can say which way it points.",
+        ),
+      );
+    }
   }
   return parts;
 }
@@ -3678,7 +3704,8 @@ function describeField(readout: Readout, display: DisplayInfo): string {
     }
     if (kindOf(s) === "stored") {
       const named = storedSignal(s.signal ?? "")?.name;
-      return `${named ? `the shared result ${named}` : "a shared result nobody has chosen yet"}${held}`;
+      const unsigned = s.abs ? ", without its sign" : "";
+      return `${named ? `the shared result ${named}` : "a shared result nobody has chosen yet"}${unsigned}${held}`;
     }
     if (kindOf(s) === "signal") {
       // How it draws the number, so a reset that only changes that says so

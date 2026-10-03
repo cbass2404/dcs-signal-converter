@@ -1801,6 +1801,10 @@ stored name for both. Kept in the module's page file beside its pages:
   refused, since the signal already says, and so is one that also has text or
   a source. Bands match the joined characters read as a number, to the places
   they show. Characters that are not a number draw as they are.
+- **`abs` on the piece drops the sign only where it is drawn.** The signal
+  keeps it, so a band or a condition can still tell -12.5 from 12.5 while the
+  piece draws `12.5`. As on a reading, a band that claims the number draws its
+  own characters instead.
 - **Nothing draws until every term has arrived.** A number missing a digit is
   a different number. A label beside it in the chain still draws.
 - **Worked out once a paint.** The engine keeps one answer per signal for each

@@ -305,6 +305,46 @@ fn the_piece_drawing_it_cannot_shape_the_number_again() {
 }
 
 #[test]
+fn the_piece_drawing_it_may_drop_the_sign_its_bands_still_see() {
+    let drift: StoredSignal = serde_json::from_str(
+        r#"{"id": "drift1", "name": "Drift",
+            "terms": [{"source": "D100", "reads": [-5, 5], "decimals": 1}]}"#,
+    )
+    .unwrap();
+    let file = page_file(
+        r#"{"cells": "0-5", "signal": "drift1", "abs": true,
+            "value_aliases": {"0": "ZERO", "-5..-0.1": {"reading": true, "colour": "red"}}}"#,
+        &[drift],
+    );
+    let found = refusals(&profile(fields(&file)));
+    assert!(
+        !found.iter().any(|e| e.contains("shapes its own")),
+        "dropping the sign is how it draws, not shaping: {found:?}"
+    );
+    let field = &fields(&file)[0];
+    let read = |drum: f64| {
+        field
+            .compose(|id| {
+                (id == "D100").then_some(Reading::Number {
+                    value: at(drum),
+                    max: 65535,
+                })
+            })
+            .unwrap()
+    };
+    let text = |g: &[dsc_config::Glyph]| g.iter().map(|g| g.text.as_str()).collect::<String>();
+    // 2.5 of 10 on the drum is -2.5 on the face: drawn without its sign, and
+    // red by the band written for the negative side.
+    let left = read(2.5);
+    assert_eq!(text(&left).trim(), "2.5");
+    assert_eq!(left[0].colour, Some(Colour::Red));
+    let right = read(7.5);
+    assert_eq!(text(&right).trim(), "2.5");
+    assert_eq!(right[0].colour, None);
+    assert_eq!(text(&read(5.0)).trim(), "ZERO");
+}
+
+#[test]
 fn a_signal_is_held_to_what_a_reading_is() {
     let mut bad = fuel();
     bad.terms[1].0.source.clear();

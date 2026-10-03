@@ -22,3 +22,8 @@ unless this says what moved.
   profile check)`. A slow moment in a log you send can now be matched to a
   stutter, a menu or an aircraft loading. See the log section of
   [docs/CLI.md](docs/CLI.md).
+
+### Editor
+
+- **The profile header shows only the aircraft under the name**, as the
+  profile cards already do. It no longer repeats the DCS-BIOS module.

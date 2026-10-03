@@ -1937,7 +1937,9 @@ async function showProfile(file: string): Promise<void> {
       el(
         "span",
         { class: "meta block", ...aircraft.title },
-        `${profile.module} · ${aircraft.text}`,
+        // The aircraft only, as on the profile cards: the DCS-BIOS module
+        // is nearly always one of them.
+        aircraft.text || "no aircraft",
       ),
     ),
     state,

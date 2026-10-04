@@ -53,6 +53,27 @@ unless this says what moved.
     their drift, map angle, power, land or sea mode, drift angle, heading
     and course.
   - **No UFC page yet.**
+- **New profile for the AJS37 Viggen:**
+  - **Backlights:** every panel's backlight is lit whenever you are in the
+    aircraft.
+  - **PTO2:** NOSE, LEFT and RIGHT light with that gear's green lamp, the
+    landing gear light with the yellow gear lamp, and the master caution
+    with the right master caution light. FLAPS lights with the AFK lamp,
+    HALF with attitude hold and FULL with altitude hold. JETT lights while
+    the external tank release cover is open, and HOOK with the stores
+    released lamp.
+  - **MCDU and PFP:** FAIL lights with the right master caution light.
+  - **Orion Throttle Base II:** A/A lights with the weapon selector at GUN
+    or IR, A/G with the master mode selector at ANF.
+  - **MCDU and PFP page, CDU Flight:** the master mode in its own colour,
+    weapon selector, interval and release modes; the FR 22's group, manual
+    frequency, base channel and buttons, each button green while pressed;
+    range in km or mil, fuel, destination, airspeed and Mach; and the CK37
+    data panel's selector, readout and IN or UT.
+  - **ICP page, DED CK47:** the CK37 data panel's selector, readout and IN
+    or UT, with range, fuel, destination, airspeed and Mach.
+  - **UFC page, UFC Flight:** the CK37 readout, selector and IN or UT, with
+    destination, range and airspeed.
 
 ### Log
 

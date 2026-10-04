@@ -15,6 +15,9 @@ This reads both, keeps the gauges whose marks are uneven and that DCS-BIOS
 sends, and writes their `conversions` rows per aircraft. docs/gauges.html reads
 the JSON and draws the tables, so only the JSON changes when this reruns.
 
+Chiclet ladders are listed too: a bar of lamps DCS-BIOS sends one signal
+each, read off its `defineLadderChiclet` calls with each chiclet's colour.
+
 `--bios` is DCS-BIOS's lib/modules/aircraft_modules. It defaults to the pinned
 nightly in target/dcs-bios-pin (tools/fetch_bios.py), then to Saved Games.
 
@@ -419,6 +422,28 @@ def bios_floats(path):
     return found
 
 
+def bios_ladders(path):
+    """Chiclet ladders: a bar of lamps, each sent as its own 0-65535. The first
+    lights only while the ladder is on; the rest fill from the bottom, so how
+    many are lit is the reading. Descriptions are usually a local string."""
+    with open(path, encoding="utf-8", errors="replace") as f:
+        text = f.read()
+    strings = dict(re.findall(r'local\s+(\w+)\s*=\s*"([^"]*)"', text))
+    arg = r'(\w+|"[^"]*")'
+    pat = re.compile(r':defineLadderChiclet\(\s*"([^"]+)"\s*,\s*' + arg + r'\s*,\s*(\d+)\s*,\s*[\w\.]+\s*,\s*'
+                     + arg + r'\s*,\s*"(\w+)"\s*\)')
+    found = {}
+    for m in pat.finditer(text):
+        name = m.group(4).strip('"') if m.group(4).startswith('"') else strings.get(m.group(4), m.group(4))
+        found.setdefault(m.group(2), (name, []))[1].append((int(m.group(3)), m.group(1), m.group(5)))
+    ladders = []
+    for name, chiclets in found.values():
+        chiclets.sort()
+        ladders.append({"name": name, "on": chiclets[0][1],
+                        "chiclets": [{"id": ident, "colour": colour} for _, ident, colour in chiclets[1:]]})
+    return sorted(ladders, key=lambda l: l["name"])
+
+
 def chord_off(points):
     (x0, y0), (x1, y1) = points[0], points[-1]
     if x1 == x0 or y1 == y0:
@@ -609,8 +634,11 @@ def collect(roots, bios_dir):
                            "straight_off_pct": round(straight_off(bps)), "dcs_gauge": name, "argument": arg,
                            "conversions": rows(bps)})
         gauges.sort(key=lambda g: g["id"])
-        if gauges:
+        ladders = bios_ladders(bios_path)
+        if gauges or ladders:
             found.append({"aircraft": title, "bios_module": bios_name, "gauges": gauges})
+            if ladders:
+                found[-1]["ladders"] = ladders
         else:
             empty.append(title)
     not_covered = [{"aircraft": title, "bios_module": bios, "why": why}
@@ -665,20 +693,22 @@ def main():
     # The editor's copy: only what filling in a reading needs, keyed by the
     # DCS-BIOS module, so the app carries a fraction of the page's file.
     lean = {a["bios_module"]: [{k: g[k] for k in ("id", "description", "unit", "reads", "conversions") if k in g}
-                               for g in a["gauges"]] for a in found}
+                               for g in a["gauges"]] for a in found if a["gauges"]}
     with open(EDITOR_OUT, "w", encoding="utf-8", newline="\r\n") as f:
         f.write(dumps(lean) + "\n")
     gauges = [g for a in found for g in a["gauges"]]
     uneven = sum(1 for g in gauges if "conversions" in g)
-    print("%d gauges (%d uneven) in %d aircraft, %d left out -> %s, %s"
-          % (len(gauges), uneven, len(found), len(left_out), os.path.relpath(OUT, ROOT),
+    ladders = sum(len(a.get("ladders", [])) for a in found)
+    print("%d gauges (%d uneven) and %d chiclet ladders in %d aircraft, %d left out -> %s, %s"
+          % (len(gauges), uneven, ladders, len(found), len(left_out), os.path.relpath(OUT, ROOT),
              os.path.relpath(EDITOR_OUT, ROOT)))
 
 
 def dumps(doc):
-    """Indented, but each conversions row and each pair of reads on one line,
-    as the profiles read."""
+    """Indented, but each conversions row, each pair of reads and each chiclet
+    on one line, as the profiles read."""
     text = json.dumps(doc, indent=2, ensure_ascii=False)
+    text = re.sub(r'\{\s+"id": ("[^"]*"),\s+"colour": ("[^"]*")\s+\}', r'{"id": \1, "colour": \2}', text)
     text = re.sub(r'\{\s+"raw": \[\s+([-\d.]+),\s+([-\d.]+)\s+\],\s+"reads": \[\s+([-\d.]+),\s+([-\d.]+)\s+\]\s+\}',
                   r'{"raw": [\1, \2], "reads": [\3, \4]}', text)
     return re.sub(r'"reads": \[\s+([-\d.]+),\s+([-\d.]+)\s+\]', r'"reads": [\1, \2]', text)

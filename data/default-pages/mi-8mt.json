@@ -1,0 +1,1754 @@
+{
+  "module": "Mi-8MT",
+  "pages": [
+    {
+      "id": "fgpeoh",
+      "name": "DED Doppler Nav",
+      "display": "DED",
+      "fields": [
+        {
+          "cells": "72-95",
+          "content": [
+            {
+              "text": "PWR"
+            },
+            {
+              "gap": true,
+              "width": 3
+            },
+            {
+              "source": "DISS15_COORD_ON_LAMP",
+              "width": 8,
+              "reads": [
+                0.0,
+                1.0
+              ],
+              "value_aliases": {
+                "0": "DISABLED",
+                "1": "ENABLE"
+              },
+              "inverse": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "CRS"
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "text": "HDG"
+            }
+          ]
+        },
+        {
+          "cells": "48-71",
+          "content": [
+            {
+              "text": "ANGLE"
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "source": "DISS15_COORD_MAP_ANGLE_100",
+              "conversions": [
+                {
+                  "raw": [
+                    0,
+                    6553
+                  ],
+                  "reads": [
+                    0.0,
+                    1.0
+                  ]
+                },
+                {
+                  "raw": [
+                    6554,
+                    13107
+                  ],
+                  "reads": [
+                    1.0,
+                    2.0
+                  ]
+                },
+                {
+                  "raw": [
+                    13108,
+                    19660
+                  ],
+                  "reads": [
+                    2.0,
+                    3.0
+                  ]
+                },
+                {
+                  "raw": [
+                    19661,
+                    65535
+                  ],
+                  "reads": [
+                    3.0,
+                    4.0
+                  ]
+                }
+              ],
+              "wrap": 4.0,
+              "inverse": true
+            },
+            {
+              "source": "DISS15_COORD_MAP_ANGLE_10",
+              "conversions": [
+                {
+                  "raw": [
+                    0,
+                    6553
+                  ],
+                  "reads": [
+                    0.0,
+                    1.0
+                  ]
+                },
+                {
+                  "raw": [
+                    6554,
+                    13107
+                  ],
+                  "reads": [
+                    1.0,
+                    2.0
+                  ]
+                },
+                {
+                  "raw": [
+                    13108,
+                    19660
+                  ],
+                  "reads": [
+                    2.0,
+                    3.0
+                  ]
+                },
+                {
+                  "raw": [
+                    19661,
+                    26214
+                  ],
+                  "reads": [
+                    3.0,
+                    4.0
+                  ]
+                },
+                {
+                  "raw": [
+                    26215,
+                    32767
+                  ],
+                  "reads": [
+                    4.0,
+                    5.0
+                  ]
+                },
+                {
+                  "raw": [
+                    32768,
+                    39321
+                  ],
+                  "reads": [
+                    5.0,
+                    6.0
+                  ]
+                },
+                {
+                  "raw": [
+                    39322,
+                    65535
+                  ],
+                  "reads": [
+                    6.0,
+                    7.0
+                  ]
+                }
+              ],
+              "wrap": 7.0,
+              "inverse": true
+            },
+            {
+              "source": "DISS15_COORD_MAP_ANGLE_1",
+              "width": 1,
+              "reads": [
+                0.0,
+                10.0
+              ],
+              "digits": 1,
+              "round": "down",
+              "wrap": 10.0,
+              "inverse": true
+            },
+            {
+              "text": "o",
+              "inverse": true
+            },
+            {
+              "source": "DISS15_COORD_MAP_ANGLE_MIN",
+              "reads": [
+                0.0,
+                60.0
+              ],
+              "digits": 2,
+              "wrap": 60.0,
+              "inverse": true
+            },
+            {
+              "text": "'",
+              "inverse": true
+            }
+          ]
+        },
+        {
+          "cells": "24-47",
+          "content": [
+            {
+              "text": "LONG"
+            },
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "signal": "s7msah",
+              "width": 5,
+              "inverse": true
+            },
+            {
+              "text": "KM",
+              "inverse": true
+            },
+            {
+              "text": " ",
+              "inverse": true
+            },
+            {
+              "signal": "y5pbrb",
+              "width": 3,
+              "value_aliases": {
+                "0": "FWD",
+                "1": "BCK"
+              },
+              "inverse": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "MISC_LAND_SEA",
+              "width": 4,
+              "value_aliases": {
+                "0": "LAND",
+                "1": "SEA"
+              },
+              "inverse": true
+            }
+          ]
+        },
+        {
+          "cells": "0-23",
+          "content": [
+            {
+              "text": "LAT"
+            },
+            {
+              "gap": true,
+              "width": 3
+            },
+            {
+              "signal": "927f9i",
+              "inverse": true
+            },
+            {
+              "text": "KM",
+              "inverse": true
+            },
+            {
+              "text": " ",
+              "inverse": true
+            },
+            {
+              "signal": "ajano3",
+              "value_aliases": {
+                "0": "RGT",
+                "1": "LFT"
+              },
+              "inverse": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "MODE"
+            }
+          ]
+        },
+        {
+          "cells": "96-119",
+          "content": [
+            {
+              "text": "DRIFT"
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "signal": "6ynpu7",
+              "width": 4,
+              "align": "right",
+              "abs": true,
+              "inverse": true
+            },
+            {
+              "text": "o",
+              "inverse": true
+            },
+            {
+              "signal": "6ynpu7",
+              "width": 3,
+              "value_aliases": {
+                "-50..-0.1": "LFT",
+                "0": "   ",
+                "0.1..50": "RGT"
+              },
+              "inverse": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "UGR_4K_HEADING_L",
+              "width": 3,
+              "reads": [
+                0.0,
+                360.0
+              ],
+              "digits": 3,
+              "round": "down",
+              "wrap": 360.0,
+              "inverse": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "signal": "u9wkqs",
+              "inverse": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "9mytul",
+      "name": "CDU Flight",
+      "display": "MCDU",
+      "fields": [
+        {
+          "cells": "288-311",
+          "content": [
+            {
+              "text": "IAS",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "BALT",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "RALT",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "VVI",
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "312-335",
+          "content": [
+            {
+              "source": "IAS_L",
+              "width": 3,
+              "conversions": [
+                {
+                  "raw": [
+                    0,
+                    2228
+                  ],
+                  "reads": [
+                    -36.0,
+                    0.0
+                  ]
+                },
+                {
+                  "raw": [
+                    2229,
+                    4587
+                  ],
+                  "reads": [
+                    0.0,
+                    50.0
+                  ]
+                },
+                {
+                  "raw": [
+                    4588,
+                    13041
+                  ],
+                  "reads": [
+                    50.0,
+                    100.0
+                  ]
+                },
+                {
+                  "raw": [
+                    13042,
+                    20054
+                  ],
+                  "reads": [
+                    100.0,
+                    150.0
+                  ]
+                },
+                {
+                  "raw": [
+                    20055,
+                    27394
+                  ],
+                  "reads": [
+                    150.0,
+                    200.0
+                  ]
+                },
+                {
+                  "raw": [
+                    27395,
+                    34734
+                  ],
+                  "reads": [
+                    200.0,
+                    250.0
+                  ]
+                },
+                {
+                  "raw": [
+                    34735,
+                    41942
+                  ],
+                  "reads": [
+                    250.0,
+                    300.0
+                  ]
+                },
+                {
+                  "raw": [
+                    41943,
+                    49282
+                  ],
+                  "reads": [
+                    300.0,
+                    350.0
+                  ]
+                },
+                {
+                  "raw": [
+                    49283,
+                    56557
+                  ],
+                  "reads": [
+                    350.0,
+                    400.0
+                  ]
+                },
+                {
+                  "raw": [
+                    56558,
+                    63634
+                  ],
+                  "reads": [
+                    400.0,
+                    450.0
+                  ]
+                },
+                {
+                  "raw": [
+                    63635,
+                    65535
+                  ],
+                  "reads": [
+                    450.0,
+                    465.1
+                  ]
+                }
+              ],
+              "value_aliases": {
+                "0..49": {
+                  "text": "---",
+                  "colour": "red"
+                },
+                "50": {
+                  "text": "70",
+                  "colour": "amber"
+                }
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "VD_10K_L_100",
+              "width": 2,
+              "reads": [
+                0.0,
+                10.0
+              ],
+              "digits": 2,
+              "round": "down",
+              "wrap": 10.0,
+              "colour": "green"
+            },
+            {
+              "source": "VD_10K_L_10",
+              "width": 3,
+              "reads": [
+                0.0,
+                1000.0
+              ],
+              "digits": 3,
+              "round": "down",
+              "wrap": 1000.0,
+              "colour": "green"
+            },
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "source": "A_036_RALT",
+              "width": 3,
+              "conversions": [
+                {
+                  "raw": [
+                    0,
+                    31129
+                  ],
+                  "reads": [
+                    0.0,
+                    100.0
+                  ]
+                },
+                {
+                  "raw": [
+                    31130,
+                    40959
+                  ],
+                  "reads": [
+                    100.0,
+                    300.0
+                  ]
+                },
+                {
+                  "raw": [
+                    40960,
+                    65535
+                  ],
+                  "reads": [
+                    300.0,
+                    800.0
+                  ]
+                }
+              ],
+              "digits": 3,
+              "round": "down",
+              "value_aliases": {
+                "0..20": {
+                  "colour": "red",
+                  "reading": true
+                },
+                "701..": {
+                  "text": "---",
+                  "colour": "red"
+                }
+              },
+              "colour": "green"
+            },
+            {
+              "switch_signal": "72vl75",
+              "cases": {
+                "..-3": [
+                  {
+                    "gap": true,
+                    "width": 3
+                  },
+                  {
+                    "signal": "72vl75",
+                    "width": 3,
+                    "align": "right",
+                    "colour": "red"
+                  },
+                  {
+                    "text": "0",
+                    "colour": "red"
+                  }
+                ],
+                "-3..-0.1": [
+                  {
+                    "gap": true
+                  },
+                  {
+                    "signal": "72vl75",
+                    "width": 3,
+                    "align": "right",
+                    "colour": "amber"
+                  },
+                  {
+                    "text": "0",
+                    "colour": "amber"
+                  }
+                ],
+                "0": [
+                  {
+                    "gap": true
+                  },
+                  {
+                    "text": "0",
+                    "width": 4,
+                    "align": "right",
+                    "colour": "green"
+                  }
+                ],
+                "1..9": [
+                  {
+                    "gap": true
+                  },
+                  {
+                    "text": "+",
+                    "colour": "green"
+                  },
+                  {
+                    "signal": "72vl75",
+                    "width": 1,
+                    "abs": true,
+                    "colour": "green"
+                  },
+                  {
+                    "text": "0",
+                    "colour": "green"
+                  }
+                ],
+                "10..": [
+                  {
+                    "gap": true
+                  },
+                  {
+                    "text": "+",
+                    "colour": "green"
+                  },
+                  {
+                    "signal": "72vl75",
+                    "width": 2,
+                    "abs": true,
+                    "colour": "green"
+                  },
+                  {
+                    "text": "0",
+                    "colour": "green"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "cells": "192-215",
+          "content": [
+            {
+              "gap": true,
+              "rule": true,
+              "label": "FLIGHT DATA",
+              "label_colour": "white",
+              "colour": "amber",
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "0-23",
+          "content": [
+            {
+              "gap": true,
+              "rule": true,
+              "colour": "amber",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "source": "RADIO_SEL_L",
+              "width": 6,
+              "value_aliases": {
+                "0": "R-863",
+                "1": "JADRO",
+                "2": "R-828",
+                "3": "NF",
+                "4": "ARC-9",
+                "5": "ARC-UD"
+              },
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "gap": true,
+              "rule": true,
+              "colour": "amber",
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "24-47",
+          "content": [
+            {
+              "source": "LST_VOL_KNOB_L",
+              "width": 4,
+              "align": "right",
+              "reads": [
+                0.0,
+                4.0
+              ],
+              "round": "down",
+              "value_aliases": {
+                "0": {
+                  "text": "]",
+                  "colour": "red"
+                },
+                "1": {
+                  "text": " ",
+                  "colour": "red",
+                  "inverse": true
+                },
+                "2": {
+                  "text": "  ",
+                  "colour": "amber",
+                  "inverse": true
+                },
+                "3": {
+                  "text": "   ",
+                  "colour": "yellow",
+                  "inverse": true
+                },
+                "4": {
+                  "text": "    ",
+                  "colour": "green",
+                  "inverse": true
+                }
+              }
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "text": "VOL",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "source": "SPU7_L_ICS",
+              "width": 5,
+              "align": "centre",
+              "value_aliases": {
+                "0": {
+                  "text": "ICS",
+                  "colour": "amber"
+                },
+                "1": "RADIO"
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "MON",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "source": "VOL_KNOB_R",
+              "width": 4,
+              "reads": [
+                0.0,
+                4.0
+              ],
+              "value_aliases": {
+                "0": {
+                  "text": "[",
+                  "colour": "red"
+                },
+                "1": {
+                  "text": " ",
+                  "colour": "red",
+                  "inverse": true
+                },
+                "2": {
+                  "text": "  ",
+                  "colour": "amber",
+                  "inverse": true
+                },
+                "3": {
+                  "text": "   ",
+                  "colour": "yellow",
+                  "inverse": true
+                },
+                "4": {
+                  "text": "    ",
+                  "colour": "green",
+                  "inverse": true
+                }
+              },
+              "colour": "green"
+            }
+          ]
+        },
+        {
+          "cells": "48-71",
+          "content": [
+            {
+              "switch": "CB_R863",
+              "cases": {
+                "0": {
+                  "text": "R-863",
+                  "colour": "red",
+                  "small": true
+                },
+                "1": {
+                  "text": "R-863",
+                  "small": true
+                }
+              }
+            },
+            {
+              "gap": true,
+              "width": 3
+            },
+            {
+              "text": "SRC",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 3
+            },
+            {
+              "text": "PRE",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "VOL",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            }
+          ]
+        },
+        {
+          "cells": "72-95",
+          "content": [
+            {
+              "source": "R863_RADIO",
+              "width": 7,
+              "colour": "green"
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "source": "R863_UNIT_SWITCH",
+              "width": 4,
+              "value_aliases": {
+                "0": "PRE",
+                "1": "DIAL"
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "source": "R863_CNL_SEL",
+              "width": 2,
+              "reads": [
+                1.0,
+                20.0
+              ],
+              "colour": "green"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "R863_VOL",
+              "width": 4,
+              "reads": [
+                0.0,
+                4.0
+              ],
+              "round": "down",
+              "value_aliases": {
+                "0": {
+                  "text": "[",
+                  "colour": "red"
+                },
+                "1": {
+                  "text": " ",
+                  "colour": "red",
+                  "inverse": true
+                },
+                "2": {
+                  "text": "  ",
+                  "colour": "amber",
+                  "inverse": true
+                },
+                "3": {
+                  "text": "   ",
+                  "colour": "yellow",
+                  "inverse": true
+                },
+                "4": {
+                  "text": "    ",
+                  "colour": "green",
+                  "inverse": true
+                }
+              }
+            }
+          ]
+        },
+        {
+          "cells": "96-119",
+          "content": [
+            {
+              "switch": "R828_PWR",
+              "cases": {
+                "0": {
+                  "text": "R-828",
+                  "colour": "red",
+                  "small": true
+                },
+                "1": {
+                  "text": "R-828",
+                  "small": true
+                }
+              }
+            },
+            {
+              "gap": true,
+              "width": 3
+            },
+            {
+              "text": "TUNED",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "VOL",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            }
+          ]
+        },
+        {
+          "cells": "120-143",
+          "content": [
+            {
+              "source": "R828_CHANNEL",
+              "width": 7,
+              "reads": [
+                1.0,
+                10.0
+              ],
+              "round": "down",
+              "colour": "green"
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "source": "R828_ASU",
+              "width": 5,
+              "reads": [
+                0.0,
+                1.0
+              ],
+              "round": "up",
+              "value_aliases": {
+                "0": "",
+                "1": {
+                  "text": "     ",
+                  "colour": "green",
+                  "inverse": true
+                }
+              }
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "R828_VOL",
+              "width": 4,
+              "reads": [
+                0.0,
+                4.0
+              ],
+              "round": "down",
+              "value_aliases": {
+                "0": {
+                  "text": "[",
+                  "colour": "red",
+                  "inverse": true
+                },
+                "1": {
+                  "text": " ",
+                  "colour": "red",
+                  "inverse": true
+                },
+                "2": {
+                  "text": "  ",
+                  "colour": "amber",
+                  "inverse": true
+                },
+                "3": {
+                  "text": "   ",
+                  "colour": "yellow",
+                  "inverse": true
+                },
+                "4": {
+                  "text": "    ",
+                  "colour": "green",
+                  "inverse": true
+                }
+              }
+            }
+          ]
+        },
+        {
+          "cells": "144-167",
+          "content": [
+            {
+              "switch": "JADR1A_MODE",
+              "cases": {
+                "0": {
+                  "text": "JADRO",
+                  "colour": "red",
+                  "small": true
+                },
+                "1": {
+                  "text": "JADRO",
+                  "colour": "amber",
+                  "small": true
+                },
+                "2": {
+                  "text": "JADRO",
+                  "colour": "white",
+                  "small": true
+                }
+              }
+            },
+            {
+              "gap": true,
+              "width": 3
+            },
+            {
+              "text": "TUNED",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "text": "SQ",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "VOL",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            }
+          ]
+        },
+        {
+          "cells": "168-191",
+          "content": [
+            {
+              "source": "YADRO1A_FREQ",
+              "width": 7,
+              "colour": "green"
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "source": "JADRO_ASU_LAMP",
+              "width": 5,
+              "value_aliases": {
+                "0": "",
+                "1": {
+                  "text": "     ",
+                  "colour": "white",
+                  "inverse": true
+                }
+              }
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "source": "YADRO1A_SQL",
+              "width": 3,
+              "value_aliases": {
+                "0": {
+                  "text": "OFF",
+                  "colour": "red"
+                },
+                "1": {
+                  "text": "ON",
+                  "colour": "green"
+                }
+              }
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "JADR1A_VOL",
+              "width": 4,
+              "reads": [
+                0.0,
+                4.0
+              ],
+              "round": "down",
+              "value_aliases": {
+                "0": {
+                  "text": "[",
+                  "colour": "red"
+                },
+                "1": {
+                  "text": " ",
+                  "colour": "red",
+                  "inverse": true
+                },
+                "2": {
+                  "text": "  ",
+                  "colour": "amber",
+                  "inverse": true
+                },
+                "3": {
+                  "text": "   ",
+                  "colour": "yellow",
+                  "inverse": true
+                },
+                "4": {
+                  "text": "    ",
+                  "colour": "green",
+                  "inverse": true
+                }
+              }
+            }
+          ]
+        },
+        {
+          "cells": "216-239",
+          "content": [
+            {
+              "signal": "dzhb5j",
+              "width": 4,
+              "colour": "green"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "ARC9_MAIN_BACKUP",
+              "width": 1,
+              "value_aliases": {
+                "0": {
+                  "text": "<",
+                  "colour": "green"
+                },
+                "1": ""
+              }
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "ARC9_MODE",
+              "width": 5,
+              "value_aliases": {
+                "0": {
+                  "text": "ARC-9",
+                  "colour": "red",
+                  "small": true
+                },
+                "1..3": {
+                  "text": "ARC-9",
+                  "colour": "white",
+                  "small": true
+                }
+              }
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "ARC9_MAIN_BACKUP",
+              "width": 1,
+              "value_aliases": {
+                "0": "",
+                "1": {
+                  "text": ">",
+                  "colour": "green"
+                }
+              }
+            },
+            {
+              "gap": true
+            },
+            {
+              "signal": "0wia9h",
+              "width": 4,
+              "colour": "green"
+            }
+          ]
+        },
+        {
+          "cells": "240-263",
+          "content": [
+            {
+              "text": "MODE",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 3
+            },
+            {
+              "text": "STR",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "VOL",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            }
+          ]
+        },
+        {
+          "cells": "264-287",
+          "content": [
+            {
+              "source": "ARC9_MODE",
+              "width": 4,
+              "value_aliases": {
+                "0": "OFF",
+                "1": "COMP",
+                "2": "ANT",
+                "3": "LOOP"
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true,
+              "width": 3
+            },
+            {
+              "source": "ARC_9_SIGNAL",
+              "width": 4,
+              "reads": [
+                0.0,
+                4.0
+              ],
+              "value_aliases": {
+                "0": {
+                  "text": "[",
+                  "colour": "red"
+                },
+                "1": {
+                  "text": " ",
+                  "colour": "red",
+                  "inverse": true
+                },
+                "2": {
+                  "text": "  ",
+                  "colour": "amber",
+                  "inverse": true
+                },
+                "3": {
+                  "text": "   ",
+                  "colour": "yellow",
+                  "inverse": true
+                },
+                "4": {
+                  "text": "    ",
+                  "colour": "green",
+                  "inverse": true
+                }
+              }
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "ARC9_VOL",
+              "width": 4,
+              "reads": [
+                0.0,
+                4.0
+              ],
+              "round": "down",
+              "value_aliases": {
+                "0": {
+                  "text": "[",
+                  "colour": "red"
+                },
+                "1": {
+                  "text": " ",
+                  "colour": "red"
+                },
+                "2": {
+                  "text": "  ",
+                  "colour": "amber"
+                },
+                "3": {
+                  "text": "   ",
+                  "colour": "yellow"
+                },
+                "4": {
+                  "text": "    ",
+                  "colour": "green"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "signals": [
+    {
+      "id": "y5pbrb",
+      "name": "DOPPLER LONG DRIFT",
+      "terms": [
+        {
+          "source": "DISS15_COORD_FORWARD",
+          "reads": [
+            0.0,
+            1.0
+          ],
+          "round": "down"
+        }
+      ]
+    },
+    {
+      "id": "ajano3",
+      "name": "DOPPLER LAT DRIFT",
+      "terms": [
+        {
+          "source": "DISS15_COORD_RIGHT",
+          "reads": [
+            0.0,
+            1.0
+          ],
+          "round": "down"
+        }
+      ]
+    },
+    {
+      "id": "s7msah",
+      "name": "DOPPLER X COORD",
+      "terms": [
+        {
+          "source": "DISS15_COORD_X_100",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "source": "DISS15_COORD_X_10",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "source": "DISS15_COORD_X_1",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "decimals": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 3
+        }
+      ]
+    },
+    {
+      "id": "927f9i",
+      "name": "DOPPLER Z COORD",
+      "terms": [
+        {
+          "source": "DISS15_COORD_Z_100",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "source": "DISS15_COORD_Z_10",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "round": "down",
+          "wrap": 10.0
+        },
+        {
+          "source": "DISS15_COORD_Z_1",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "decimals": 1,
+          "wrap": 10.0,
+          "width": 3
+        }
+      ]
+    },
+    {
+      "id": "6ynpu7",
+      "name": "DOPPLER DRIFT DEGREES",
+      "terms": [
+        {
+          "source": "DISS15_DRIFT_ANGLE",
+          "reads": [
+            -50.0,
+            50.0
+          ],
+          "decimals": 1,
+          "digits": 1
+        }
+      ]
+    },
+    {
+      "id": "u9wkqs",
+      "name": "COURSE PILOT",
+      "terms": [
+        {
+          "source": "UGR_4K_HEADING_L",
+          "reads": [
+            0.0,
+            360.0
+          ],
+          "round": "down",
+          "wrap": 360.0
+        },
+        {
+          "source": "UGR_4K_COMMANDED_COURSE_L",
+          "reads": [
+            0.0,
+            360.0
+          ],
+          "round": "down",
+          "wrap": 360.0,
+          "add": true
+        }
+      ],
+      "total": {
+        "wrap": 360.0,
+        "digits": 3
+      }
+    },
+    {
+      "id": "0wia9h",
+      "name": "ADF MAIN FREQ",
+      "terms": [
+        {
+          "source": "ARC_MAIN_100KHZ",
+          "reads": [
+            1.0,
+            12.0
+          ],
+          "digits": 2,
+          "width": 2
+        },
+        {
+          "source": "ARC_MAIN_10KHZ",
+          "reads": [
+            0.0,
+            90.0
+          ],
+          "digits": 2,
+          "width": 2
+        },
+        {
+          "source": "ARC9_MAIN_TUNE",
+          "reads": [
+            -10.0,
+            20.0
+          ],
+          "add": true
+        }
+      ],
+      "total": {
+        "digits": 4
+      }
+    },
+    {
+      "id": "dzhb5j",
+      "name": "ADF BCKUP FREQ",
+      "terms": [
+        {
+          "source": "ARC_BCK_100KHZ",
+          "reads": [
+            1.0,
+            12.0
+          ],
+          "digits": 2,
+          "width": 2
+        },
+        {
+          "source": "ARC_BCK_10KHZ",
+          "reads": [
+            0.0,
+            90.0
+          ],
+          "digits": 2,
+          "width": 2
+        },
+        {
+          "source": "ARC9_BCK_TUNE",
+          "reads": [
+            -10.0,
+            20.0
+          ],
+          "add": true
+        }
+      ],
+      "total": {
+        "digits": 4
+      }
+    },
+    {
+      "id": "72vl75",
+      "name": "VARIOMETER PILOT",
+      "terms": [
+        {
+          "source": "VARIOMETER_L",
+          "conversions": [
+            {
+              "raw": [
+                0,
+                9503
+              ],
+              "reads": [
+                -30.0,
+                -20.0
+              ]
+            },
+            {
+              "raw": [
+                9504,
+                18677
+              ],
+              "reads": [
+                -20.0,
+                -10.0
+              ]
+            },
+            {
+              "raw": [
+                18678,
+                25231
+              ],
+              "reads": [
+                -10.0,
+                -5.0
+              ]
+            },
+            {
+              "raw": [
+                25232,
+                29818
+              ],
+              "reads": [
+                -5.0,
+                -2.0
+              ]
+            },
+            {
+              "raw": [
+                29819,
+                31129
+              ],
+              "reads": [
+                -2.0,
+                -1.0
+              ]
+            },
+            {
+              "raw": [
+                31130,
+                32768
+              ],
+              "reads": [
+                -1.0,
+                0.0
+              ]
+            },
+            {
+              "raw": [
+                32769,
+                34406
+              ],
+              "reads": [
+                0.0,
+                1.0
+              ]
+            },
+            {
+              "raw": [
+                34407,
+                35717
+              ],
+              "reads": [
+                1.0,
+                2.0
+              ]
+            },
+            {
+              "raw": [
+                35718,
+                40304
+              ],
+              "reads": [
+                2.0,
+                5.0
+              ]
+            },
+            {
+              "raw": [
+                40305,
+                46858
+              ],
+              "reads": [
+                5.0,
+                10.0
+              ]
+            },
+            {
+              "raw": [
+                46859,
+                56032
+              ],
+              "reads": [
+                10.0,
+                20.0
+              ]
+            },
+            {
+              "raw": [
+                56033,
+                65535
+              ],
+              "reads": [
+                20.0,
+                30.0
+              ]
+            }
+          ],
+          "width": 3
+        }
+      ]
+    }
+  ]
+}

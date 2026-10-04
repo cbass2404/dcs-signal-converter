@@ -50,6 +50,10 @@
         --accent-wash: #fbeedf;
         --btn-ink: #ffffff;
         --live: #1f7a3d;
+        --chic-red: #c62828;
+        --chic-yellow: #c99700;
+        --chic-green: #2e8b3e;
+        --chic-blue: #1e6fd9;
       }
       @media (prefers-color-scheme: dark) {
         :root:not([data-theme="light"]) {
@@ -66,6 +70,10 @@
           --accent-wash: #2a2118;
           --btn-ink: #12161a;
           --live: #6fcf8e;
+          --chic-red: #ef5350;
+          --chic-yellow: #f2c94c;
+          --chic-green: #5cc97a;
+          --chic-blue: #5aa2f0;
         }
       }
       :root[data-theme="dark"] {
@@ -82,6 +90,10 @@
         --accent-wash: #2a2118;
         --btn-ink: #12161a;
         --live: #6fcf8e;
+        --chic-red: #ef5350;
+        --chic-yellow: #f2c94c;
+        --chic-green: #5cc97a;
+        --chic-blue: #5aa2f0;
       }
       * {
         box-sizing: border-box;
@@ -324,6 +336,33 @@
         font-size: 0.82rem;
         white-space: nowrap;
       }
+      .block-label {
+        display: block;
+        margin-top: 18px;
+      }
+      .strip {
+        display: flex;
+        gap: 2px;
+        margin: 3px 0 6px;
+      }
+      .chic {
+        flex: none;
+        width: 7px;
+        height: 16px;
+        background: var(--ink-3);
+      }
+      .chic-red {
+        background: var(--chic-red);
+      }
+      .chic-yellow {
+        background: var(--chic-yellow);
+      }
+      .chic-green {
+        background: var(--chic-green);
+      }
+      .chic-blue {
+        background: var(--chic-blue);
+      }
       button.copy {
         background: var(--panel-2);
         border: 1px solid var(--rule-2);
@@ -440,6 +479,15 @@
               DCS-BIOS names many signals after DCS's own gauges, so a name can say little. The DCS
               gauge column is the name in the module's <code>mainpanel_init.lua</code> and the
               argument number, which can help match a signal to a dial.
+            </p>
+            <p>
+              A <strong>chiclet ladder</strong> is a bar of lamps, not a needle. DCS-BIOS sends each
+              chiclet as its own signal, 0 to 65535 as it dims, and the bottom one lights only while
+              the ladder is on. The rest fill from the bottom, so the reading is how many are lit.
+              <strong>Copy terms</strong> gives a shared result's terms that add them, each read 0
+              to 1 and rounded up so a dimmed chiclet still counts. The bar shows the colour of the
+              top lit chiclet at each total, for the aliases and colours that turn the count into
+              text.
             </p>
           </div>
         </div>
@@ -640,6 +688,77 @@
         return tr;
       }
 
+      // Runs of one colour along a ladder, counted from the first chiclet
+      // above the one that shows the ladder is on: 1-10 red.
+      function runs(chiclets) {
+        const out = [];
+        chiclets.forEach((c, i) => {
+          const last = out[out.length - 1];
+          if (last && last.colour === c.colour) last.to = i + 1;
+          else out.push({ colour: c.colour, from: i + 1, to: i + 1 });
+        });
+        return out.map((r) => `${r.from === r.to ? r.from : `${r.from}-${r.to}`} ${r.colour}`);
+      }
+
+      function ladderRow(aircraft, l) {
+        const first = l.chiclets[0].id;
+        const last = l.chiclets[l.chiclets.length - 1].id;
+        const terms = l.chiclets.map((c, i) =>
+          i
+            ? { source: c.id, reads: [0, 1], round: "up", add: true }
+            : { source: c.id, reads: [0, 1], round: "up" },
+        );
+        const btn = h("button", { type: "button", class: "copy" }, "Copy terms");
+        btn.addEventListener("click", () => copy(btn, `"terms": ${rowsJson(terms)}`));
+        const strip = h(
+          "div",
+          { class: "strip", role: "img", "aria-label": runs(l.chiclets).join(", ") },
+          ...l.chiclets.map((c, i) =>
+            h("span", { class: `chic chic-${c.colour}`, title: `${i + 1} lit: ${c.colour}` }),
+          ),
+        );
+        const tr = h(
+          "tr",
+          {},
+          h(
+            "td",
+            {},
+            l.name,
+            h("div", { class: "note" }, `${l.chiclets.length} chiclets, plus the one for on`),
+          ),
+          h(
+            "td",
+            {},
+            h("code", {}, first),
+            " to ",
+            h("code", {}, last),
+            h("div", { class: "note" }, h("code", {}, l.on), " lights while the ladder is on"),
+          ),
+          h(
+            "td",
+            { class: "bp" },
+            strip,
+            h("div", { class: "note mono" }, runs(l.chiclets).join(" · ")),
+          ),
+          h("td", {}, btn),
+        );
+        tr.dataset.find =
+          `${aircraft} ${l.name} ${l.on} ${first} ${last} chiclet ladder`.toLowerCase();
+        return tr;
+      }
+
+      const table = (heads, body) =>
+        h(
+          "div",
+          { class: "table-scroll" },
+          h(
+            "table",
+            { class: "ref" },
+            h("thead", {}, h("tr", {}, ...heads.map((t) => h("th", {}, t)))),
+            body,
+          ),
+        );
+
       function draw(data) {
         $("versions").textContent = `Parsed from DCS ${data.dcs} and DCS-BIOS ${data.dcs_bios}.`;
         const tables = $("tables");
@@ -657,10 +776,21 @@
               "button",
               { type: "button", class: "chip", "data-pick": id, "aria-pressed": "false" },
               a.aircraft,
-              h("span", { class: "n" }, String(a.gauges.length)),
+              h("span", { class: "n" }, String(a.gauges.length + (a.ladders?.length ?? 0))),
             ),
           );
           const body = h("tbody", {}, ...a.gauges.map((g) => gaugeRow(a.aircraft, g)));
+          const ladders = a.ladders?.length
+            ? h(
+                "div",
+                { class: "block" },
+                h("span", { class: "eyebrow block-label" }, "Chiclet ladders"),
+                table(
+                  ["Ladder", "DCS-BIOS", "Colour by total lit", ""],
+                  h("tbody", {}, ...a.ladders.map((l) => ladderRow(a.aircraft, l))),
+                ),
+              )
+            : null;
           tables.append(
             h(
               "section",
@@ -668,24 +798,10 @@
               h("h2", {}, h("a", { class: "self", href: `#${id}` }, a.aircraft)),
               h(
                 "div",
-                { class: "table-scroll" },
-                h(
-                  "table",
-                  { class: "ref" },
-                  h(
-                    "thead",
-                    {},
-                    h(
-                      "tr",
-                      {},
-                      ...["DCS-BIOS", "DCS gauge", "Unit", "Raw → reads", "Off straight", ""].map(
-                        (t) => h("th", {}, t),
-                      ),
-                    ),
-                  ),
-                  body,
-                ),
+                { class: "block" },
+                table(["DCS-BIOS", "DCS gauge", "Unit", "Raw → reads", "Off straight", ""], body),
               ),
+              ladders,
             ),
           );
         }
@@ -744,6 +860,8 @@
             if (hit) shown++;
           }
           sec.hidden = !any;
+          for (const b of sec.querySelectorAll(".block"))
+            b.hidden = !b.querySelector("tbody tr:not([hidden])");
         }
         for (const b of $("jump").querySelectorAll("button"))
           b.setAttribute("aria-pressed", String(b.dataset.pick === pick));

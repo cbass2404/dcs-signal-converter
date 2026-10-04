@@ -1377,6 +1377,30 @@
           "width": 1
         }
       ]
+    },
+    {
+      "id": "fqmvhs",
+      "name": "Radar Altimeter Power",
+      "conditions": [
+        {
+          "source": "RADAR_ALT_PWR",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "2itzsm",
+      "name": "Weight ON Skids",
+      "conditions": [
+        {
+          "source": "EXT_WOW_SKID",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     }
   ]
 }

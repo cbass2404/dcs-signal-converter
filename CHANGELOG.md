@@ -32,7 +32,7 @@ unless this says what moved.
   - **ICP page, DED Radio:** the Remote Frequency Indicator's five radios,
     each with its channel, a C while it ciphers, its frequency, and an
     arrow marking the radio each seat has selected.
-  - **No MCDU or UFC pages yet.** Their slots hold empty pages.
+  - **No MCDU or UFC pages yet.**
 - **New profile for the Mi-8MT and Mi-8MTV2:**
   - **Backlights:** every panel's backlight is lit whenever you are in the
     aircraft.
@@ -74,6 +74,31 @@ unless this says what moved.
     or UT, with range, fuel, destination, airspeed and Mach.
   - **UFC page, UFC Flight:** the CK37 readout, selector and IN or UT, with
     destination, range and airspeed.
+- **New profile for the C-130J-30:**
+  - **Backlights:** every panel's backlight is lit whenever you are in the
+    aircraft.
+  - **PTO2:** the landing gear light follows the red gear handle light, and
+    NOSE, LEFT and RIGHT light once that gear shows locked. FULL lights with
+    the flaps indicator at full, and HALF with both the flaps indicator and
+    the flap lever at half. The master caution lights with the pilot's
+    master caution or master warning. LI, RI, LO and RO light with engines
+    1 to 4's LSGI low lights. JETT lights while the chute release cover is
+    open, CTR with the ramp/door control light, and HOOK with the CMDS mode
+    selector at MAN, SEMI or AUTO.
+  - **MCDU and PFP:** the pilot's CNI-MU lights. FAIL lights with FAIL,
+    MCDU and OFST with OFSET, IND and MSG with MSG, RDY and DSPY with DSPY,
+    and STATUS and EXEC with EXEC.
+  - **Orion Throttle Base II:** A/A lights with the airdrop jump light, A/G
+    with the airdrop caution light.
+  - **ICP page, DED AP:** the pilot's autopilot mode lights, ALT, SEL, HDG,
+    NAV, APP, VS, IAS, CAP and A/T, each showing ON while lit; the pilot and
+    copilot AFCS engage switches, highlighted while engaged; and the
+    reference select switch with its readout.
+  - **No MCDU or UFC pages yet.** DCS-BIOS does not send the CNI-MU's
+    screen.
+- **UH-1H:** RDY on the MCDU, DSPY on the PFPs, and NOSE, LEFT and RIGHT on
+  the PTO2 now take their conditions from shared conditions, Radar Altimeter
+  Power and Weight ON Skids. They light as before.
 
 ### Log
 

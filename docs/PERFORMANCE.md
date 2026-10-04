@@ -1,6 +1,6 @@
 # Performance and install size
 
-The daemon was measured 2026-09-30, at 1.0.0-beta.005 in development, on an
+The daemon was measured 2026-10-04, at 1.0.0-beta.008 in development, on an
 i9-12900KF with 64 GB, Windows 11, release builds from rustc 1.98.1, with
 nothing else open: no browser, no chat. Every figure is from the panels
 driven for real; the benchmark has no dry run, since writing to the panels
@@ -10,11 +10,11 @@ release.
 
 ## Summary
 
-- The daemon uses about 35 MB of private memory and about 1.3% of one core
+- The daemon uses about 45 MB of private memory and about 1.3% of one core
   in flight, 0.3% deciding what to send and the rest writing to the panels
   and reading their keys. Waiting for DCS it uses about 0.5%. Under a
   stream far heavier than DCS produces, every lamp and screen changing
-  every frame, it uses 3.4%. On an i5-12400F, the most common gaming CPU,
+  every frame, it uses 3.6%. On an i5-12400F, the most common gaming CPU,
   expect about 1.2 times these figures (estimated, see
   [Other CPUs](#other-cpus)).
 - The editor uses about 165 MB, almost all of it WebView2. It uses no CPU while
@@ -31,17 +31,17 @@ module-load flood, in one pass. Peaks are the busiest 1-second sample.
 
 | Scenario | Frames/s | CPU avg | CPU peak | Working set | Private |
 |---|---|---|---|---|---|
-| idle | 0 | 0.47% | 0.54% | 40.5 MB | 34.3 MB |
-| typical | 30 | 1.31% | 2.56% | 41.0 MB | 34.5 MB |
-| stress | 60 | 3.43% | 4.22% | 40.7 MB | 34.4 MB |
+| idle | 0 | 0.47% | 0.56% | 50.5 MB | 44.6 MB |
+| typical | 30 | 1.28% | 2.20% | 51.4 MB | 45.6 MB |
+| stress | 60 | 3.62% | 4.18% | 54.1 MB | 47.9 MB |
 
 Where the CPU goes, by thread, same pass:
 
 | Scenario | Main loop | Panel writers | Page key readers | Windows' threads |
 |---|---|---|---|---|
-| idle | 0.11% | 0% | 0.36% | 0% |
-| typical | 0.33% | 0.48% | 0.51% | 0% |
-| stress | 1.05% | 1.46% | 0.92% | 0% |
+| idle | 0.13% | 0% | 0.33% | 0% |
+| typical | 0.33% | 0.46% | 0.49% | 0% |
+| stress | 1.07% | 1.63% | 0.92% | 0% |
 
 - **idle:** no stream at all, which is the daemon waiting for DCS. It still
   reads page keys, and writes nothing.
@@ -79,13 +79,13 @@ wakes for every one, whether DCS is running or not.
   only when they differ, which cannot lose a press: the same bytes hold the
   same keys. Measured before and after, the readers came down by about
   0.1% of a core together.
-- **What is left is waking up.** At idle, 0.11 to 0.13% of a core each for
+- **What is left is waking up.** At idle, 0.09 to 0.13% of a core each for
   the UFC, ICP and MCDU. Windows buffers reports, so a reader could wake 30
   times a second and take several at once, for up to 33 ms more before a
   page key acts. Not done: it would save perhaps another 0.2%.
 - **They climb while their panel is written to**, since its input reports
   then change and a repeat can no longer be passed over: the MCDU's to
-  0.22% at typical and 0.31% under stress, the ICP's to 0.50% under stress.
+  0.21% at typical and 0.33% under stress, the ICP's to 0.51% under stress.
 
 **Lamps and screens are sent at most once a frame**, 40 ms, 25 times a
 second. The first change after a quiet spell goes out at once, and the rest
@@ -137,15 +137,15 @@ profiles and nothing that runs per frame.
   so each send carries all of them: 94 reports a second to the PTO2
   against 4 at typical. No cockpit changes everything at once.
 
-What each panel was sent, per second, on beta.005. Busy is the share of
+What each panel was sent, per second, on beta.008. Busy is the share of
 each second its writer spent blocked on USB, which holds up nothing else:
 
 | Panel | Typical | Busy | Stress | Busy |
 |---|---|---|---|---|
-| MCDU Captain | 185 reports | 19% | 394 reports | 39% |
-| ViperAce ICP | 17 reports | 1.7% | 224 reports | 22% |
-| PTO2 | 4 reports | 0.5% | 94 reports | 9% |
-| Orion Throttle | 0.7 reports | 0.1% | 16 reports | 2% |
+| MCDU Captain | 173 reports | 17% | 393 reports | 39% |
+| ViperAce ICP | 19 reports | 1.9% | 224 reports | 23% |
+| PTO2 | 4 reports | 0.5% | 95 reports | 10% |
+| Orion Throttle | 0.8 reports | 0.1% | 17 reports | 2% |
 | CarrierAce UFC | 0.4 reports | 0% | 0.4 reports | 0% |
 | Orion Rudder Pedals | 0.1 reports | 0% | 0.1 reports | 0% |
 
@@ -164,6 +164,13 @@ about 12 screens, against typical's 185, with its writer busy 18 to 21% of
 each second. The longest main loop pass was 2 ms, aircraft load included,
 so the 94 ms pass under stress belongs to that scenario and not to flying.
 
+**Memory is up about 11 MB since beta.005, almost all of it in
+beta.006.** Idle passes of each release, back to back on 2026-10-04, read
+29.1 MB private for beta.005, 40.0 MB for beta.006, 42.2 MB for beta.007
+and 44.8 MB for beta.008. beta.006 added switch pieces, stored signals and
+flashing lamps. The shipped data grew 0.3 MB over the same releases and the
+catalogue not at all (51 files, 11 MB). Not profiled.
+
 **Memory is up about 11 MB since 2026-09-22.** The catalogue has not grown
 (still 51 files, 11 MB), so it is the profiles, pages and screens added
 since then, and about 1 MB for the open panels. Not profiled.
@@ -171,14 +178,38 @@ since then, and about 1 MB for the open panels. Not profiled.
 **What the numbers show.** CPU follows how much actually changes, not how many
 frames arrive. That matches the engine's design: `BiosState::apply` reports
 whether a word moved, and only words that moved are resolved against the
-profile. Memory is flat across all three scenarios and did not grow during any
-run.
+profile. Memory rises about 3 MB under stress, holds there, and did not grow
+during any run.
 
 **Where the memory goes.** This has not been profiled. The daemon loads every
 module in `data/catalogue` at startup (51 files, 11 MB of JSON), and that is
 the likeliest owner of most of it. Loading only the active aircraft's module
 was considered and turned down: learn mode and the startup profile checks need
 every module, and they are worth far more than a few megabytes.
+
+## Release runs
+
+Every release is benchmarked before it ships, and gets a row here whether
+or not anything changed, so a later change can be dated to the releases
+between which it appeared. Live, quiet machine, A-10C II profile, one 60 s
+pass per scenario. Memory is private memory at idle; the 2026-10-04 column
+was measured for every release back to back, so those compare with each
+other.
+
+| Release | Run | Idle | Typical | Stress | Memory at the run | Memory, 2026-10-04 | Result |
+|---|---|---|---|---|---|---|---|
+| beta.004 | 2026-09-30 | 0.47% | 1.35% | 3.85% | not kept | not measured | First run with panel writer threads |
+| beta.005 | 2026-09-30 | 0.47% | 1.31% | 3.43% | 34.3 MB | 29.1 MB | Baseline for the tables until beta.008 |
+| beta.006 | before release | not kept | not kept | not kept | not kept | 40.0 MB | No notable change in CPU |
+| beta.007 | before release | not kept | not kept | not kept | not kept | 42.2 MB | No notable change in CPU |
+| beta.008 | 2026-10-04 | 0.47% | 1.28% | 3.62% | 44.6 MB | 44.8 MB | No notable change; memory up about 11 MB since beta.005, mostly beta.006, still small |
+
+- **beta.005's two memory figures differ** because the first is a
+  development build before release, and the second is the release build.
+  Compare memory down the 2026-10-04 column only.
+- **Stress moves by about 0.2% between passes** of builds that change
+  nothing per frame, as beta.004 to beta.005 shows, so a difference that
+  size is not a change.
 
 ## Other CPUs
 
@@ -187,8 +218,8 @@ Estimated, not measured: the only machine measured is the i9-12900KF above.
 | Scenario | i9-12900KF, measured | i5-12400F, estimated |
 |---|---|---|
 | idle | 0.47% | about 0.6% |
-| typical | 1.31% | about 1.6% |
-| stress | 3.43% | about 4.1% |
+| typical | 1.28% | about 1.5% |
+| stress | 3.62% | about 4.3% |
 
 - **How.** The daemon's threads each do a little, on whichever core is
   free, and none comes near filling one, so what it costs follows how fast a

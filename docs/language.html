@@ -639,6 +639,21 @@
         padding: 10px 8px;
         overflow-x: auto;
       }
+      /* a chiclet ladder, bottom chiclet first */
+      .ladder {
+        display: flex;
+        gap: 2px;
+        margin-top: 4px;
+        background: var(--glass);
+        border: 1px solid var(--glass-edge);
+        padding: 6px;
+        overflow-x: auto;
+      }
+      .ladder span {
+        flex: none;
+        width: 6px;
+        height: 14px;
+      }
       .cells {
         display: grid;
         grid-template-columns: repeat(var(--n, 24), minmax(0, 1fr));
@@ -2019,6 +2034,17 @@
                 180 for the reciprocal.
               </p>
               <p>
+                Adding also counts. The Kiowa shows its rotor RPM as a
+                <strong>chiclet ladder</strong>, a bar of lamps that fills from the bottom, and
+                DCS-BIOS sends each chiclet as its own signal, 0 to 65535 as the display dims. Read
+                each from 0 to 1, <span class="ed">rounded</span> up so a dimmed chiclet still
+                counts, and add them all: the total is how many are lit. An alias for each total
+                turns the count into text, in the colour of the top lit chiclet. The bottom chiclet
+                only shows the ladder is on, so it is left out. The
+                <a href="gauges.html#oh-58d">gauges page</a> lists every ladder with its colours,
+                and copies its parts.
+              </p>
+              <p>
                 A part reading a switch can give each position
                 <span class="ed">a number for each position</span>: a switch sending 0 and 1 can
                 read 1 and 5. Each number is drawn as typed, so 05 keeps its zero and 1.50 its two
@@ -2120,6 +2146,35 @@
                   <div class="glass"><div class="cells" id="su-cells" style="--n: 10"></div></div>
                   <p class="say" id="su-say"></p>
                   <pre id="su-json"></pre>
+                </div>
+              </div>
+            </div>
+            <div class="demo" id="demo-ladder">
+              <div class="demo-head">
+                <span class="t">Counting a chiclet ladder</span><span class="try">Try it</span>
+              </div>
+              <div class="demo-body">
+                <div class="controls">
+                  <div class="row">
+                    <span class="lbl">Lit</span
+                    ><input type="range" id="la-lit" min="0" max="32" value="19" /><span
+                      class="mono"
+                      id="la-littext"
+                    ></span>
+                  </div>
+                  <div class="row">
+                    <span class="lbl">Dimmer</span
+                    ><input type="range" id="la-dim" min="5" max="100" value="100" /><span
+                      class="mono"
+                      id="la-dimtext"
+                    ></span>
+                  </div>
+                  <div class="ladder" id="la-bar" aria-hidden="true"></div>
+                </div>
+                <div class="out">
+                  <div class="glass"><div class="cells" id="la-cells" style="--n: 10"></div></div>
+                  <p class="say" id="la-say"></p>
+                  <pre id="la-json"></pre>
                 </div>
               </div>
             </div>
@@ -3877,6 +3932,80 @@
         draw();
       })();
 
+      /* --------------------------------------------------- chiclet ladder */
+      (() => {
+        // The Kiowa's NR ladder above its on chiclet, bottom first, in the
+        // colours DCS-BIOS gives each chiclet.
+        const COLOURS = [
+          [10, "red"],
+          [7, "yellow"],
+          [3, "green"],
+          [7, "yellow"],
+          [5, "red"],
+        ].flatMap(([n, c]) => Array(n).fill(c));
+        $("la-lit").addEventListener("input", draw);
+        $("la-dim").addEventListener("input", draw);
+        const alias = (n) =>
+          n > COLOURS.length || n < 0
+            ? null
+            : `      "${n}": { "text": "${n ? n : "---"}", "colour": "${n ? COLOURS[n - 1] : "red"}" }`;
+        function draw() {
+          const lit = Number($("la-lit").value);
+          const dim = Number($("la-dim").value) / 100;
+          const raw = Math.round(dim * 65535);
+          const colour = lit ? COLOURS[lit - 1] : "red";
+          const value = lit ? String(lit) : "---";
+          $("la-littext").textContent = `${lit} of ${COLOURS.length}`;
+          $("la-dimtext").textContent = String(raw);
+          const bar = $("la-bar");
+          bar.textContent = "";
+          COLOURS.forEach((c, i) =>
+            bar.append(
+              h("span", {
+                style: `background:${INK[c]};opacity:${i < lit ? 0.3 + 0.7 * dim : 0.12}`,
+              }),
+            ),
+          );
+          paint(
+            $("la-cells"),
+            fitTo(
+              [
+                ...[..."NR "].map((ch) => ({ ch, colour: "white", small: true })),
+                ...[...value].map((ch) => ({ ch, colour })),
+              ],
+              10,
+              "left",
+            ),
+            10,
+          );
+          const reads = (raw / 65535).toFixed(2);
+          $("la-say").innerHTML = lit
+            ? `Each lit chiclet sends <b>${raw}</b>, which reads ${reads} on 0 to 1. Rounded up that is 1, so the ${lit} lit add to <b>${lit}</b>` +
+              (dim < 0.5
+                ? `. Rounded to the nearest they would add to 0 with the display this dim.`
+                : ".") +
+              ` The alias for ${lit} draws it ${colour}, the colour of the top lit chiclet.`
+            : "Nothing is lit, so every part reads 0 and the total is 0, which its alias draws as --- in red.";
+          const shown = [lit - 1, lit, lit + 1].map(alias).filter(Boolean);
+          $("la-json").textContent =
+            `"signals": [\n` +
+            `  { "id": "nr4lad", "name": "NR, chiclets lit",\n` +
+            `    "terms": [\n` +
+            `      { "source": "RPM_NR_2", "reads": [0, 1], "round": "up" },\n` +
+            `      { "source": "RPM_NR_3", "reads": [0, 1], "round": "up", "add": true },\n` +
+            `      // RPM_NR_4 to RPM_NR_32 the same\n` +
+            `      { "source": "RPM_NR_33", "reads": [0, 1], "round": "up", "add": true }\n` +
+            `    ] }\n]\n\n` +
+            `"content": [\n` +
+            `  { "text": "NR ", "small": true },\n` +
+            `  { "signal": "nr4lad", "value_aliases": {\n` +
+            `      // one for each total, 0 to ${COLOURS.length}\n` +
+            `${shown.join(",\n")}\n` +
+            `  } }\n]`;
+        }
+        draw();
+      })();
+
       /* ------------------------------------------------------ added parts */
       (() => {
         const how = seg("su-how", draw);
@@ -4189,7 +4318,7 @@
             "Added to the parts before",
             "add",
             "Shared result",
-            "Add this part's number to the number the parts before it make, instead of laying its characters beside theirs: a heading and a course arrow's angle on a turning card, or an ADF's fine tuning after its hundreds and tens knobs side by side. The chain runs left to right, each part shaped first. A total is drawn to the most places either side shows.",
+            "Add this part's number to the number the parts before it make, instead of laying its characters beside theirs: a heading and a course arrow's angle on a turning card, or an ADF's fine tuning after its hundreds and tens knobs side by side. The chain runs left to right, each part shaped first. A total is drawn to the most places either side shows. Parts read 0 to 1 and rounded up count a chiclet ladder's lit lamps.",
             "stored",
           ],
           [

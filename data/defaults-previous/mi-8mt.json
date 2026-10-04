@@ -1,13 +1,13 @@
 {
   "schema_version": 2,
-  "name": "UH-1H",
+  "name": "Mi-8MT",
   "author": "",
   "profile_version": "0.1.0",
   "aircraft": [
-    "Bell47_2",
-    "UH-1H"
+    "Mi-8MT",
+    "Mi-8MTV2"
   ],
-  "module": "UH-1H",
+  "module": "Mi-8MT",
   "font": "../mcdu/f14bu-font-21x31.json",
   "bindings": [
     {
@@ -74,8 +74,7 @@
     {
       "device": "MCDU_Captain",
       "led": "Fail",
-      "conditions": [],
-      "signal": "4bj0m3"
+      "conditions": []
     },
     {
       "device": "MCDU_Captain",
@@ -105,8 +104,7 @@
     {
       "device": "MCDU_Captain",
       "led": "RDY",
-      "conditions": [],
-      "signal": "fqmvhs"
+      "conditions": []
     },
     {
       "device": "MCDU_Captain",
@@ -281,44 +279,12 @@
     {
       "device": "Orion_Throttle_Base_II",
       "led": "A/A",
-      "conditions": [
-        {
-          "source": "MASTER_ARM_SW",
-          "on_when": {
-            "equals": 2
-          }
-        },
-        {
-          "source": "ROCKET_SEL",
-          "on_when": {
-            "equals": 0
-          }
-        }
-      ]
+      "conditions": []
     },
     {
       "device": "Orion_Throttle_Base_II",
       "led": "A/G",
-      "conditions": [
-        {
-          "source": "MASTER_ARM_SW",
-          "on_when": {
-            "equals": 2
-          }
-        },
-        {
-          "source": "ROCKET_SEL",
-          "on_when": {
-            "equals": 1
-          }
-        },
-        {
-          "source": "ROCKET_PAIR",
-          "on_when": {
-            "gte": 1
-          }
-        }
-      ]
+      "conditions": []
     },
     {
       "device": "PFP3N_Captain",
@@ -346,14 +312,12 @@
     {
       "device": "PFP3N_Captain",
       "led": "DSPY",
-      "conditions": [],
-      "signal": "fqmvhs"
+      "conditions": []
     },
     {
       "device": "PFP3N_Captain",
       "led": "FAIL",
-      "conditions": [],
-      "signal": "4bj0m3"
+      "conditions": []
     },
     {
       "device": "PFP3N_Captain",
@@ -488,14 +452,12 @@
     {
       "device": "PFP4_Captain",
       "led": "DSPY",
-      "conditions": [],
-      "signal": "fqmvhs"
+      "conditions": []
     },
     {
       "device": "PFP4_Captain",
       "led": "FAIL",
-      "conditions": [],
-      "signal": "4bj0m3"
+      "conditions": []
     },
     {
       "device": "PFP4_Captain",
@@ -630,14 +592,12 @@
     {
       "device": "PFP7_Captain",
       "led": "DSPY",
-      "conditions": [],
-      "signal": "fqmvhs"
+      "conditions": []
     },
     {
       "device": "PFP7_Captain",
       "led": "FAIL",
-      "conditions": [],
-      "signal": "4bj0m3"
+      "conditions": []
     },
     {
       "device": "PFP7_Captain",
@@ -777,20 +737,19 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "Master_Caution",
-      "conditions": [],
-      "signal": "4bj0m3"
-    },
-    {
-      "device": "TAKEOFF_PLANEL_2",
-      "led": "JETT",
       "conditions": [
         {
-          "source": "JTSN_COVER",
+          "source": "WPN_ARM",
           "on_when": {
             "equals": 1
           }
         }
       ]
+    },
+    {
+      "device": "TAKEOFF_PLANEL_2",
+      "led": "JETT",
+      "conditions": []
     },
     {
       "device": "TAKEOFF_PLANEL_2",
@@ -825,8 +784,14 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "NOSE",
-      "conditions": [],
-      "signal": "2itzsm"
+      "conditions": [
+        {
+          "source": "EXT_WOW_NOSE",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
@@ -836,14 +801,26 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "RIGHT",
-      "conditions": [],
-      "signal": "2itzsm"
+      "conditions": [
+        {
+          "source": "EXT_WOW_RIGHT",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "LEFT",
-      "conditions": [],
-      "signal": "2itzsm"
+      "conditions": [
+        {
+          "source": "EXT_WOW_LEFT",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
@@ -855,9 +832,9 @@
       "led": "HOOK",
       "conditions": [
         {
-          "source": "CARGO_REL_SAFE",
+          "source": "CARGO_EMG_RLS_CVR",
           "on_when": {
-            "equals": 0
+            "equals": 1
           }
         }
       ]
@@ -891,25 +868,11 @@
     "PFP7_Observer": "PFP7_Captain"
   },
   "screens": {
-    "CarrierAce_UFC": {
-      "start": 1,
-      "slots": [
-        {
-          "page": "ev5wiw",
-          "key": null
-        },
-        null,
-        null,
-        null,
-        null,
-        null
-      ]
-    },
     "MCDU_Captain": {
       "start": 1,
       "slots": [
         {
-          "page": "j2v3qy",
+          "page": "9mytul",
           "key": null
         },
         {
@@ -926,7 +889,7 @@
       "start": 1,
       "slots": [
         {
-          "page": "j2v3qy",
+          "page": "9mytul",
           "key": null
         },
         {
@@ -943,7 +906,7 @@
       "start": 1,
       "slots": [
         {
-          "page": "j2v3qy",
+          "page": "9mytul",
           "key": null
         },
         {
@@ -960,7 +923,7 @@
       "start": 1,
       "slots": [
         {
-          "page": "j2v3qy",
+          "page": "9mytul",
           "key": null
         },
         {
@@ -977,7 +940,7 @@
       "start": 1,
       "slots": [
         {
-          "page": "ooc6ko",
+          "page": "fgpeoh",
           "key": null
         },
         {

@@ -40,14 +40,15 @@ unless this says what moved.
     HOOK while the emergency cargo release cover is open, and the master
     caution while the weapon safe/armed switch is on, standing in for the
     red cabin light that switch turns on.
-  - **MCDU and PFP page, CDU Flight:** the radio selector; the R-863,
-    R-828 and Jadro-1A, each with its power, channel or frequency, tuning
-    and volume; the ARC-9 ADF's main and backup frequencies with its mode,
+  - **MCDU and PFP page, CDU Flight:** the radio selector; the R-863, R-828
+    and Jadro-1A, each with its power, channel or frequency, tuning and
+    volume; the ARC-9 ADF's main and backup frequencies with its mode,
     signal and volume; and a flight data line with airspeed, barometric and
-    radar altitude and vertical speed. Airspeed under 50 shows `---` in
-    red. Radar altitude is red under 20 m and shows `---` above 700 m.
-    Vertical speed is red descending at 3 m/s or more, amber descending
-    slower, and green level or climbing.
+    radar altitude and vertical speed. Airspeed under 50 shows `---` in red,
+    and is amber from 50 to 70. Radar altitude is red under 20 m and shows
+    `---` above 700 m. Vertical speed reads like the dial, 100 for each
+    mark, so a climb of one mark shows +100. It is red descending past 300,
+    amber descending at 300 or less, and green level or climbing.
   - **ICP page, DED Doppler Nav:** the DISS-15's coordinates in km with
     their drift, map angle, power, land or sea mode, drift angle, heading
     and course.

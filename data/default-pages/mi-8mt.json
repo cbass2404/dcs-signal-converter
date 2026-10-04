@@ -368,21 +368,24 @@
               "small": true
             },
             {
-              "gap": true
+              "gap": true,
+              "width": 3
             },
             {
               "text": "BALT",
               "small": true
             },
             {
-              "gap": true
+              "gap": true,
+              "width": 3
             },
             {
               "text": "RALT",
               "small": true
             },
             {
-              "gap": true
+              "gap": true,
+              "width": 3
             },
             {
               "text": "VVI",
@@ -513,9 +516,9 @@
                   "text": "---",
                   "colour": "red"
                 },
-                "50": {
-                  "text": "70",
-                  "colour": "amber"
+                "50..70": {
+                  "colour": "amber",
+                  "reading": true
                 }
               },
               "colour": "green"
@@ -603,34 +606,25 @@
             {
               "switch_signal": "72vl75",
               "cases": {
-                "..-3": [
+                "..-301": [
                   {
                     "gap": true,
                     "width": 3
                   },
                   {
                     "signal": "72vl75",
-                    "width": 3,
-                    "align": "right",
-                    "colour": "red"
-                  },
-                  {
-                    "text": "0",
+                    "width": 5,
                     "colour": "red"
                   }
                 ],
-                "-3..-0.1": [
+                "-300..-10": [
                   {
-                    "gap": true
+                    "gap": true,
+                    "width": 3
                   },
                   {
                     "signal": "72vl75",
-                    "width": 3,
-                    "align": "right",
-                    "colour": "amber"
-                  },
-                  {
-                    "text": "0",
+                    "width": 5,
                     "colour": "amber"
                   }
                 ],
@@ -639,13 +633,28 @@
                     "gap": true
                   },
                   {
-                    "text": "0",
+                    "text": " 0",
+                    "width": 5,
+                    "colour": "green"
+                  }
+                ],
+                "1..300": [
+                  {
+                    "gap": true,
+                    "width": 3
+                  },
+                  {
+                    "text": "+",
+                    "colour": "green"
+                  },
+                  {
+                    "signal": "72vl75",
                     "width": 4,
-                    "align": "right",
+                    "abs": true,
                     "colour": "green"
                   }
                 ],
-                "1..9": [
+                "301..": [
                   {
                     "gap": true
                   },
@@ -655,31 +664,8 @@
                   },
                   {
                     "signal": "72vl75",
-                    "width": 1,
+                    "width": 4,
                     "abs": true,
-                    "colour": "green"
-                  },
-                  {
-                    "text": "0",
-                    "colour": "green"
-                  }
-                ],
-                "10..": [
-                  {
-                    "gap": true
-                  },
-                  {
-                    "text": "+",
-                    "colour": "green"
-                  },
-                  {
-                    "signal": "72vl75",
-                    "width": 2,
-                    "abs": true,
-                    "colour": "green"
-                  },
-                  {
-                    "text": "0",
                     "colour": "green"
                   }
                 ]
@@ -1515,7 +1501,7 @@
             50.0
           ],
           "decimals": 1,
-          "digits": 1
+          "digits": 2
         }
       ]
     },
@@ -1620,7 +1606,7 @@
     },
     {
       "id": "72vl75",
-      "name": "VARIOMETER PILOT",
+      "name": "VVI PILOT",
       "terms": [
         {
           "source": "VARIOMETER_L",
@@ -1631,8 +1617,8 @@
                 9503
               ],
               "reads": [
-                -30.0,
-                -20.0
+                -300.0,
+                -200.0
               ]
             },
             {
@@ -1641,8 +1627,8 @@
                 18677
               ],
               "reads": [
-                -20.0,
-                -10.0
+                -200.0,
+                -100.0
               ]
             },
             {
@@ -1651,8 +1637,8 @@
                 25231
               ],
               "reads": [
-                -10.0,
-                -5.0
+                -100.0,
+                -50.0
               ]
             },
             {
@@ -1661,8 +1647,8 @@
                 29818
               ],
               "reads": [
-                -5.0,
-                -2.0
+                -50.0,
+                -20.0
               ]
             },
             {
@@ -1671,8 +1657,8 @@
                 31129
               ],
               "reads": [
-                -2.0,
-                -1.0
+                -20.0,
+                -10.0
               ]
             },
             {
@@ -1681,7 +1667,7 @@
                 32768
               ],
               "reads": [
-                -1.0,
+                -10.0,
                 0.0
               ]
             },
@@ -1692,7 +1678,7 @@
               ],
               "reads": [
                 0.0,
-                1.0
+                10.0
               ]
             },
             {
@@ -1701,8 +1687,8 @@
                 35717
               ],
               "reads": [
-                1.0,
-                2.0
+                10.0,
+                20.0
               ]
             },
             {
@@ -1711,8 +1697,8 @@
                 40304
               ],
               "reads": [
-                2.0,
-                5.0
+                20.0,
+                50.0
               ]
             },
             {
@@ -1721,8 +1707,8 @@
                 46858
               ],
               "reads": [
-                5.0,
-                10.0
+                50.0,
+                100.0
               ]
             },
             {
@@ -1731,8 +1717,8 @@
                 56032
               ],
               "reads": [
-                10.0,
-                20.0
+                100.0,
+                200.0
               ]
             },
             {
@@ -1741,12 +1727,14 @@
                 65535
               ],
               "reads": [
-                20.0,
-                30.0
+                200.0,
+                300.0
               ]
             }
-          ],
-          "width": 3
+          ]
+        },
+        {
+          "text": "0"
         }
       ]
     }

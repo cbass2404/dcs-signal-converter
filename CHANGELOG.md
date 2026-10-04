@@ -46,12 +46,16 @@ unless this says what moved.
 
 - **The profile header shows only the aircraft under the name**, as the
   profile cards already do. It no longer repeats the DCS-BIOS module.
-- **A shared result can add its parts** instead of laying them side by
-  side. Choose **The parts are: added**, then pad and wrap the total. The
-  Mi-8's course arrow turns with the compass card, so DCS-BIOS sends its
-  angle on the card rather than the course: the heading plus that angle,
-  wrapping at 360, is the course you set. A number part adds a fixed
-  number, such as 180 for a reciprocal.
+- **A shared result can add a part** to the parts before it instead of
+  laying it beside them. Each part after the first chooses **laid beside
+  the parts before** or **added to the parts before**, and the chain runs
+  left to right, so the two mix: the Mi-8's ADF lays its hundreds and tens
+  knobs side by side, 1 and 50 for 150, and adds the fine tuning to that.
+  The Mi-8's course arrow turns with the compass card, so DCS-BIOS sends
+  its angle on the card rather than the course: the heading plus that
+  angle, each total wrapping at 360, is the course you set. Totals can be
+  padded and wrapped, and an added symbol part adds a fixed number, such as
+  180 for a reciprocal.
 - **Picking a gauge's signal fills in what it reads, for every gauge**, not
   only uneven ones. An even dial arrives converted across its real range,
   such as 0 to 10,000 m on the Mi-8's altimeter, instead of 0 to 100 for you

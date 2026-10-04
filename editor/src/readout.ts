@@ -64,6 +64,7 @@ import type {
   Span,
   SpanPatch,
   StoredSignal,
+  Term,
 } from "./types";
 
 /** The swatch beside each colour name, so the menu shows what it means. */
@@ -1646,14 +1647,13 @@ function spanWidth(span: Span, signals: SignalView[]): number {
   // can never be the reason content will not fit.
   if (span.gap) return 0;
   if (isLiteral(span)) return (span.text ?? "").length;
-  // A stored signal is as wide as its terms laid side by side, or its
-  // total where it adds them, or the longest word drawn in its place.
+  // A stored signal is as wide as its terms laid side by side, a total
+  // starting the count again where a term adds, or the longest word drawn
+  // in its place.
   if (kindOf(span) === "stored") {
     const stored = storedSignal(span.signal ?? "");
     if (!stored) return 0;
-    const terms = stored.sum
-      ? sumWidth(stored, signals)
-      : stored.terms.reduce((n, t) => n + spanWidth(t, signals), 0);
+    const terms = chainWidth(stored, signals);
     const words = Object.values(span.value_aliases ?? {})
       .filter((a) => !aliasShowsReading(a))
       .map((a) => [...aliasText(a)].length);
@@ -1708,47 +1708,82 @@ function spanWidth(span: Span, signals: SignalView[]): number {
 }
 
 /**
- * The widest a shared result that adds its parts draws: each part's lowest
- * and highest added, then measured as a reading running between them is. The
- * same sum `StoredSignal::widest` does.
+ * The lowest and highest a shared result's part draws as a number, settled:
+ * a typed number is its own, a reading that wraps runs from 0 to just short
+ * of where it starts again.
  */
-function sumWidth(stored: StoredSignal, signals: SignalView[]): number {
-  let [lo, hi, dp] = [0, 0, 0];
+function partEnds(t: Term, signals: SignalView[]): [number, number] {
+  if (isSymbolPart(t)) {
+    const n = Number(t.text) || 0;
+    return [n, n];
+  }
+  const dp = t.decimals ?? 0;
+  if (t.wrap && t.wrap > 0) return [0, Math.max(0, t.wrap - 10 ** -dp)];
+  const ends = t.conversions?.length
+    ? t.conversions.flatMap((c: Conversion) => c.reads)
+    : (t.reads ?? [0, maxOf(signals, t.source ?? "")]);
+  const [a, b] = [Math.min(...ends), Math.max(...ends)];
+  if (!t.abs) return [a, b];
+  return a <= 0 && b >= 0
+    ? [0, Math.max(-a, b)]
+    : [Math.min(Math.abs(a), Math.abs(b)), Math.max(Math.abs(a), Math.abs(b))];
+}
+
+/** The places after the point in a drawn number. */
+function placesIn(text: string): number {
+  return text.split(".")[1]?.length ?? 0;
+}
+
+/**
+ * The widest a shared result draws. Parts laid side by side add their
+ * widths; a part that adds replaces everything before it with one total, so
+ * the count starts again there: the lowest and highest the parts so far draw
+ * are added to its own, and the total measured as a reading running between
+ * them is. The same walk `StoredSignal::widest` does.
+ */
+function chainWidth(stored: StoredSignal, signals: SignalView[]): number {
+  const every = stored.total?.wrap && stored.total.wrap > 0 ? stored.total.wrap : 0;
+  const digits = stored.total?.digits ?? 0;
+  let width = 0;
+  // The parts so far drawn at their lowest and at their highest, for a total
+  // that takes them in. Characters with no number add nothing.
+  let [low, high] = ["", ""];
   for (const t of stored.terms) {
+    const [a, b] =
+      isSymbolPart(t) || !isText(signals, t.source ?? "") ? partEnds(t, signals) : [0, 0];
+    if (t.add) {
+      const soFar = (text: string): number => Number(text.trim()) || 0;
+      const [x, y] = [soFar(low), soFar(high)];
+      const dp = Math.max(
+        placesIn(low),
+        placesIn(high),
+        isSymbolPart(t) ? placesIn(t.text ?? "") : (t.decimals ?? 0),
+      );
+      const [lo, hi] = [Math.min(x, y) + a, Math.max(x, y) + b];
+      const settle = (end: number): number => {
+        const rounded = Number(end.toFixed(dp));
+        const wrapped = every ? ((rounded % every) + every) % every : rounded;
+        return wrapped === 0 ? 0 : wrapped;
+      };
+      const ends = [settle(lo), settle(hi)];
+      if (every && (hi - lo >= every || Math.floor(lo / every) !== Math.floor(hi / every))) {
+        ends.push(Math.max(0, every - 10 ** -dp));
+      }
+      width = Math.max(...ends.map((end) => numberText(end, dp, digits).length));
+      low = numberText(Math.min(...ends), dp, digits);
+      high = numberText(Math.max(...ends), dp, digits);
+      continue;
+    }
+    width += spanWidth(t, signals);
     if (isSymbolPart(t)) {
-      const n = Number(t.text) || 0;
-      [lo, hi] = [lo + n, hi + n];
-      dp = Math.max(dp, (t.text ?? "").split(".")[1]?.length ?? 0);
-      continue;
+      low += t.text ?? "";
+      high += t.text ?? "";
+    } else if (!isText(signals, t.source ?? "")) {
+      low += numberText(a, t.decimals ?? 0, t.digits ?? 0);
+      high += numberText(b, t.decimals ?? 0, t.digits ?? 0);
     }
-    const tdp = t.decimals ?? 0;
-    dp = Math.max(dp, tdp);
-    if (t.wrap && t.wrap > 0) {
-      hi += Math.max(0, t.wrap - 10 ** -tdp);
-      continue;
-    }
-    const ends = t.conversions?.length
-      ? t.conversions.flatMap((c: Conversion) => c.reads)
-      : (t.reads ?? [0, maxOf(signals, t.source ?? "")]);
-    let [a, b] = [Math.min(...ends), Math.max(...ends)];
-    if (t.abs)
-      [a, b] =
-        a <= 0 && b >= 0
-          ? [0, Math.max(-a, b)]
-          : [Math.min(Math.abs(a), Math.abs(b)), Math.max(Math.abs(a), Math.abs(b))];
-    [lo, hi] = [lo + a, hi + b];
   }
-  const every = stored.sum?.wrap && stored.sum.wrap > 0 ? stored.sum.wrap : 0;
-  const settle = (end: number): number => {
-    const rounded = Number(end.toFixed(dp));
-    const wrapped = every ? ((rounded % every) + every) % every : rounded;
-    return wrapped === 0 ? 0 : wrapped;
-  };
-  const ends = [settle(lo), settle(hi)];
-  if (every && (hi - lo >= every || Math.floor(lo / every) !== Math.floor(hi / every))) {
-    ends.push(Math.max(0, every - 10 ** -dp));
-  }
-  return Math.max(...ends.map((end) => numberText(end, dp, stored.sum?.digits ?? 0).length));
+  return width;
 }
 
 /**
@@ -3157,7 +3192,7 @@ function storedControls(
     // it still see which way it points; only what is drawn loses it.
     // A total that wraps starts again from 0, so it never goes below.
     const signed =
-      !chosen.sum?.wrap &&
+      !(chosen.total?.wrap && chosen.terms.some((t) => t.add)) &&
       chosen.terms.some(
         (t) =>
           (t.text ?? "").includes("-") ||

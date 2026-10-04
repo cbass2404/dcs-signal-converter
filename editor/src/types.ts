@@ -490,7 +490,7 @@ export interface PageUse {
 
 /**
  * One DCS-BIOS signal in a stored signal, shaped the way a reading is, and
- * the cells it takes.
+ * the cells it takes, or its number added to what the parts before it make.
  */
 export type Term = Pick<
   Span,
@@ -505,13 +505,16 @@ export type Term = Pick<
   | "abs"
   | "width"
   | "align"
->;
+> & {
+  /** Added to what the parts before it make, rather than laid beside them. */
+  add?: boolean;
+};
 
 /**
- * How the total of a shared result that adds its parts is drawn. Shown to the
- * most places any part shows.
+ * How every total in a shared result is drawn, wherever a part adds. Shown to
+ * the most places either side shows.
  */
-export interface Sum {
+export interface Total {
   /** Start again from 0 every this many: 360 for a course. */
   wrap?: number;
   /** Zeros in front to make this many whole digits. */
@@ -530,8 +533,8 @@ export interface StoredSignal {
   note?: string;
   /** A number's parts. Empty on lamp conditions. */
   terms: Term[];
-  /** Present when the parts are added rather than laid side by side. */
-  sum?: Sum;
+  /** How a total is drawn, where a part adds to the ones before it. */
+  total?: Total;
   /**
    * Lamp conditions, written as a lamp's are, for every lamp that lights by
    * this signal. Empty on a number.

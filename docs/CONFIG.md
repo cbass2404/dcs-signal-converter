@@ -1788,11 +1788,12 @@ stored name for both. Kept in the module's page file beside its pages:
   bands can match; anything else is refused, since words are the piece's.
   Places for a band's edge are counted from the last point, typed or a
   term's own.
-- **Or added, with `sum`.** Built 2026-10-03. A course arrow drawn on a
-  turning compass card is sent as its angle from the top of the case, so the
-  course it points at is the card's heading plus that angle. The Mi-8's
-  UGR-4K sends `UGR_4K_HEADING_L` and `UGR_4K_COMMANDED_COURSE_L` that way,
-  each 0 to 360 in a straight line:
+- **Or added, with `add`.** Built 2026-10-03. A term with `"add": true` is
+  added to the number the terms before it make, instead of laid beside
+  them. A course arrow drawn on a turning compass card is sent as its angle
+  from the top of the case, so the course it points at is the card's
+  heading plus that angle. The Mi-8's UGR-4K sends `UGR_4K_HEADING_L` and
+  `UGR_4K_COMMANDED_COURSE_L` that way, each 0 to 360 in a straight line:
 
   ```jsonc
   {
@@ -1800,21 +1801,37 @@ stored name for both. Kept in the module's page file beside its pages:
     "name": "Course, pilot",
     "terms": [
       { "source": "UGR_4K_HEADING_L", "reads": [0, 360] },
-      { "source": "UGR_4K_COMMANDED_COURSE_L", "reads": [0, 360] },
+      { "source": "UGR_4K_COMMANDED_COURSE_L", "reads": [0, 360], "add": true },
     ],
-    "sum": { "wrap": 360, "digits": 3 }, // heading 350, arrow 20: 010
+    "total": { "wrap": 360, "digits": 3 }, // heading 350, arrow 20: 010
   }
   ```
 
-  Each term is shaped exactly as before, then the numbers they draw are
-  added. `sum` takes the total's `wrap` and `digits`; its places are the most
-  any term shows, so no part loses a digit it was shaped to keep. `"sum": {}`
-  adds with nothing more. A term's `width` and `align` say nothing in a sum,
-  since the total is one number, and the editor drops them when the parts
-  are switched to added. A symbol part is a number to add (`180` for a
-  reciprocal) and is refused if it is not one; a term reading characters is
-  refused, having no number. The widest a sum draws is measured from each
-  term's lowest and highest added, wrap and all.
+  The chain runs left to right, so the two mix. An ADF with a hundreds
+  knob, a tens knob and a fine tuning knob lays the first two side by side
+  and adds the third:
+
+  ```jsonc
+  "terms": [
+    { "source": "HUNDREDS", "reads": [1, 12] },
+    { "source": "TENS", "reads": [0, 90], "digits": 2 },
+    { "source": "FINE", "reads": [-10, 20], "add": true }, // 1, 50, +5: 155
+  ]
+  ```
+
+  Each term is shaped exactly as before. At a term that adds, what the
+  terms so far read is taken as a number, the term's number is added, and
+  that total stands in for them; a term after it is laid beside the total.
+  `total` takes every total's `wrap` and `digits`, and is left out when
+  nothing is set. A total's places are the most either side shows, so no
+  part loses a digit it was shaped to keep. An added term's `width` and
+  `align` say nothing, since the total is one number, and the editor drops
+  them when a part is switched to added. A symbol part that adds is a
+  number (`180` for a reciprocal) and is refused if it is not one; a term
+  reading characters at or before the last term that adds is refused,
+  having no number. `add` on the first term adds it to nothing. The widest
+  a chain draws starts again at each total, measured from the lowest and
+  highest the terms before it draw plus the term's own, wrap and all.
 - **A number for each position.** A term reading a switch can give each
   position its own number with a conversion of one count each:
   `[{ "raw": [0, 0], "reads": [1, 1] }, { "raw": [1, 1], "reads": [5, 5] }]`

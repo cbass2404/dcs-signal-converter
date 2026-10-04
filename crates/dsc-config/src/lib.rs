@@ -23,7 +23,7 @@ pub mod settings;
 pub mod stored;
 
 pub use pages::{Page, PageFile, PageLibrary, PageRun, PageSlots, Pages, Slot, SlotNote, SlotRun};
-pub use stored::{StoredCache, StoredSignal, StoredValue, Sum, Term};
+pub use stored::{Join, StoredCache, StoredSignal, StoredValue, Term, Total};
 
 /// The profile format this version reads and writes. Version 2 is the first
 /// with MCDU pages, and version 1 files are refused rather than migrated.
@@ -276,9 +276,9 @@ pub enum Error {
     StoredTermStyled(String),
     #[error("{0:?} has both parts and lamp conditions; it is a shared result or shared conditions, not both")]
     StoredTwoKinds(String),
-    #[error("the shared result {0:?} adds its parts, but the symbol part {1:?} is not a number to add; type one, such as 180 or -90")]
+    #[error("the shared result {0:?} adds the symbol part {1:?}, which is not a number; type one, such as 180 or -90")]
     StoredSumPartNotNumber(String, String),
-    #[error("the shared result {0:?} adds its parts, but {1} sends characters, not a number; lay the parts side by side or pick another signal")]
+    #[error("the shared result {0:?} adds a total that takes in {1}, but {1} sends characters, not a number; move it after the last part added or pick another signal")]
     StoredSumOfText(String, String),
     #[error("the shared conditions {0:?} carry both conditions and any_of; put every alternative in any_of")]
     StoredConditionsWithAnyOf(String),
@@ -3248,7 +3248,7 @@ impl StoredSignal {
             out.push(Error::StoredUnnamed);
         }
         if self.is_lamp() {
-            if !self.terms.is_empty() || self.sum.is_some() {
+            if !self.terms.is_empty() || self.total != Total::default() {
                 out.push(Error::StoredTwoKinds(name.clone()));
             }
             self.condition_problems(&name, &mut out);
@@ -3258,8 +3258,12 @@ impl StoredSignal {
             out.push(Error::StoredWithoutTerms(name.clone()));
         }
         let mut unfinished = false;
-        for term in &self.terms {
+        // A term up to the last that adds goes into a total, so it has to be
+        // a number; one after it is only laid beside.
+        let last_add = self.terms.iter().rposition(Term::adds);
+        for (i, term) in self.terms.iter().enumerate() {
             let span = &term.0;
+            let totalled = last_add.is_some_and(|last| i <= last);
             if span
                 .conversions
                 .iter()
@@ -3275,7 +3279,7 @@ impl StoredSignal {
                     .collect();
                 if !odd.is_empty() {
                     out.push(Error::StoredTermNotNumber(name.clone(), odd));
-                } else if self.sum.is_some() && span.text.trim().parse::<f64>().is_err() {
+                } else if term.adds() && span.text.trim().parse::<f64>().is_err() {
                     out.push(Error::StoredSumPartNotNumber(
                         name.clone(),
                         span.text.clone(),
@@ -3296,7 +3300,7 @@ impl StoredSignal {
                 continue;
             };
             if output.r#type == "string" {
-                if self.sum.is_some() {
+                if totalled {
                     out.push(Error::StoredSumOfText(name.clone(), span.source.clone()));
                 } else if span.shapes_a_number() {
                     out.push(Error::RangeOnText(span.source.clone()));
@@ -3327,72 +3331,68 @@ impl StoredSignal {
 
     /// The widest this can ever read, in characters, or None where a term
     /// reads characters with no length DCS-BIOS declares.
+    ///
+    /// A term that adds replaces everything before it with one total, so the
+    /// width starts again there: the lowest and highest the terms so far draw
+    /// are added to this term's, and the total measured as a reading running
+    /// between them is, wrap and all.
     pub fn widest(&self, module: &Module) -> Option<usize> {
-        if let Some(sum) = &self.sum {
-            return self.widest_sum(sum, module);
-        }
-        let mut total = 0;
+        let mut width = 0;
+        // The terms so far drawn at their lowest and at their highest, for a
+        // total that takes them in. Characters with no number add nothing.
+        let (mut low, mut high) = (String::new(), String::new());
         for term in &self.terms {
             let span = &term.0;
-            if span.width > 0 {
-                total += span.width;
+            let output = module.signal(&span.source).and_then(|s| s.primary());
+            let number_max = output
+                .filter(|o| o.r#type != "string")
+                .map(|o| o.number_max());
+            if term.adds() {
+                // Typed numbers and every DCS-BIOS number have known ends, so
+                // a total's width is always known.
+                let [a, b] = if term.is_text() {
+                    let n = span.text.trim().parse::<f64>().unwrap_or(0.0);
+                    [n, n]
+                } else {
+                    span.settled_range(number_max.unwrap_or(0))
+                };
+                let so_far = |t: &str| stored::number_in(t).unwrap_or(0.0);
+                let (x, y) = (so_far(&low), so_far(&high));
+                let places = stored::places_in(&low)
+                    .max(stored::places_in(&high))
+                    .max(term.places());
+                let total = Span {
+                    reads: Some([x.min(y) + a, x.max(y) + b]),
+                    ..self.total.shape(places)
+                };
+                width = total.number_width(u16::MAX);
+                let [lo, hi] = total.settled_range(u16::MAX);
+                low = total.settled_text(lo);
+                high = total.settled_text(hi);
                 continue;
             }
             if term.is_text() {
-                total += span.text.chars().count();
+                low.push_str(&span.fit_text(&span.text));
+                high.push_str(&span.fit_text(&span.text));
+            } else if let Some(max) = number_max {
+                let [lo, hi] = span.settled_range(max);
+                low.push_str(&span.fit_text(&span.settled_text(lo)));
+                high.push_str(&span.fit_text(&span.settled_text(hi)));
+            }
+            if span.width > 0 {
+                width += span.width;
                 continue;
             }
-            let Some(output) = module.signal(&span.source).and_then(|s| s.primary()) else {
+            if term.is_text() {
+                width += span.text.chars().count();
+                continue;
+            }
+            let Some(output) = output else {
                 continue;
             };
-            let number_max = (output.r#type != "string").then(|| output.number_max());
-            total += span.widest(output.max_length.map(usize::from), number_max)?;
+            width += span.widest(output.max_length.map(usize::from), number_max)?;
         }
-        Some(total)
-    }
-
-    /// The widest a total can read: each term's lowest and highest added,
-    /// then measured as a reading running between them is, wrap and all.
-    fn widest_sum(&self, sum: &Sum, module: &Module) -> Option<usize> {
-        // Typed numbers and every DCS-BIOS number have known ends, so a sum's
-        // width is always known.
-        let (mut lo, mut hi) = (0.0, 0.0);
-        for term in &self.terms {
-            let span = &term.0;
-            let [a, b] = if term.is_text() {
-                let n = span.text.trim().parse::<f64>().unwrap_or(0.0);
-                [n, n]
-            } else {
-                let max = module
-                    .signal(&span.source)
-                    .and_then(|s| s.primary())
-                    .filter(|o| o.r#type != "string")
-                    .map_or(0, |o| o.number_max());
-                span.settled_range(max)
-            };
-            lo += a;
-            hi += b;
-        }
-        let total = Span {
-            reads: Some([lo, hi]),
-            ..sum.shape(self.places())
-        };
-        Some(total.number_width(u16::MAX))
-    }
-
-    /// The most places any term of a sum shows, which the total is drawn to.
-    fn places(&self) -> u8 {
-        self.terms
-            .iter()
-            .map(|t| {
-                if t.is_text() {
-                    stored::places_in(&t.0.text)
-                } else {
-                    t.0.decimals
-                }
-            })
-            .max()
-            .unwrap_or(0)
+        Some(width)
     }
 
     /// How close a reading has to be to a band's edge to count as inside it:
@@ -3401,15 +3401,16 @@ impl StoredSignal {
     /// The places are counted from the last decimal point: a term's own, or
     /// one typed as a part between two drums, after which every digit a later
     /// term shows is one more place. A term that may grow is counted at the
-    /// fewest it shows, so a band is never held to finer than it can be.
+    /// fewest it shows, so a band is never held to finer than it can be. A
+    /// total is drawn to the most places either side of it shows.
     pub fn tolerance(&self) -> f64 {
-        if self.sum.is_some() {
-            return 10f64.powi(-i32::from(self.places())) / 2.0;
-        }
         let mut places: Option<usize> = None;
         for term in &self.terms {
             let span = &term.0;
-            if term.is_text() {
+            if term.adds() {
+                let shown = places.unwrap_or(0).max(usize::from(term.places()));
+                places = (shown > 0).then_some(shown);
+            } else if term.is_text() {
                 places = match span.text.rsplit_once('.') {
                     Some((_, after)) => Some(after.chars().count()),
                     None => places.map(|p| p + span.text.chars().count()),

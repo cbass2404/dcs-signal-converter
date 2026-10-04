@@ -41,13 +41,16 @@ export function partName(t: Term): string {
   return t.source || "a part with no signal yet";
 }
 
-/** What a shared result does with its parts, as a summary line says it. */
+/**
+ * What a shared result does with its parts, as a summary line says it: each
+ * part after the first laid after the ones before it, or added to them.
+ */
 export function partsSaid(s: StoredSignal): string {
-  const parts = s.terms.map(partName);
-  if (!s.sum) return `reads ${parts.join(", then ")}`;
-  const last = parts.pop();
-  const added = parts.length > 0 ? `${parts.join(", ")} and ${last}` : (last ?? "");
-  return `adds ${added}` + (s.sum.wrap ? `, wrapping at ${s.sum.wrap}` : "");
+  const said = s.terms
+    .map((t, i) => (i === 0 ? partName(t) : `${t.add ? "plus" : "then"} ${partName(t)}`))
+    .join(", ");
+  const wraps = s.total?.wrap && s.terms.some((t) => t.add);
+  return `reads ${said}` + (wraps ? `, wrapping at ${s.total?.wrap}` : "");
 }
 
 /** One stored signal by id, where the module has it. */

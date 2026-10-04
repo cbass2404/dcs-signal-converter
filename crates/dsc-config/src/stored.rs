@@ -10,11 +10,14 @@
 //! already partway to the next digit, and each one settled on its own is what
 //! keeps the one above it from counting that twice.
 //!
-//! A signal with a `sum` adds its terms instead. A course arrow drawn on a
-//! turning compass card is sent as its angle from the top of the case, so the
-//! course it points at is the card's heading plus that angle, wrapped at 360.
-//! Each term is still shaped on its own first; only the numbers they come to
-//! are added, and the total is wrapped and padded as the sum says.
+//! A term marked `add` is added to what the terms before it make instead. A
+//! course arrow drawn on a turning compass card is sent as its angle from the
+//! top of the case, so the course it points at is the card's heading plus
+//! that angle, wrapped at 360. The Mi-8's ADF lays its hundreds and tens
+//! knobs side by side, 1 and 50 for 150, and adds the fine tuning to that.
+//! The chain runs left to right, each term shaped on its own first; only the
+//! numbers they come to are added, and every total is wrapped and padded as
+//! the signal's `total` says.
 //!
 //! Only the number lives here. How it is drawn, its words, colour and size,
 //! is the field's, so two pages can draw one signal two ways.
@@ -49,10 +52,9 @@ pub struct StoredSignal {
     /// for a screen. Empty on a signal of lamp conditions.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub terms: Vec<Term>,
-    /// Present when the terms are added rather than laid side by side, and
-    /// how the total is drawn.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sum: Option<Sum>,
+    /// How a total is drawn, where a term adds to the ones before it.
+    #[serde(default, skip_serializing_if = "Total::is_plain")]
+    pub total: Total,
     /// Tests that must all hold, written as a lamp's are, for a signal a
     /// lamp draws: one set of conditions, many lamps. Each test lights the
     /// lamp at its own `on` or leaves it at its `off`, so the answer is on or
@@ -74,13 +76,13 @@ pub struct StoredSignal {
     pub blink: Blink,
 }
 
-/// How the total of a stored signal that adds its terms is drawn.
+/// How each total in a stored signal is drawn, wherever a term adds.
 ///
-/// Shown to the most places any term shows, so a total never drops a digit
-/// a part was shaped to keep. A term's box says nothing here: the total is
-/// one number, not characters laid side by side.
+/// Shown to the most places either side shows, so a total never drops a
+/// digit a part was shaped to keep. An added term's box says nothing: the
+/// total is one number, not characters laid side by side.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct Sum {
+pub struct Total {
     /// Start again from 0 every this many: 360 for a course.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub wrap: Option<f64>,
@@ -89,7 +91,11 @@ pub struct Sum {
     pub digits: u8,
 }
 
-impl Sum {
+impl Total {
+    fn is_plain(&self) -> bool {
+        *self == Total::default()
+    }
+
     /// The total settled and drawn: wrapped, never -0, padded.
     pub(crate) fn draw(&self, total: f64, places: u8) -> String {
         self.shape(places).settled_text(total)
@@ -114,6 +120,26 @@ pub(crate) fn places_in(text: &str) -> u8 {
     })
 }
 
+/// `text` read as a number, where it is one. Nothing at all is 0, so a first
+/// term that adds is added to nothing.
+pub(crate) fn number_in(text: &str) -> Option<f64> {
+    let text = text.trim();
+    if text.is_empty() {
+        return Some(0.0);
+    }
+    text.parse::<f64>().ok().filter(|n| n.is_finite())
+}
+
+/// How a term meets the terms before it.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum Join {
+    /// Its characters laid after theirs: the drums of a counter.
+    #[default]
+    Beside,
+    /// Its number added to the number theirs make: an ADF's fine tuning.
+    Add,
+}
+
 /// One DCS-BIOS signal in a stored signal, and how it is shaped, or
 /// characters typed in.
 ///
@@ -123,9 +149,23 @@ pub(crate) fn places_in(text: &str) -> u8 {
 /// to the field.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(from = "TermRepr", into = "TermRepr")]
-pub struct Term(pub Span);
+pub struct Term(pub Span, pub Join);
 
 impl Term {
+    /// Whether this term's number is added to what the terms before it make.
+    pub fn adds(&self) -> bool {
+        self.1 == Join::Add
+    }
+
+    /// The places this term shows: a typed number's own, or its decimals.
+    pub(crate) fn places(&self) -> u8 {
+        if self.is_text() {
+            places_in(&self.0.text)
+        } else {
+            self.0.decimals
+        }
+    }
+
     /// Whether this part is symbols typed in, reading nothing: the `.`
     /// between two drums that makes `12` and `3` read as `12.3`, still a
     /// number a band can match.
@@ -164,31 +204,39 @@ struct TermRepr {
     width: usize,
     #[serde(default, skip_serializing_if = "is_left")]
     align: Align,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    add: bool,
 }
 
 impl From<TermRepr> for Term {
     fn from(r: TermRepr) -> Self {
-        Term(Span {
-            text: r.text,
-            source: r.source,
-            reads: r.reads,
-            conversions: r.conversions,
-            decimals: r.decimals,
-            digits: r.digits,
-            round: r.round,
-            wrap: r.wrap,
-            abs: r.abs,
-            width: r.width,
-            align: r.align,
-            ..Span::default()
-        })
+        let join = if r.add { Join::Add } else { Join::Beside };
+        Term(
+            Span {
+                text: r.text,
+                source: r.source,
+                reads: r.reads,
+                conversions: r.conversions,
+                decimals: r.decimals,
+                digits: r.digits,
+                round: r.round,
+                wrap: r.wrap,
+                abs: r.abs,
+                width: r.width,
+                align: r.align,
+                ..Span::default()
+            },
+            join,
+        )
     }
 }
 
 impl From<Term> for TermRepr {
     fn from(t: Term) -> Self {
+        let add = t.adds();
         let s = t.0;
         TermRepr {
+            add,
             text: s.text,
             source: s.source,
             reads: s.reads,
@@ -293,39 +341,32 @@ impl StoredSignal {
     where
         S: FnMut(&'a str, u16, &str),
     {
-        let drawn = self.terms.iter().zip(inputs).map(|(term, input)| {
+        let mut text = String::new();
+        for (term, input) in self.terms.iter().zip(inputs) {
             let span = &term.0;
-            match input {
+            let drawn = match input {
                 Reading::Text(t) => t.clone(),
                 Reading::Number { value, max } => {
                     let drawn = span.format_number(*value, *max);
                     seen(&span.source, *value, &drawn);
                     drawn
                 }
+            };
+            if !term.adds() {
+                text.push_str(&span.fit_text(&drawn));
+                continue;
             }
-        });
-        let Some(sum) = &self.sum else {
-            let text = self
-                .terms
-                .iter()
-                .zip(drawn)
-                .map(|(term, d)| term.0.fit_text(&d))
-                .collect();
-            return StoredValue::new(text);
-        };
-        // Each term as the number it draws, so a part rounded or wrapped on
-        // its own is added as it reads. Characters that are not a number
-        // leave nothing to add, and the checks refuse a part that can be one.
-        let mut total = 0.0;
-        let mut places = 0;
-        for d in drawn {
-            let Some(n) = d.trim().parse::<f64>().ok().filter(|n| n.is_finite()) else {
+            // What the terms so far read and what this one draws, each as a
+            // number, so a part rounded or wrapped on its own is added as it
+            // reads. Characters that are not a number leave nothing to add,
+            // and the checks refuse a part that can be one.
+            let (Some(so_far), Some(n)) = (number_in(&text), number_in(&drawn)) else {
                 return StoredValue::new(String::new());
             };
-            total += n;
-            places = places.max(places_in(&d));
+            let places = places_in(&text).max(places_in(&drawn));
+            text = self.total.draw(so_far + n, places);
         }
-        StoredValue::new(sum.draw(total, places))
+        StoredValue::new(text)
     }
 }
 

@@ -6,6 +6,12 @@
 //! draws the joined characters and only styles them, nothing draws until
 //! every term has arrived, a paint works each signal out once however many
 //! fields draw it, and sharing and updates carry the signals with the pages.
+//!
+//! A term can be added to what the terms before it make instead: a course
+//! arrow on a turning compass card is sent as its angle from the top of the
+//! case, and the course is the card's heading plus that angle, wrapped at
+//! 360. The chain runs left to right, so an ADF's hundreds and tens knobs
+//! laid side by side make 150 and its fine tuning is added to that.
 
 use std::cell::Cell;
 use std::path::{Path, PathBuf};
@@ -305,6 +311,46 @@ fn the_piece_drawing_it_cannot_shape_the_number_again() {
 }
 
 #[test]
+fn the_piece_drawing_it_may_drop_the_sign_its_bands_still_see() {
+    let drift: StoredSignal = serde_json::from_str(
+        r#"{"id": "drift1", "name": "Drift",
+            "terms": [{"source": "D100", "reads": [-5, 5], "decimals": 1}]}"#,
+    )
+    .unwrap();
+    let file = page_file(
+        r#"{"cells": "0-5", "signal": "drift1", "abs": true,
+            "value_aliases": {"0": "ZERO", "-5..-0.1": {"reading": true, "colour": "red"}}}"#,
+        &[drift],
+    );
+    let found = refusals(&profile(fields(&file)));
+    assert!(
+        !found.iter().any(|e| e.contains("shapes its own")),
+        "dropping the sign is how it draws, not shaping: {found:?}"
+    );
+    let field = &fields(&file)[0];
+    let read = |drum: f64| {
+        field
+            .compose(|id| {
+                (id == "D100").then_some(Reading::Number {
+                    value: at(drum),
+                    max: 65535,
+                })
+            })
+            .unwrap()
+    };
+    let text = |g: &[dsc_config::Glyph]| g.iter().map(|g| g.text.as_str()).collect::<String>();
+    // 2.5 of 10 on the drum is -2.5 on the face: drawn without its sign, and
+    // red by the band written for the negative side.
+    let left = read(2.5);
+    assert_eq!(text(&left).trim(), "2.5");
+    assert_eq!(left[0].colour, Some(Colour::Red));
+    let right = read(7.5);
+    assert_eq!(text(&right).trim(), "2.5");
+    assert_eq!(right[0].colour, None);
+    assert_eq!(text(&read(5.0)).trim(), "ZERO");
+}
+
+#[test]
 fn a_signal_is_held_to_what_a_reading_is() {
     let mut bad = fuel();
     bad.terms[1].0.source.clear();
@@ -410,6 +456,173 @@ fn a_part_gives_each_position_its_own_number() {
     assert_eq!(at(1).number, Some(5.0));
     assert_eq!(signal.widest(&module()), Some(1));
     assert!(signal.problems(&module()).is_empty());
+}
+
+/// A course from a turning card: the heading on D10K and the arrow's angle
+/// from the top of the case on D1K, each 0 to 360 across the needle, added
+/// and wrapped at 360, drawn to three digits.
+fn course() -> StoredSignal {
+    serde_json::from_str(
+        r#"{"id": "crs001", "name": "Course",
+            "terms": [{"source": "D10K", "reads": [0, 360]},
+                      {"source": "D1K", "reads": [0, 360], "add": true}],
+            "total": {"wrap": 360, "digits": 3}}"#,
+    )
+    .expect("the fixture signal parses")
+}
+
+/// What `signal` reads with each gauge at the angle given, in degrees.
+fn reading(signal: &StoredSignal, angles: &[(&str, f64)]) -> dsc_config::StoredValue {
+    signal
+        .evaluate(
+            &|id: &str| {
+                let (_, deg) = angles.iter().find(|(name, _)| *name == id)?;
+                Some(Reading::Number {
+                    value: (deg / 360.0 * 65535.0).round() as u16,
+                    max: 65535,
+                })
+            },
+            &mut |_: &str, _: u16, _: &str| {},
+        )
+        .expect("every term has arrived")
+}
+
+#[test]
+fn a_sum_adds_its_parts_and_wraps_the_total() {
+    let at = |hdg, crs| reading(&course(), &[("D10K", hdg), ("D1K", crs)]);
+    assert_eq!(at(90.0, 0.0).text, "090");
+    // Past north it starts again from 0 rather than reading 370.
+    assert_eq!(at(350.0, 20.0).text, "010");
+    assert_eq!(at(350.0, 20.0).number, Some(10.0));
+    assert_eq!(course().widest(&module()), Some(3));
+    assert_eq!(course().tolerance(), 0.5);
+    assert!(course().problems(&module()).is_empty());
+}
+
+#[test]
+fn a_field_draws_a_sum_as_one_number() {
+    let file = page_file(r#"{"cells": "0-5", "signal": "crs001"}"#, &[course()]);
+    let field = &fields(&file)[0];
+    // 7.5 of 10 across the needle is 270 degrees, 2.5 is 90.
+    assert_eq!(
+        drawn(field, [Some(7.5), Some(2.5), None]).as_deref(),
+        Some("000")
+    );
+    assert_eq!(drawn(field, [Some(7.5), None, None]), None);
+}
+
+#[test]
+fn a_sum_adds_a_number_typed_in() {
+    // The reciprocal: the heading turned half way round.
+    let back: StoredSignal = serde_json::from_str(
+        r#"{"id": "rcp001", "name": "Reciprocal",
+            "terms": [{"source": "D10K", "reads": [0, 360]}, {"text": "180", "add": true}],
+            "total": {"wrap": 360}}"#,
+    )
+    .unwrap();
+    assert_eq!(reading(&back, &[("D10K", 270.0)]).text, "90");
+    assert_eq!(reading(&back, &[("D10K", 90.0)]).text, "270");
+    assert!(back.problems(&module()).is_empty());
+}
+
+#[test]
+fn a_sum_is_drawn_to_the_most_places_a_part_shows() {
+    let mut fine = course();
+    fine.terms[1].0.decimals = 1;
+    assert_eq!(
+        reading(&fine, &[("D10K", 350.0), ("D1K", 20.0)]).text,
+        "010.0"
+    );
+    assert_eq!(fine.tolerance(), 0.05);
+}
+
+#[test]
+fn a_sum_adds_only_numbers() {
+    // Characters laid beside, then a symbol added to them: the characters
+    // go into the total, and the symbol is no number.
+    let mut bad = course();
+    bad.terms
+        .push(serde_json::from_str(r#"{"source": "CHAN"}"#).unwrap());
+    bad.terms
+        .push(serde_json::from_str(r#"{"text": ".", "add": true}"#).unwrap());
+    let found: Vec<String> = bad
+        .problems(&module())
+        .iter()
+        .map(|e| e.to_string())
+        .collect();
+    assert!(
+        found.iter().any(|e| e.contains("which is not a number")),
+        "{found:?}"
+    );
+    assert!(
+        found.iter().any(|e| e.contains("CHAN sends characters")),
+        "{found:?}"
+    );
+    // Laid beside after the last total, characters are only characters.
+    let mut fine = course();
+    fine.terms
+        .push(serde_json::from_str(r#"{"source": "CHAN"}"#).unwrap());
+    assert!(fine.problems(&module()).is_empty());
+}
+
+#[test]
+fn an_add_with_no_total_set_still_adds() {
+    let plain: StoredSignal = serde_json::from_str(
+        r#"{"id": "s1", "name": "S", "terms": [{"source": "D10K", "reads": [0, 360]},
+            {"source": "D1K", "reads": [0, 360], "add": true}]}"#,
+    )
+    .unwrap();
+    assert_eq!(
+        reading(&plain, &[("D10K", 350.0), ("D1K", 20.0)]).text,
+        "370"
+    );
+    // Written back as it was read: the add kept on its term, no total.
+    let back = serde_json::to_value(&plain).unwrap();
+    assert_eq!(back["terms"][1]["add"], serde_json::json!(true));
+    assert!(back.get("terms").unwrap()[0].get("add").is_none());
+    assert!(back.get("total").is_none());
+    assert_eq!(plain.widest(&module()), Some(3));
+}
+
+/// The Mi-8's ADF: the hundreds knob on D10K, 1 to 12, the tens knob on D1K,
+/// 0 to 90 in two digits, laid side by side, and the fine tuning on D100,
+/// -10 to 20, added to the frequency they make.
+fn adf() -> StoredSignal {
+    serde_json::from_str(
+        r#"{"id": "adf001", "name": "ADF",
+            "terms": [{"source": "D10K", "reads": [1, 12]},
+                      {"source": "D1K", "reads": [0, 90], "digits": 2},
+                      {"source": "D100", "reads": [-10, 20], "add": true}]}"#,
+    )
+    .expect("the fixture signal parses")
+}
+
+#[test]
+fn a_chain_lays_parts_side_by_side_then_adds() {
+    // An angle of 360 is the whole needle: 0 is 1 on the hundreds, 200 is 50
+    // on the tens, 180 is 5 on the fine tuning and 0 is -10.
+    let at = |fine| reading(&adf(), &[("D10K", 0.0), ("D1K", 200.0), ("D100", fine)]);
+    assert_eq!(at(180.0).text, "155");
+    assert_eq!(at(0.0).text, "140");
+    assert_eq!(at(0.0).number, Some(140.0));
+    // 1 and 00 at the lowest, less 10, to 12 and 90 at the highest, plus 20.
+    assert_eq!(adf().widest(&module()), Some(4));
+    assert_eq!(adf().tolerance(), 0.5);
+    assert!(adf().problems(&module()).is_empty());
+}
+
+#[test]
+fn a_chain_carries_on_after_a_total() {
+    // A point and a digit laid after the total, as a radio's kHz would be.
+    let mut tenths = adf();
+    tenths
+        .terms
+        .push(serde_json::from_str(r#"{"text": ".5"}"#).unwrap());
+    let at = reading(&tenths, &[("D10K", 0.0), ("D1K", 200.0), ("D100", 180.0)]);
+    assert_eq!(at.text, "155.5");
+    assert_eq!(tenths.tolerance(), 0.05);
+    assert_eq!(tenths.widest(&module()), Some(6));
+    assert!(tenths.problems(&module()).is_empty());
 }
 
 #[test]

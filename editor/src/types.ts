@@ -490,7 +490,7 @@ export interface PageUse {
 
 /**
  * One DCS-BIOS signal in a stored signal, shaped the way a reading is, and
- * the cells it takes.
+ * the cells it takes, or its number added to what the parts before it make.
  */
 export type Term = Pick<
   Span,
@@ -505,11 +505,25 @@ export type Term = Pick<
   | "abs"
   | "width"
   | "align"
->;
+> & {
+  /** Added to what the parts before it make, rather than laid beside them. */
+  add?: boolean;
+};
+
+/**
+ * How every total in a shared result is drawn, wherever a part adds. Shown to
+ * the most places either side shows.
+ */
+export interface Total {
+  /** Start again from 0 every this many: 360 for a course. */
+  wrap?: number;
+  /** Zeros in front to make this many whole digits. */
+  digits?: number;
+}
 
 /**
  * A number on one module worked out once and named, for any page there to
- * draw: one DCS-BIOS signal shaped, or several laid side by side.
+ * draw: one DCS-BIOS signal shaped, or several laid side by side or added.
  */
 export interface StoredSignal {
   /** Fixed when it is made. What a piece points at. */
@@ -519,6 +533,8 @@ export interface StoredSignal {
   note?: string;
   /** A number's parts. Empty on lamp conditions. */
   terms: Term[];
+  /** How a total is drawn, where a part adds to the ones before it. */
+  total?: Total;
   /**
    * Lamp conditions, written as a lamp's are, for every lamp that lights by
    * this signal. Empty on a number.
@@ -917,6 +933,13 @@ export interface SignalView {
   reads: string;
   /** Non-empty for signals with few enough values to label individually. */
   values: ValueLabel[];
+  /** A lamp's colour as DCS-BIOS gives it, such as "green". Often empty. */
+  colour: string;
+  /**
+   * Set when DCS-BIOS has retired this signal: what it says to read instead,
+   * and why. Either may be empty.
+   */
+  replaced: { use_instead: string; why: string } | null;
 }
 
 /** What the editor found when it checked the catalogue against DCS-BIOS. */

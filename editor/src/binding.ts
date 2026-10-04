@@ -10,7 +10,7 @@ import { confirmAction } from "./confirm";
 import { flagSlot } from "./flags";
 import { noteEditor } from "./note";
 import { isLampSignal, storedSignal, storedSignals } from "./stored";
-import { hintFor, infoIcon, signalPicker } from "./typeahead";
+import { hintFor, infoIcon, replacedNote, signalPicker } from "./typeahead";
 import type { Binding, BlinkRate, Branch, Condition, Led, OnWhen, SignalView } from "./types";
 
 type TestKind = "equals" | "in" | "gte" | "lte" | "between" | "scale";
@@ -445,6 +445,8 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
           el("span", { class: "test" }, describeTest(condition.on_when, signal)),
         ),
       );
+      const replaced = replacedNote(signal);
+      if (replaced) text.append(replaced);
     } else {
       // A signal this module does not have is called out rather than quietly
       // rendered, because the lamp it drives will never light.

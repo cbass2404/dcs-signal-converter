@@ -1,0 +1,334 @@
+{
+  "module": "OH-58D",
+  "pages": [
+    {
+      "id": "j328et",
+      "name": "DED Radio",
+      "display": "DED",
+      "fields": [
+        {
+          "cells": "0-23",
+          "content": [
+            {
+              "text": "1",
+              "width": 1
+            },
+            {
+              "source": "RFI_LINE_1_SELECT_COPILOT",
+              "width": 1,
+              "value_aliases": {
+                "0": "",
+                "1": {
+                  "text": "<",
+                  "inverse": true
+                }
+              }
+            },
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "source": "RFI_LINE_1_CHANNEL",
+              "width": 2
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "source": "RFI_LINE_1_CIPHER",
+              "width": 1,
+              "value_aliases": {
+                "0": "",
+                "1": {
+                  "text": "C",
+                  "inverse": true
+                }
+              }
+            },
+            {
+              "gap": true,
+              "width": 4
+            },
+            {
+              "source": "RFI_LINE_1_FREQUENCY",
+              "width": 7
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "RFI_LINE_1_SELECT_PILOT",
+              "width": 1,
+              "value_aliases": {
+                "0": "",
+                "1": {
+                  "text": ">",
+                  "inverse": true
+                }
+              }
+            }
+          ]
+        },
+        {
+          "cells": "24-47",
+          "content": [
+            {
+              "text": "2"
+            },
+            {
+              "source": "RFI_LINE_2_SELECT_COPILOT",
+              "width": 1,
+              "value_aliases": {
+                "0": "",
+                "1": {
+                  "text": "<",
+                  "inverse": true
+                }
+              }
+            },
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "source": "RFI_LINE_2_CHANNEL",
+              "width": 2
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "source": "RFI_LINE_2_CIPHER",
+              "width": 1,
+              "value_aliases": {
+                "0": "",
+                "1": {
+                  "text": "C",
+                  "inverse": true
+                }
+              }
+            },
+            {
+              "gap": true,
+              "width": 4
+            },
+            {
+              "source": "RFI_LINE_2_FREQUENCY",
+              "width": 7
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "RFI_LINE_2_SELECT_PILOT",
+              "width": 1,
+              "value_aliases": {
+                "0": "",
+                "1": {
+                  "text": ">",
+                  "inverse": true
+                }
+              }
+            }
+          ]
+        },
+        {
+          "cells": "48-71",
+          "content": [
+            {
+              "text": "3"
+            },
+            {
+              "source": "RFI_LINE_3_SELECT_COPILOT",
+              "width": 1,
+              "value_aliases": {
+                "0": "",
+                "1": {
+                  "text": "<",
+                  "inverse": true
+                }
+              }
+            },
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "source": "RFI_LINE_3_CHANNEL",
+              "width": 2
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "source": "RFI_LINE_3_CIPHER",
+              "width": 1,
+              "value_aliases": {
+                "0": "",
+                "1": {
+                  "text": "C",
+                  "inverse": true
+                }
+              }
+            },
+            {
+              "gap": true,
+              "width": 4
+            },
+            {
+              "source": "RFI_LINE_3_FREQUENCY",
+              "width": 7
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "RFI_LINE_3_SELECT_PILOT",
+              "width": 1,
+              "value_aliases": {
+                "0": "",
+                "1": {
+                  "text": ">",
+                  "inverse": true
+                }
+              }
+            }
+          ]
+        },
+        {
+          "cells": "72-95",
+          "content": [
+            {
+              "text": "4",
+              "width": 1
+            },
+            {
+              "source": "RFI_LINE_4_SELECT_COPILOT",
+              "width": 1,
+              "value_aliases": {
+                "0": "",
+                "1": {
+                  "text": "<",
+                  "inverse": true
+                }
+              }
+            },
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "source": "RFI_LINE_4_CHANNEL",
+              "width": 2
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "source": "RFI_LINE_4_CIPHER",
+              "width": 1,
+              "value_aliases": {
+                "0": "",
+                "1": {
+                  "text": "C",
+                  "inverse": true
+                }
+              }
+            },
+            {
+              "gap": true,
+              "width": 4
+            },
+            {
+              "source": "RFI_LINE_4_FREQUENCY",
+              "width": 7
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "RFI_LINE_4_SELECT_PILOT",
+              "width": 1,
+              "value_aliases": {
+                "0": "",
+                "1": {
+                  "text": ">",
+                  "inverse": true
+                }
+              }
+            }
+          ]
+        },
+        {
+          "cells": "96-119",
+          "content": [
+            {
+              "text": "5"
+            },
+            {
+              "source": "RFI_LINE_5_SELECT_COPILOT",
+              "width": 1,
+              "value_aliases": {
+                "0": "",
+                "1": {
+                  "text": "<",
+                  "inverse": true
+                }
+              }
+            },
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "source": "RFI_LINE_5_CHANNEL",
+              "width": 2
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "source": "RFI_LINE_5_CIPHER",
+              "width": 1,
+              "value_aliases": {
+                "0": "",
+                "1": {
+                  "text": "C",
+                  "inverse": true
+                }
+              }
+            },
+            {
+              "gap": true,
+              "width": 4
+            },
+            {
+              "source": "RFI_LINE_5_FREQUENCY",
+              "width": 7
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "RFI_LINE_5_SELECT_PILOT",
+              "width": 1,
+              "value_aliases": {
+                "0": "",
+                "1": {
+                  "text": ">",
+                  "inverse": true
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

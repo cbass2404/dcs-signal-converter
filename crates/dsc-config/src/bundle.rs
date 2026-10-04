@@ -294,7 +294,7 @@ pub fn signals_named(pages: &[Page]) -> BTreeSet<String> {
 /// Whether two stored signals read the same thing. The name and note are
 /// left out, as a page's name is: one renamed here is still the one shared.
 fn same_signal(a: &StoredSignal, b: &StoredSignal) -> bool {
-    serde_json::to_value(&a.terms).ok() == serde_json::to_value(&b.terms).ok()
+    serde_json::to_value(&a.terms).ok() == serde_json::to_value(&b.terms).ok() && a.total == b.total
 }
 
 /// Settle the stored signals `pages` draw against the library, the way

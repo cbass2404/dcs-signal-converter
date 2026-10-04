@@ -9,8 +9,8 @@ use std::collections::BTreeMap;
 use std::path::Path;
 
 use dsc_config::{
-    Colour, DeviceSpec, Display, DisplayCatalogue, Families, Glass, Led, Module, Profile, ShapeArt,
-    ValueLabel,
+    Colour, Deprecated, DeviceSpec, Display, DisplayCatalogue, Families, Glass, Led, Module,
+    Profile, ShapeArt, ValueLabel,
 };
 use serde::{Deserialize, Serialize};
 
@@ -504,6 +504,12 @@ pub struct SignalView {
     /// Present for signals with few enough values to label individually, such
     /// as a three-position switch. The editor offers these instead of a number.
     pub values: Vec<ValueLabel>,
+    /// A lamp's colour as DCS-BIOS gives it, such as "green". Often empty: few
+    /// modules say.
+    pub colour: String,
+    /// Present when DCS-BIOS has retired this signal, so the picker can say so
+    /// and name what replaced it.
+    pub replaced: Option<Deprecated>,
 }
 
 impl SignalView {
@@ -534,6 +540,8 @@ impl SignalView {
                     } else {
                         Vec::new()
                     },
+                    colour: sig.color.clone(),
+                    replaced: sig.deprecated.clone(),
                 })
             })
             .collect();

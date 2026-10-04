@@ -1001,8 +1001,9 @@ marks: the counts DCS-BIOS sends at each end, and what the dial reads there.
   after, exactly as they do after `reads`. The width check measures every
   row's ends.
 
-Rows for many DCS gauges, worked out from each module's own gauge tables, are
-on the [uneven gauges](gauges.html) page.
+What each DCS gauge reads, an even one's `reads` and an uneven one's rows,
+worked out from each module's own gauge tables, is on the [gauges](gauges.html)
+page. The editor fills a reading in from it when a gauge's signal is picked.
 
 **`digits` pads a number with leading zeros.** A 000 to 999 counter at 1
 reads `001`, since a drum shows a digit whatever it reads. It is the fewest
@@ -1787,6 +1788,50 @@ stored name for both. Kept in the module's page file beside its pages:
   bands can match; anything else is refused, since words are the piece's.
   Places for a band's edge are counted from the last point, typed or a
   term's own.
+- **Or added, with `add`.** Built 2026-10-03. A term with `"add": true` is
+  added to the number the terms before it make, instead of laid beside
+  them. A course arrow drawn on a turning compass card is sent as its angle
+  from the top of the case, so the course it points at is the card's
+  heading plus that angle. The Mi-8's UGR-4K sends `UGR_4K_HEADING_L` and
+  `UGR_4K_COMMANDED_COURSE_L` that way, each 0 to 360 in a straight line:
+
+  ```jsonc
+  {
+    "id": "c7rs2m",
+    "name": "Course, pilot",
+    "terms": [
+      { "source": "UGR_4K_HEADING_L", "reads": [0, 360] },
+      { "source": "UGR_4K_COMMANDED_COURSE_L", "reads": [0, 360], "add": true },
+    ],
+    "total": { "wrap": 360, "digits": 3 }, // heading 350, arrow 20: 010
+  }
+  ```
+
+  The chain runs left to right, so the two mix. An ADF with a hundreds
+  knob, a tens knob and a fine tuning knob lays the first two side by side
+  and adds the third:
+
+  ```jsonc
+  "terms": [
+    { "source": "HUNDREDS", "reads": [1, 12] },
+    { "source": "TENS", "reads": [0, 90], "digits": 2 },
+    { "source": "FINE", "reads": [-10, 20], "add": true }, // 1, 50, +5: 155
+  ]
+  ```
+
+  Each term is shaped exactly as before. At a term that adds, what the
+  terms so far read is taken as a number, the term's number is added, and
+  that total stands in for them; a term after it is laid beside the total.
+  `total` takes every total's `wrap` and `digits`, and is left out when
+  nothing is set. A total's places are the most either side shows, so no
+  part loses a digit it was shaped to keep. An added term's `width` and
+  `align` say nothing, since the total is one number, and the editor drops
+  them when a part is switched to added. A symbol part that adds is a
+  number (`180` for a reciprocal) and is refused if it is not one; a term
+  reading characters at or before the last term that adds is refused,
+  having no number. `add` on the first term adds it to nothing. The widest
+  a chain draws starts again at each total, measured from the lowest and
+  highest the terms before it draw plus the term's own, wrap and all.
 - **A number for each position.** A term reading a switch can give each
   position its own number with a conversion of one count each:
   `[{ "raw": [0, 0], "reads": [1, 1] }, { "raw": [1, 1], "reads": [5, 5] }]`
@@ -1801,6 +1846,10 @@ stored name for both. Kept in the module's page file beside its pages:
   refused, since the signal already says, and so is one that also has text or
   a source. Bands match the joined characters read as a number, to the places
   they show. Characters that are not a number draw as they are.
+- **`abs` on the piece drops the sign only where it is drawn.** The signal
+  keeps it, so a band or a condition can still tell -12.5 from 12.5 while the
+  piece draws `12.5`. As on a reading, a band that claims the number draws its
+  own characters instead.
 - **Nothing draws until every term has arrived.** A number missing a digit is
   a different number. A label beside it in the chain still draws.
 - **Worked out once a paint.** The engine keeps one answer per signal for each

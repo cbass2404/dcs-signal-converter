@@ -50,6 +50,12 @@ const VERSION_SIGNAL: &str = "VERSION";
 /// labelled dropdown; anything wider becomes a numeric range input.
 const DISCRETE_LIMIT: u64 = 8;
 
+/// What this builder writes. Raised when a build gains something an older
+/// catalogue lacks, so a catalogue from before is rebuilt once to gain it
+/// rather than waiting for DCS-BIOS to change. 1 added lamp colours and
+/// retired signals.
+const FORMAT: u32 = 1;
+
 /// What the version reads as when `BIOSConfig.lua` cannot be found or parsed.
 pub const UNKNOWN_VERSION: &str = "unknown";
 
@@ -137,6 +143,8 @@ pub(crate) struct Index {
     pub version_signal: Option<VersionSignal>,
     #[serde(default)]
     pub stamp: Option<String>,
+    #[serde(default)]
+    pub format: Option<u32>,
 }
 
 pub(crate) fn read_index(catalogue: &Path) -> Option<Index> {
@@ -272,14 +280,14 @@ pub fn ensure(bios_json: &Path, out: &Path) -> Result<Freshness> {
     })
 }
 
-/// Built from `installed`, from files still as they were, and by a builder
-/// that recorded where the stream reports its version. A catalogue from the
-/// old Python builder has the right version and neither record, so it is
-/// rebuilt once to gain them.
+/// Built from `installed`, from files still as they were, and by this
+/// builder's [`FORMAT`]. A catalogue from an older builder has the right
+/// version but not what was added since, so it is rebuilt once to gain it.
 fn is_current(out: &Path, installed: &str, files: Option<&str>) -> bool {
     read_index(out).is_some_and(|i| {
         i.bios_version.as_deref() == Some(installed)
             && i.version_signal.is_some()
+            && i.format == Some(FORMAT)
             && files.is_some()
             && i.stamp.as_deref() == files
     })
@@ -573,6 +581,7 @@ impl Serialize for IndexOut<'_> {
         if let Some(stamp) = self.stamp {
             map.serialize_entry("stamp", stamp)?;
         }
+        map.serialize_entry("format", &FORMAT)?;
         map.end()
     }
 }
@@ -583,7 +592,21 @@ struct SignalOut {
     category: String,
     description: Value,
     control_type: Value,
+    /// A lamp's colour, where DCS-BIOS gives one, in lower case.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    color: Option<String>,
+    /// Present when DCS-BIOS has retired this signal.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    deprecated: Option<DeprecatedOut>,
     outputs: Vec<OutputOut>,
+}
+
+/// Why DCS-BIOS retired a signal, and what it says to read instead. Either can
+/// be empty: some retired signals name no replacement.
+#[derive(Serialize)]
+struct DeprecatedOut {
+    use_instead: String,
+    why: String,
 }
 
 #[derive(Serialize)]
@@ -667,6 +690,19 @@ fn convert_module(raw: &Value) -> Vec<SignalOut> {
                     .get("control_type")
                     .cloned()
                     .unwrap_or_else(|| Value::from("")),
+                color: control
+                    .get("color")
+                    .and_then(Value::as_str)
+                    .map(|c| c.trim().to_lowercase())
+                    .filter(|c| !c.is_empty()),
+                deprecated: control.get("deprecated").map(|d| {
+                    let text =
+                        |key: &str| d.get(key).and_then(Value::as_str).unwrap_or("").to_string();
+                    DeprecatedOut {
+                        use_instead: text("use_instead"),
+                        why: text("description"),
+                    }
+                }),
                 outputs,
             });
         }

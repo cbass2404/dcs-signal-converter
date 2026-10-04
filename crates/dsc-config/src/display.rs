@@ -2076,7 +2076,7 @@ impl SpanPatch {
             value_aliases: self
                 .value_aliases
                 .pick(reading || shares_stored, &shared.value_aliases),
-            abs: self.abs.pick(reading, &shared.abs),
+            abs: self.abs.pick(reading || shares_stored, &shared.abs),
             aliases: self.aliases.pick(reading, &shared.aliases),
             format: self.format.pick_opt(reading, &shared.format),
             colour: self.colour.pick_opt(true, &shared.colour),
@@ -2361,13 +2361,20 @@ impl Span {
     /// Whether anything here says how to draw a number: a range, decimal
     /// places, rounding, a wrap or a dropped sign.
     pub fn shapes_a_number(&self) -> bool {
+        self.works_out_a_number() || self.abs
+    }
+
+    /// Whether anything here works the number out, rather than only drawing
+    /// it without its sign: everything [`shapes_a_number`](Self::shapes_a_number)
+    /// asks but `abs`. A piece drawing a shared result may drop the sign,
+    /// since the result keeps it for the conditions and bands that test it.
+    pub fn works_out_a_number(&self) -> bool {
         self.reads.is_some()
             || !self.conversions.is_empty()
             || self.decimals != 0
             || self.digits != 0
             || self.round != Round::Nearest
             || self.wrap.is_some()
-            || self.abs
     }
 
     /// Half of the last decimal place a reading is shown to, which is how
@@ -2451,7 +2458,9 @@ impl Span {
     ///
     /// The signal has already shaped the number, so all that is left is the
     /// bands: matched against the value read as a number, to the places it
-    /// shows. Characters that are not a number draw as they are.
+    /// shows. Characters that are not a number draw as they are. A number no
+    /// band claims loses its sign for `abs`, after the bands, as a reading's
+    /// does.
     pub fn format_stored(&self, value: &StoredValue) -> (String, Option<&AliasDraw>) {
         let tol = value.tolerance();
         let band = value.number.and_then(|n| {
@@ -2462,6 +2471,9 @@ impl Span {
         });
         if let Some(drawn) = band.filter(|b| !b.reading) {
             return (drawn.text.clone(), Some(drawn));
+        }
+        if self.abs && value.number.is_some() {
+            return (value.text.replacen('-', "", 1), band);
         }
         (value.text.clone(), band)
     }
@@ -2630,6 +2642,39 @@ impl Span {
             .map(|(_, drawn)| drawn)
     }
 
+    /// The characters for a reading already converted, rounded and wrapped
+    /// the way this part says: what a stored signal's total draws.
+    pub(crate) fn settled_text(&self, reading: f64) -> String {
+        self.format_number_at(self.settle(reading, 0.0))
+    }
+
+    /// The lowest and highest this part can draw, settled, signs dropped for
+    /// `abs`: where a stored signal's total can run.
+    pub(crate) fn settled_range(&self, max: u16) -> [f64; 2] {
+        if let Some(every) = self.wrap.filter(|&w| w > 0.0) {
+            return [
+                0.0,
+                (every - 10f64.powi(-i32::from(self.decimals))).max(0.0),
+            ];
+        }
+        let ends: Vec<f64> = self
+            .face_ends(max)
+            .into_iter()
+            .map(|end| self.settle(end, 0.0))
+            .collect();
+        let lo = ends.iter().copied().fold(f64::INFINITY, f64::min);
+        let hi = ends.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+        if !self.abs {
+            return [lo, hi];
+        }
+        let far = lo.abs().max(hi.abs());
+        if lo <= 0.0 && hi >= 0.0 {
+            [0.0, far]
+        } else {
+            [lo.abs().min(hi.abs()), far]
+        }
+    }
+
     /// Round a converted reading the way this part says, then wrap it.
     ///
     /// Rounded before wrapping, so a compass at 359.7 rounds to 360 and then
@@ -2728,6 +2773,13 @@ impl Span {
         if self.bands_cover(low, high) {
             return Some(longest_alias);
         }
+        Some(self.number_width(max).max(longest_alias))
+    }
+
+    /// The widest number this part draws on a face of 0 to `max` counts:
+    /// [`widest`](Self::widest) with the bands left out.
+    pub(crate) fn number_width(&self, max: u16) -> usize {
+        let [low, high] = self.face(max);
         let mut ends: Vec<f64> = self
             .face_ends(max)
             .into_iter()
@@ -2742,8 +2794,7 @@ impl Span {
                 ends.push((every - 10f64.powi(-i32::from(self.decimals))).max(0.0));
             }
         }
-        let number = ends
-            .into_iter()
+        ends.into_iter()
             // The sign goes before the width is taken, or a face running below
             // zero is measured a cell wider than it ever draws.
             .map(|end| {
@@ -2751,8 +2802,7 @@ impl Span {
                 self.format_number_at(shown).chars().count()
             })
             .max()
-            .unwrap_or(0);
-        Some(number.max(longest_alias))
+            .unwrap_or(0)
     }
 
     /// The characters this part would draw for one real reading, used to

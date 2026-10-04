@@ -1751,22 +1751,76 @@ struct Tally {
     leds: u64,
     paints: u64,
     longest: u128,
+    /// When the longest pass ended and what it did. A slow pass is only
+    /// explained by what else happened then: a stutter in DCS, a menu, an
+    /// aircraft loading.
+    longest_at: Option<(String, Did)>,
 }
 
 impl Tally {
     /// How long one pass of the main loop took, less the wait for a datagram.
-    fn pass(&mut self, took: Duration) {
-        self.longest = self.longest.max(took.as_millis());
+    /// A tie keeps the first, so the time named is when it started happening.
+    fn pass(&mut self, took: Duration, did: Did) {
+        let ms = took.as_millis();
+        if ms > self.longest {
+            self.longest = ms;
+            self.longest_at = Some((dlog::time_of_day(), did));
+        }
     }
 
     /// The status line, and start counting again.
     fn report(&mut self) -> String {
+        let when = match &self.longest_at {
+            Some((at, did)) => format!(" at {at} ({})", did.describe()),
+            None => String::new(),
+        };
         let line = format!(
-            "status   {} frame(s), {} word(s) in, {} lamp write(s), {} paint(s), longest pass {} ms",
+            "status   {} frame(s), {} word(s) in, {} lamp write(s), {} paint(s), longest pass {} ms{when}",
             self.frames, self.words, self.leds, self.paints, self.longest
         );
         *self = Tally::default();
         line
+    }
+}
+
+/// What one pass of the main loop did besides wait for a datagram, so the
+/// slowest pass in a minute can say what held it up.
+#[derive(Clone, Copy, Default)]
+struct Did(u8);
+
+impl Did {
+    const FRAME: u8 = 1;
+    const PROFILE_CHECK: u8 = 2;
+    const PROFILE_RELOAD: u8 = 4;
+    const DCS_CHECK: u8 = 8;
+    const PAGE_KEY: u8 = 16;
+    const AIRCRAFT: u8 = 32;
+    const CATALOGUE: u8 = 64;
+
+    const NAMES: [(u8, &'static str); 7] = [
+        (Did::FRAME, "frame"),
+        (Did::PROFILE_CHECK, "profile check"),
+        (Did::PROFILE_RELOAD, "profile reload"),
+        (Did::DCS_CHECK, "DCS check"),
+        (Did::PAGE_KEY, "page key"),
+        (Did::AIRCRAFT, "aircraft change"),
+        (Did::CATALOGUE, "catalogue rebuild"),
+    ];
+
+    fn add(&mut self, what: u8) {
+        self.0 |= what;
+    }
+
+    fn describe(self) -> String {
+        if self.0 == 0 {
+            return "no frame".to_string();
+        }
+        Did::NAMES
+            .iter()
+            .filter(|(bit, _)| self.0 & bit != 0)
+            .map(|(_, name)| *name)
+            .collect::<Vec<_>>()
+            .join(" + ")
     }
 }
 
@@ -2024,10 +2078,33 @@ fn process_listed(stdout: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{dlog, process_listed, Drawn, Followed, Trace};
+    use super::{dlog, process_listed, Did, Drawn, Followed, Tally, Trace};
     use dsc_bios::{BiosState, Write as BiosWrite};
     use dsc_config::{Catalogue, Module, Profile};
-    use std::time::Instant;
+    use std::time::{Duration, Instant};
+
+    /// The slowest pass names when it happened and what it did; a tie keeps
+    /// the first, and a minute with nothing slower than 0 ms says no more.
+    #[test]
+    fn the_longest_pass_says_when_and_what() {
+        let mut tally = Tally::default();
+        tally.pass(Duration::ZERO, Did::default());
+        assert!(tally.report().ends_with("longest pass 0 ms"));
+
+        let mut frame = Did::default();
+        frame.add(Did::FRAME);
+        let mut checked = frame;
+        checked.add(Did::PROFILE_CHECK);
+        tally.pass(Duration::from_millis(5), frame);
+        tally.pass(Duration::from_millis(40), checked);
+        tally.pass(Duration::from_millis(40), Did::default());
+        let line = tally.report();
+        assert!(line.contains("longest pass 40 ms at "), "{line}");
+        assert!(line.ends_with(" (frame + profile check)"), "{line}");
+
+        tally.pass(Duration::from_millis(1), Did::default());
+        assert!(tally.report().ends_with(" (no frame)"));
+    }
 
     /// A module with one lamp signal and one string signal, so a trace can be
     /// followed without the generated catalogue, which is machine-local.
@@ -3103,9 +3180,11 @@ fn run(
             .max(Duration::from_millis(1));
         listener.set_read_timeout(Some(wait))?;
         writes.clear();
+        let mut did = Did::default();
         match listener.recv(&mut writes) {
             Ok(_) => {
                 if !writes.is_empty() {
+                    did.add(Did::FRAME);
                     // Said once each way round, because "is DCS-BIOS talking to
                     // us at all" is the first question every report comes down
                     // to, and the answer is otherwise nowhere in the file.
@@ -3137,6 +3216,7 @@ fn run(
         if let (Some(limit), Some(seen)) = (idle_limit, last_traffic) {
             if now.saturating_duration_since(seen) >= limit && now >= next_dcs_check {
                 next_dcs_check = now + DCS_RECHECK;
+                did.add(Did::DCS_CHECK);
                 if !dcs_is_running() {
                     say!(
                         "stream quiet for {}s and DCS is no longer running. Exiting.",
@@ -3149,6 +3229,7 @@ fn run(
 
         if now >= next_check {
             next_check = now + PROFILE_POLL;
+            did.add(Did::PROFILE_CHECK);
             // The settings file is small and written in one step, so a change
             // is read at once rather than settled like a profile.
             let stamp = file_stamp(settings_path);
@@ -3172,6 +3253,7 @@ fn run(
                 if settling.as_ref() == Some(&current) {
                     fingerprint = current;
                     settling = None;
+                    did.add(Did::PROFILE_RELOAD);
 
                     let reloaded = load_profiles(
                         profiles_dir,
@@ -3236,6 +3318,7 @@ fn run(
                     }
                     match engine.show_slot(&device, slot) {
                         Some(batch) => {
+                            did.add(Did::PAGE_KEY);
                             let what = engine
                                 .active_profile()
                                 .and_then(|p| p.page_runs.get(&device))
@@ -3283,6 +3366,7 @@ fn run(
 
         let current = engine.aircraft().map(str::to_string);
         if current != last_aircraft {
+            did.add(Did::AIRCRAFT);
             if let Some(name) = &current {
                 match engine.active_profile() {
                     Some(p) => {
@@ -3349,6 +3433,7 @@ fn run(
                     // the new catalogue's address.
                     if !rebuilt && installed.as_deref() != Some(built.as_str()) {
                         rebuilt = true;
+                        did.add(Did::CATALOGUE);
                         say!("catalogue rebuilt: DCS is running DCS-BIOS {running:?}");
                         let cat = load_catalogue(catalogue_dir, bios)?;
                         let reloaded = load_profiles(
@@ -3390,7 +3475,7 @@ fn run(
         // as it did when the main loop wrote.
         panels.check()?;
         trace.flush(now);
-        trace.tally.pass(now.elapsed());
+        trace.tally.pass(now.elapsed(), did);
         if now >= next_status {
             next_status = now + STATUS_EVERY;
             note!("{}", trace.tally.report());

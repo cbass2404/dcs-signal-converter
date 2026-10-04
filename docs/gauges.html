@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="DCS gauges whose marks are unevenly spaced, with conversions rows for DCS Signal Converter worked out from each module's own gauge tables."
+      content="What every DCS gauge DCS-BIOS sends reads, by aircraft: the range of an even dial and the conversions rows of an uneven one, worked out from each module's own gauge tables."
     />
     <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#ECEEF1" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#101418" media="(prefers-color-scheme: dark)" />
-    <title>Uneven Gauges</title>
+    <title>Gauges</title>
     <link rel="icon" href="img/icon.svg" type="image/svg+xml" />
     <link rel="icon" href="img/icon.png" type="image/png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -373,22 +373,22 @@
       <header class="top">
         <div class="wrap">
           <span class="eyebrow">Reference</span>
-          <h1 style="margin-top: 10px">Uneven gauges</h1>
+          <h1 style="margin-top: 10px">Gauges</h1>
           <p class="lede">
-            The DCS gauges whose marks are not evenly spaced, each with the
-            <code>conversions</code> rows that turn what DCS-BIOS sends into what the dial reads.
-            Copy a gauge's rows into its reading.
+            Every DCS gauge DCS-BIOS sends, by aircraft: which signal it is, the gauge DCS calls it,
+            and what the needle reads from one end of the signal to the other. Use it to find the
+            signal behind a dial, and to see what a reading converts to.
           </p>
           <div class="caution" role="note">
             <p>
-              <strong>This is parsed data, not flown.</strong> Every row here is worked out from the
-              gauge tables in each module's files and the limits in DCS-BIOS, by a script. It has
-              not been checked against each needle in the cockpit.
+              <strong>This is parsed data, not flown.</strong> Every number here is worked out from
+              the gauge tables in each module's files and the limits in DCS-BIOS, by a script. It
+              has not been checked against each needle in the cockpit.
             </p>
             <p>
-              Expect to adjust it when you set a gauge up: use Learn with the needle on a mark and
-              fix the row that is off. A DCS module update or a new DCS-BIOS can move any of these
-              numbers without notice.
+              The editor fills a reading in from this data when you pick a gauge's signal. Expect to
+              adjust it: use Learn with the needle on a mark and fix the number that is off. A DCS
+              module update or a new DCS-BIOS can move any of these numbers without notice.
             </p>
             <p class="note" id="versions"></p>
           </div>
@@ -413,14 +413,17 @@
           <div class="prose">
             <p>
               So a gauge whose DCS-BIOS limits are <code>{-1, 1}</code> puts a needle at 0 on raw
-              32768, not raw 0. The table shows each gauge's breakpoints as raw &rarr; reads, and
+              32768, not raw 0. An even gauge, whose marks are evenly spaced, is a straight line:
+              the table gives what it reads at raw 0 and at 65535, and
+              <strong>Copy reads</strong> gives them as <code>reads</code>. An uneven gauge is
+              marked <em>uneven</em>; the table shows its breakpoints as raw &rarr; reads, and
               <strong>Copy rows</strong> gives the same breakpoints as
               <code>conversions</code> rows, one per section.
             </p>
             <p>
-              <strong>Straight line off by</strong> is how far a plain <code>reads</code> from one
-              end to the other would be wrong at its worst mark, as a share of the whole dial. Under
-              5% you may not need rows at all.
+              <strong>Off straight</strong> is how far a plain <code>reads</code> from one end to
+              the other would be wrong at an uneven gauge's worst mark, as a share of the whole
+              dial. Under 5% you may not need rows at all.
             </p>
             <p>
               Where a note says the first or last row is the needle's rest, that row is the needle
@@ -428,10 +431,15 @@
               ends if you want the screen to hold the scale's end instead.
             </p>
             <p>
-              Reads are in the dial's own units where the unit is known. Where DCS works in m/s,
-              radians or &deg;C and the dial does not, the reads are already converted and the note
-              says so. A gauge marked <em>DCS units</em> reads in DCS's numbers, which may not match
-              the dial's marks.
+              Reads are in the dial's own units where the unit has been read off the dial. Where DCS
+              works in m/s, radians or &deg;C and the dial does not, the reads are already converted
+              and the note says so. A gauge whose unit says <em>not checked</em> reads in DCS's
+              numbers. Those are usually the dial's, but not always.
+            </p>
+            <p>
+              DCS-BIOS names many signals after DCS's own gauges, so a name can say little. The DCS
+              gauge column is the name in the module's <code>mainpanel_init.lua</code> and the
+              argument number, which can help match a signal to a dial.
             </p>
           </div>
         </div>
@@ -447,7 +455,7 @@
             <input
               type="search"
               id="find"
-              placeholder="Find a gauge: fuel, VVI, PORT_FUEL_IN_G..."
+              placeholder="Find a gauge: fuel, VVI, VD_10K, uneven..."
               aria-label="Find a gauge"
             />
             <span class="count" id="count"></span>
@@ -466,8 +474,8 @@
           </div>
           <div class="prose">
             <p>
-              These gauges are uneven in DCS but have no rows here. Aircraft whose gauges are all
-              evenly spaced need no rows.
+              These uneven gauges are in DCS's tables but have no rows here. Even gauges DCS-BIOS
+              does not send are left out without a mention, since a module has many.
             </p>
           </div>
           <div class="table-scroll">
@@ -576,10 +584,11 @@
           document.execCommand("copy");
           t.remove();
         }
+        const label = btn.textContent;
         btn.textContent = "Copied";
         btn.classList.add("done");
         setTimeout(() => {
-          btn.textContent = "Copy rows";
+          btn.textContent = label;
           btn.classList.remove("done");
         }, 1400);
       }
@@ -598,20 +607,36 @@
       }
 
       function gaugeRow(aircraft, g) {
-        const btn = h("button", { type: "button", class: "copy" }, "Copy rows");
-        btn.addEventListener("click", () => copy(btn, rowsJson(g.conversions)));
-        const bp = breakpoints(g.conversions);
+        const uneven = Boolean(g.conversions);
+        const btn = h(
+          "button",
+          { type: "button", class: "copy" },
+          uneven ? "Copy rows" : "Copy reads",
+        );
+        btn.addEventListener("click", () =>
+          copy(btn, uneven ? rowsJson(g.conversions) : `"reads": [${g.reads.join(", ")}]`),
+        );
+        const bp = uneven
+          ? breakpoints(g.conversions)
+          : breakpoints([{ raw: [0, 65535], reads: g.reads }]);
         if (g.notes.length) bp.append(h("div", { class: "note" }, g.notes.join("; ")));
         const tr = h(
           "tr",
           {},
           h("td", {}, h("code", {}, g.id), h("div", { class: "note" }, g.description)),
-          h("td", {}, g.unit),
+          h(
+            "td",
+            {},
+            h("code", {}, g.dcs_gauge),
+            h("div", { class: "note" }, `argument ${g.argument}`),
+          ),
+          h("td", {}, g.unit || h("span", { class: "note" }, "not checked")),
           bp,
-          h("td", { class: "off" }, `${g.straight_off_pct}%`),
+          h("td", { class: "off" }, uneven ? `uneven, ${g.straight_off_pct}%` : "even"),
           h("td", {}, btn),
         );
-        tr.dataset.find = `${aircraft} ${g.id} ${g.description} ${g.unit}`.toLowerCase();
+        tr.dataset.find =
+          `${aircraft} ${g.id} ${g.description} ${g.dcs_gauge} ${g.unit} ${uneven ? "uneven" : "even"}`.toLowerCase();
         return tr;
       }
 
@@ -653,8 +678,8 @@
                     h(
                       "tr",
                       {},
-                      ...["DCS-BIOS", "Unit", "Raw → reads", "Straight line off by", ""].map((t) =>
-                        h("th", {}, t),
+                      ...["DCS-BIOS", "DCS gauge", "Unit", "Raw → reads", "Off straight", ""].map(
+                        (t) => h("th", {}, t),
                       ),
                     ),
                   ),
@@ -677,7 +702,7 @@
         }
         if (data.none_found.length)
           $("even").textContent =
-            `Every gauge even, so nothing to list: ${data.none_found.join(", ")}.`;
+            `No gauge found that DCS-BIOS sends: ${data.none_found.join(", ")}.`;
         for (const u of data.not_covered || []) {
           $("uncovered").append(
             h(

@@ -145,8 +145,13 @@ export function hintFor(signal: SignalView): HTMLElement {
     {},
     el("strong", {}, signal.description || signal.id),
     el("code", { class: "hint-id block" }, signal.id),
-    el("span", { class: "meta block" }, `${signal.control_type} · ${signal.category}`),
+    el(
+      "span",
+      { class: "meta block" },
+      [signal.control_type, signal.colour, signal.category].filter(Boolean).join(" · "),
+    ),
   );
+  if (signal.replaced) lines.append(el("span", { class: "block" }, replacedText(signal)));
   if (signal.text) {
     // Characters have no range, and 0 to 65535 would suggest one to convert.
     lines.append(
@@ -170,6 +175,26 @@ export function hintFor(signal: SignalView): HTMLElement {
   }
 
   return infoIcon("Signal details", lines);
+}
+
+/** What DCS-BIOS says about a signal it has retired, as one sentence. */
+function replacedText(signal: SignalView): string {
+  const r = signal.replaced;
+  if (!r) return "";
+  const why = r.why ? `: ${r.why}` : "";
+  return r.use_instead
+    ? `DCS-BIOS replaced this with ${r.use_instead}${why}.`
+    : `DCS-BIOS has retired this${why}.`;
+}
+
+/**
+ * A line under a signal DCS-BIOS has retired. It still works today, but a
+ * later DCS-BIOS may drop it, and the replacement is often the better signal.
+ * Said in words rather than behind the icon, for the same reason as a missing
+ * signal: nobody would think to hover to find out.
+ */
+export function replacedNote(signal: SignalView): HTMLElement | null {
+  return signal.replaced ? el("div", { class: "flag" }, replacedText(signal)) : null;
 }
 
 /** Score a signal against the query. Lower sorts first; null means no match. */
@@ -196,8 +221,10 @@ export function search(signals: SignalView[], query: string): SignalView[] {
     if (rank !== null) hits.push({ signal, rank });
   }
   // Stable within a rank, and the incoming list is already lamps-first, so a
-  // cockpit lamp outranks a switch that matched equally well.
-  hits.sort((a, b) => a.rank - b.rank);
+  // cockpit lamp outranks a switch that matched equally well. A retired
+  // signal goes after every live one, where it is still found but not picked
+  // by accident.
+  hits.sort((a, b) => Number(!!a.signal.replaced) - Number(!!b.signal.replaced) || a.rank - b.rank);
   return hits.slice(0, MAX_ROWS).map((h) => h.signal);
 }
 
@@ -252,9 +279,9 @@ export function signalPicker(opts: PickerOptions): HTMLElement {
   // wrong: the row highlighted on hover but only sometimes took the click.
   // Cancelling the mousedown means focus never moves and there is no race.
   results.addEventListener("mousedown", (e) => e.preventDefault());
-  // A signal the module does not have is the one thing said in words rather
-  // than behind the icon, because the lamp will never light and nobody would
-  // think to hover to find that out.
+  // A signal the module does not have, or one DCS-BIOS has retired, is said
+  // in words rather than behind the icon, because nobody would think to hover
+  // to find that out.
   const problem = el("div", { class: "detail" });
   const wrap = el("div", { class: "picker-field" }, row, results, problem);
   if (canLearn()) row.append(learn);
@@ -287,6 +314,17 @@ export function signalPicker(opts: PickerOptions): HTMLElement {
       return;
     }
     icon.append(hintFor(signal));
+    const note = replacedNote(signal);
+    if (note) {
+      // One click to the replacement, where it is in this module.
+      const next = byId.get(signal.replaced?.use_instead ?? "");
+      if (next) {
+        const use = el("button", { class: "add small", type: "button" }, `Use ${next.id}`);
+        use.addEventListener("click", () => pick(next));
+        note.append(" ", use);
+      }
+      problem.append(note);
+    }
   }
 
   function close(): void {
@@ -309,11 +347,14 @@ export function signalPicker(opts: PickerOptions): HTMLElement {
       return;
     }
     for (const signal of hits) {
+      const replaced = signal.replaced
+        ? ` · replaced${signal.replaced.use_instead ? ` by ${signal.replaced.use_instead}` : ""}`
+        : "";
       const row = el(
         "button",
         { class: "result", type: "button" },
         el("span", { class: "desc" }, signal.description),
-        el("span", { class: "sub" }, signal.category),
+        el("span", { class: "sub" }, signal.category + replaced),
         el("span", { class: "id" }, signal.id),
       );
       row.addEventListener("click", () => pick(signal));

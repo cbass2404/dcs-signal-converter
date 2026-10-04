@@ -13,87 +13,108 @@ release shipped it is brought up to the new one for you. A fix to something
 you have touched only reaches you if you reset it, and you cannot decide to
 unless this says what moved.
 
-## 1.0.0-beta.007
+## 1.0.0-beta.008
 
 ### Profiles
 
-- **New profile for the UH-60L mod**, read through the MH-60R module in
-  DCS-BIOS:
+- **New profile for the OH-58D Kiowa Warrior:**
   - **Backlights:** every panel's backlight is lit whenever you are in the
     aircraft.
-  - **MCDU, PFP-3N, PFP-4 and PFP-7:** FAIL lights on the Master Caution.
-  - **PTO2:** Master Caution lights on the Master Caution.
-  - All three take it from one set of shared conditions, Master Caution
-    Light.
-  - **No screen pages.** The module sends no gauge, radio or engine
-    readings worth showing, so the MCDU, UFC and ICP are left blank.
-
-- **New profile for the UH-1H**, which also loads for the Bell 47:
+  - **MCDU:** RDY lights steady with the laser armed and blinks slowly with
+    it on but not armed. IND lights while the copilot fires the armed laser,
+    and STATUS with the MMS mode selector past its second position.
+  - **PTO2:** JETT lights while either pylon jettison guard is open, and
+    HOOK with the CMWS armed and on, or with the IR jammer on and
+    transmitting.
+  - **Orion Throttle Base II:** A/A lights with the master switch at ARM
+    and the ARMED lamp lit, A/G with the gun switch at its middle position
+    and the ARMED lamp lit.
+  - **ICP page, DED Radio:** the Remote Frequency Indicator's five radios,
+    each with its channel, a C while it ciphers, its frequency, and an
+    arrow marking the radio each seat has selected.
+  - **No MCDU or UFC pages yet.** Their slots hold empty pages.
+- **New profile for the Mi-8MT and Mi-8MTV2:**
   - **Backlights:** every panel's backlight is lit whenever you are in the
     aircraft.
-  - **Master Caution:** FAIL on the MCDU, PFP-3N, PFP-4 and PFP-7, and
-    Master Caution on the PTO2, all from one set of shared conditions,
-    MASTER CAUTION.
-  - **MCDU and PFPs:** RDY on the MCDU and DSPY on the PFPs light while
-    the radar altimeter is powered.
-  - **PTO2:** NOSE, LEFT and RIGHT light with weight on the skids, JETT
-    while the jettison cover is open, and HOOK with the cargo release
-    safety switch.
-  - **Orion Throttle Base II:** A/A lights with master arm ARMED and the
-    7.62 guns selected, A/G with master arm ARMED, 2.75 rockets selected
-    and a rocket pair set.
-  - **MCDU page, CDU Radios:** the transmit selector, which picks the
-    radio you talk on, then UHF, VHF AM, VHF FM, VHF NAV and ADF, each
-    with its frequency, power and volume. UHF adds its preset, and the ADF
-    its band and a signal strength bar.
-  - **No UFC or ICP pages yet.** Their slots hold empty pages.
+  - **PTO2:** NOSE, LEFT and RIGHT light while that wheel carries weight,
+    HOOK while the emergency cargo release cover is open, and the master
+    caution while the weapon safe/armed switch is on, standing in for the
+    red cabin light that switch turns on.
+  - **MCDU and PFP page, CDU Flight:** the radio selector; the R-863, R-828
+    and Jadro-1A, each with its power, channel or frequency, tuning and
+    volume; the ARC-9 ADF's main and backup frequencies with its mode,
+    signal and volume; and a flight data line with airspeed, barometric and
+    radar altitude and vertical speed. Airspeed under 50 shows `---` in red,
+    and is amber from 50 to 70. Radar altitude is red under 20 m and shows
+    `---` above 700 m. Vertical speed reads like the dial, 100 for each
+    mark, so a climb of one mark shows +100. It is red descending past 300,
+    amber descending at 300 or less, and green level or climbing.
+  - **ICP page, DED Doppler Nav:** the DISS-15's coordinates in km with
+    their drift, map angle, power, land or sea mode, drift angle, heading
+    and course.
+  - **No UFC page yet.**
+- **New profile for the AJS37 Viggen:**
+  - **Backlights:** every panel's backlight is lit whenever you are in the
+    aircraft.
+  - **PTO2:** NOSE, LEFT and RIGHT light with that gear's green lamp, the
+    landing gear light with the yellow gear lamp, and the master caution
+    with the right master caution light. FLAPS lights with the AFK lamp,
+    HALF with attitude hold and FULL with altitude hold. JETT lights while
+    the external tank release cover is open, and HOOK with the stores
+    released lamp.
+  - **MCDU and PFP:** FAIL lights with the right master caution light.
+  - **Orion Throttle Base II:** A/A lights with the weapon selector at GUN
+    or IR, A/G with the master mode selector at ANF.
+  - **MCDU and PFP page, CDU Flight:** the master mode in its own colour,
+    weapon selector, interval and release modes; the FR 22's group, manual
+    frequency, base channel and buttons, each button green while pressed;
+    range in km or mil, fuel, destination, airspeed and Mach; and the CK37
+    data panel's selector, readout and IN or UT.
+  - **ICP page, DED CK47:** the CK37 data panel's selector, readout and IN
+    or UT, with range, fuel, destination, airspeed and Mach.
+  - **UFC page, UFC Flight:** the CK37 readout, selector and IN or UT, with
+    destination, range and airspeed.
 
-- **F-16C: the fuel totalizer on the CDU Flight page is coloured by
-  fuel left,** red at 2,000 lbs or less, amber up to 3,000 lbs and green
-  above. It used to be amber throughout. Changed: the totalizer and the
-  trailing 0 beside it on the CDU Flight page.
+### Log
+
+- **The minute status line says when its slowest pass happened and what it
+  was doing**, for example `longest pass 76 ms at 21:38:12.304 (frame +
+  profile check)`. A slow moment in a log you send can now be matched to a
+  stutter, a menu or an aircraft loading. See the log section of
+  [docs/CLI.md](docs/CLI.md).
 
 ### Editor
 
-- **The flash choice "steady" is now "as DCS shows it".** It never held a
-  lamp steady: a lamp DCS flashes still flashes. Only the name changed.
-- **Collapsing a panel closes its page editor.** With unsaved changes to
-  the page, you are asked first: Continue discards them, Cancel keeps the
-  panel and the editor open. Collapse all asks once for every page.
-- **Profile cards name only the aircraft.** The DCS-BIOS module is
-  gone from the line under each profile's name, where it repeated one of
-  the aircraft.
-- **A lamp on shared conditions shows just their name,** with "shared
-  conditions" under it, instead of "Lights by" and the name.
-- **A lamp that follows another shows just that lamp,** with "lit the
-  same as that lamp" under it, instead of "Matches" and "follows it".
-- **A switch no longer has settings shared by its cases.** Each case
-  builds what it draws from its own pieces, a reading, a shared result or
-  text, each with its own colour, so the reading and the colour under the
-  switch are gone. A switch that had them opens with them copied into
-  each case and draws the same.
-- **A switch offers an else case only while a position has none.** Once
-  every position has a case, else could never draw, so it is no longer
-  offered.
-- **A shared result can have symbol parts.** Beside its readings, a
-  part can be digits, a point or a sign, laid down as typed: a radio's
-  megahertz, a ".", then its hundredths at two digits read 30.50. The
-  result stays a number, so bands still match it.
-- **A shared result's part can give each switch position a number.**
-  Choose "a number for each position" on a part reading a switch, and a
-  switch sending 0 and 1 can read 1 and 5, each drawn exactly as typed.
-- **An always on lamp no longer has "Use a signal instead".** Clear it
-  with its × and pick any of the choices, as on every other lamp.
-
-### Fixes
-
-- **A failed save no longer lingers.** Once a profile, page or shared
-  result saves, the error from its last failed attempt goes, and trying
-  again replaces the error rather than adding another.
-
-- **Lamp rows see shared conditions as soon as they change.** A lamp lit
-  by shared conditions now shows a renamed set by its new name, and a new
-  set is offered in its menu, without reopening the profile.
-- **An empty note closes again.** Opened with "Add a note" and left
-  empty, the box goes back to the button once you click elsewhere,
-  instead of staying open until the profile is reopened.
+- **The profile header shows only the aircraft under the name**, as the
+  profile cards already do. It no longer repeats the DCS-BIOS module.
+- **A shared result can add a part** to the parts before it instead of
+  laying it beside them. Each part after the first chooses **laid beside
+  the parts before** or **added to the parts before**, and the chain runs
+  left to right, so the two mix: the Mi-8's ADF lays its hundreds and tens
+  knobs side by side, 1 and 50 for 150, and adds the fine tuning to that.
+  The Mi-8's course arrow turns with the compass card, so DCS-BIOS sends
+  its angle on the card rather than the course: the heading plus that
+  angle, each total wrapping at 360, is the course you set. Totals can be
+  padded and wrapped, and an added symbol part adds a fixed number, such as
+  180 for a reciprocal.
+- **Picking a gauge's signal fills in what it reads, for every gauge**, not
+  only uneven ones. An even dial arrives converted across its real range,
+  such as 0 to 10,000 m on the Mi-8's altimeter, instead of 0 to 100 for you
+  to set. The numbers are parsed from DCS's own files, so a line under them
+  says so and asks you to check them against the dial; where nobody has read
+  the unit off the dial, it says the unit is not checked. The line goes once
+  you change the numbers.
+- **41 more gauges get section rows**, ones that were wrongly taken for even
+  before: among them the A-10C's airspeed, the F/A-18C's pressure altimeter,
+  the Mi-8's radar altimeter and the MiG-21's fuel quantity.
+- **Signals DCS-BIOS has retired are marked.** In the search list and in
+  Learn they are tagged "replaced by" the signal to use, and sort after the
+  rest. One in a row gets a line saying so, with a button that switches to
+  the replacement. It still works today; a later DCS-BIOS may drop it.
+- **A lamp's signal details show its colour** where DCS-BIOS gives one, as
+  it does for most F-14, C-130J and AH-64D lamps.
+- **The signal catalogue is rebuilt once on first start** to pick these up.
+- **A piece drawing a shared result can draw it without its sign.** Offered
+  when the result can go below zero. The result keeps its sign, so its
+  aliases and conditions still tell left from right, and the screen shows
+  only the size: a drift of -12.5 draws as 12.5.

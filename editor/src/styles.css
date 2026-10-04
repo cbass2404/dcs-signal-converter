@@ -790,7 +790,8 @@ button.result .id {
   align-items: center;
 }
 
-/* Only ever holds the "not in this module" warning. */
+/* Holds the "not in this module" warning, or the line under a signal
+   DCS-BIOS has retired. */
 .detail {
   margin-top: 3px;
 }

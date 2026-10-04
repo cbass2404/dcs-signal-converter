@@ -30,6 +30,7 @@ import re
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "docs", "gauges.json")
+EDITOR_OUT = os.path.join(ROOT, "editor", "src", "gauge-data.json")
 BIOS_PIN = os.path.join(ROOT, "target", "dcs-bios-pin", "DCS-BIOS", "lib", "modules", "aircraft_modules")
 BIOS_SAVED = os.path.join(os.path.expanduser("~"), "Saved Games", "DCS", "Scripts", "DCS-BIOS",
                           "lib", "modules", "aircraft_modules")
@@ -280,6 +281,7 @@ SKIP = {
 
 NUM = r"[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?"
 LINEAR = 0.02  # a needle within 2% of a straight line counts as even
+PEG = 0.1  # an end reading more than this share of the dial is scale, not a peg
 
 
 def strip_comments(text):
@@ -443,14 +445,24 @@ def shape(points):
         ranks = [i for i, _ in sorted(enumerate(ys), key=lambda p: p[1])]
         breaks = sum(1 for a, b in zip(ranks, ranks[1:]) if abs(b - a) != 1)
         return "wraps" if breaks <= 1 else "switch"
-    if len(pts) < 3 or chord_off(pts) < LINEAR:
-        return "even"
-    for lo, hi in ((1, 0), (0, 1), (1, 1)):
-        sub = pts[lo:len(pts) - hi]
-        # Two points left are always straight, so that proves nothing.
-        if len(sub) >= 3 and chord_off(sub) < LINEAR:
-            return "even"  # straight apart from a peg at one end
-    return "uneven"
+    # Even means straight end to end. A needle straight apart from one end,
+    # whether a peg off the scale or a squeezed-up first 50 kt, gets rows:
+    # one straight line would read 25 kt with the aircraft parked.
+    return "even" if len(pts) < 3 or chord_off(pts) < LINEAR else "uneven"
+
+
+def even_reads(points, lo, hi, unit):
+    """What an even needle reads at raw 0 and at 65535: its straight line,
+    run out to DCS-BIOS's limits."""
+    factor, offset = (unit[1], unit[2]) if len(unit) > 1 else (1, 0)
+    pts = sorted(points)
+    (x0, y0), (x1, y1) = pts[0], pts[-1]
+    if y1 == y0:
+        return None  # a needle that never moves
+
+    def at(y):
+        return tidy((x0 + (y - y0) * (x1 - x0) / (y1 - y0)) * factor + offset)
+    return [at(lo), at(hi)]
 
 
 def pick(defs, gauge):
@@ -488,10 +500,13 @@ def pegged(bps):
     """Which ends are a peg: a stretch of needle travel worth almost nothing."""
     def slope(a, b):
         return abs(b[1] - a[1]) / max(1, b[0] - a[0])
+    # As in straight_part, an end reading a real share of the dial is part of
+    # the scale, however spread out.
+    short = PEG * abs(bps[-1][1] - bps[0][1])
     ends = []
-    if len(bps) >= 3 and slope(bps[0], bps[1]) * 5 < slope(bps[1], bps[2]):
+    if len(bps) >= 3 and slope(bps[0], bps[1]) * 5 < slope(bps[1], bps[2]) and abs(bps[1][1] - bps[0][1]) <= short:
         ends.append("first")
-    if len(bps) >= 3 and slope(bps[-2], bps[-1]) * 5 < slope(bps[-3], bps[-2]):
+    if len(bps) >= 3 and slope(bps[-2], bps[-1]) * 5 < slope(bps[-3], bps[-2]) and abs(bps[-1][1] - bps[-2][1]) <= short:
         ends.append("last")
     return ends
 
@@ -535,7 +550,7 @@ def collect(roots, bios_dir):
             missing.append(bios_name)
             continue
         floats = bios_floats(bios_path)
-        seen, gauges = set(), []
+        seen, taken, gauges = set(), set(), []
         for name, arg, points in dcs_gauges(mainpanel):
             if (arg, name) in seen:
                 continue
@@ -545,9 +560,27 @@ def collect(roots, bios_dir):
                 # The needle can't show the sign, so it reads the magnitude.
                 points = [p for p in points if p[0] >= 0]
                 kind = shape(points)
-            if kind == "even" or kind == "step":
+            if kind == "step":
                 continue
             defs = floats.get(arg)
+            if kind == "even":
+                # Most of a module's gauges are even, and DCS-BIOS leaves many
+                # out. Listing each one it leaves out would bury the uneven
+                # ones that matter, so an even one is just dropped.
+                if not defs or (folder, name) in SKIP:
+                    continue
+                ident, lo, hi, desc = pick(defs, name)
+                unit = UNITS.get((folder, name), ("",))
+                reads = even_reads(points, lo, hi, unit)
+                if not reads or ident in taken:
+                    continue
+                taken.add(ident)
+                notes = [unit[3] + ", converted"] if len(unit) > 3 else []
+                if (lo, hi) != (0, 1):
+                    notes.append("DCS-BIOS limits {%g, %g}" % (lo, hi))
+                gauges.append({"id": ident, "description": desc, "unit": unit[0], "notes": notes,
+                               "dcs_gauge": name, "argument": arg, "reads": reads})
+                continue
             why = SKIP.get((folder, name))
             if not why and kind == "switch":
                 why = "a switch's positions, not a gauge; draw them with value_aliases"
@@ -557,7 +590,10 @@ def collect(roots, bios_dir):
                 left_out.append({"aircraft": title, "dcs_gauge": name, "why": why})
                 continue
             ident, lo, hi, desc = pick(defs, name)
-            unit = UNITS.get((folder, name), ("DCS units",))
+            if ident in taken:
+                continue
+            taken.add(ident)
+            unit = UNITS.get((folder, name), ("",))
             bps = breakpoints(points, lo, hi, unit)
             notes = []
             if len(unit) > 3:
@@ -572,6 +608,7 @@ def collect(roots, bios_dir):
             gauges.append({"id": ident, "description": desc, "unit": unit[0], "notes": notes,
                            "straight_off_pct": round(straight_off(bps)), "dcs_gauge": name, "argument": arg,
                            "conversions": rows(bps)})
+        gauges.sort(key=lambda g: g["id"])
         if gauges:
             found.append({"aircraft": title, "bios_module": bios_name, "gauges": gauges})
         else:
@@ -625,15 +662,26 @@ def main():
     }
     with open(OUT, "w", encoding="utf-8", newline="\r\n") as f:
         f.write(dumps(doc) + "\n")
-    print("%d gauges in %d aircraft, %d left out -> %s"
-          % (sum(len(a["gauges"]) for a in found), len(found), len(left_out), os.path.relpath(OUT, ROOT)))
+    # The editor's copy: only what filling in a reading needs, keyed by the
+    # DCS-BIOS module, so the app carries a fraction of the page's file.
+    lean = {a["bios_module"]: [{k: g[k] for k in ("id", "description", "unit", "reads", "conversions") if k in g}
+                               for g in a["gauges"]] for a in found}
+    with open(EDITOR_OUT, "w", encoding="utf-8", newline="\r\n") as f:
+        f.write(dumps(lean) + "\n")
+    gauges = [g for a in found for g in a["gauges"]]
+    uneven = sum(1 for g in gauges if "conversions" in g)
+    print("%d gauges (%d uneven) in %d aircraft, %d left out -> %s, %s"
+          % (len(gauges), uneven, len(found), len(left_out), os.path.relpath(OUT, ROOT),
+             os.path.relpath(EDITOR_OUT, ROOT)))
 
 
 def dumps(doc):
-    """Indented, but each conversions row on one line, as the profiles read."""
+    """Indented, but each conversions row and each pair of reads on one line,
+    as the profiles read."""
     text = json.dumps(doc, indent=2, ensure_ascii=False)
-    return re.sub(r'\{\s+"raw": \[\s+([-\d.]+),\s+([-\d.]+)\s+\],\s+"reads": \[\s+([-\d.]+),\s+([-\d.]+)\s+\]\s+\}',
+    text = re.sub(r'\{\s+"raw": \[\s+([-\d.]+),\s+([-\d.]+)\s+\],\s+"reads": \[\s+([-\d.]+),\s+([-\d.]+)\s+\]\s+\}',
                   r'{"raw": [\1, \2], "reads": [\3, \4]}', text)
+    return re.sub(r'"reads": \[\s+([-\d.]+),\s+([-\d.]+)\s+\]', r'"reads": [\1, \2]', text)
 
 
 if __name__ == "__main__":

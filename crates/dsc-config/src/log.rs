@@ -328,6 +328,12 @@ impl Throttle {
     }
 }
 
+/// The time of day as a record shows it, for a line that names a moment other
+/// than the one it was written at.
+pub fn time_of_day() -> String {
+    stamp()[11..].to_string()
+}
+
 /// Local wall clock to the millisecond, formatted as `dcs.log` formats it, so
 /// the two can be read side by side.
 #[cfg(windows)]

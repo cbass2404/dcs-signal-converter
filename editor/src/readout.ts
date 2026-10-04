@@ -36,9 +36,9 @@ import {
 } from "./content";
 import type { SpanKind } from "./content";
 import { cautionSlot, flagSlot } from "./flags";
-import { gaugeTable, gaugeTables, matchingTable, tableRows } from "./gauges";
+import { fillFromGauge, gaugeNote, gaugeTables, matchingTable, tableRows } from "./gauges";
 import { noteEditor } from "./note";
-import { isLampSignal, partName, storedSignal, storedSignals } from "./stored";
+import { isLampSignal, isSymbolPart, partsSaid, storedSignal, storedSignals } from "./stored";
 import { infoIcon, signalPicker } from "./typeahead";
 import {
   aliasColour,
@@ -63,6 +63,8 @@ import type {
   SignalView,
   Span,
   SpanPatch,
+  StoredSignal,
+  Term,
 } from "./types";
 
 /** The swatch beside each colour name, so the menu shows what it means. */
@@ -223,9 +225,9 @@ function namedPositions(signal: SignalView | undefined): Record<string, string> 
  *
  * A switch whose positions have names arrives aliased to them, ready to be
  * shortened. A full word is a needle's position rather than a quantity, and 0
- * to 65535 means nothing on a screen, so it arrives converted: by the gauge's
- * table where docs/gauges.json has one for it, or to a range the user then
- * sets from the dial. Anything else is a count or a selector whose value
+ * to 65535 means nothing on a screen, so it arrives converted the way the
+ * module's files say the gauge reads, or to a range the user then sets from
+ * the dial. Anything else is a count or a selector whose value
  * already is the number, and is shown as sent.
  */
 function startReading(span: Span, signal: SignalView | undefined, module: string): void {
@@ -242,13 +244,11 @@ function startReading(span: Span, signal: SignalView | undefined, module: string
 }
 
 /**
- * The conversion a needle starts from: its gauge's table where there is one,
- * since its marks are already worked out, and a plain range otherwise.
+ * The conversion a needle starts from: its gauge's rows or range where the
+ * module's files give one, and a plain range to set from the dial otherwise.
  */
 function startConverted(span: Span, signal: SignalView, module: string): void {
-  const table = gaugeTable(module, signal.id);
-  if (table) span.conversions = tableRows(table);
-  else span.reads = [0, 100];
+  if (!fillFromGauge(span, module, signal.id)) span.reads = [0, 100];
 }
 
 /**
@@ -313,9 +313,9 @@ function conversionRow(
   }
   select.value = positions ? "positions" : isConverted(span) ? "converted" : "sent";
   select.addEventListener("change", () => {
-    // Converting starts from the gauge's table where there is one. Otherwise
-    // from the signal's own range, which draws exactly what as sent did, so
-    // the choice changes nothing until a number is changed. Decimals mean
+    // Converting starts from the gauge's rows or range where there is one.
+    // Otherwise from the signal's own range, which draws exactly what as sent
+    // did, so the choice changes nothing until a number is changed. Decimals mean
     // nothing on a whole number sent as it is. Each position starts reading
     // its own number, for the same reason.
     clearReading(span);
@@ -325,14 +325,12 @@ function conversionRow(
         reads: [n, n] as [number, number],
       }));
     } else if (select.value === "converted") {
-      const table = signal ? gaugeTable(module, signal.id) : undefined;
-      if (table) span.conversions = tableRows(table);
-      else span.reads = [0, max];
+      if (!signal || !fillFromGauge(span, module, signal.id)) span.reads = [0, max];
     }
     rebuild();
   });
 
-  // The module's tables from docs/gauges.json, any of which can be copied in.
+  // The module's uneven gauges' rows, any of which can be copied in.
   // Not only this signal's: two needles on one aircraft often share a dial.
   // It shows the table while the rows are still it, with the rows hidden, and
   // custom with the rows open once custom is chosen or a row no longer
@@ -343,9 +341,8 @@ function conversionRow(
   tableSelect.append(el("option", { value: "" }, "custom"));
   for (const g of tables) {
     const own = g.id === signal?.id ? ", this signal" : "";
-    tableSelect.append(
-      el("option", { value: g.id }, `${g.description}, ${g.unit} (${g.id}${own})`),
-    );
+    const unit = g.unit ? `, ${g.unit}` : "";
+    tableSelect.append(el("option", { value: g.id }, `${g.description}${unit} (${g.id}${own})`));
   }
   tableSelect.addEventListener("change", () => {
     // Only the rows change: decimals, padding, rounding and wrap are about
@@ -404,6 +401,15 @@ function conversionRow(
   }
   const offer = el("button", { class: "add small" });
   const values = el("span", { class: "values-row flow" });
+  // Said while the numbers are still the ones filled in from the gauge, and
+  // gone once the user changes them: by then they have looked at the dial.
+  const filled = el("div", { class: "flag" });
+  const settleFilled = (): void => {
+    const note = gaugeNote(module, signal?.id, span);
+    filled.hidden = !note;
+    filled.textContent = note ?? "";
+  };
+  settleFilled();
   const converted = isConverted(span);
   if (converted) {
     const number = (value: number | string, attrs: Record<string, string> = {}): HTMLInputElement =>
@@ -510,6 +516,7 @@ function conversionRow(
         row.raw = [count(rawLo), count(rawHi)];
         row.reads = [Number(lo.value) || 0, Number(hi.value) || 0];
         store();
+        settleFilled();
         settleSign();
         offerRest();
         edited();
@@ -636,7 +643,9 @@ function conversionRow(
               "than 1. Round down for a drum or a counter, which only shows a " +
               "digit once it has clicked over. Wrap for anything that starts " +
               "again from 0: one drum digit is 0 to 10 wrapping at 10, and a " +
-              "compass is 0 to 360 wrapping at 360." +
+              "compass is 0 to 360 wrapping at 360. Picking a gauge's signal " +
+              "fills this in from the gauges page, which is parsed from DCS's " +
+              "files: check it against the dial." +
               (tables.length > 0
                 ? " The second menu copies in a gauge's rows from the gauge " +
                   "tables on the site, and hides them while they are the " +
@@ -650,6 +659,7 @@ function conversionRow(
     converted && !positions && !shown ? stretches : "",
     converted && !positions && !shown ? offer : "",
     converted && !positions ? el("div", { class: "test-row" }, values) : "",
+    converted && !positions ? filled : "",
     aliases ? valueAliasEditor(span, signal, set, smallSet, colours, inverse, edited) : "",
   );
 }
@@ -1637,12 +1647,13 @@ function spanWidth(span: Span, signals: SignalView[]): number {
   // can never be the reason content will not fit.
   if (span.gap) return 0;
   if (isLiteral(span)) return (span.text ?? "").length;
-  // A stored signal is as wide as its terms laid side by side, or the
-  // longest word drawn in its place.
+  // A stored signal is as wide as its terms laid side by side, a total
+  // starting the count again where a term adds, or the longest word drawn
+  // in its place.
   if (kindOf(span) === "stored") {
     const stored = storedSignal(span.signal ?? "");
     if (!stored) return 0;
-    const terms = stored.terms.reduce((n, t) => n + spanWidth(t, signals), 0);
+    const terms = chainWidth(stored, signals);
     const words = Object.values(span.value_aliases ?? {})
       .filter((a) => !aliasShowsReading(a))
       .map((a) => [...aliasText(a)].length);
@@ -1694,6 +1705,85 @@ function spanWidth(span: Span, signals: SignalView[]): number {
     longest,
     ...ends.map((end) => numberText(shown(end), dp, span.digits ?? 0).length),
   );
+}
+
+/**
+ * The lowest and highest a shared result's part draws as a number, settled:
+ * a typed number is its own, a reading that wraps runs from 0 to just short
+ * of where it starts again.
+ */
+function partEnds(t: Term, signals: SignalView[]): [number, number] {
+  if (isSymbolPart(t)) {
+    const n = Number(t.text) || 0;
+    return [n, n];
+  }
+  const dp = t.decimals ?? 0;
+  if (t.wrap && t.wrap > 0) return [0, Math.max(0, t.wrap - 10 ** -dp)];
+  const ends = t.conversions?.length
+    ? t.conversions.flatMap((c: Conversion) => c.reads)
+    : (t.reads ?? [0, maxOf(signals, t.source ?? "")]);
+  const [a, b] = [Math.min(...ends), Math.max(...ends)];
+  if (!t.abs) return [a, b];
+  return a <= 0 && b >= 0
+    ? [0, Math.max(-a, b)]
+    : [Math.min(Math.abs(a), Math.abs(b)), Math.max(Math.abs(a), Math.abs(b))];
+}
+
+/** The places after the point in a drawn number. */
+function placesIn(text: string): number {
+  return text.split(".")[1]?.length ?? 0;
+}
+
+/**
+ * The widest a shared result draws. Parts laid side by side add their
+ * widths; a part that adds replaces everything before it with one total, so
+ * the count starts again there: the lowest and highest the parts so far draw
+ * are added to its own, and the total measured as a reading running between
+ * them is. The same walk `StoredSignal::widest` does.
+ */
+function chainWidth(stored: StoredSignal, signals: SignalView[]): number {
+  const every = stored.total?.wrap && stored.total.wrap > 0 ? stored.total.wrap : 0;
+  const digits = stored.total?.digits ?? 0;
+  let width = 0;
+  // The parts so far drawn at their lowest and at their highest, for a total
+  // that takes them in. Characters with no number add nothing.
+  let [low, high] = ["", ""];
+  for (const t of stored.terms) {
+    const [a, b] =
+      isSymbolPart(t) || !isText(signals, t.source ?? "") ? partEnds(t, signals) : [0, 0];
+    if (t.add) {
+      const soFar = (text: string): number => Number(text.trim()) || 0;
+      const [x, y] = [soFar(low), soFar(high)];
+      const dp = Math.max(
+        placesIn(low),
+        placesIn(high),
+        isSymbolPart(t) ? placesIn(t.text ?? "") : (t.decimals ?? 0),
+      );
+      const [lo, hi] = [Math.min(x, y) + a, Math.max(x, y) + b];
+      const settle = (end: number): number => {
+        const rounded = Number(end.toFixed(dp));
+        const wrapped = every ? ((rounded % every) + every) % every : rounded;
+        return wrapped === 0 ? 0 : wrapped;
+      };
+      const ends = [settle(lo), settle(hi)];
+      if (every && (hi - lo >= every || Math.floor(lo / every) !== Math.floor(hi / every))) {
+        ends.push(Math.max(0, every - 10 ** -dp));
+      }
+      width = Math.max(...ends.map((end) => numberText(end, dp, digits).length));
+      low = numberText(Math.min(...ends), dp, digits);
+      high = numberText(Math.max(...ends), dp, digits);
+      continue;
+    }
+    width += spanWidth(t, signals);
+    if (isSymbolPart(t)) {
+      low += t.text ?? "";
+      high += t.text ?? "";
+    } else if (!isText(signals, t.source ?? "")) {
+      low += numberText(a, t.decimals ?? 0, t.digits ?? 0);
+      high += numberText(b, t.decimals ?? 0, t.digits ?? 0);
+    }
+  }
+  return width;
 }
 
 /**
@@ -3097,6 +3187,35 @@ function storedControls(
         edited,
       ),
     );
+    // Offered where the result can run below zero, as on a reading. The
+    // result keeps its sign, so the bands above and every condition testing
+    // it still see which way it points; only what is drawn loses it.
+    // A total that wraps starts again from 0, so it never goes below.
+    const signed =
+      !(chosen.total?.wrap && chosen.terms.some((t) => t.add)) &&
+      chosen.terms.some(
+        (t) =>
+          (t.text ?? "").includes("-") ||
+          (t.reads ?? []).some((end) => end < 0) ||
+          (t.conversions ?? []).some((c) => c.reads.some((end) => end < 0)),
+      );
+    if (signed || span.abs) {
+      const abs = el("input", { type: "checkbox" });
+      abs.checked = span.abs === true;
+      abs.addEventListener("change", () => {
+        if (abs.checked) span.abs = true;
+        else delete span.abs;
+        edited();
+      });
+      parts.push(
+        explained(
+          el("label", { class: "meta" }, abs, " without its sign"),
+          "About drawing without the sign",
+          "Draws -12.5 as 12.5. The shared result still reads -12.5, so an " +
+            "alias or a condition can say which way it points.",
+        ),
+      );
+    }
   }
   return parts;
 }
@@ -3113,6 +3232,7 @@ export function termControls(
   module: string,
   edited: () => void,
   rebuild: () => void,
+  boxed = true,
 ): HTMLElement[] {
   const picker = signalPicker({
     signals,
@@ -3153,7 +3273,8 @@ export function termControls(
       ),
     );
   }
-  parts.push(boxControls(term, null, edited));
+  // A part that is added is a number, not characters, so it takes no box.
+  if (boxed) parts.push(boxControls(term, null, edited));
   return parts;
 }
 
@@ -3568,7 +3689,6 @@ function sharedReads(id: string): HTMLElement {
   if (id === "") return el("span", { class: "bad" }, "A shared result nobody has chosen yet");
   const shared = storedSignal(id);
   if (!shared) return el("span", { class: "bad" }, `${id} is not a shared result here`);
-  const parts = shared.terms.map(partName);
   return el(
     "span",
     { class: "sub" },
@@ -3576,7 +3696,7 @@ function sharedReads(id: string): HTMLElement {
     el(
       "span",
       { class: "test" },
-      parts.length > 0 ? `shared result, reads ${parts.join(", then ")}` : "shared result",
+      shared.terms.length > 0 ? `shared result, ${partsSaid(shared)}` : "shared result",
     ),
   );
 }
@@ -3678,7 +3798,8 @@ function describeField(readout: Readout, display: DisplayInfo): string {
     }
     if (kindOf(s) === "stored") {
       const named = storedSignal(s.signal ?? "")?.name;
-      return `${named ? `the shared result ${named}` : "a shared result nobody has chosen yet"}${held}`;
+      const unsigned = s.abs ? ", without its sign" : "";
+      return `${named ? `the shared result ${named}` : "a shared result nobody has chosen yet"}${unsigned}${held}`;
     }
     if (kindOf(s) === "signal") {
       // How it draws the number, so a reset that only changes that says so

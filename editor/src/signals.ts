@@ -11,10 +11,14 @@
 //
 // A shared result is a short chain of parts, each one DCS-BIOS signal shaped
 // exactly the way a reading is, laid side by side: the F-16's three fuel
-// drums, each rounded down and wrapped at 10, read as one number. How it is
-// drawn, its words and colours, is the piece's that draws it. Shared
-// conditions are tests written as a lamp's are, for every lamp that repeats
-// one cockpit lamp; each lamp keeps its own brightness.
+// drums, each rounded down and wrapped at 10, read as one number. A part
+// can be added to the parts before it instead: the Mi-8's heading and the
+// course arrow's angle on the card make the course, wrapped at 360, and its
+// ADF's hundreds and tens knobs side by side, plus the fine tuning, make the
+// frequency. How it is drawn, its words and colours, is the
+// piece's that draws it. Shared conditions are tests written as a lamp's
+// are, for every lamp that repeats one cockpit lamp; each lamp keeps its own
+// brightness.
 
 import { deleteSignal, newPageId, savePage, saveSignal } from "./api";
 import { bindingEditor, iconButton } from "./binding";
@@ -35,9 +39,19 @@ import { noteEditor } from "./note";
 import { signalsChanged, whereShown } from "./pages";
 import type { PageBook } from "./pages";
 import { termControls } from "./readout";
-import { isLampSignal, isSymbolPart, NUMBER_SYMBOLS, partName } from "./stored";
+import { isLampSignal, isSymbolPart, NUMBER_SYMBOLS, partsSaid } from "./stored";
 import { infoIcon } from "./typeahead";
-import type { Binding, Led, Page, Profile, SignalView, Span, StoredSignal, Term } from "./types";
+import type {
+  Binding,
+  Led,
+  Page,
+  Profile,
+  SignalView,
+  Span,
+  StoredSignal,
+  Term,
+  Total,
+} from "./types";
 
 function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -196,8 +210,7 @@ export function signalSection(
           ),
         ),
       ];
-      const sources = w.lamp ? tested : w.signal.terms.map(partName);
-      const reads = w.lamp ? `tests ${sources.join(", ")}` : `reads ${sources.join(", then ")}`;
+      const reads = w.lamp ? `tests ${tested.join(", ")}` : partsSaid(w.signal);
       const edit = iconButton("pencil", "\u270E", "Edit this signal", () => {
         opened.add(w.signal.id);
         redraw();
@@ -261,8 +274,13 @@ export function signalSection(
                   "wrapped at 10, read as one number. Rounding each drum on its own " +
                   "is what stops a drum that is rolling counting twice. A symbol " +
                   "part lays down a point or a sign between them, so a radio's " +
-                  "30 and 50 read 30.50. Words and colours belong to the piece " +
-                  "that draws it.",
+                  "30 and 50 read 30.50. A part can be added to the parts before " +
+                  "it instead, left to right: an ADF's hundreds and tens knobs side " +
+                  "by side read 150, and its fine tuning is added to that. A course " +
+                  "arrow on a turning compass card is the heading plus its angle, " +
+                  "wrapping at 360. A symbol part added is a number, such as 180 " +
+                  "for the reciprocal. Words and colours belong to the piece that " +
+                  "draws it.",
               ),
         ),
       );
@@ -283,24 +301,107 @@ export function signalSection(
         );
       }
 
-      // A point or a sign typed in. Anything else is turned away as it is
-      // typed, so the result stays a number.
+      // The first part has nothing before it to be added to, and a total
+      // with no part adding draws nothing, so neither stays in the file
+      // unseen once the parts move.
+      const tidy = (): void => {
+        if (w.signal.terms[0]) delete w.signal.terms[0].add;
+        if (!w.signal.terms.some((t) => t.add)) delete w.signal.total;
+      };
+
+      // A point or a sign typed in, or a number to add. Anything else is
+      // turned away as it is typed, so the result stays a number.
       const symbolControls = (term: Term): HTMLElement[] => {
+        const adding = term.add === true;
         const box = el("input", {
           type: "text",
           class: "span-text",
           value: term.text ?? "",
-          placeholder: ".",
+          placeholder: adding ? "180" : ".",
         });
         box.addEventListener("input", () => {
           if (!NUMBER_SYMBOLS.test(box.value)) box.value = term.text ?? "";
           term.text = box.value;
           edited();
         });
-        return [
-          el("label", { class: "meta" }, "symbols ", box),
-          el("span", { class: "meta" }, "digits, . - or +"),
-        ];
+        return adding
+          ? [
+              el("label", { class: "meta" }, "number ", box),
+              el("span", { class: "meta" }, "added to the parts before, such as 180 or -90"),
+            ]
+          : [
+              el("label", { class: "meta" }, "symbols ", box),
+              el("span", { class: "meta" }, "digits, . - or +"),
+            ];
+      };
+
+      // How a part meets the parts before it: laid beside them, the way
+      // drums read, or added to the number they make, the way an ADF's fine
+      // tuning is.
+      const joinControl = (term: Term): HTMLElement => {
+        const how = el("select", { class: "test" });
+        how.append(
+          el("option", { value: "beside" }, "laid beside the parts before"),
+          el("option", { value: "add" }, "added to the parts before"),
+        );
+        how.value = term.add ? "add" : "beside";
+        how.addEventListener("change", () => {
+          if (how.value === "add") {
+            term.add = true;
+            // A box says where characters sit, and an added part is a
+            // number, so the box goes rather than staying in the file unseen.
+            delete term.width;
+            delete term.align;
+            if (isSymbolPart(term) && !Number.isFinite(Number(term.text || "x"))) term.text = "0";
+          } else delete term.add;
+          tidy();
+          edited();
+          draw();
+        });
+        return how;
+      };
+
+      // Every total's own shaping, once a part adds: zeros in front and
+      // where it starts again from 0.
+      const totalControls = (): HTMLElement => {
+        const sum: Total = w.signal.total ?? {};
+        const digits = el("input", {
+          type: "number",
+          class: "value",
+          min: "0",
+          max: "9",
+          value: sum.digits ? String(sum.digits) : "",
+          placeholder: "any",
+        });
+        // Empty rather than 0 when there is none, as on a reading.
+        const wrap = el("input", {
+          type: "number",
+          class: "value",
+          min: "0",
+          value: sum.wrap ? String(sum.wrap) : "",
+          placeholder: "never",
+        });
+        const sync = (): void => {
+          const whole = Math.round(Number(digits.value) || 0);
+          if (whole > 0) sum.digits = whole;
+          else delete sum.digits;
+          const every = Number(wrap.value);
+          if (Number.isFinite(every) && every > 0) sum.wrap = every;
+          else delete sum.wrap;
+          if (sum.digits || sum.wrap) w.signal.total = sum;
+          else delete w.signal.total;
+          edited();
+        };
+        for (const box of [digits, wrap]) box.addEventListener("input", sync);
+        const sep = (text: string): HTMLElement => el("span", { class: "sep" }, text);
+        const phrase = (...parts: (Node | string)[]): HTMLElement =>
+          el("span", { class: "phrase" }, ...parts);
+        return el(
+          "div",
+          { class: "values-row flow" },
+          phrase(sep("Each total with"), digits, sep("digits")),
+          phrase(sep("and wrapping at"), wrap),
+        );
       };
 
       const chain = el("div", { class: "chain" });
@@ -310,18 +411,21 @@ export function signalSection(
         up.disabled = i === 0;
         up.addEventListener("click", () => {
           w.signal.terms.splice(i - 1, 0, ...w.signal.terms.splice(i, 1));
+          tidy();
           draw();
         });
         const down = el("button", { class: "icon", title: "Move this part later" }, "↓");
         down.disabled = i === w.signal.terms.length - 1;
         down.addEventListener("click", () => {
           w.signal.terms.splice(i + 1, 0, ...w.signal.terms.splice(i, 1));
+          tidy();
           draw();
         });
         const drop = el("button", { class: "icon danger", title: "Remove this part" }, "×");
         drop.disabled = w.signal.terms.length === 1;
         drop.addEventListener("click", () => {
           w.signal.terms.splice(i, 1);
+          tidy();
           draw();
         });
         chain.append(
@@ -332,6 +436,7 @@ export function signalSection(
               "div",
               { class: "span-head" },
               el("span", { class: "meta" }, `part ${i + 1}`),
+              i > 0 ? joinControl(term) : "",
               el("span", { class: "spacer" }),
               up,
               down,
@@ -342,7 +447,7 @@ export function signalSection(
               { class: "span-body" },
               ...(isSymbolPart(term)
                 ? symbolControls(term)
-                : termControls(span, ctx.signals, module, edited, draw)),
+                : termControls(span, ctx.signals, module, edited, draw, !term.add)),
             ),
           ),
         );
@@ -362,6 +467,7 @@ export function signalSection(
         body.append(
           chain,
           el("div", { class: "chain-add" }, more, symbol),
+          w.signal.terms.some((t) => t.add) ? totalControls() : "",
           noteEditor(w.signal, "signal", edited, true),
         );
       }

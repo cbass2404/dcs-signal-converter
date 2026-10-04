@@ -47,11 +47,35 @@
             },
             {
               "signal": "dxkh8y",
-              "colour": "amber"
+              "value_aliases": {
+                "0..200": {
+                  "colour": "red",
+                  "reading": true
+                },
+                "201..300": {
+                  "colour": "amber",
+                  "reading": true
+                }
+              },
+              "colour": "green"
             },
             {
-              "text": "0",
-              "colour": "amber"
+              "signal": "dxkh8y",
+              "switch_signal": "dxkh8y",
+              "colour": "green",
+              "cases": {
+                "..200": {
+                  "text": "0",
+                  "colour": "red"
+                },
+                "201..300": {
+                  "text": "0",
+                  "colour": "amber"
+                },
+                "else": {
+                  "text": "0"
+                }
+              }
             },
             {
               "text": "lbs",

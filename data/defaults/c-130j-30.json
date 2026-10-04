@@ -996,23 +996,6 @@
     "PFP7_Observer": "PFP7_Captain"
   },
   "screens": {
-    "CarrierAce_UFC": {
-      "start": 1,
-      "slots": [
-        {
-          "page": "v7k099",
-          "key": null
-        },
-        {
-          "page": null,
-          "key": null
-        },
-        null,
-        null,
-        null,
-        null
-      ]
-    },
     "ViperAce_ICP": {
       "start": 1,
       "slots": [

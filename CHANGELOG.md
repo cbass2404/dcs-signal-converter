@@ -32,7 +32,7 @@ unless this says what moved.
   - **ICP page, DED Radio:** the Remote Frequency Indicator's five radios,
     each with its channel, a C while it ciphers, its frequency, and an
     arrow marking the radio each seat has selected.
-  - **No MCDU or UFC pages yet.** Their slots hold empty pages.
+  - **No MCDU or UFC pages yet.**
 - **New profile for the Mi-8MT and Mi-8MTV2:**
   - **Backlights:** every panel's backlight is lit whenever you are in the
     aircraft.
@@ -95,7 +95,10 @@ unless this says what moved.
     copilot AFCS engage switches, highlighted while engaged; and the
     reference select switch with its readout.
   - **No MCDU or UFC pages yet.** DCS-BIOS does not send the CNI-MU's
-    screen, and the UFC slot holds an empty page.
+    screen.
+- **UH-1H:** RDY on the MCDU, DSPY on the PFPs, and NOSE, LEFT and RIGHT on
+  the PTO2 now take their conditions from shared conditions, Radar Altimeter
+  Power and Weight ON Skids. They light as before.
 
 ### Log
 

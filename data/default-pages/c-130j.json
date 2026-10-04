@@ -2,12 +2,6 @@
   "module": "C-130J",
   "pages": [
     {
-      "id": "v7k099",
-      "name": "UFC Flight",
-      "display": "UFC1",
-      "fields": []
-    },
-    {
       "id": "px7avb",
       "name": "DED AP",
       "display": "DED",

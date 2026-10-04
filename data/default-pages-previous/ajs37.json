@@ -1,0 +1,1445 @@
+{
+  "module": "AJS37",
+  "pages": [
+    {
+      "id": "lfmzo8",
+      "name": "CDU Flight",
+      "display": "MCDU",
+      "fields": [
+        {
+          "cells": "288-311",
+          "content": [
+            {
+              "text": "SELECT",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "DATA",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "INPUT",
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "312-335",
+          "content": [
+            {
+              "source": "DATAPANEL_SELECTOR",
+              "width": 7,
+              "value_aliases": {
+                "0": "ID-NR",
+                "1": "TAKT",
+                "2": "TID",
+                "3": "VIND",
+                "4": "BANA",
+                "5": "REF",
+                "6": "AKT POS"
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true,
+              "width": 3
+            },
+            {
+              "signal": "0trh2y",
+              "width": 6,
+              "colour": "green"
+            },
+            {
+              "gap": true,
+              "width": 4
+            },
+            {
+              "source": "DATA_IN_OUT",
+              "value_aliases": {
+                "0": "UT",
+                "1": "IN"
+              },
+              "colour": "green"
+            }
+          ]
+        },
+        {
+          "cells": "264-287",
+          "content": [
+            {
+              "gap": true,
+              "rule": true,
+              "label": "CK 37",
+              "label_colour": "white",
+              "colour": "amber",
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "240-263",
+          "content": [
+            {
+              "signal": "3pfye8",
+              "width": 4
+            },
+            {
+              "signal": "gss7rm",
+              "width": 2,
+              "value_aliases": {
+                "0": "KM",
+                "1": "MI"
+              }
+            },
+            {
+              "gap": true
+            },
+            {
+              "signal": "y6z5hy",
+              "width": 3,
+              "align": "right",
+              "colour": "green"
+            },
+            {
+              "text": "%",
+              "width": 1,
+              "colour": "green",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "signal": "hel0e8",
+              "width": 2,
+              "colour": "green"
+            },
+            {
+              "gap": true
+            },
+            {
+              "signal": "nvd9ss",
+              "width": 4,
+              "colour": "green"
+            },
+            {
+              "gap": true
+            },
+            {
+              "signal": "j5vfwz",
+              "width": 4,
+              "colour": "green"
+            }
+          ]
+        },
+        {
+          "cells": "216-239",
+          "content": [
+            {
+              "text": "RNG",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 4
+            },
+            {
+              "text": "FUEL",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "text": "WP",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "text": "IAS",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "MACH",
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "192-215",
+          "content": [
+            {
+              "gap": true,
+              "rule": true,
+              "label": "FLIGHT",
+              "label_colour": "white",
+              "colour": "amber",
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "120-143",
+          "content": [
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "source": "FR22_GROUP",
+              "width": 2,
+              "reads": [
+                9.0,
+                52.0
+              ],
+              "value_aliases": {
+                "9": "--",
+                "16": "20",
+                "17": "21",
+                "18": "22",
+                "19": "23",
+                "20": "24",
+                "21": "25",
+                "22": "30",
+                "23": "31",
+                "24": "32",
+                "25": "33",
+                "26": "40",
+                "27": "41",
+                "28": "42",
+                "29": "43",
+                "30": "44",
+                "31": "45",
+                "32": "50",
+                "33": "51",
+                "34": "52",
+                "35": "53",
+                "36": "54",
+                "37": "55",
+                "38": "60",
+                "39": "61",
+                "40": "62",
+                "41": "63",
+                "42": "64",
+                "43": "70",
+                "44": "71",
+                "45": "72",
+                "46": "73",
+                "47": "74",
+                "48": "80",
+                "49": "81",
+                "50": "82",
+                "51": "T3",
+                "52": "--"
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true
+            },
+            {
+              "switch": "FR22_MINUS",
+              "cases": {
+                "0": [
+                  {
+                    "signal": "ilamca",
+                    "width": 7,
+                    "colour": "red"
+                  },
+                  {
+                    "source": "FR22_SET_MODULATION",
+                    "width": 2,
+                    "value_aliases": {
+                      "0": "FM",
+                      "1": "AM"
+                    },
+                    "colour": "red",
+                    "small": true
+                  }
+                ],
+                "1": [
+                  {
+                    "signal": "ilamca",
+                    "width": 7,
+                    "colour": "green"
+                  },
+                  {
+                    "source": "FR22_SET_MODULATION",
+                    "width": 2,
+                    "value_aliases": {
+                      "0": "FM",
+                      "1": "AM"
+                    },
+                    "colour": "green",
+                    "small": true
+                  }
+                ]
+              }
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "FR22_BASE",
+              "width": 4,
+              "align": "centre",
+              "value_aliases": {
+                "0": "--",
+                "1": "01",
+                "2": "02",
+                "3": "03",
+                "4": "04",
+                "5": "05",
+                "6": "ALLM",
+                "7": "06",
+                "8": "07",
+                "9": "08",
+                "10": "09",
+                "11": "10",
+                "12": "ALLM",
+                "13": "11",
+                "14": "12",
+                "15": "13",
+                "16": "14",
+                "17": "15",
+                "18": "ALLM",
+                "19": "16",
+                "20": "17",
+                "21": "18",
+                "22": "19",
+                "23": "20",
+                "24": "ALLM",
+                "25": "21",
+                "26": "22",
+                "27": "23",
+                "28": "24",
+                "29": "25",
+                "30": "ALLM",
+                "31": "26",
+                "32": "27",
+                "33": "28",
+                "34": "29",
+                "35": "30",
+                "36": "ALLM",
+                "37": "31",
+                "38": "32",
+                "39": "33",
+                "40": "34",
+                "41": "35",
+                "42": "ALLM",
+                "43": "36",
+                "44": "37",
+                "45": "38",
+                "46": "39",
+                "47": "40",
+                "48": "ALLM",
+                "49": "41",
+                "50": "42",
+                "51": "43",
+                "52": "44",
+                "53": "45",
+                "54": "ALLM",
+                "55": "46",
+                "56": "47",
+                "57": "48",
+                "58": "49",
+                "59": "50",
+                "60": "ALLM",
+                "61": "51",
+                "62": "52",
+                "63": "53",
+                "64": "54",
+                "65": "55",
+                "66": "ALLM",
+                "67": "56",
+                "68": "57",
+                "69": "58",
+                "70": "59",
+                "71": "60",
+                "72": "ALLM",
+                "73": "61",
+                "74": "62",
+                "75": "63",
+                "76": "64",
+                "77": "65",
+                "78": "ALLM",
+                "79": "66",
+                "80": "67",
+                "81": "68",
+                "82": "69",
+                "83": "T1",
+                "84": "T2",
+                "85": "--"
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true,
+              "width": 1
+            }
+          ]
+        },
+        {
+          "cells": "96-119",
+          "content": [
+            {
+              "text": "GROUP",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "MAN FREQ",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "BASE",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            }
+          ]
+        },
+        {
+          "cells": "144-167",
+          "content": [
+            {
+              "source": "FR22_CHANNEL_H",
+              "width": 2,
+              "value_aliases": {
+                "0": "H",
+                "1": {
+                  "text": "H",
+                  "colour": "green"
+                }
+              },
+              "colour": "amber"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "FR22_SPECIAL_1",
+              "width": 2,
+              "value_aliases": {
+                "0": "S1",
+                "1": {
+                  "text": "S1",
+                  "colour": "green"
+                }
+              },
+              "colour": "amber"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "FR22_SPECIAL_2",
+              "width": 2,
+              "value_aliases": {
+                "0": "S2",
+                "1": {
+                  "text": "S2",
+                  "colour": "green"
+                }
+              },
+              "colour": "amber"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "FR22_SPECIAL_3",
+              "width": 2,
+              "value_aliases": {
+                "0": "S3",
+                "1": {
+                  "text": "S3",
+                  "colour": "green"
+                }
+              },
+              "colour": "amber"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "FR22_MINUS",
+              "width": 2,
+              "value_aliases": {
+                "0": "-",
+                "1": {
+                  "text": "-",
+                  "colour": "green"
+                }
+              },
+              "colour": "amber"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "FR22_FLIGHT_0",
+              "width": 1,
+              "value_aliases": {
+                "0": "0",
+                "1": {
+                  "text": "0",
+                  "colour": "green"
+                }
+              },
+              "colour": "amber"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "FR22_FLIGHT_1",
+              "width": 1,
+              "value_aliases": {
+                "0": "1",
+                "1": {
+                  "text": "1",
+                  "colour": "green"
+                }
+              },
+              "colour": "amber"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "FR22_FLIGHT_2",
+              "width": 1,
+              "value_aliases": {
+                "0": "2",
+                "1": {
+                  "text": "2",
+                  "colour": "green"
+                }
+              },
+              "colour": "amber"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "FR22_FLIGHT_3",
+              "width": 1,
+              "value_aliases": {
+                "0": "3",
+                "1": {
+                  "text": "3",
+                  "colour": "green"
+                }
+              },
+              "colour": "amber"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "FR22_FLIGHT_4",
+              "width": 1,
+              "value_aliases": {
+                "0": "4",
+                "1": {
+                  "text": "4",
+                  "colour": "green"
+                }
+              },
+              "colour": "amber"
+            }
+          ]
+        },
+        {
+          "cells": "168-191",
+          "content": [
+            {
+              "source": "FR22_CHANNEL_AG",
+              "width": 2,
+              "value_aliases": {
+                "0": "AG",
+                "1": {
+                  "text": "AG",
+                  "colour": "green"
+                }
+              },
+              "colour": "amber"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "FR22_CHANNEL_B",
+              "width": 2,
+              "value_aliases": {
+                "0": "B",
+                "1": {
+                  "text": "B",
+                  "colour": "green"
+                }
+              },
+              "colour": "amber"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "FR22_CHANNEL_CF",
+              "width": 2,
+              "value_aliases": {
+                "0": "CF",
+                "1": {
+                  "text": "CF",
+                  "colour": "green"
+                }
+              },
+              "colour": "amber"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "FR22_CHANNEL_C2",
+              "width": 2,
+              "value_aliases": {
+                "0": "C2",
+                "1": {
+                  "text": "C2",
+                  "colour": "green"
+                }
+              },
+              "colour": "amber"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "FR22_CHANNEL_DE",
+              "width": 2,
+              "value_aliases": {
+                "0": "DE",
+                "1": {
+                  "text": "DE",
+                  "colour": "green"
+                }
+              },
+              "colour": "amber"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "FR22_FLIGHT_5",
+              "width": 1,
+              "value_aliases": {
+                "0": "5",
+                "1": {
+                  "text": "5",
+                  "colour": "green"
+                }
+              },
+              "colour": "amber"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "FR22_FLIGHT_6",
+              "width": 1,
+              "value_aliases": {
+                "0": "6",
+                "1": {
+                  "text": "6",
+                  "colour": "green"
+                }
+              },
+              "colour": "amber"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "FR22_FLIGHT_7",
+              "width": 1,
+              "value_aliases": {
+                "0": "7",
+                "1": {
+                  "text": "7",
+                  "colour": "green"
+                }
+              },
+              "colour": "amber"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "FR22_FLIGHT_8",
+              "width": 1,
+              "value_aliases": {
+                "0": "8",
+                "1": {
+                  "text": "8",
+                  "colour": "green"
+                }
+              },
+              "colour": "amber"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "FR22_FLIGHT_9",
+              "width": 1,
+              "value_aliases": {
+                "0": "9",
+                "1": {
+                  "text": "9",
+                  "colour": "green"
+                }
+              },
+              "colour": "amber"
+            }
+          ]
+        },
+        {
+          "cells": "48-71",
+          "content": [
+            {
+              "source": "MASTER_MODE_SELECT",
+              "width": 4,
+              "value_aliases": {
+                "0": {
+                  "text": "F.C.",
+                  "colour": "red"
+                },
+                "1": {
+                  "text": "STBY",
+                  "colour": "red"
+                },
+                "2": "NAV",
+                "3": "ANF",
+                "4": {
+                  "text": "SPA",
+                  "colour": "amber"
+                },
+                "5": {
+                  "text": "NAV",
+                  "colour": "grey"
+                },
+                "6": {
+                  "text": "P/O",
+                  "colour": "khaki"
+                }
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "source": "WEAPON_SELECT",
+              "value_aliases": {
+                "0": "SEA",
+                "1": "GND",
+                "2": "A/A",
+                "3": "GUN",
+                "4": "ANF",
+                "5": "IR"
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "source": "WEAPON_INTERVAL",
+              "width": 3,
+              "value_aliases": {
+                "0": "LH",
+                "1": "TOP",
+                "2": "RH",
+                "3": "10",
+                "4": "15",
+                "5": "20",
+                "6": "25",
+                "7": "30",
+                "8": "40",
+                "9": "50",
+                "10": "60"
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "source": "WEAPON_REL_MODE",
+              "width": 4,
+              "value_aliases": {
+                "0": "SRS",
+                "1": "SGL"
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "source": "RB_BK_REL_MODE",
+              "width": 3,
+              "value_aliases": {
+                "0": "GRP",
+                "1": "SGL"
+              },
+              "colour": "green"
+            }
+          ]
+        },
+        {
+          "cells": "72-95",
+          "content": [
+            {
+              "gap": true,
+              "rule": true,
+              "label": "RADIO",
+              "label_colour": "white",
+              "colour": "amber",
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "24-47",
+          "content": [
+            {
+              "text": "MSTR",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "WPN",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "INT",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "RCKTS",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "SMART",
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "0-23",
+          "content": [
+            {
+              "gap": true,
+              "rule": true,
+              "label": "MODES",
+              "label_colour": "white",
+              "colour": "amber",
+              "small": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "igkd1p",
+      "name": "DED CK47",
+      "display": "DED",
+      "fields": [
+        {
+          "cells": "96-119",
+          "content": [
+            {
+              "source": "DATAPANEL_SELECTOR",
+              "width": 7,
+              "value_aliases": {
+                "0": "ID-NR  ",
+                "1": "TAKT   ",
+                "2": "TID    ",
+                "3": "VIND   ",
+                "4": "BANA   ",
+                "5": "REF    ",
+                "6": "AKT POS"
+              },
+              "inverse": true
+            },
+            {
+              "gap": true,
+              "width": 3
+            },
+            {
+              "signal": "0trh2y",
+              "width": 6,
+              "inverse": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "DATA_IN_OUT",
+              "width": 5,
+              "value_aliases": {
+                "0": " UT  ",
+                "1": " IN  "
+              },
+              "inverse": true
+            }
+          ]
+        },
+        {
+          "cells": "72-95",
+          "content": [
+            {
+              "text": "SELECT"
+            },
+            {
+              "gap": true,
+              "width": 5
+            },
+            {
+              "text": "DATA"
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "INPUT"
+            }
+          ]
+        },
+        {
+          "cells": "24-47",
+          "content": [
+            {
+              "signal": "3pfye8",
+              "width": 4,
+              "inverse": true
+            },
+            {
+              "signal": "gss7rm",
+              "width": 2,
+              "value_aliases": {
+                "0": {
+                  "text": "KM ",
+                  "inverse": true
+                },
+                "1": {
+                  "text": "MI",
+                  "inverse": true
+                }
+              }
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "signal": "y6z5hy",
+              "width": 3,
+              "inverse": true
+            },
+            {
+              "text": "%",
+              "inverse": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "signal": "hel0e8",
+              "width": 2,
+              "inverse": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "signal": "nvd9ss",
+              "width": 4,
+              "inverse": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "signal": "j5vfwz",
+              "width": 4,
+              "inverse": true
+            }
+          ]
+        },
+        {
+          "cells": "0-23",
+          "content": [
+            {
+              "text": "RNG"
+            },
+            {
+              "gap": true,
+              "width": 4
+            },
+            {
+              "text": "FUEL"
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "text": "WP"
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "text": "IAS"
+            },
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "text": "MACH"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "50eve1",
+      "name": "UFC Flight",
+      "display": "UFC1",
+      "fields": [
+        {
+          "cells": "2-8",
+          "signal": "0trh2y"
+        },
+        {
+          "cells": "10-13",
+          "source": "DATAPANEL_SELECTOR",
+          "value_aliases": {
+            "0": "ID",
+            "1": "TAKT",
+            "2": "TID",
+            "3": "VIND",
+            "4": "BANA",
+            "5": "REF",
+            "6": "AKT"
+          }
+        },
+        {
+          "cells": "15-18",
+          "source": "DATA_IN_OUT",
+          "value_aliases": {
+            "0": "UT",
+            "1": "IN"
+          }
+        },
+        {
+          "cells": "20-23",
+          "signal": "hel0e8"
+        },
+        {
+          "cells": "25-28",
+          "signal": "3pfye8"
+        },
+        {
+          "cells": "30-33",
+          "signal": "nvd9ss"
+        }
+      ]
+    }
+  ],
+  "signals": [
+    {
+      "id": "0trh2y",
+      "name": "CK37 OUTPUT",
+      "terms": [
+        {
+          "source": "AJS37_NAV_INDICATOR_DATA_1",
+          "width": 1
+        },
+        {
+          "source": "AJS37_NAV_INDICATOR_DATA_2",
+          "width": 1
+        },
+        {
+          "source": "AJS37_NAV_INDICATOR_DATA_3",
+          "width": 1
+        },
+        {
+          "source": "AJS37_NAV_INDICATOR_DATA_4",
+          "width": 1
+        },
+        {
+          "source": "AJS37_NAV_INDICATOR_DATA_5",
+          "width": 1
+        },
+        {
+          "source": "AJS37_NAV_INDICATOR_DATA_6",
+          "width": 1
+        }
+      ]
+    },
+    {
+      "id": "hel0e8",
+      "name": "DESTINATION",
+      "terms": [
+        {
+          "source": "AJS37_DEST_INDICATOR_DATA_1",
+          "width": 1
+        },
+        {
+          "source": "AJS37_DEST_INDICATOR_DATA_2",
+          "width": 1
+        }
+      ]
+    },
+    {
+      "id": "3pfye8",
+      "name": "RANGE",
+      "terms": [
+        {
+          "source": "DISTANCE_INDICATOR",
+          "reads": [
+            0.0,
+            40.0
+          ],
+          "decimals": 1,
+          "digits": 2,
+          "round": "down",
+          "width": 4
+        }
+      ]
+    },
+    {
+      "id": "y6z5hy",
+      "name": "FUEL",
+      "terms": [
+        {
+          "source": "FUEL_LEVEL",
+          "reads": [
+            0.0,
+            135.0
+          ],
+          "digits": 3,
+          "round": "down",
+          "width": 3
+        }
+      ]
+    },
+    {
+      "id": "nvd9ss",
+      "name": "IAS",
+      "terms": [
+        {
+          "source": "AIRSPEED_MS",
+          "conversions": [
+            {
+              "raw": [
+                0,
+                6403
+              ],
+              "reads": [
+                0.0,
+                199.8
+              ]
+            },
+            {
+              "raw": [
+                6404,
+                11862
+              ],
+              "reads": [
+                199.8,
+                250.0
+              ]
+            },
+            {
+              "raw": [
+                11863,
+                16908
+              ],
+              "reads": [
+                250.0,
+                299.9
+              ]
+            },
+            {
+              "raw": [
+                16909,
+                24772
+              ],
+              "reads": [
+                299.9,
+                400.0
+              ]
+            },
+            {
+              "raw": [
+                24773,
+                30847
+              ],
+              "reads": [
+                400.0,
+                499.7
+              ]
+            },
+            {
+              "raw": [
+                30848,
+                36529
+              ],
+              "reads": [
+                499.7,
+                599.8
+              ]
+            },
+            {
+              "raw": [
+                36530,
+                41182
+              ],
+              "reads": [
+                599.8,
+                699.8
+              ]
+            },
+            {
+              "raw": [
+                41183,
+                45422
+              ],
+              "reads": [
+                699.8,
+                799.9
+              ]
+            },
+            {
+              "raw": [
+                45423,
+                49289
+              ],
+              "reads": [
+                799.9,
+                900.0
+              ]
+            },
+            {
+              "raw": [
+                49290,
+                52933
+              ],
+              "reads": [
+                900.0,
+                1000.0
+              ]
+            },
+            {
+              "raw": [
+                52934,
+                59643
+              ],
+              "reads": [
+                1000.0,
+                1200.0
+              ]
+            },
+            {
+              "raw": [
+                59644,
+                65535
+              ],
+              "reads": [
+                1200.0,
+                1400.0
+              ]
+            }
+          ],
+          "digits": 4,
+          "round": "down",
+          "width": 4
+        }
+      ]
+    },
+    {
+      "id": "j5vfwz",
+      "name": "MACH",
+      "terms": [
+        {
+          "source": "MACH_METER_INTEGER",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "text": "."
+        },
+        {
+          "source": "MACH_METER_FIRST_DECIMAL",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "source": "MACH_METER_SECOND_DECIMAL",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        }
+      ]
+    },
+    {
+      "id": "ilamca",
+      "name": "MANUAL RADIO FREQ",
+      "terms": [
+        {
+          "source": "FR22_DRUM_100000",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "source": "FR22_DRUM_10000",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "source": "FR22_DRUM_1000",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "text": "."
+        },
+        {
+          "source": "FR22_DRUM_100",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "source": "FR22_DRUM_10",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "source": "FR22_DRUM_1",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        }
+      ]
+    },
+    {
+      "id": "gss7rm",
+      "name": "Distance Indicator Unit KM/MILS",
+      "terms": [
+        {
+          "source": "DISTANCE_INDICATOR_UNIT",
+          "reads": [
+            0.0,
+            1.0
+          ]
+        }
+      ]
+    }
+  ]
+}

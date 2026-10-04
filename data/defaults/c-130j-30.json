@@ -642,14 +642,8 @@
     {
       "device": "PFP7_Captain",
       "led": "EXEC",
-      "conditions": [
-        {
-          "source": "PLT_CNI_EXEC_LED",
-          "on_when": {
-            "gte": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "4ddo1k"
     },
     {
       "device": "PFP7_CoPilot",

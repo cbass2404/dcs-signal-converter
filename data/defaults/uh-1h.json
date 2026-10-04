@@ -105,14 +105,8 @@
     {
       "device": "MCDU_Captain",
       "led": "RDY",
-      "conditions": [
-        {
-          "source": "RADAR_ALT_PWR",
-          "on_when": {
-            "equals": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "fqmvhs"
     },
     {
       "device": "MCDU_Captain",
@@ -352,14 +346,8 @@
     {
       "device": "PFP3N_Captain",
       "led": "DSPY",
-      "conditions": [
-        {
-          "source": "RADAR_ALT_PWR",
-          "on_when": {
-            "equals": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "fqmvhs"
     },
     {
       "device": "PFP3N_Captain",
@@ -500,14 +488,8 @@
     {
       "device": "PFP4_Captain",
       "led": "DSPY",
-      "conditions": [
-        {
-          "source": "RADAR_ALT_PWR",
-          "on_when": {
-            "equals": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "fqmvhs"
     },
     {
       "device": "PFP4_Captain",
@@ -648,14 +630,8 @@
     {
       "device": "PFP7_Captain",
       "led": "DSPY",
-      "conditions": [
-        {
-          "source": "RADAR_ALT_PWR",
-          "on_when": {
-            "equals": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "fqmvhs"
     },
     {
       "device": "PFP7_Captain",
@@ -849,14 +825,8 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "NOSE",
-      "conditions": [
-        {
-          "source": "EXT_WOW_SKID",
-          "on_when": {
-            "equals": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "2itzsm"
     },
     {
       "device": "TAKEOFF_PLANEL_2",
@@ -866,26 +836,14 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "RIGHT",
-      "conditions": [
-        {
-          "source": "EXT_WOW_SKID",
-          "on_when": {
-            "equals": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "2itzsm"
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "LEFT",
-      "conditions": [
-        {
-          "source": "EXT_WOW_SKID",
-          "on_when": {
-            "equals": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "2itzsm"
     },
     {
       "device": "TAKEOFF_PLANEL_2",

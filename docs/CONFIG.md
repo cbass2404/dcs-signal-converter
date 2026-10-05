@@ -2054,11 +2054,14 @@ the keyboard held at that moment. It only reads.
   page modifier can match one set up in DCS: DCS lets any button on any
   device be a modifier, and then holds that button and a key as a
   combination of their own, as it does Ctrl and a key. It is asked at the
-  moment a page key goes down, as Ctrl is, so nothing reads the controller
-  in between:
+  moment a page key goes down, as Ctrl is:
   - **Read through DirectInput, as DCS reads it**, so the number is the one
     DCS's controls show: JOY_BTN12 is button 12. Shared and in the
     background, so DCS still sees the button whichever window has focus.
+  - **It costs CPU that Ctrl does not.** While the controller is open,
+    DirectInput reads every report it sends on a thread of its own: about
+    2.5% of one core more with a MOZA AB9 FFB base, which reports
+    constantly. See [PERFORMANCE.md](PERFORMANCE.md#a-controller-button-as-the-page-modifier).
   - **Known by the instance GUID Windows gives the controller**, the one DCS
     names its binding files after, so two identical sticks are told apart.
     Windows can give a controller a new instance on another USB port, so when

@@ -67,6 +67,10 @@ unless this says what moved.
   same button DCS sees, JOY_BTN12 being button 12, so with it set as a
   modifier in DCS's controls, it and a page key stay a combination of their
   own there too. **Press another button...** changes it.
+- **A controller button costs a little CPU that a key does not.** Windows
+  reads the controller for as long as it is open, as it does for any
+  program using one: about 2.5% of one core with a force feedback base.
+  Ctrl, Shift or Alt keeps the lowest CPU.
 - **If that controller is not connected**, the log and Settings say
   `<name> not found. Page swapping is disabled until it's back or another
   modifier is selected.` Plug it back in and pages swap again within a few

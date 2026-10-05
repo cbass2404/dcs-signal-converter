@@ -1,6 +1,6 @@
 # Performance and install size
 
-The daemon was measured 2026-10-04, at 1.0.0-beta.008 in development, on an
+The daemon was measured 2026-10-05, at 1.0.0-beta.009 in development, on an
 i9-12900KF with 64 GB, Windows 11, release builds from rustc 1.98.1, with
 nothing else open: no browser, no chat. Every figure is from the panels
 driven for real; the benchmark has no dry run, since writing to the panels
@@ -10,11 +10,11 @@ release.
 
 ## Summary
 
-- The daemon uses about 45 MB of private memory and about 1.3% of one core
+- The daemon uses about 48 MB of private memory and about 1.4% of one core
   in flight, 0.3% deciding what to send and the rest writing to the panels
   and reading their keys. Waiting for DCS it uses about 0.5%. Under a
   stream far heavier than DCS produces, every lamp and screen changing
-  every frame, it uses 3.6%. On an i5-12400F, the most common gaming CPU,
+  every frame, it uses 4.4%. On an i5-12400F, the most common gaming CPU,
   expect about 1.2 times these figures (estimated, see
   [Other CPUs](#other-cpus)).
 - The editor uses about 165 MB, almost all of it WebView2. It uses no CPU while
@@ -31,17 +31,20 @@ module-load flood, in one pass. Peaks are the busiest 1-second sample.
 
 | Scenario | Frames/s | CPU avg | CPU peak | Working set | Private |
 |---|---|---|---|---|---|
-| idle | 0 | 0.47% | 0.56% | 50.5 MB | 44.6 MB |
-| typical | 30 | 1.28% | 2.20% | 51.4 MB | 45.6 MB |
-| stress | 60 | 3.62% | 4.18% | 54.1 MB | 47.9 MB |
+| idle | 0 | 0.45% | 0.53% | 55.3 MB | 47.5 MB |
+| typical | 30 | 1.41% | 2.69% | 55.7 MB | 48.2 MB |
+| stress | 60 | 4.38% | 5.42% | 58.5 MB | 50.2 MB |
 
 Where the CPU goes, by thread, same pass:
 
 | Scenario | Main loop | Panel writers | Page key readers | Windows' threads |
 |---|---|---|---|---|
-| idle | 0.13% | 0% | 0.33% | 0% |
-| typical | 0.33% | 0.46% | 0.49% | 0% |
-| stress | 1.07% | 1.63% | 0.92% | 0% |
+| idle | 0.13% | 0% | 0.32% | 0% |
+| typical | 0.34% | 0.54% | 0.53% | 0% |
+| stress | 1.09% | 2.27% | 1.02% | 0% |
+
+These are with Ctrl as the page modifier. A controller button costs more;
+see [A controller button as the page modifier](#a-controller-button-as-the-page-modifier).
 
 - **idle:** no stream at all, which is the daemon waiting for DCS. It still
   reads page keys, and writes nothing.
@@ -134,20 +137,26 @@ profiles and nothing that runs per frame.
 - **Stress costs more than typical because every send carries
   everything.** The frame holds sends to 25 a second however fast the
   stream runs, but under stress every lamp and screen changes every frame,
-  so each send carries all of them: 94 reports a second to the PTO2
-  against 4 at typical. No cockpit changes everything at once.
+  so each send carries all of them: 149 reports a second to the PTO2
+  against 7 at typical. No cockpit changes everything at once.
+- **Stress rose from 3.6% to 4.4% in beta.009 because the backlights now
+  follow a knob.** The A-10C II backlight row used to be held on; it now
+  follows the left console knob, and stress moves that knob every frame,
+  so every backlight on every panel is sent at the frame cap: the UFC went
+  from 0.4 reports a second to 37 and the PTO2 from 95 to 149. The main
+  loop and the key readers are unchanged. In flight the knob sits still.
 
-What each panel was sent, per second, on beta.008. Busy is the share of
+What each panel was sent, per second, on beta.009. Busy is the share of
 each second its writer spent blocked on USB, which holds up nothing else:
 
 | Panel | Typical | Busy | Stress | Busy |
 |---|---|---|---|---|
-| MCDU Captain | 173 reports | 17% | 393 reports | 39% |
-| ViperAce ICP | 19 reports | 1.9% | 224 reports | 23% |
-| PTO2 | 4 reports | 0.5% | 95 reports | 10% |
-| Orion Throttle | 0.8 reports | 0.1% | 17 reports | 2% |
-| CarrierAce UFC | 0.4 reports | 0% | 0.4 reports | 0% |
-| Orion Rudder Pedals | 0.1 reports | 0% | 0.1 reports | 0% |
+| MCDU Captain | 193 reports | 19% | 430 reports | 43% |
+| ViperAce ICP | 17 reports | 1.7% | 244 reports | 25% |
+| PTO2 | 7 reports | 0.7% | 149 reports | 15% |
+| Orion Rudder Pedals | 2 reports | 0.2% | 55 reports | 6% |
+| CarrierAce UFC | 2 reports | 0.2% | 37 reports | 4% |
+| Orion Throttle | 1.4 reports | 0.2% | 35 reports | 4% |
 
 - **The MCDU costs most because a text screen is always sent whole**, 16
   reports. Under stress it paints about 24 screens a second against a cap
@@ -203,6 +212,7 @@ other.
 | beta.006 | before release | not kept | not kept | not kept | not kept | 40.0 MB | No notable change in CPU |
 | beta.007 | before release | not kept | not kept | not kept | not kept | 42.2 MB | No notable change in CPU |
 | beta.008 | 2026-10-04 | 0.47% | 1.28% | 3.62% | 44.6 MB | 44.8 MB | No notable change; memory up about 11 MB since beta.005, mostly beta.006, still small |
+| beta.009 | 2026-10-05 | 0.45% | 1.41% | 4.38% | 47.5 MB | not measured | Ctrl as modifier. Stress up 0.8%: the backlights follow a knob that stress moves every frame. A controller button as modifier adds about 2.5% throughout |
 
 - **beta.005's two memory figures differ** because the first is a
   development build before release, and the second is the release build.
@@ -211,15 +221,39 @@ other.
   nothing per frame, as beta.004 to beta.005 shows, so a difference that
   size is not a change.
 
+## A controller button as the page modifier
+
+With a controller button as the page modifier, the daemon keeps that
+controller open through DirectInput, and DirectInput reads every report
+the controller sends on a thread of its own for as long as it is open.
+That is the cost of any program reading a controller, not of the daemon:
+measured with button 6 on a MOZA AB9 FFB base, which reports constantly,
+it added about 2.5% of one core in every scenario, idle included.
+
+| Scenario | Ctrl | MOZA AB9 button |
+|---|---|---|
+| idle | 0.45% | 3.32% |
+| typical | 1.41% | 4.25% |
+| stress | 4.38% | 7.17% |
+
+- **The daemon's own part is nothing.** Its `modifier` thread, which looks
+  for a missing controller every 2 s, read 0.002%. The rest is Windows'
+  threads, which read 0% with Ctrl.
+- **Other controllers will differ.** A stick that only reports when
+  something moves should cost less than a force feedback base; none has
+  been measured.
+- **A keyboard modifier costs nothing extra**, so Ctrl, Shift or Alt is the
+  choice for the lowest CPU.
+
 ## Other CPUs
 
 Estimated, not measured: the only machine measured is the i9-12900KF above.
 
 | Scenario | i9-12900KF, measured | i5-12400F, estimated |
 |---|---|---|
-| idle | 0.47% | about 0.6% |
-| typical | 1.28% | about 1.5% |
-| stress | 3.62% | about 4.3% |
+| idle | 0.45% | about 0.5% |
+| typical | 1.41% | about 1.7% |
+| stress | 4.38% | about 5.3% |
 
 - **How.** The daemon's threads each do a little, on whichever core is
   free, and none comes near filling one, so what it costs follows how fast a

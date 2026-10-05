@@ -891,20 +891,6 @@
     "PFP7_Observer": "PFP7_Captain"
   },
   "screens": {
-    "CarrierAce_UFC": {
-      "start": 1,
-      "slots": [
-        {
-          "page": "ev5wiw",
-          "key": null
-        },
-        null,
-        null,
-        null,
-        null,
-        null
-      ]
-    },
     "MCDU_Captain": {
       "start": 1,
       "slots": [
@@ -961,23 +947,6 @@
       "slots": [
         {
           "page": "j2v3qy",
-          "key": null
-        },
-        {
-          "page": null,
-          "key": null
-        },
-        null,
-        null,
-        null,
-        null
-      ]
-    },
-    "ViperAce_ICP": {
-      "start": 1,
-      "slots": [
-        {
-          "page": "ooc6ko",
           "key": null
         },
         {

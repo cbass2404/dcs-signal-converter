@@ -15,6 +15,22 @@ unless this says what moved.
 
 ## 1.0.0-beta.009
 
+### Profiles
+
+- **AH-64D:** the backup altimeter is one reading on the KU, UFC Backup and
+  DED Backup pages, in feet to the nearest 10. Each drum now holds its digit
+  until it has fully turned over, so the thousands no longer step up early.
+  On the KU it is green.
+- **F-16C:** fuel on the CDU Flight page is one reading in pounds, red under
+  2000 and amber to 3000, so the trailing 0 changes colour with the rest.
+- **AJS37:** every lamp that follows the right master caution light (FAIL on
+  the MCDU and each PFP, and the PTO2 master caution) reads it from one
+  shared result, Master Caution Light right (red).
+- **Mosquito:** ON on the DED Sight Settings page is as wide as OFF, so its
+  highlight no longer jumps.
+- **UH-1H:** the empty UFC Flight and DED Flight pages are gone. **A-10C and
+  A-10C II** drop an empty UFC screen entry. Neither showed anything.
+
 ### Editor
 
 - **The page modifier can match a modifier you set up in DCS**, on any of

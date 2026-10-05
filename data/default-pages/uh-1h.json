@@ -628,18 +628,6 @@
           ]
         }
       ]
-    },
-    {
-      "id": "ev5wiw",
-      "name": "UFC Flight",
-      "display": "UFC1",
-      "fields": []
-    },
-    {
-      "id": "ooc6ko",
-      "name": "DED Flight",
-      "display": "DED",
-      "fields": []
     }
   ],
   "signals": [

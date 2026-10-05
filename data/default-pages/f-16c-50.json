@@ -48,34 +48,16 @@
             {
               "signal": "dxkh8y",
               "value_aliases": {
-                "0..200": {
+                "0..2000": {
                   "colour": "red",
                   "reading": true
                 },
-                "201..300": {
+                "2001..3000": {
                   "colour": "amber",
                   "reading": true
                 }
               },
               "colour": "green"
-            },
-            {
-              "signal": "dxkh8y",
-              "switch_signal": "dxkh8y",
-              "colour": "green",
-              "cases": {
-                "..200": {
-                  "text": "0",
-                  "colour": "red"
-                },
-                "201..300": {
-                  "text": "0",
-                  "colour": "amber"
-                },
-                "else": {
-                  "text": "0"
-                }
-              }
             },
             {
               "text": "lbs",
@@ -518,6 +500,9 @@
           "wrap": 100.0,
           "width": 2,
           "align": "right"
+        },
+        {
+          "text": "0"
         }
       ]
     },

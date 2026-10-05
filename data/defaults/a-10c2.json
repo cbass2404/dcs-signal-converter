@@ -997,20 +997,6 @@
     "PFP7_Observer": "PFP7_Captain"
   },
   "screens": {
-    "CarrierAce_UFC": {
-      "start": 1,
-      "slots": [
-        {
-          "page": null,
-          "key": null
-        },
-        null,
-        null,
-        null,
-        null,
-        null
-      ]
-    },
     "MCDU_Captain": {
       "start": 1,
       "slots": [

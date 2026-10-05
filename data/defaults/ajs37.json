@@ -73,14 +73,8 @@
     {
       "device": "MCDU_Captain",
       "led": "Fail",
-      "conditions": [
-        {
-          "source": "HUVUDVARNING_R",
-          "on_when": {
-            "equals": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "tlabqg"
     },
     {
       "device": "MCDU_Captain",
@@ -340,14 +334,8 @@
     {
       "device": "PFP3N_Captain",
       "led": "FAIL",
-      "conditions": [
-        {
-          "source": "HUVUDVARNING_R",
-          "on_when": {
-            "equals": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "tlabqg"
     },
     {
       "device": "PFP3N_Captain",
@@ -487,14 +475,8 @@
     {
       "device": "PFP4_Captain",
       "led": "FAIL",
-      "conditions": [
-        {
-          "source": "HUVUDVARNING_R",
-          "on_when": {
-            "equals": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "tlabqg"
     },
     {
       "device": "PFP4_Captain",
@@ -634,14 +616,8 @@
     {
       "device": "PFP7_Captain",
       "led": "FAIL",
-      "conditions": [
-        {
-          "source": "HUVUDVARNING_R",
-          "on_when": {
-            "equals": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "tlabqg"
     },
     {
       "device": "PFP7_Captain",
@@ -788,14 +764,8 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "Master_Caution",
-      "conditions": [
-        {
-          "source": "HUVUDVARNING_R",
-          "on_when": {
-            "equals": 1
-          }
-        }
-      ]
+      "conditions": [],
+      "signal": "tlabqg"
     },
     {
       "device": "TAKEOFF_PLANEL_2",

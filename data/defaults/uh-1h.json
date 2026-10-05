@@ -14,7 +14,46 @@
       "device": "CarrierAce_MFD_C",
       "led": "INST_PNL_Backlight",
       "conditions": [],
-      "always": true
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "BRT_PILOT",
+              "on_when": {
+                "scale": [
+                  0,
+                  65535
+                ]
+              }
+            },
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 0
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "BRT_COPILOT",
+              "on_when": {
+                "scale": [
+                  0,
+                  65535
+                ]
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "CarrierAce_MFD_L",

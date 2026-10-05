@@ -17,10 +17,37 @@ unless this says what moved.
 
 ### Profiles
 
+- **New profile: A-4E-C** (the community mod). The takeoff panel shows
+  gear, flaps, hook and each armed station, with the glareshield fire light
+  as master caution and on FAIL. The throttle's A/A lamp lights with the gun
+  armed. The MCDU and PFPs get a CDU Flight page with UHF and TACAN
+  frequencies and the APN-153 navigation readings.
+- **Backlights follow the cockpit again.** Every panel backlight dims with a
+  console or instrument lighting knob instead of being held on, in every
+  profile. The row that sets it is the INST_PNL_Backlight row on the
+  CarrierAce MFD C; the others follow it. The knob is:
+  - **A-10C and A-10C II:** left console.
+  - **AH-64D:** primary lighting of the seat you are in.
+  - **AJS37:** console lighting.
+  - **C-130J-30:** pilot or copilot panel backlighting, whichever was
+    turned last.
+  - **CH-47F:** centre console dimmer.
+  - **F-14A/B and F-14B Upgrade:** pilot or RIO console, whichever was
+    turned last.
+  - **F-16C:** primary consoles.
+  - **F/A-18C:** consoles dimmer.
+  - **Mi-24P:** the seat you are in.
+  - **Mi-8MTV2:** left red lighting.
+  - **Mosquito:** left bomb panel dimmer.
+  - **OH-58D:** front overhead console.
+  - **UH-1H:** the seat you are in.
+  - **UH-60L:** pilot or copilot instrument lighting, whichever is brighter.
 - **AH-64D:** the backup altimeter is one reading on the KU, UFC Backup and
   DED Backup pages, in feet to the nearest 10. Each drum now holds its digit
   until it has fully turned over, so the thousands no longer step up early.
   On the KU it is green.
+  The shared result Pilot Alitimeter Needle is now spelled Pilot Altimeter
+  Needle.
 - **F-16C:** fuel on the CDU Flight page is one reading in pounds, red under
   2000 and amber to 3000, so the trailing 0 changes colour with the rest.
 - **AJS37:** every lamp that follows the right master caution light (FAIL on

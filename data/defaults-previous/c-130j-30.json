@@ -13,7 +13,35 @@
       "device": "CarrierAce_MFD_C",
       "led": "INST_PNL_Backlight",
       "conditions": [],
-      "always": true
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "CPLT_CC_LIGHTING_PANEL_BACKLIGHTING",
+              "on_when": {
+                "scale": [
+                  0,
+                  65535
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "PLT_CC_LIGHTING_PANEL_BACKLIGHTING",
+              "on_when": {
+                "scale": [
+                  0,
+                  65535
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "pick": "latest"
     },
     {
       "device": "CarrierAce_MFD_L",

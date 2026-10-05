@@ -11,8 +11,17 @@
     {
       "device": "CarrierAce_MFD_C",
       "led": "INST_PNL_Backlight",
-      "conditions": [],
-      "always": true,
+      "conditions": [
+        {
+          "source": "INT_CONSOLE_L_BRIGHT",
+          "on_when": {
+            "scale": [
+              0,
+              65535
+            ]
+          }
+        }
+      ],
       "on": 175
     },
     {
@@ -997,20 +1006,6 @@
     "PFP7_Observer": "PFP7_Captain"
   },
   "screens": {
-    "CarrierAce_UFC": {
-      "start": 1,
-      "slots": [
-        {
-          "page": null,
-          "key": null
-        },
-        null,
-        null,
-        null,
-        null,
-        null
-      ]
-    },
     "MCDU_Captain": {
       "start": 1,
       "slots": [

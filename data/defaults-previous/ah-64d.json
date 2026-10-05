@@ -12,7 +12,46 @@
       "device": "CarrierAce_MFD_C",
       "led": "INST_PNL_Backlight",
       "conditions": [],
-      "always": true,
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "PLT_INTL_PRIMARY_L_KNB",
+              "on_when": {
+                "scale": [
+                  0,
+                  65535
+                ]
+              }
+            },
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 0
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "CPG_INTL_PRIMARY_L_KNB",
+              "on_when": {
+                "scale": [
+                  0,
+                  65535
+                ]
+              }
+            },
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        }
+      ],
       "on": 175
     },
     {

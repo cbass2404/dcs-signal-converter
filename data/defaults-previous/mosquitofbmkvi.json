@@ -12,8 +12,17 @@
     {
       "device": "CarrierAce_MFD_C",
       "led": "INST_PNL_Backlight",
-      "conditions": [],
-      "always": true,
+      "conditions": [
+        {
+          "source": "BOMB_PANEL_L_DIM",
+          "on_when": {
+            "scale": [
+              0,
+              65535
+            ]
+          }
+        }
+      ],
       "on": 175
     },
     {

@@ -1,12 +1,12 @@
 {
   "schema_version": 2,
-  "name": "OH-58D",
+  "name": "A-4E-C",
   "author": "",
   "profile_version": "0.1.0",
   "aircraft": [
-    "OH58D"
+    "A-4E-C"
   ],
-  "module": "OH-58D",
+  "module": "A-4E-C",
   "font": "../mcdu/f14bu-font-21x31.json",
   "bindings": [
     {
@@ -14,7 +14,7 @@
       "led": "INST_PNL_Backlight",
       "conditions": [
         {
-          "source": "FRONT_OVERHEAD_CONSOLE_BRIGHTNESS",
+          "source": "LIGHT_INT_CONSOLE",
           "on_when": {
             "scale": [
               0,
@@ -61,7 +61,8 @@
       "led": "Backlight",
       "conditions": [],
       "same_as": "INST_PNL_Backlight",
-      "same_as_device": "CarrierAce_MFD_C"
+      "same_as_device": "CarrierAce_MFD_C",
+      "off": 125
     },
     {
       "device": "MCDU_Captain",
@@ -82,7 +83,8 @@
     {
       "device": "MCDU_Captain",
       "led": "Fail",
-      "conditions": []
+      "conditions": [],
+      "signal": "mxx3bi"
     },
     {
       "device": "MCDU_Captain",
@@ -107,60 +109,17 @@
     {
       "device": "MCDU_Captain",
       "led": "IND",
-      "conditions": [
-        {
-          "source": "MMS_LASER_POWER",
-          "on_when": {
-            "equals": 2
-          }
-        },
-        {
-          "source": "CPLT_CYCLIC_LASER",
-          "on_when": {
-            "equals": 1
-          }
-        }
-      ]
+      "conditions": []
     },
     {
       "device": "MCDU_Captain",
       "led": "RDY",
-      "conditions": [],
-      "any_of": [
-        {
-          "conditions": [
-            {
-              "source": "MMS_LASER_POWER",
-              "on_when": {
-                "equals": 2
-              }
-            }
-          ]
-        },
-        {
-          "conditions": [
-            {
-              "source": "MMS_LASER_POWER",
-              "on_when": {
-                "equals": 1
-              }
-            }
-          ],
-          "blink": "slow"
-        }
-      ]
+      "conditions": []
     },
     {
       "device": "MCDU_Captain",
       "led": "STATUS",
-      "conditions": [
-        {
-          "source": "MMS_MODE",
-          "on_when": {
-            "gte": 2
-          }
-        }
-      ]
+      "conditions": []
     },
     {
       "device": "MCDU_Captain",
@@ -332,15 +291,21 @@
       "led": "A/A",
       "conditions": [
         {
-          "source": "ARMAMENT_MASTER_ARM",
+          "source": "ARM_MASTER",
           "on_when": {
-            "equals": 2
+            "equals": 1
           }
         },
         {
-          "source": "ARMAMENT_ARMED",
+          "source": "ARM_GUN",
           "on_when": {
             "equals": 1
+          }
+        },
+        {
+          "source": "ARM_FUNC_SEL",
+          "on_when": {
+            "equals": 5
           }
         }
       ]
@@ -348,18 +313,60 @@
     {
       "device": "Orion_Throttle_Base_II",
       "led": "A/G",
-      "conditions": [
+      "conditions": [],
+      "any_of": [
         {
-          "source": "ARMAMENT_GUN",
-          "on_when": {
-            "equals": 1
-          }
+          "conditions": [
+            {
+              "source": "ARM_MASTER",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "ARM_GUN",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "ARM_FUNC_SEL",
+              "on_when": {
+                "equals": 2
+              }
+            }
+          ]
         },
         {
-          "source": "ARMAMENT_ARMED",
-          "on_when": {
-            "equals": 1
-          }
+          "conditions": [
+            {
+              "source": "ARM_MASTER",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "ARM_GUN",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "ARM_FUNC_SEL",
+              "on_when": {
+                "equals": 5
+              }
+            },
+            {
+              "source": "ARM_BOMB",
+              "on_when": {
+                "in": [
+                  0,
+                  2
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -394,7 +401,8 @@
     {
       "device": "PFP3N_Captain",
       "led": "FAIL",
-      "conditions": []
+      "conditions": [],
+      "signal": "mxx3bi"
     },
     {
       "device": "PFP3N_Captain",
@@ -534,7 +542,8 @@
     {
       "device": "PFP4_Captain",
       "led": "FAIL",
-      "conditions": []
+      "conditions": [],
+      "signal": "mxx3bi"
     },
     {
       "device": "PFP4_Captain",
@@ -674,7 +683,8 @@
     {
       "device": "PFP7_Captain",
       "led": "FAIL",
-      "conditions": []
+      "conditions": [],
+      "signal": "mxx3bi"
     },
     {
       "device": "PFP7_Captain",
@@ -793,7 +803,14 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "Landing_gear_lights",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "GEAR_LIGHT",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
@@ -814,126 +831,210 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "Master_Caution",
-      "conditions": []
+      "conditions": [],
+      "signal": "mxx3bi"
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "JETT",
-      "conditions": [],
-      "any_of": [
+      "conditions": [
         {
-          "conditions": [
-            {
-              "source": "ARMAMENT_JETTISON_COVER_R",
-              "on_when": {
-                "equals": 1
-              }
-            }
-          ]
+          "source": "ARM_FUNC_SEL",
+          "on_when": {
+            "equals": 5
+          }
         },
         {
-          "conditions": [
-            {
-              "source": "ARMAMENT_JETTISON_COVER_L",
-              "on_when": {
-                "equals": 1
-              }
-            }
-          ]
+          "source": "ARM_BOMB",
+          "on_when": {
+            "in": [
+              0,
+              2
+            ]
+          }
+        },
+        {
+          "source": "ARM_MASTER",
+          "on_when": {
+            "equals": 1
+          }
         }
       ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "CTR",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "ARM_STATION1",
+          "on_when": {
+            "equals": 1
+          }
+        },
+        {
+          "source": "ARM_MASTER",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "LI",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "ARM_STATION2",
+          "on_when": {
+            "equals": 1
+          }
+        },
+        {
+          "source": "ARM_MASTER",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "LO",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "ARM_STATION4",
+          "on_when": {
+            "equals": 1
+          }
+        },
+        {
+          "source": "ARM_MASTER",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "RO",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "ARM_STATION5",
+          "on_when": {
+            "equals": 1
+          }
+        },
+        {
+          "source": "ARM_MASTER",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "RI",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "ARM_STATION3",
+          "on_when": {
+            "equals": 1
+          }
+        },
+        {
+          "source": "ARM_MASTER",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "FLAPS",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "D_FLAPS_IND",
+          "on_when": {
+            "gte": 10
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "NOSE",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "GEAR_NOSE",
+          "on_when": {
+            "gte": 32768
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "FULL",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "D_FLAPS_IND",
+          "on_when": {
+            "gte": 62000
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "RIGHT",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "GEAR_RIGHT",
+          "on_when": {
+            "gte": 32768
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "LEFT",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "GEAR_LEFT",
+          "on_when": {
+            "gte": 32768
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "HALF",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "D_FLAPS_IND",
+          "on_when": {
+            "between": [
+              31000,
+              32000
+            ]
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "HOOK",
-      "conditions": [],
-      "any_of": [
+      "conditions": [
         {
-          "conditions": [
-            {
-              "source": "CMWS_ARM",
-              "on_when": {
-                "equals": 1
-              }
-            },
-            {
-              "source": "CMWS_ON_OFF_TEST",
-              "on_when": {
-                "equals": 1
-              }
-            }
-          ]
-        },
-        {
-          "conditions": [
-            {
-              "source": "PLT_OVERHEAD_IR_JAMMER_BASE",
-              "on_when": {
-                "equals": 1
-              }
-            },
-            {
-              "source": "FRONT_OVERHEAD_IR_JAMMER_XMTR",
-              "on_when": {
-                "equals": 1
-              }
-            }
-          ]
+          "source": "D_TAIL_HOOK",
+          "on_when": {
+            "equals": 65535
+          }
         }
       ]
     },
@@ -966,11 +1067,62 @@
     "PFP7_Observer": "PFP7_Captain"
   },
   "screens": {
-    "ViperAce_ICP": {
+    "MCDU_Captain": {
       "start": 1,
       "slots": [
         {
-          "page": "j328et",
+          "page": "aedqu1",
+          "key": null
+        },
+        {
+          "page": null,
+          "key": null
+        },
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "PFP3N_Captain": {
+      "start": 1,
+      "slots": [
+        {
+          "page": "aedqu1",
+          "key": null
+        },
+        {
+          "page": null,
+          "key": null
+        },
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "PFP4_Captain": {
+      "start": 1,
+      "slots": [
+        {
+          "page": "aedqu1",
+          "key": null
+        },
+        {
+          "page": null,
+          "key": null
+        },
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "PFP7_Captain": {
+      "start": 1,
+      "slots": [
+        {
+          "page": "aedqu1",
           "key": null
         },
         {

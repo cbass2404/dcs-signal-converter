@@ -19,8 +19,17 @@
     {
       "device": "CarrierAce_MFD_C",
       "led": "INST_PNL_Backlight",
-      "conditions": [],
-      "always": true,
+      "conditions": [
+        {
+          "source": "PRI_CONSOLES_BRT_KNB",
+          "on_when": {
+            "scale": [
+              0,
+              65535
+            ]
+          }
+        }
+      ],
       "on": 175
     },
     {

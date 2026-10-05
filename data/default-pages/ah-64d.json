@@ -269,33 +269,9 @@
               "gap": true
             },
             {
-              "source": "PLT_ALT_10000",
-              "width": 1,
-              "reads": [
-                0.0,
-                10.0
-              ],
-              "wrap": 10.0
-            },
-            {
-              "source": "PLT_ALT_1000",
-              "width": 1,
-              "reads": [
-                0.0,
-                10.0
-              ],
-              "wrap": 10.0
-            },
-            {
-              "source": "PLT_ALT_NEEDLE",
-              "width": 3,
-              "align": "right",
-              "reads": [
-                0.0,
-                100.0
-              ],
-              "digits": 3,
-              "wrap": 100.0
+              "signal": "0lfeq7",
+              "width": 5,
+              "colour": "green"
             },
             {
               "text": "FT",
@@ -512,17 +488,8 @@
           "cells": "2-8",
           "content": [
             {
-              "gap": true
-            },
-            {
-              "signal": "0lfeq7"
-            },
-            {
-              "signal": "kahgpf",
-              "width": 3
-            },
-            {
-              "text": "0"
+              "signal": "0lfeq7",
+              "width": 5
             }
           ]
         },
@@ -611,14 +578,7 @@
             },
             {
               "signal": "0lfeq7",
-              "width": 1
-            },
-            {
-              "signal": "kahgpf",
-              "width": 3
-            },
-            {
-              "text": "0"
+              "width": 5
             },
             {
               "gap": true
@@ -675,7 +635,7 @@
   "signals": [
     {
       "id": "0lfeq7",
-      "name": "Pilot Altimeter 10000 Drum",
+      "name": "Pilot Backup Altimeter",
       "terms": [
         {
           "source": "PLT_ALT_10000",
@@ -683,8 +643,34 @@
             0.0,
             10.0
           ],
+          "digits": 1,
           "round": "down",
-          "wrap": 10.0
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "source": "PLT_ALT_1000",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "source": "PLT_ALT_NEEDLE",
+          "reads": [
+            0.0,
+            100.0
+          ],
+          "digits": 2,
+          "wrap": 100.0,
+          "width": 2
+        },
+        {
+          "text": "0"
         }
       ]
     },
@@ -696,11 +682,12 @@
           "source": "PLT_ALT_1000",
           "reads": [
             0.0,
-            1000.0
+            10.0
           ],
-          "digits": 3,
+          "digits": 1,
           "round": "down",
-          "wrap": 1000.0
+          "wrap": 10.0,
+          "width": 1
         }
       ]
     },
@@ -968,6 +955,25 @@
               }
             }
           ]
+        }
+      ]
+    },
+    {
+      "id": "e54le2",
+      "name": "Pilot Altimeter Needle",
+      "terms": [
+        {
+          "source": "PLT_ALT_NEEDLE",
+          "reads": [
+            0.0,
+            100.0
+          ],
+          "digits": 2,
+          "wrap": 100.0,
+          "width": 2
+        },
+        {
+          "text": "0"
         }
       ]
     }

@@ -15,8 +15,17 @@
     {
       "device": "CarrierAce_MFD_C",
       "led": "INST_PNL_Backlight",
-      "conditions": [],
-      "always": true,
+      "conditions": [
+        {
+          "source": "CONSOLES_DIMMER",
+          "on_when": {
+            "scale": [
+              0,
+              65535
+            ]
+          }
+        }
+      ],
       "on": 175
     },
     {

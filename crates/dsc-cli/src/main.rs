@@ -30,6 +30,7 @@ use wctrl_hid::Device;
 mod buttons;
 #[cfg(windows)]
 mod keyboard;
+mod modifier;
 mod page_keys;
 mod panels;
 use panels::Panel;
@@ -198,6 +199,16 @@ enum Command {
         /// Print every report that changes, not only those that move a button.
         #[arg(long)]
         raw: bool,
+        /// Stop after this many seconds. Runs until Ctrl-C when omitted.
+        #[arg(long)]
+        seconds: Option<u64>,
+    },
+    /// List every game controller and show its buttons as they are pressed.
+    ///
+    /// Asks DirectInput, as DCS does, so each button has the number DCS's
+    /// controls give it (JOY_BTN12 is 12). These are the controllers and
+    /// numbers a controller button page modifier can name. Only reads.
+    Controllers {
         /// Stop after this many seconds. Runs until Ctrl-C when omitted.
         #[arg(long)]
         seconds: Option<u64>,
@@ -483,6 +494,71 @@ fn buttons_capture(_pid: u16, _raw: bool, _seconds: Option<u64>) -> Result<()> {
     anyhow::bail!("reading buttons is only built for Windows")
 }
 
+/// Every controller DirectInput lists, then each button going down or up,
+/// asked of all of them every 10 ms until the time is up.
+fn controllers_watch(seconds: Option<u64>) -> Result<()> {
+    let (devices, failed) = dsc_input::open_all().context("listing the controllers")?;
+    if devices.is_empty() && failed.is_empty() {
+        println!("No game controllers are connected.");
+        return Ok(());
+    }
+    for (n, d) in devices.iter().enumerate() {
+        let c = d.controller();
+        println!(
+            "{n:>2}  {}  instance {}  product {}",
+            c.name, c.instance, c.product
+        );
+    }
+    for (c, e) in &failed {
+        println!("    {}  could not open: {e}", c.name);
+    }
+    if devices.is_empty() {
+        return Ok(());
+    }
+    // A controller just opened reads as nothing held for a moment, so what
+    // is held to start with is read once it has settled.
+    std::thread::sleep(dsc_input::SETTLE);
+    let mut last: Vec<Vec<u16>> = devices
+        .iter()
+        .map(|d| d.pressed().unwrap_or_default())
+        .collect();
+    for (n, held) in last.iter().enumerate() {
+        if !held.is_empty() {
+            let held: Vec<String> = held.iter().map(u16::to_string).collect();
+            println!("{n:>2}  held from the start: {}", held.join(" "));
+        }
+    }
+    println!("Press buttons. Ctrl-C to stop.");
+    let start = Instant::now();
+    let until = seconds.map(|s| start + Duration::from_secs(s));
+    let mut gone = vec![false; devices.len()];
+    while until.map_or(true, |u| Instant::now() < u) {
+        std::thread::sleep(Duration::from_millis(10));
+        let t = start.elapsed().as_secs_f64();
+        for (n, d) in devices.iter().enumerate() {
+            if gone[n] {
+                continue;
+            }
+            let now = match d.pressed() {
+                Ok(now) => now,
+                Err(e) => {
+                    println!("{t:8.3}s  {n:>2}  {}: {e}", d.controller().name);
+                    gone[n] = true;
+                    continue;
+                }
+            };
+            for b in now.iter().filter(|b| !last[n].contains(b)) {
+                println!("{t:8.3}s  {n:>2}  down {b:>3}  {}", d.controller().name);
+            }
+            for b in last[n].iter().filter(|b| !now.contains(b)) {
+                println!("{t:8.3}s  {n:>2}  up   {b:>3}  {}", d.controller().name);
+            }
+            last[n] = now;
+        }
+    }
+    Ok(())
+}
+
 /// A report as hex, without the run of zeros a padded report ends in.
 #[cfg(windows)]
 fn hex_trimmed(report: &[u8]) -> String {
@@ -753,6 +829,8 @@ fn main() -> Result<()> {
         } => probe_brightness(pid, part, master, lamp, countdown, hold)?,
 
         Command::Buttons { pid, raw, seconds } => buttons_capture(pid, raw, seconds)?,
+
+        Command::Controllers { seconds } => controllers_watch(seconds)?,
 
         Command::Listen {
             seconds,
@@ -3080,12 +3158,13 @@ fn run(
     };
 
     // The page keys, read even on a dry run: reading a panel sends it nothing.
-    let (keys, lines) = page_keys::start(&inventory, &connected);
+    let mut settings = load_settings(settings_path);
+    let mut settings_seen = file_stamp(settings_path);
+    let modifier = modifier::Watch::start(settings.page_modifier.clone());
+    let (keys, lines) = page_keys::start(&inventory, &connected, &modifier);
     for line in lines {
         kept!("{line}");
     }
-    let mut settings = load_settings(settings_path);
-    let mut settings_seen = file_stamp(settings_path);
     kept!("keys     page modifier {}", settings.page_modifier.name());
 
     let mut writers = HashMap::new();
@@ -3236,10 +3315,17 @@ fn run(
             if stamp != settings_seen {
                 settings_seen = stamp;
                 settings = load_settings(settings_path);
+                modifier.set(settings.page_modifier.clone());
                 say!(
                     "settings reloaded: page modifier {}",
                     settings.page_modifier.name()
                 );
+            }
+            for line in modifier.lines() {
+                match line {
+                    modifier::Line::Say(line) => say!("{line}"),
+                    modifier::Line::Warn(line) => warn!("{line}"),
+                }
             }
             let current = [
                 profiles_fingerprint(profiles_dir),
@@ -3303,7 +3389,7 @@ fn run(
                 page_keys::KeyEvent::Down {
                     device,
                     number,
-                    held,
+                    modifier,
                 } => {
                     let Some(spec) = engine.devices().device(&device) else {
                         continue;
@@ -3313,7 +3399,7 @@ fn run(
                     };
                     let key = spec.page_keys[slot].clone();
                     // The chosen modifier alone, or the press is DCS's.
-                    if !settings.page_modifier.alone_in(&held) {
+                    if !modifier {
                         continue;
                     }
                     match engine.show_slot(&device, slot) {

@@ -252,11 +252,11 @@ A few more things the editor does:
   flight, hold Ctrl and press a page key to swap the screen to that slot's
   page: LSK 1L to 6L on the MCDU, A/P, IFF, TCN, ILS, D/N and BCN on the UFC,
   and COM 1, COM 2, IFF, LIST, A-A and A-G on the ICP. DCS still sees the
-  press, so keep Ctrl with those keys unbound there, or pick Shift or Alt in
-  Settings.
+  press, so keep Ctrl with those keys unbound there, or pick Shift, Alt or a
+  button on any of your controllers in Settings.
 - **Settings**, the gear at the top of the Profiles page, picks the window's
-  theme and the key held to swap pages, and holds Import profile... and
-  Manage Converter.
+  theme and the key or controller button held to swap pages, and holds
+  Import profile... and Manage Converter.
 - **Manage Converter**, under the gear, is for the rare times the converter
   needs restarting. Saving a profile is not one of them. See below.
 - **Reset** puts a profile back to the shipped one. **Reset this lamp** and

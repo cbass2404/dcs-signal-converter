@@ -14,7 +14,46 @@
       "device": "CarrierAce_MFD_C",
       "led": "INST_PNL_Backlight",
       "conditions": [],
-      "always": true
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "BRT_PILOT",
+              "on_when": {
+                "scale": [
+                  0,
+                  65535
+                ]
+              }
+            },
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 0
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "SEAT_POSITION",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "BRT_COPILOT",
+              "on_when": {
+                "scale": [
+                  0,
+                  65535
+                ]
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "CarrierAce_MFD_L",
@@ -891,20 +930,6 @@
     "PFP7_Observer": "PFP7_Captain"
   },
   "screens": {
-    "CarrierAce_UFC": {
-      "start": 1,
-      "slots": [
-        {
-          "page": "ev5wiw",
-          "key": null
-        },
-        null,
-        null,
-        null,
-        null,
-        null
-      ]
-    },
     "MCDU_Captain": {
       "start": 1,
       "slots": [
@@ -961,23 +986,6 @@
       "slots": [
         {
           "page": "j2v3qy",
-          "key": null
-        },
-        {
-          "page": null,
-          "key": null
-        },
-        null,
-        null,
-        null,
-        null
-      ]
-    },
-    "ViperAce_ICP": {
-      "start": 1,
-      "slots": [
-        {
-          "page": "ooc6ko",
           "key": null
         },
         {

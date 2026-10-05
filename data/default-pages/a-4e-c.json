@@ -1,0 +1,1126 @@
+{
+  "module": "A-4E-C",
+  "pages": [
+    {
+      "id": "aedqu1",
+      "name": "CDU Flight",
+      "display": "MCDU",
+      "fields": [
+        {
+          "cells": "264-287",
+          "content": [
+            {
+              "signal": "b3khjx"
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "source": "ARC51_MODE",
+              "width": 4,
+              "value_aliases": {
+                "0": {
+                  "text": "OFF",
+                  "colour": "red"
+                },
+                "1": "T/R",
+                "2": "T/RG",
+                "3": "ADF"
+              }
+            },
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "switch": "ARC51_XMIT_MODE",
+              "cases": {
+                "2": {
+                  "source": "ARC51_FREQ_PRE",
+                  "width": 2,
+                  "reads": [
+                    1.0,
+                    20.0
+                  ],
+                  "digits": 2,
+                  "colour": "green"
+                },
+                "else": {
+                  "text": "   ",
+                  "width": 2
+                }
+              }
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "ARC51_VOL",
+              "width": 4,
+              "reads": [
+                0.0,
+                4.0
+              ],
+              "round": "down",
+              "value_aliases": {
+                "0": {
+                  "text": "[",
+                  "colour": "red"
+                },
+                "1": {
+                  "text": " ",
+                  "colour": "red",
+                  "inverse": true
+                },
+                "2": {
+                  "text": "  ",
+                  "colour": "amber",
+                  "inverse": true
+                },
+                "3": {
+                  "text": "   ",
+                  "colour": "yellow",
+                  "inverse": true
+                },
+                "4": {
+                  "text": "    ",
+                  "colour": "green",
+                  "inverse": true
+                }
+              },
+              "colour": "red"
+            }
+          ]
+        },
+        {
+          "cells": "0-23",
+          "content": [
+            {
+              "gap": true
+            },
+            {
+              "signal": "tlhrdd",
+              "width": 4,
+              "colour": "green"
+            },
+            {
+              "signal": "t7psf7",
+              "width": 1,
+              "value_aliases": {
+                "0": "N",
+                "1": "S"
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "text": "PRES",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "signal": "3tcewh",
+              "width": 1,
+              "value_aliases": {
+                "0": "E",
+                "1": "W"
+              },
+              "colour": "green"
+            },
+            {
+              "signal": "g62adx",
+              "width": 5,
+              "colour": "green"
+            },
+            {
+              "gap": true
+            }
+          ]
+        },
+        {
+          "cells": "24-47",
+          "content": [
+            {
+              "gap": true,
+              "width": 5
+            },
+            {
+              "text": "LAT",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "LONG",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 4
+            }
+          ]
+        },
+        {
+          "cells": "48-71",
+          "content": [
+            {
+              "gap": true
+            },
+            {
+              "signal": "yw2ocg",
+              "width": 4,
+              "colour": "green"
+            },
+            {
+              "signal": "j77ib9",
+              "width": 1,
+              "value_aliases": {
+                "0": "N",
+                "1": "S"
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "text": "DEST",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "signal": "tmz21n",
+              "width": 5,
+              "colour": "green"
+            },
+            {
+              "signal": "k4iucp",
+              "width": 1,
+              "value_aliases": {
+                "0": "E",
+                "1": "W"
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true
+            }
+          ]
+        },
+        {
+          "cells": "72-95",
+          "content": [
+            {
+              "gap": true,
+              "width": 3
+            },
+            {
+              "text": "MAGVAR",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "SPEED",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 2
+            }
+          ]
+        },
+        {
+          "cells": "96-119",
+          "content": [
+            {
+              "gap": true,
+              "width": 3
+            },
+            {
+              "signal": "nb20ws",
+              "width": 5,
+              "colour": "green"
+            },
+            {
+              "signal": "jgju4j",
+              "width": 1,
+              "value_aliases": {
+                "0": "E",
+                "1": "W"
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true
+            },
+            {
+              "signal": "bnpopa",
+              "width": 3,
+              "colour": "green"
+            },
+            {
+              "gap": true,
+              "width": 3
+            }
+          ]
+        },
+        {
+          "cells": "120-143",
+          "content": [
+            {
+              "gap": true,
+              "width": 4
+            },
+            {
+              "text": "FUNC",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "WIND",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 2
+            }
+          ]
+        },
+        {
+          "cells": "144-167",
+          "content": [
+            {
+              "gap": true,
+              "width": 4
+            },
+            {
+              "source": "NAV_SEL",
+              "width": 4,
+              "value_aliases": {
+                "0": {
+                  "text": "TEST",
+                  "colour": "red"
+                },
+                "1": {
+                  "text": "OFF",
+                  "colour": "red"
+                },
+                "2": {
+                  "text": "STBY",
+                  "colour": "amber"
+                },
+                "3": "D1",
+                "4": "D2"
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true
+            },
+            {
+              "signal": "tvgko2",
+              "width": 3,
+              "colour": "green"
+            },
+            {
+              "gap": true,
+              "width": 3
+            }
+          ]
+        },
+        {
+          "cells": "168-191",
+          "content": [
+            {
+              "gap": true,
+              "width": 4
+            },
+            {
+              "text": "MODE",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "DRIFT",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 2
+            }
+          ]
+        },
+        {
+          "cells": "192-215",
+          "content": [
+            {
+              "gap": true,
+              "width": 4
+            },
+            {
+              "source": "DOPPLER_SEL",
+              "value_aliases": {
+                "0": {
+                  "text": "OFF",
+                  "colour": "red"
+                },
+                "1": {
+                  "text": "STBY",
+                  "colour": "amber"
+                },
+                "2": "LAND",
+                "3": "SEA",
+                "4": {
+                  "text": "TEST",
+                  "colour": "amber"
+                }
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true
+            },
+            {
+              "signal": "b46ik2",
+              "width": 2,
+              "align": "right",
+              "value_aliases": {
+                "0": {
+                  "colour": "green",
+                  "reading": true
+                }
+              },
+              "abs": true,
+              "colour": "amber"
+            },
+            {
+              "switch_signal": "b46ik2",
+              "cases": {
+                "..-1": {
+                  "text": "L",
+                  "width": 1,
+                  "colour": "amber"
+                },
+                "0": {
+                  "text": " ",
+                  "width": 1,
+                  "colour": "green"
+                },
+                "1..": {
+                  "text": "R",
+                  "width": 1,
+                  "colour": "amber"
+                }
+              }
+            },
+            {
+              "gap": true,
+              "width": 3
+            }
+          ]
+        },
+        {
+          "cells": "216-239",
+          "content": [
+            {
+              "gap": true,
+              "rule": true,
+              "label": "RADIO",
+              "label_colour": "white",
+              "colour": "amber",
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "240-263",
+          "content": [
+            {
+              "text": "ARC51",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "text": "MODE",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "text": "PRE",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "VOL",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            }
+          ]
+        },
+        {
+          "cells": "288-311",
+          "content": [
+            {
+              "text": "TACAN",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "text": "MODE",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "VOL",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            }
+          ]
+        },
+        {
+          "cells": "312-335",
+          "content": [
+            {
+              "signal": "qw9kst",
+              "width": 3
+            },
+            {
+              "gap": true,
+              "width": 4
+            },
+            {
+              "source": "TACAN_MODE",
+              "value_aliases": {
+                "0": {
+                  "text": "OFF",
+                  "colour": "red"
+                },
+                "1": "REC",
+                "2": "T/R",
+                "3": "A/A"
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "TACAN_VOL",
+              "width": 4,
+              "conversions": [
+                {
+                  "raw": [
+                    0,
+                    32767
+                  ],
+                  "reads": [
+                    0.0,
+                    0.0
+                  ]
+                },
+                {
+                  "raw": [
+                    32768,
+                    65535
+                  ],
+                  "reads": [
+                    1.0,
+                    4.0
+                  ]
+                }
+              ],
+              "round": "down",
+              "value_aliases": {
+                "0": {
+                  "text": "[",
+                  "colour": "red"
+                },
+                "1": {
+                  "text": " ",
+                  "colour": "red",
+                  "inverse": true
+                },
+                "2": {
+                  "text": "  ",
+                  "colour": "amber",
+                  "inverse": true
+                },
+                "3": {
+                  "text": "   ",
+                  "colour": "yellow",
+                  "inverse": true
+                },
+                "4": {
+                  "text": "    ",
+                  "colour": "green",
+                  "inverse": true
+                }
+              }
+            }
+          ],
+          "note": "TAC VOL never reads below 32767"
+        }
+      ]
+    }
+  ],
+  "signals": [
+    {
+      "id": "mxx3bi",
+      "name": "Glareshield Fire (red)",
+      "conditions": [
+        {
+          "source": "D_GLARE_FIRE",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "b3khjx",
+      "name": "UHF Radio Freq",
+      "terms": [
+        {
+          "source": "ARC51_FREQ_10MHZ",
+          "reads": [
+            22.0,
+            39.0
+          ]
+        },
+        {
+          "source": "ARC51_FREQ_1MHZ"
+        },
+        {
+          "text": "."
+        },
+        {
+          "source": "ARC51_FREQ_50KHZ",
+          "reads": [
+            0.0,
+            95.0
+          ]
+        }
+      ]
+    },
+    {
+      "id": "qw9kst",
+      "name": "Tacan Freq",
+      "terms": [
+        {
+          "source": "TACAN_CHAN_MAJ",
+          "reads": [
+            0.0,
+            12.0
+          ],
+          "digits": 2,
+          "round": "down",
+          "width": 2
+        },
+        {
+          "source": "TACAN_CHAN_MIN",
+          "reads": [
+            0.0,
+            9.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "width": 1
+        }
+      ]
+    },
+    {
+      "id": "tlhrdd",
+      "name": "APN153 PRST LAT #",
+      "terms": [
+        {
+          "source": "NAV_CURPOS_LAT_X0000",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "source": "NAV_CURPOS_LAT_0X000",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "source": "NAV_CURPOS_LAT_00X00",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "source": "NAV_CURPOS_LAT_000X0",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        }
+      ]
+    },
+    {
+      "id": "t7psf7",
+      "name": "APN153 PRST LAT D",
+      "terms": [
+        {
+          "source": "NAV_CURPOS_LAT_0000X",
+          "reads": [
+            0.0,
+            2.0
+          ],
+          "round": "down",
+          "wrap": 2.0,
+          "width": 1
+        }
+      ]
+    },
+    {
+      "id": "g62adx",
+      "name": "APN153 PRST LNG #",
+      "terms": [
+        {
+          "source": "NAV_CURPOS_LON_X00000",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "source": "NAV_CURPOS_LON_0X0000",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "source": "NAV_CURPOS_LON_00X000",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "source": "NAV_CURPOS_LON_000X00",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "source": "NAV_CURPOS_LON_0000X0",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        }
+      ]
+    },
+    {
+      "id": "3tcewh",
+      "name": "APN153 PRST LNG D",
+      "terms": [
+        {
+          "source": "NAV_CURPOS_LON_00000X",
+          "reads": [
+            0.0,
+            2.0
+          ],
+          "round": "down",
+          "wrap": 2.0
+        }
+      ]
+    },
+    {
+      "id": "yw2ocg",
+      "name": "APN153 DEST LAT #",
+      "terms": [
+        {
+          "source": "NAV_DEST_LAT_X0000",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "source": "NAV_DEST_LAT_0X000",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "source": "NAV_DEST_LAT_00X00",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "source": "NAV_DEST_LAT_000X0",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        }
+      ]
+    },
+    {
+      "id": "j77ib9",
+      "name": "APN153 DEST LAT D",
+      "terms": [
+        {
+          "source": "NAV_DEST_LAT_0000X",
+          "reads": [
+            0.0,
+            2.0
+          ],
+          "round": "down",
+          "wrap": 2.0
+        }
+      ]
+    },
+    {
+      "id": "tmz21n",
+      "name": "APN153 DEST LNG #",
+      "terms": [
+        {
+          "source": "NAV_DEST_LON_X00000",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "source": "NAV_DEST_LON_0X0000",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "source": "NAV_DEST_LON_00X000",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "source": "NAV_DEST_LON_000X00",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "source": "NAV_DEST_LON_0000X0",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        }
+      ]
+    },
+    {
+      "id": "k4iucp",
+      "name": "APN153 DEST LNG D",
+      "terms": [
+        {
+          "source": "NAV_DEST_LON_00000X",
+          "reads": [
+            0.0,
+            2.0
+          ],
+          "round": "down",
+          "wrap": 2.0
+        }
+      ]
+    },
+    {
+      "id": "nb20ws",
+      "name": "APN153 MAG VAR #",
+      "terms": [
+        {
+          "source": "ASN41_MAGVAR_X0000",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "source": "ASN41_MAGVAR_0X000",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "source": "ASN41_MAGVAR_00X00",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "text": "."
+        },
+        {
+          "source": "ASN41_MAGVAR_000X0",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        }
+      ]
+    },
+    {
+      "id": "jgju4j",
+      "name": "APN153 MAG VAR D",
+      "terms": [
+        {
+          "source": "ASN41_MAGVAR_0000X",
+          "reads": [
+            0.0,
+            2.0
+          ],
+          "round": "down",
+          "wrap": 2.0
+        }
+      ]
+    },
+    {
+      "id": "bnpopa",
+      "name": "APN153 SPEED",
+      "terms": [
+        {
+          "source": "APN153_SPEED_X00",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "source": "APN153_SPEED_0X0",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "source": "APN153_SPEED_00X",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        }
+      ]
+    },
+    {
+      "id": "t13vvo",
+      "name": "UHF PRST",
+      "terms": [
+        {
+          "source": "ARC51_FREQ_PRE",
+          "reads": [
+            1.0,
+            20.0
+          ],
+          "digits": 2,
+          "width": 2
+        }
+      ]
+    },
+    {
+      "id": "tvgko2",
+      "name": "APN153 WIND",
+      "terms": [
+        {
+          "source": "ASN41_WINDDIR_X00",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "source": "ASN41_WINDDIR_0X0",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 1,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        },
+        {
+          "source": "ASN41_WINDDIR_00X",
+          "reads": [
+            0.0,
+            10.0
+          ],
+          "digits": 10,
+          "round": "down",
+          "wrap": 10.0,
+          "width": 1
+        }
+      ]
+    },
+    {
+      "id": "b46ik2",
+      "name": "APN153 DRIFT",
+      "terms": [
+        {
+          "source": "APN153_DRIFT_GAUGE",
+          "reads": [
+            -40.0,
+            40.0
+          ],
+          "digits": 2,
+          "width": 2
+        }
+      ]
+    }
+  ]
+}

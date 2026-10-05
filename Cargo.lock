@@ -817,6 +817,7 @@ dependencies = [
  "dsc-bios",
  "dsc-config",
  "dsc-engine",
+ "dsc-input",
  "hidapi",
  "serde_json",
  "wctrl-hid",
@@ -841,6 +842,7 @@ dependencies = [
  "dsc-bios",
  "dsc-config",
  "dsc-engine",
+ "dsc-input",
  "hidapi",
  "reqwest",
  "serde",
@@ -858,6 +860,14 @@ dependencies = [
  "dsc-bios",
  "dsc-config",
  "serde_json",
+]
+
+[[package]]
+name = "dsc-input"
+version = "1.0.0-beta.9"
+dependencies = [
+ "thiserror 1.0.69",
+ "windows",
 ]
 
 [[package]]

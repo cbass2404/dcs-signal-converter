@@ -581,8 +581,21 @@ export interface Findings {
 }
 
 /** Whether the converter daemon is running, and whether there is one to start. */
-/** The key held with a page key to swap a screen's page. */
-export type PageModifier = "ctrl" | "shift" | "alt";
+/** A keyboard key held with a page key to swap a screen's page. */
+export type ModifierKey = "ctrl" | "shift" | "alt";
+
+/** A button on any game controller, numbered as DCS numbers it (JOY_BTN12 is 12). */
+export interface ControllerButton {
+  /** The controller's instance GUID: this one controller on this PC. */
+  device: string;
+  /** Its product GUID, to find it again under a new instance. */
+  product: string;
+  name: string;
+  button: number;
+}
+
+/** What is held with a page key to swap a screen's page. */
+export type PageModifier = ModifierKey | ControllerButton;
 export type Theme = "system" | "light" | "dark";
 
 /** The PC's own settings, from settings.json beside the profiles. */
@@ -594,6 +607,8 @@ export interface Settings {
 export interface SettingsView extends Settings {
   /** Why the file could not be read; the defaults are shown instead. */
   problem: string | null;
+  /** The modifier is a controller button and that controller is not connected. */
+  modifier_missing: boolean;
 }
 
 export interface ConverterState {

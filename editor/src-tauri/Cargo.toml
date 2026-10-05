@@ -22,6 +22,8 @@ reqwest = { version = "0.13", default-features = false, features = ["native-tls"
 dsc-bios = { path = "../../crates/dsc-bios" }
 dsc-config = { path = "../../crates/dsc-config" }
 dsc-engine = { path = "../../crates/dsc-engine" }
+# The Settings dialog's "press the button" for a controller page modifier.
+dsc-input = { path = "../../crates/dsc-input" }
 # Which panels are plugged in, for grouping the profile page. Listed only,
 # never opened, so a running converter keeps them.
 wctrl-hid = { path = "../../crates/wctrl-hid" }

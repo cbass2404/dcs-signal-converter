@@ -1440,6 +1440,18 @@
           ]
         }
       ]
+    },
+    {
+      "id": "tlabqg",
+      "name": "Master Caution Light right (red)",
+      "conditions": [
+        {
+          "source": "HUVUDVARNING_R",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     }
   ]
 }

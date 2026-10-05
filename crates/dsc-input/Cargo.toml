@@ -1,0 +1,15 @@
+[package]
+name = "dsc-input"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Game controller buttons for DCS Signal Converter, read as DCS reads them"
+
+[dependencies]
+thiserror.workspace = true
+
+# DirectInput is COM, which windows-sys leaves out. The version Tauri already
+# brings, so there is one copy in the build.
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.61", features = ["Win32_Devices_HumanInterfaceDevice", "Win32_Foundation", "Win32_System_LibraryLoader"] }

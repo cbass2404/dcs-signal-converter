@@ -9,6 +9,7 @@ import type {
   CatalogueStatus,
   CellDraw,
   CellInk,
+  ControllerButton,
   ConverterState,
   Device,
   ExportPage,
@@ -84,6 +85,9 @@ export const converterKill = () => invoke<string>("converter_kill");
 // The PC's own settings. A running converter picks up a saved change itself.
 export const settingsRead = () => invoke<SettingsView>("settings_read");
 export const settingsSave = (settings: Settings) => invoke<void>("settings_save", { settings });
+/** Wait up to 10 s for a button on any controller; null when none was pressed. */
+export const controllerCapture = () => invoke<ControllerButton | null>("controller_capture");
+export const controllerCaptureCancel = () => invoke<void>("controller_capture_cancel");
 
 export const openProfile = (file: string) => invoke<Profile>("open_profile", { file });
 export const defaultProfile = (file: string) => invoke<Profile | null>("default_profile", { file });

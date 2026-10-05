@@ -2,27 +2,29 @@
 //!
 //! Every connected panel that lists page keys in `devices.json` gets a thread
 //! reading its buttons, and each key going down arrives on one channel with
-//! what the keyboard held at that moment. What a key means is decided by the
-//! caller, from the device's own `page_keys` and the modifier setting, so
-//! nothing here knows a slot or an MCDU.
+//! whether the page modifier was held at that moment. What a key means is
+//! decided by the caller, from the device's own `page_keys`, so nothing here
+//! knows a slot or an MCDU.
 //!
 //! Only reads. Windows gives every open handle its own copy of each input
 //! report, so DCS and SimAppPro see every press as before.
 
 use std::sync::mpsc::{self, Receiver};
+use std::sync::Arc;
 
-use dsc_config::settings::Modifier;
 use dsc_config::DeviceInventory;
 
 #[cfg(windows)]
-use crate::{buttons, keyboard};
+use crate::buttons;
+use crate::modifier::Watch;
 
 pub enum KeyEvent {
-    /// A button went down on a device, with the modifiers held at the time.
+    /// A button went down on a device, and whether the page modifier, and
+    /// only it, was held at the time.
     Down {
         device: String,
         number: u16,
-        held: Vec<Modifier>,
+        modifier: bool,
     },
     /// A reader stopped, most likely because the panel was unplugged. Its
     /// keys do nothing until the converter starts again.
@@ -34,6 +36,7 @@ pub enum KeyEvent {
 pub fn start(
     _inventory: &DeviceInventory,
     _connected: &[String],
+    _modifier: &Arc<Watch>,
 ) -> (Receiver<KeyEvent>, Vec<String>) {
     (mpsc::channel().1, Vec::new())
 }
@@ -44,6 +47,7 @@ pub fn start(
 pub fn start(
     inventory: &DeviceInventory,
     connected: &[String],
+    modifier: &Arc<Watch>,
 ) -> (Receiver<KeyEvent>, Vec<String>) {
     let (tx, rx) = mpsc::channel();
     let mut lines = Vec::new();
@@ -89,6 +93,7 @@ pub fn start(
         ));
         let tx = tx.clone();
         let device = spec.key.clone();
+        let modifier = Arc::clone(modifier);
         // Named so a profiler, or tools/bench_daemon.py, can tell the
         // readers' cost from the main loop's.
         let spawned = std::thread::Builder::new()
@@ -123,12 +128,12 @@ pub fn start(
                     let new: Vec<u16> =
                         down.iter().copied().filter(|b| !last.contains(b)).collect();
                     if !new.is_empty() {
-                        let held = keyboard::held_now();
+                        let held = modifier.held();
                         for number in new {
                             let event = KeyEvent::Down {
                                 device: device.clone(),
                                 number,
-                                held: held.clone(),
+                                modifier: held,
                             };
                             if tx.send(event).is_err() {
                                 return;

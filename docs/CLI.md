@@ -376,3 +376,20 @@ collection 0: usage page 0x0001 usage 0x0004, input report 64 bytes, report 1 bu
 ```
 
 `--raw` also prints reports that change without a button moving.
+
+`controllers` lists every game controller DirectInput sees, panels included,
+then prints each button as it goes down and comes up. The numbers are the ones
+DCS's controls show, JOY_BTN12 being 12, and the GUIDs are the ones a
+controller button page modifier is saved with. What is held when it starts is
+listed once rather than as presses. It only reads.
+
+```powershell
+dcs-signal controllers --seconds 30
+```
+
+```text
+ 1  WINCTRL Orion Throttle Base II + F15EX HANDLE L + F15EX HANDLE R  instance DDD6C7A0-CF71-11F0-8003-444553540000  product BD644098-0000-0000-0000-504944564944
+ 1  held from the start: 4 23 30 31
+Press buttons. Ctrl-C to stop.
+   2.410s   1  down  12  WINCTRL Orion Throttle Base II + F15EX HANDLE L + F15EX HANDLE R
+```

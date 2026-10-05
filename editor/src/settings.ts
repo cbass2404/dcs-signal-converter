@@ -1,12 +1,20 @@
 // The Settings dialog, behind the gear on the Profiles page.
 //
 // What belongs to the PC rather than to any profile: the window's theme and
-// the key held to swap pages, both kept in settings.json, and the two
+// the key or controller button held to swap pages, both kept in
+// settings.json, and the two
 // things on this page that are not about one profile, Import and Manage
 // Converter, moved here to keep the header short. Laid out like converter.ts.
 
-import { settingsRead, settingsSave } from "./api";
-import type { PageModifier, Settings, Theme } from "./types";
+import { controllerCapture, controllerCaptureCancel, settingsRead, settingsSave } from "./api";
+import type {
+  ControllerButton,
+  ModifierKey,
+  PageModifier,
+  Settings,
+  SettingsView,
+  Theme,
+} from "./types";
 
 /** What the dialog closed on: nothing, or one of the dialogs it hands on to. */
 export type SettingsExit = null | "import" | "converter";
@@ -66,13 +74,37 @@ export function showSettings(): Promise<SettingsExit> {
   return new Promise((resolve) => {
     void settingsRead().then(
       (view) => open(view, view.problem, resolve),
-      (e) => open({ page_modifier: "ctrl", theme: "system" }, String(e), resolve),
+      (e) =>
+        open(
+          { page_modifier: "ctrl", theme: "system", problem: String(e), modifier_missing: false },
+          String(e),
+          resolve,
+        ),
     );
   });
 }
 
+/** The dropdown's value for a modifier: the key's name, or "button". */
+function modifierChoice(m: PageModifier): ModifierKey | "button" {
+  return typeof m === "string" ? m : "button";
+}
+
+function buttonText(b: ControllerButton): string {
+  return `${b.name} button ${b.button}`;
+}
+
+function missingText(b: ControllerButton): string {
+  return `${b.name} not found. Page swapping is disabled until it's back or another modifier is selected.`;
+}
+
+const KEY_NOTE =
+  "Hold it alone: with a second modifier held too, the press is left to DCS and nothing swaps. DCS still sees every press, so leave the combination you pick unbound in DCS, or one press will swap the page and do whatever it is bound to.";
+
+const BUTTON_NOTE =
+  "Pick the button you set as a modifier in DCS's controls, so DCS keeps it and a page key as a combination of their own, as it does Ctrl and a key. Hold it with no Ctrl, Shift or Alt. Its number is the one DCS gives it. A button DCS binds to something else does that too, on every swap.";
+
 function open(
-  current: Settings,
+  current: SettingsView,
   problem: string | null | undefined,
   resolve: (exit: SettingsExit) => void,
 ): void {
@@ -116,25 +148,84 @@ function open(
   });
   dialog.append(themeField);
 
-  const [modifierField, modifier] = choice<PageModifier>(
+  const [modifierField, modifier] = choice<ModifierKey | "button">(
     "Page keys",
     [
       ["ctrl", "Ctrl + page key"],
       ["shift", "Shift + page key"],
       ["alt", "Alt + page key"],
+      ["button", "Controller button + page key..."],
     ],
-    settings.page_modifier,
+    modifierChoice(settings.page_modifier),
   );
+  const buttonOption = modifier.querySelector<HTMLOptionElement>('option[value="button"]')!;
+  const missing = note("");
+  missing.classList.add("bad");
+  const modifierNote = note("");
+  const another = document.createElement("button");
+  another.textContent = "Press another button...";
+  const anotherRow = document.createElement("div");
+  anotherRow.append(another);
+
+  // What the dropdown, its notes and Press another say for the setting now.
+  const showModifier = (): void => {
+    const m = settings.page_modifier;
+    buttonOption.textContent =
+      typeof m === "string" ? "Controller button + page key..." : `${buttonText(m)} + page key`;
+    modifier.value = modifierChoice(m);
+    modifierNote.textContent = typeof m === "string" ? KEY_NOTE : BUTTON_NOTE;
+    anotherRow.hidden = typeof m === "string";
+  };
+  showModifier();
+  const pm = settings.page_modifier;
+  missing.hidden = !(current.modifier_missing && typeof pm !== "string");
+  if (!missing.hidden && typeof pm !== "string") missing.textContent = missingText(pm);
+
+  let waiting = false;
+  // Wait for a button on any controller. Nothing pressed in time leaves the
+  // modifier as it was.
+  const capture = async (): Promise<void> => {
+    if (waiting) return;
+    waiting = true;
+    modifier.disabled = true;
+    another.disabled = true;
+    modifierNote.textContent =
+      "Press the button to hold with page keys, on any controller. Waiting 10 seconds...";
+    let pressed: ControllerButton | null = null;
+    let failed: string | null = null;
+    try {
+      pressed = await controllerCapture();
+    } catch (e) {
+      failed = e instanceof Error ? e.message : String(e);
+    }
+    waiting = false;
+    if (done) return;
+    modifier.disabled = false;
+    another.disabled = false;
+    if (pressed) {
+      settings.page_modifier = pressed;
+      missing.hidden = true;
+      save();
+    }
+    showModifier();
+    if (!pressed) {
+      modifierNote.textContent =
+        failed ?? "No button was pressed, so the page modifier is unchanged.";
+    }
+  };
+
   modifier.addEventListener("change", () => {
-    settings.page_modifier = modifier.value as PageModifier;
+    if (modifier.value === "button") {
+      void capture();
+      return;
+    }
+    settings.page_modifier = modifier.value as ModifierKey;
+    missing.hidden = true;
+    showModifier();
     save();
   });
-  dialog.append(modifierField);
-  dialog.append(
-    note(
-      "Hold it alone: with a second modifier held too, the press is left to DCS and nothing swaps. DCS still sees every press, so leave the combination you pick unbound in DCS, or one press will swap the page and do whatever it is bound to.",
-    ),
-  );
+  another.addEventListener("click", () => void capture());
+  dialog.append(modifierField, missing, modifierNote, anotherRow);
 
   const importButton = document.createElement("button");
   importButton.textContent = "Import profile...";
@@ -155,6 +246,7 @@ function open(
   const finish = (exit: SettingsExit): void => {
     if (done) return;
     done = true;
+    if (waiting) void controllerCaptureCancel();
     dialog.close();
     dialog.remove();
     resolve(exit);

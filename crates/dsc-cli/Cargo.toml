@@ -15,6 +15,7 @@ wctrl-hid = { path = "../wctrl-hid" }
 dsc-bios = { path = "../dsc-bios" }
 dsc-config = { path = "../dsc-config" }
 dsc-engine = { path = "../dsc-engine" }
+dsc-input = { path = "../dsc-input" }
 anyhow.workspace = true
 clap = { version = "4", features = ["derive"] }
 ctrlc = "3"

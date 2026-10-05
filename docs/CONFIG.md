@@ -2040,7 +2040,8 @@ number Windows gives it, with the raw report and which of Ctrl, Shift and Alt
 the keyboard held at that moment. It only reads.
 
 - **Hold the modifier and press a page key.** One modifier for every panel.
-  The modifier is Ctrl, Shift or Alt, and Ctrl unless the user picks another. Left and right are the same
+  The modifier is Ctrl, Shift or Alt, and Ctrl unless the user picks another,
+  or a button on any game controller (below). Left and right are the same
   key: the capture read left and right Ctrl, Shift and Alt each as one.
   Needing the keyboard and the panel together makes it hard to do by accident.
 - **The modifier on its own.** A press counts only when the chosen modifier
@@ -2049,6 +2050,34 @@ the keyboard held at that moment. It only reads.
   left to whatever the user bound it to, and nothing swaps. It follows that
   on keyboards with AltGr, where Windows reports right Alt as Ctrl and Alt
   together, right Alt does not count as Alt. DCS sees it the same way.
+- **A controller button can be the modifier.** Added in beta.009, so the
+  page modifier can match one set up in DCS: DCS lets any button on any
+  device be a modifier, and then holds that button and a key as a
+  combination of their own, as it does Ctrl and a key. It is asked at the
+  moment a page key goes down, as Ctrl is, so nothing reads the controller
+  in between:
+  - **Read through DirectInput, as DCS reads it**, so the number is the one
+    DCS's controls show: JOY_BTN12 is button 12. Shared and in the
+    background, so DCS still sees the button whichever window has focus.
+  - **Known by the instance GUID Windows gives the controller**, the one DCS
+    names its binding files after, so two identical sticks are told apart.
+    Windows can give a controller a new instance on another USB port, so when
+    the instance is gone the one attached controller with the same product
+    GUID stands in. With two of that product attached, neither is guessed at.
+  - **It counts only with none of Ctrl, Shift and Alt held**, for the same
+    reason a key counts only alone.
+  - **When the controller is missing**, at start or unplugged in flight, the
+    log says `<name> not found. Page swapping is disabled until it's back or
+    another modifier is selected.` and the Settings dialog says the same. The
+    converter looks for it every two seconds on a thread of its own, since
+    listing controllers can take longer than a pass of the main loop should,
+    and says when it is back. An open controller is asked as often whether it
+    is still there, one read of a few microseconds.
+  - **Chosen by pressing it.** Settings offers Controller button + page key,
+    then waits ten seconds for a button on any controller. A switch already
+    resting on a position when it starts is not taken for a press.
+    `dcs-signal controllers` lists every controller with its GUIDs and prints
+    each button as it moves, for checking a number by hand.
 - **The chosen combination should stay unbound in DCS.** DCS still sees the
   press, since reading a panel takes nothing from anyone else reading it.
   Ctrl and a page key is a binding only if the user made one, and if
@@ -2066,9 +2095,20 @@ the keyboard held at that moment. It only reads.
   ```jsonc
   { "page_modifier": "ctrl", "theme": "system" } // ctrl | shift | alt; system | light | dark
   ```
+
+  A controller button is written in place of the key's name:
+
+  ```jsonc
+  "page_modifier": {
+    "device": "DDD6C7A0-CF71-11F0-8003-444553540000", // instance GUID
+    "product": "BD644098-0000-0000-0000-504944564944", // product GUID
+    "name": "VKB Gladiator",
+    "button": 12, // as DCS numbers it
+  }
+  ```
 - **Every input belongs to the device it comes from**, as every lamp does.
   The keyboard is one source and owns Ctrl, Shift and Alt, and the modifier
-  setting names one of those. The MCDU's line select keys are the MCDU's, and
+  setting names one of those, or a controller's button. The MCDU's line select keys are the MCDU's, and
   a panel's buttons are listed in its own entry in `devices.json`, by name and
   by the number Windows gives them:
 

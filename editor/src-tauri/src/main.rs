@@ -610,6 +610,8 @@ fn main() {
             converter::converter_kill,
             settings::settings_read,
             settings::settings_save,
+            settings::controller_capture,
+            settings::controller_capture_cancel,
             open_profile,
             default_profile,
             create_profile,

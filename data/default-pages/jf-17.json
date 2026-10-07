@@ -1,0 +1,25 @@
+{
+  "module": "JF-17",
+  "pages": [
+    {
+      "id": "bjlogb",
+      "name": "CDU Flight",
+      "display": "MCDU",
+      "fields": []
+    }
+  ],
+  "signals": [
+    {
+      "id": "d6nhi9",
+      "name": "Warning Light ----- (red)",
+      "conditions": [
+        {
+          "source": "WARN_L_NULL",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
+    }
+  ]
+}

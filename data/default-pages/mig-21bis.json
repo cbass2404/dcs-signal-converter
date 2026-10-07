@@ -1,0 +1,25 @@
+{
+  "module": "MiG-21Bis",
+  "pages": [
+    {
+      "id": "l1cueu",
+      "name": "CDU Flight",
+      "display": "MCDU",
+      "fields": []
+    }
+  ],
+  "signals": [
+    {
+      "id": "kye0ul",
+      "name": "Master Caution/SORC Light (red)",
+      "conditions": [
+        {
+          "source": "MASTER_CAUTION",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
+    }
+  ]
+}

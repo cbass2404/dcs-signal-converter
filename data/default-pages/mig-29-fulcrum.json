@@ -1,0 +1,25 @@
+{
+  "module": "MiG-29 Fulcrum",
+  "pages": [
+    {
+      "id": "0u63qz",
+      "name": "CDU Flight",
+      "display": "MCDU",
+      "fields": []
+    }
+  ],
+  "signals": [
+    {
+      "id": "k82vsr",
+      "name": "Master Caution Light",
+      "conditions": [
+        {
+          "source": "MASTER_CAUTION_LIGHT",
+          "on_when": {
+            "gte": 32768
+          }
+        }
+      ]
+    }
+  ]
+}

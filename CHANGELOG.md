@@ -53,3 +53,16 @@ unless this says what moved.
   caution, and FAIL on the MCDU and each PFP. A/A and A/G on the throttle
   follow the ASP-5 sight's operating and aiming modes. Backlights follow the
   left UV lamp knob.
+- **New profile: JF-17.** The takeoff panel shows each gear leg, the gear
+  lever light, and JETT with the emergency jettison cover open. The red
+  warning light is master caution, and FAIL on the MCDU and each PFP.
+  Backlights follow the console light knob.
+- **New profile: MiG-21bis.** The takeoff panel shows each gear leg, lit up
+  and blinking down, the check gear light, the flaps light, FULL at landing
+  and HALF at take-off, and JETT with any pylon or drop tank jettison cover
+  open. Master caution is master caution, and FAIL on the MCDU and each PFP.
+  Backlights follow the instrument lighting knob.
+- **New profile: MiG-29 Fulcrum.** The takeoff panel shows each gear leg, the
+  gear warning light, FULL with both flaps at landing and HALF with both at
+  take-off, and JETT with the emergency jettison cover open. Master caution
+  is master caution, and FAIL on the MCDU and each PFP.

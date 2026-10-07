@@ -1,0 +1,32 @@
+{
+  "module": "F-15E",
+  "pages": [],
+  "signals": [
+    {
+      "id": "xr44ai",
+      "name": "Master Caution",
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "F_MASTER_CAUTION_L",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "R_MC_MASTER_CAUTION_L",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

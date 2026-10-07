@@ -1,0 +1,32 @@
+{
+  "module": "M-2000C",
+  "pages": [],
+  "signals": [
+    {
+      "id": "gt3fvt",
+      "name": "Master Caution",
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "MC_ROUGE",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "MC_AMBRE",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

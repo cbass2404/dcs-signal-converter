@@ -1,0 +1,32 @@
+{
+  "module": "AV8BNA",
+  "pages": [],
+  "signals": [
+    {
+      "id": "83a4gs",
+      "name": "Master Caution/Warning",
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "MC_LIGHT",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "MW_LIGHT",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

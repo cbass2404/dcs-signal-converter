@@ -1,0 +1,18 @@
+{
+  "module": "MiG-19P",
+  "pages": [],
+  "signals": [
+    {
+      "id": "t08ipn",
+      "name": "ENGINE FIRE",
+      "conditions": [
+        {
+          "source": "ENGINE_FIRE",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
+    }
+  ]
+}

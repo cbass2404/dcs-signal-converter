@@ -228,7 +228,7 @@ numbers move and the words do not.
 
       Colour as a bindable signal is a separate, much larger feature and is not
       part of this. See "What VIRPIL will need decided" in STATUS.md for why
-      each of those is in that order.
+      each of those is in that order. Tracked in #124.
 
 - [ ] **Fly `follows` on two MCDUs.** Built 2026-09-21 and tested, not yet on
       a panel. Point the Co-Pilot unit at the Captain in the Hornet and check
@@ -251,6 +251,10 @@ numbers move and the words do not.
       [STATUS.md](STATUS.md), "Open threads"
 - [ ] **A perceptual response curve for dimmers.** Linear PWM feels wrong at
       the bottom. [STATUS.md](STATUS.md), "Open threads"
+- [ ] **Arduino boards as user-defined devices.** A generic sketch flashed
+      once, the board and its lamps added in the editor, bound per aircraft
+      like any panel. Needs our own protocol (HID, serial or both), a
+      user-owned device file and an Add a device form. Tracked in #123.
 - [x] ~~**The 175 ms pass at mission start.**~~ Gone 2026-09-30: it was
       the screens being written from the main loop. Each panel now has its
       own writer thread, and the longest pass in the minute the Mosquito

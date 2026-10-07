@@ -213,6 +213,7 @@ other.
 | beta.007 | before release | not kept | not kept | not kept | not kept | 42.2 MB | No notable change in CPU |
 | beta.008 | 2026-10-04 | 0.47% | 1.28% | 3.62% | 44.6 MB | 44.8 MB | No notable change; memory up about 11 MB since beta.005, mostly beta.006, still small |
 | beta.009 | 2026-10-05 | 0.45% | 1.41% | 4.38% | 47.5 MB | not measured | Ctrl as modifier. Stress up 0.8%: the backlights follow a knob that stress moves every frame. A controller button as modifier adds about 2.5% throughout |
+| beta.010 | 2026-10-07 | 0.50% | 1.50% | 4.52% | 50.8 MB | not measured | No notable change. Memory up 3.3 MB, but not from the eight new profiles' size: on a dry run one profile commits 48.6 MB, beta.009's 19 commit 46.0 MB and these 27 commit 49.0 MB, so it moves with startup heap layout, not with data |
 
 - **beta.005's two memory figures differ** because the first is a
   development build before release, and the second is the release build.

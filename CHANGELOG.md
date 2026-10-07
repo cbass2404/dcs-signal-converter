@@ -65,4 +65,5 @@ unless this says what moved.
 - **New profile: MiG-29 Fulcrum.** The takeoff panel shows each gear leg, the
   gear warning light, FULL with both flaps at landing and HALF with both at
   take-off, and JETT with the emergency jettison cover open. Master caution
-  is master caution, and FAIL on the MCDU and each PFP.
+  is master caution, and FAIL on the MCDU and each PFP. Backlights follow the
+  console lights knob.

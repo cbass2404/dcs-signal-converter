@@ -1,6 +1,6 @@
 # Project status
 
-Written 2026-09-16, last updated 2026-09-30. Enough context to resume cold.
+Written 2026-09-16, last updated 2026-10-07. Enough context to resume cold.
 
 ## Resume here
 
@@ -11,7 +11,7 @@ checklist, for when that is all that is wanted.
 **Verify nothing has rotted** (30 seconds, no hardware, no DCS):
 
 ```powershell
-cargo test --workspace            # expect 516 passing
+cargo test --workspace            # expect 610 passing
 cargo run --bin dcs-signal -- devices
 cargo run --bin dcs-signal -- catalogue --aircraft F-4E-45MC --find hook
 ```

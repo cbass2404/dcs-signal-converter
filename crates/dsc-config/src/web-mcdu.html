@@ -25,7 +25,9 @@
         position: fixed;
         inset: auto 0 12px 0;
         text-align: center;
-        font: 14px system-ui, sans-serif;
+        font:
+          14px system-ui,
+          sans-serif;
         color: #5c6670;
       }
     </style>
@@ -57,13 +59,19 @@
       const note = document.getElementById("note");
       const ctx = canvas.getContext("2d");
       const device = new URLSearchParams(location.search).get("device");
+      // Opened from disk, so it asks the converter for the screen where the
+      // converter answers. The same address as WEB_ADDRESS in dsc-config,
+      // which a test holds it to.
+      const SERVER = "http://127.0.0.1:8310";
       const fonts = new Map();
 
       function fontFor(file) {
         if (!fonts.has(file)) {
           fonts.set(
             file,
-            fetch(`/font?file=${encodeURIComponent(file)}`).then((r) => (r.ok ? r.json() : null)),
+            fetch(`${SERVER}/font?file=${encodeURIComponent(file)}`).then((r) =>
+              r.ok ? r.json() : null,
+            ),
           );
         }
         return fonts.get(file);
@@ -123,7 +131,7 @@
           try {
             const query = new URLSearchParams({ after: String(version) });
             if (device) query.set("device", device);
-            const r = await fetch(`/screen?${query}`);
+            const r = await fetch(`${SERVER}/screen?${query}`);
             const screen = await r.json();
             if (!screen.device) {
               note.textContent = "Waiting for a profile to put a page on this screen.";

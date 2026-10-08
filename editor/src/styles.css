@@ -527,14 +527,20 @@ details.device[open] > summary {
   box-shadow: 0 1px 0 var(--line);
 }
 
-/* A web device's address, between its title and its lamps. */
+/* A web device's file and address, between its title and its lamps. */
 .web-address {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.web-address > div {
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
   gap: 10px;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--line);
 }
 
 .web-address code {

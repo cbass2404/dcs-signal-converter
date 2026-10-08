@@ -3106,6 +3106,21 @@ fn run(
             ));
         }
     }
+    // The web view's page as a file too, for OpenKneeboard, which loads it
+    // before any mission starts this converter. Kept current with the build.
+    if inventory
+        .devices
+        .iter()
+        .any(|d| d.protocol == dsc_config::WEB_PROTOCOL)
+    {
+        let page = settings_path.with_file_name(dsc_config::web::PAGE_FILE);
+        if let Err(e) = dsc_config::web::write_page(&page) {
+            warn!(
+                "could not write the web view's page to {}: {e}",
+                page.display()
+            );
+        }
+    }
     let mut connected = Vec::new();
     let mut handles: HashMap<String, Box<dyn Panel>> = HashMap::new();
     for spec in &inventory.devices {

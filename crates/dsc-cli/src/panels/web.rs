@@ -1,8 +1,9 @@
 //! The web view: a text grid drawn in a web page rather than on a panel.
 //!
-//! For anyone without a CDU of their own. The page is served on this machine
-//! only, at [`WEB_ADDRESS`], for OpenKneeboard's Web Dashboard tab, a browser, or a
-//! spare monitor. It draws the grid in the same font the panel would be sent,
+//! For anyone without a CDU of their own. The page is a file
+//! ([`dsc_config::web`]), opened in OpenKneeboard or a browser on this PC, and
+//! this answers it with the screen and its font, at [`WEB_ADDRESS`] on this
+//! machine only. It draws the grid in the same font the panel would be sent,
 //! so a page looks the way it does on the glass.
 //!
 //! A web device is always there, so it is always connected, and a profile
@@ -30,9 +31,6 @@ use super::{Found, Panel, Protocol, Sent};
 /// How long a poll waits for a newer screen before answering with the same
 /// one, which keeps a page that lost its server from waiting forever.
 const POLL_FOR: Duration = Duration::from_secs(10);
-
-/// The page itself, built into the binary so there is nothing to install.
-const PAGE: &str = include_str!("web.html");
 
 pub struct Web {
     shared: Arc<Shared>,
@@ -288,7 +286,6 @@ fn answer(request: Request, shared: &Shared) {
             .map(|(_, v)| decode(v))
     };
     let reply = match path {
-        "/" => Some(("text/html; charset=utf-8", PAGE.to_string())),
         "/screen" => {
             let after = arg("after").and_then(|v| v.parse().ok()).unwrap_or(0);
             Some(("application/json", screen(shared, arg("device"), after)))
@@ -301,10 +298,14 @@ fn answer(request: Request, shared: &Shared) {
         _ => None,
     };
     let _ = match reply {
+        // Any origin may read it: the page, opened from disk, has none of its
+        // own. It is served on this machine only and says nothing but what is
+        // on the screen.
         Some((kind, body)) => request.respond(
             Response::from_string(body)
                 .with_header(header("Content-Type", kind))
-                .with_header(header("Cache-Control", "no-store")),
+                .with_header(header("Cache-Control", "no-store"))
+                .with_header(header("Access-Control-Allow-Origin", "*")),
         ),
         None => request.respond(Response::from_string("not found").with_status_code(404)),
     };

@@ -72,6 +72,12 @@ pub struct Paths {
 }
 
 impl Paths {
+    /// Where the web view's page is kept as a file, for OpenKneeboard: beside
+    /// the settings, in the folder the user's own files are written to.
+    pub fn web_page(&self) -> PathBuf {
+        self.settings.with_file_name(crate::web::PAGE_FILE)
+    }
+
     /// Found in this order:
     ///
     /// 1. `DSC_DATA`, one folder for everything, so a test or a second copy can

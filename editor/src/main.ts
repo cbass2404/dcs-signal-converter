@@ -2337,7 +2337,7 @@ function deviceSection(
   applyDriveState();
 
   section.append(summary);
-  if (device.web_url) section.append(webAddress(device.web_url));
+  if (device.web_file || device.web_file_problem) section.append(webPage(device));
   section.append(table);
   // Every screen takes its fields from pages rather than from the profile.
   for (const display of device.displays) {
@@ -2358,33 +2358,49 @@ function deviceSection(
   return section;
 }
 
-/**
- * Where a web device's page is served, with a button to copy it, since the
- * one thing anyone does with it is paste it into OpenKneeboard.
- */
-function webAddress(url: string): HTMLElement {
+/** A button that puts `text` on the clipboard and says so. */
+function copyButton(text: string, what: string): HTMLElement {
   const copy = el("button", { class: "small", type: "button" }, "Copy");
   copy.addEventListener("click", () => {
-    void navigator.clipboard.writeText(url).then(
+    void navigator.clipboard.writeText(text).then(
       () => {
         copy.textContent = "Copied";
         setTimeout(() => (copy.textContent = "Copy"), 1500);
       },
-      (e: unknown) => showError("Copying the address", e),
+      (e: unknown) => showError(`Copying the ${what}`, e),
     );
   });
-  return el(
-    "div",
-    { class: "web-address" },
-    el("span", {}, "Page at "),
-    el("code", {}, url),
-    copy,
-    el(
-      "span",
-      { class: "meta" },
-      "Add it as a Web Dashboard tab in OpenKneeboard, or open it in a browser.",
-    ),
-  );
+  return copy;
+}
+
+/**
+ * Where a web device's page is, with a button to copy it, for OpenKneeboard
+ * or a browser on this PC. A file rather than an address because
+ * OpenKneeboard loads its tabs before a mission has started the converter,
+ * and a file loads whether or not the converter is there yet.
+ */
+function webPage(device: Device): HTMLElement {
+  const box = el("div", { class: "web-address" });
+  if (device.web_file) {
+    box.append(
+      el(
+        "div",
+        {},
+        el("span", {}, "Add "),
+        el("code", {}, device.web_file),
+        copyButton(device.web_file, "file"),
+        el(
+          "span",
+          { class: "meta" },
+          "as a Single file tab in OpenKneeboard, or open it in a browser.",
+        ),
+      ),
+    );
+  }
+  if (device.web_file_problem) {
+    box.append(el("div", { class: "meta" }, device.web_file_problem));
+  }
+  return box;
 }
 
 /**

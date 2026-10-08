@@ -18,10 +18,12 @@ unless this says what moved.
 - **Web MCDU: the CDU screen in OpenKneeboard or a browser**, for anyone
   without a CDU of their own. Turn on **Web MCDU** in a profile, fill its six
   slots with CDU pages and pick the start page, as on any MCDU. Its section
-  shows the address, `http://127.0.0.1:8310`, with a **Copy** button: add it
-  as a Web Dashboard tab in OpenKneeboard, or open it in a browser. It draws
-  each page in the aircraft's own CDU font and the page's colours, on a dark
-  screen. It is served on this PC only, and only once a profile turns it on.
+  shows a file, with a **Copy** button, to add to OpenKneeboard as a **Single
+  file** tab (OpenKneeboard 1.10 or later) or open in a browser on this PC. It
+  says it is waiting until a mission starts, then shows the screen, drawing
+  each page in the aircraft's own CDU font and the page's colours on a dark
+  screen. The converter answers it on this PC only, and only once a profile
+  turns the Web MCDU on.
 - **The Web MCDU's screen backlight** can follow a cockpit lighting knob,
   like the MCDU's. Left unassigned, it stays at full brightness.
 - **Swap the Web MCDU's pages with the page modifier and 1 to 6** on the

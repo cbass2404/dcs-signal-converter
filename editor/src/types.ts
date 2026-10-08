@@ -808,8 +808,10 @@ export interface Device {
    * has one slot per key, or one that never swaps when there are none.
    */
   page_keys: string[];
-  /** Where a web device's page is served. Absent for a panel. */
-  web_url?: string;
+  /** A web device's page, as a file for OpenKneeboard. Absent for a panel. */
+  web_file?: string;
+  /** Why a web device's page could not be written, when it could not. */
+  web_file_problem?: string;
 }
 
 /** A profile picked for import, before anything is written. */

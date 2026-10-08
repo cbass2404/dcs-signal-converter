@@ -1,0 +1,18 @@
+{
+  "module": "Bf-109K-4",
+  "pages": [],
+  "signals": [
+    {
+      "id": "26jhfy",
+      "name": "Master Caution",
+      "conditions": [
+        {
+          "source": "BOMB_1_L",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
+    }
+  ]
+}

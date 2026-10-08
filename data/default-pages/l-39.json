@@ -1,0 +1,44 @@
+{
+  "module": "L-39",
+  "pages": [],
+  "signals": [
+    {
+      "id": "ob735n",
+      "name": "Master Caution",
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "FRONT_MASTER_CAUTION_LAMP",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "CB_SEAT_HELMET",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "BACK_MASTER_CAUTION_LAMP",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "CB_SEAT_INSTRUCTOR",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

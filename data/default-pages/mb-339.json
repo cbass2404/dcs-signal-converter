@@ -1,0 +1,18 @@
+{
+  "module": "MB-339",
+  "pages": [],
+  "signals": [
+    {
+      "id": "j1gw8f",
+      "name": "Master Caution",
+      "conditions": [
+        {
+          "source": "MASTER_CAUTION_L",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
+    }
+  ]
+}

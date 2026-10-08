@@ -1,0 +1,18 @@
+{
+  "module": "FW-190A8",
+  "pages": [],
+  "signals": [
+    {
+      "id": "dggcnv",
+      "name": "Master Caution",
+      "conditions": [
+        {
+          "source": "FUEL_LOW_FWD",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
+    }
+  ]
+}

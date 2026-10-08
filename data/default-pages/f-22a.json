@@ -1,0 +1,18 @@
+{
+  "module": "F-22A",
+  "pages": [],
+  "signals": [
+    {
+      "id": "2vnewo",
+      "name": "Master Caution",
+      "conditions": [
+        {
+          "source": "BATTERY_L",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
+    }
+  ]
+}

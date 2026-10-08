@@ -1,0 +1,18 @@
+{
+  "module": "F-5E-3",
+  "pages": [],
+  "signals": [
+    {
+      "id": "3z8lkh",
+      "name": "Master Caution",
+      "conditions": [
+        {
+          "source": "MC_LIGHT",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
+    }
+  ]
+}

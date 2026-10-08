@@ -1,0 +1,18 @@
+{
+  "module": "SpitfireLFMkIX",
+  "pages": [],
+  "signals": [
+    {
+      "id": "c2sqf7",
+      "name": "Master Caution",
+      "conditions": [
+        {
+          "source": "FUEL_PRESS_LIGHT",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
+    }
+  ]
+}

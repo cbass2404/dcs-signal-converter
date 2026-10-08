@@ -1,0 +1,18 @@
+{
+  "module": "I-16",
+  "pages": [],
+  "signals": [
+    {
+      "id": "qhphyy",
+      "name": "Master Caution",
+      "conditions": [
+        {
+          "source": "PANEL_GLOW",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -52,3 +52,16 @@ unless this says what moved.
   AJS37, CH-47F, F-14B Upgrade, F-16, F/A-18, JF-17, Mi-24P, Mi-8, MiG-15bis,
   MiG-21bis, MiG-29, Mosquito and UH-1H. The other profiles leave its slots
   empty, as they leave the MCDU's.
+- **Placeholder profiles for the aircraft DCS-BIOS supports that had none
+  yet:** A-29B, AH-6J, Alphajet, Bf-109K-4, C-101, Christen Eagle II,
+  Edge540, F-22A, F-4E-45MC, F-5E-3, F-86F Sabre, F4U-1D, FW-190A8,
+  FW-190D9, I-16, Ka-50, L-39, MB-339, P-47D, P-51D, SA342 and Spitfire LF
+  Mk IX. They are not finished. Each has a Master Caution shared condition
+  that lights the PTO 2 Master Caution and the MCDU and PFP FAIL lamps; in
+  some it reads a stand-in lamp until the profile is done. The MFD C
+  backlight is held on, every other panel backlight follows it, and the
+  Kneeboard CDU's screen is held at full. Every other lamp is left for you.
+  They ship now so the finished versions arrive later as ordinary updates:
+  anything you change in one stays yours. If you already have a profile of
+  your own for one of these aircraft, it is kept and the placeholder does
+  not come in for that aircraft.

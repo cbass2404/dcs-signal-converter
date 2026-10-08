@@ -1052,6 +1052,14 @@
       "always": true,
       "off": 255,
       "note": "Held at full, because at 0 the screen shows nothing. It lights only while this profile puts fields on the screen, whatever it is bound to, so a screen with nothing on it stays black."
+    },
+    {
+      "device": "MCDU_Web",
+      "led": "Screen_Backlight",
+      "conditions": [],
+      "always": true,
+      "off": 255,
+      "note": "Held at full, because at 0 the screen shows nothing. It lights only while this profile puts fields on the screen, whatever it is bound to, so a screen with nothing on it stays black."
     }
   ],
   "follows": {

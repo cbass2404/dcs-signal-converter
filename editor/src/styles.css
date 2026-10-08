@@ -527,6 +527,23 @@ details.device[open] > summary {
   box-shadow: 0 1px 0 var(--line);
 }
 
+/* A web device's address, between its title and its lamps. */
+.web-address {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.web-address code {
+  font:
+    12.5px/1.5 "Cascadia Mono",
+    Consolas,
+    monospace;
+}
+
 /* Fixed layout with explicit widths, so the columns line up from one device
    section to the next. Each section is its own table, and automatic widths made
    every one of them size to its own longest lamp name. */

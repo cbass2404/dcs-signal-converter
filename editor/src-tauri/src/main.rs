@@ -75,7 +75,8 @@ fn devices() -> Reply<Vec<DeviceView>> {
 /// `HidApi` each time, since one caches the list it was built with.
 ///
 /// Only devices on a protocol this build can list are ever reported; any other
-/// reads as not found, which is true as far as the editor can tell.
+/// reads as not found, which is true as far as the editor can tell. A web
+/// device is not plugged in at all, so it is always there.
 #[tauri::command]
 fn connected_devices() -> Reply<Vec<String>> {
     let paths = Paths::resolve();
@@ -88,7 +89,10 @@ fn connected_devices() -> Reply<Vec<String>> {
     Ok(inv
         .devices
         .iter()
-        .filter(|d| d.protocol == dsc_config::DEFAULT_PROTOCOL && pids.contains(&d.usb_pid))
+        .filter(|d| {
+            d.protocol == dsc_config::WEB_PROTOCOL
+                || (d.protocol == dsc_config::DEFAULT_PROTOCOL && pids.contains(&d.usb_pid))
+        })
         .map(|d| d.key.clone())
         .collect())
 }

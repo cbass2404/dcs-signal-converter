@@ -77,6 +77,10 @@ pub struct DeviceView {
     /// What each page key is called, in slot order: one slot per key. Empty
     /// for a device with none, which has one slot that never swaps.
     pub page_keys: Vec<String>,
+    /// Where a web device's page is served, for the window to offer to copy
+    /// into OpenKneeboard. Absent for a panel.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub web_url: Option<String>,
 }
 
 /// A segment display, described only as far as the window needs it.
@@ -288,6 +292,8 @@ impl DeviceView {
                     })
                 })
                 .collect(),
+            web_url: (spec.protocol == dsc_config::WEB_PROTOCOL)
+                .then(|| format!("http://{}", dsc_config::WEB_ADDRESS)),
         }
     }
 

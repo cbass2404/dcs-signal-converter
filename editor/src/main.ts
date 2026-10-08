@@ -2336,7 +2336,9 @@ function deviceSection(
   });
   applyDriveState();
 
-  section.append(summary, table);
+  section.append(summary);
+  if (device.web_url) section.append(webAddress(device.web_url));
+  section.append(table);
   // Every screen takes its fields from pages rather than from the profile.
   for (const display of device.displays) {
     section.append(
@@ -2354,6 +2356,35 @@ function deviceSection(
     );
   }
   return section;
+}
+
+/**
+ * Where a web device's page is served, with a button to copy it, since the
+ * one thing anyone does with it is paste it into OpenKneeboard.
+ */
+function webAddress(url: string): HTMLElement {
+  const copy = el("button", { class: "small", type: "button" }, "Copy");
+  copy.addEventListener("click", () => {
+    void navigator.clipboard.writeText(url).then(
+      () => {
+        copy.textContent = "Copied";
+        setTimeout(() => (copy.textContent = "Copy"), 1500);
+      },
+      (e: unknown) => showError("Copying the address", e),
+    );
+  });
+  return el(
+    "div",
+    { class: "web-address" },
+    el("span", {}, "Page at "),
+    el("code", {}, url),
+    copy,
+    el(
+      "span",
+      { class: "meta" },
+      "Add it as a Web Dashboard tab in OpenKneeboard, or open it in a browser.",
+    ),
+  );
 }
 
 /**

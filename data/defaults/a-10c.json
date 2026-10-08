@@ -991,7 +991,18 @@
       "always": true,
       "off": 255,
       "note": "Held at full, because at 0 the screen shows nothing. It lights only while this profile puts fields on the screen, whatever it is bound to, so a screen with nothing on it stays black."
+    },
+    {
+      "device": "MCDU_Web",
+      "led": "Screen_Backlight",
+      "conditions": [],
+      "always": true,
+      "off": 255,
+      "note": "Held at full, because at 0 the screen shows nothing. It lights only while this profile puts fields on the screen, whatever it is bound to, so a screen with nothing on it stays black."
     }
+  ],
+  "disabled_devices": [
+    "MCDU_Web"
   ],
   "follows": {
     "CarrierAce_MFD_L": "CarrierAce_MFD_C",
@@ -1045,6 +1056,23 @@
           "key": null
         },
         null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "MCDU_Web": {
+      "start": 1,
+      "slots": [
+        {
+          "page": "i63dn3",
+          "key": null
+        },
+        {
+          "page": null,
+          "key": null
+        },
         null,
         null,
         null,

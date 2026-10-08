@@ -255,6 +255,17 @@ numbers move and the words do not.
       once, the board and its lamps added in the editor, bound per aircraft
       like any panel. Needs our own protocol (HID, serial or both), a
       user-owned device file and an Add a device form. Tracked in #123.
+
+      The same protocol can serve small commercial makers. Total Controls
+      (Apache MPDs and other panels) is being asked (2026-10-08) about putting
+      it in their firmware; their MPDs have no host brightness control today,
+      only key combos. So the spec comes first and is written as its own
+      document beside PROTOCOL-WINCTRL.md, with a capability report (the
+      device says what lamps and channels it has) and a version byte from
+      the start, because outside firmware will ship against it. A
+      self-describing device then needs no device file; our sketch can
+      report itself the same way and shrink the form. Backend is one module
+      in `crates/dsc-cli/src/panels/`, the seam VIRPIL uses.
 - [x] ~~**The 175 ms pass at mission start.**~~ Gone 2026-09-30: it was
       the screens being written from the main loop. Each panel now has its
       own writer thread, and the longest pass in the minute the Mosquito

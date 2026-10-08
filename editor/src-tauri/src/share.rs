@@ -338,7 +338,15 @@ pub async fn import_pick(
     let (flags, _) = cache.flags(&paths, &profile, &lib);
     let devices = inventory(&paths)?;
     let mut parts = merge::parts(&profile, &devices);
-    parts.slots = slot_parts(&profile, &devices, &lib);
+    // Slots are read from the file as it is, so each keeps the id its page
+    // has in `pages`, and named as the page would come in.
+    parts.slots = merge::slot_parts(&bundle.profile, &devices, |id| {
+        pages
+            .iter()
+            .find(|p| p.id == id)
+            .map(|p| p.name_after.clone())
+            .or_else(|| lib.page_on(&profile.module, id).map(|p| p.name.clone()))
+    });
     Ok(Some(Preview {
         parts,
         pages,

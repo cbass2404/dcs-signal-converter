@@ -36,6 +36,10 @@ unless this says what moved.
 - **A controller button page modifier is found the moment it is plugged
   back in**, instead of within a few seconds, and an unplugged one is in the
   log as it goes.
+- **Merging page slots from a file says what becomes of each page.** Each
+  slot says whether its page is already here or comes in new, and a page
+  shown in several slots is said to come in once. It always did; the list
+  only made it look like a copy per slot.
 
 ### Profiles
 

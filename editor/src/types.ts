@@ -870,6 +870,8 @@ export interface SlotPart {
   slot: number;
   /** The page's name, or its id where it cannot be found. Empty when blank. */
   page: string;
+  /** The page's id as the source has it; null when blank. */
+  page_id: string | null;
   /** Shows a blank screen rather than a page. */
   blank: boolean;
   start: boolean;

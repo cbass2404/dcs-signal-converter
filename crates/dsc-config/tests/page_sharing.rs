@@ -244,4 +244,10 @@ fn a_merge_takes_slot_n_for_slot_n() {
         .map(|s| (s.slot, s.page.as_str(), s.start))
         .collect();
     assert_eq!(named, vec![(1, "Alpha", false), (3, "c", true)]);
+    let ids: Vec<Option<&str>> = parts.iter().map(|s| s.page_id.as_deref()).collect();
+    assert_eq!(
+        ids,
+        vec![Some("a"), Some("c")],
+        "the id is the source's, whatever the name"
+    );
 }

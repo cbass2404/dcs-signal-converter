@@ -253,10 +253,14 @@ function plural(n: number, one: string, many = `${one}s`): string {
  * The lights and page slots a profile could give another, every one ticked
  * to start with. Lights go a lamp at a time under a box per panel, slots under
  * a box per screen, and every group has a box over it.
+ *
+ * `pages` is given when merging from a file: each slot then says what becomes
+ * of its page here, since a page in several slots looks like several imports.
  */
 function mergeChecklist(
   parts: MergeParts,
   onChange: () => void,
+  pages?: PagePlan[],
 ): { node: HTMLElement; pick: () => MergePick } {
   const list = el("div", { class: "checklist" });
   const tick = (): HTMLInputElement => {
@@ -319,13 +323,16 @@ function mergeChecklist(
         el("label", { class: "sub" }, box, el("span", {}, `${group[0]?.screen ?? ""} pages`)),
       );
       group.forEach((s, i) => {
+        const plan = pages?.find((p) => p.id === s.page_id);
+        const meta = [s.start ? "starts" : ""];
+        if (plan) meta.push(plan.fate === "same" ? "page already here" : "new page");
         rows.push(
           el(
             "label",
             { class: "sub2" },
             boxes[i] as HTMLInputElement,
             el("span", {}, `Slot ${s.slot}: ${s.blank ? "blank screen" : s.page}`),
-            el("span", { class: "meta" }, s.start ? "starts" : ""),
+            el("span", { class: "meta" }, meta.filter((m) => m !== "").join("; ")),
           ),
         );
       });
@@ -334,6 +341,16 @@ function mergeChecklist(
       el("label", { class: "group" }, parentBox(screenBoxes), el("span", {}, "Page slots")),
       ...rows,
     );
+    const shown = parts.slots.flatMap((s) => (s.page_id === null ? [] : [s.page_id]));
+    if (pages && new Set(shown).size < shown.length) {
+      list.append(
+        el(
+          "p",
+          { class: "meta" },
+          "A slot shows a page, it does not hold one. A page in several slots comes in once, or not at all when it is already here.",
+        ),
+      );
+    }
   }
 
   if (lights.length === 0 && slots.length === 0) {
@@ -891,7 +908,7 @@ async function showImport(): Promise<void> {
     if (ready) make.removeAttribute("disabled");
     else make.setAttribute("disabled", "");
   };
-  const merge = mergeChecklist(picked.parts, () => sync());
+  const merge = mergeChecklist(picked.parts, () => sync(), picked.pages);
   const whole = el(
     "div",
     {},

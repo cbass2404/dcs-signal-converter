@@ -15,15 +15,15 @@ unless this says what moved.
 
 ## 1.0.0-beta.011
 
-- **Kneeboard CDU: the CDU screen in OpenKneeboard or a browser**, for anyone
-  without a CDU of their own. Turn on **Kneeboard CDU** in a profile, fill its six
-  slots with CDU pages and pick the start page, as on any MCDU. Its section
-  shows a file, with a **Copy** button, to add to OpenKneeboard as a **Single
-  file** tab (OpenKneeboard 1.10 or later) or open in a browser on this PC. It
-  says it is waiting until a mission starts, then shows the screen, drawing
-  each page in the aircraft's own CDU font and the page's colours on a dark
-  screen. The converter answers it on this PC only, and only once a profile
-  turns the Kneeboard CDU on.
+- **Kneeboard CDU: the CDU screen in OpenKneeboard or a browser**, for
+  anyone without a CDU of their own. Turn on **Kneeboard CDU** in a profile,
+  fill its six slots with CDU pages and pick the start page, as on any MCDU.
+  Its section shows a file, with a **Copy** button, to add to OpenKneeboard as
+  a **Single file** tab (OpenKneeboard 1.10 or later) or open in a browser on
+  this PC. It says it is waiting until a mission starts, then shows the
+  screen, drawing each page in the aircraft's own CDU font and the page's
+  colours on a dark screen. The converter answers it on this PC only, and only
+  once a profile turns the Kneeboard CDU on.
 - **The Kneeboard CDU's screen backlight** can follow a cockpit lighting knob,
   like the MCDU's. Left unassigned, it stays at full brightness.
 - **Swap the Kneeboard CDU's pages with the page modifier and 1 to 6** on the
@@ -36,3 +36,15 @@ unless this says what moved.
 - **A controller button page modifier is found the moment it is plugged
   back in**, instead of within a few seconds, and an unplugged one is in the
   log as it goes.
+
+### Profiles
+
+- **Every profile has the Kneeboard CDU, turned off.** Turn it on in the
+  profile to use it. Its screen backlight row follows the INST_PNL_Backlight
+  row on the CarrierAce MFD C, as every other panel backlight does, and is
+  full bright while the lighting knob reads zero.
+- **Its slots start with the CDU pages the profile already shows on the MCDU
+  and PFPs**, on the same start page: the A-10C, A-10C II, A-4E-C, AH-64D,
+  AJS37, CH-47F, F-14B Upgrade, F-16, F/A-18, JF-17, Mi-24P, Mi-8, MiG-15bis,
+  MiG-21bis, MiG-29, Mosquito and UH-1H. The other profiles leave its slots
+  empty, as they leave the MCDU's.

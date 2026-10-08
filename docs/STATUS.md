@@ -1,6 +1,6 @@
 # Project status
 
-Written 2026-09-16, last updated 2026-10-07. Enough context to resume cold.
+Written 2026-09-16, last updated 2026-10-08. Enough context to resume cold.
 
 ## Resume here
 
@@ -11,7 +11,7 @@ checklist, for when that is all that is wanted.
 **Verify nothing has rotted** (30 seconds, no hardware, no DCS):
 
 ```powershell
-cargo test --workspace            # expect 610 passing
+cargo test --workspace            # expect 615 passing
 cargo run --bin dcs-signal -- devices
 cargo run --bin dcs-signal -- catalogue --aircraft F-4E-45MC --find hook
 ```
@@ -111,7 +111,9 @@ describe something a later one replaced, and says so where it does.
 - **Turned down: starting the key readers only with a page key aircraft.**
   It would save about 0.35% of a core at idle, but nearly every setup has
   one of the supported screens, so the readers would run anyway, and the
-  switch is complexity for a negligible cost.
+  switch is complexity for a negligible cost. Reversed in beta.011 (b016b2e):
+  a reader now runs only while its device is driven, and the live idle
+  pass fell from 0.50% to 0.15%, the 0.35% predicted.
 - **What writing is made of, and the MCDU stall fixed.** Each panel now
   counts reports, bytes and time blocked in `wctrl_hid::Device::write_report`
   (the one place a report leaves), reported per panel in the status line

@@ -2173,10 +2173,20 @@ the keyboard held at that moment. It only reads.
   panel's buttons and `crates/dsc-cli/src/keyboard.rs` the keyboard's
   modifiers. `crates/dsc-cli/src/page_keys.rs` gives each connected panel
   with page keys a thread on the collection that declares buttons, and hands
-  each key going down to the daemon's loop with the modifiers held. The loop
+  each key going down to the daemon's loop with the modifiers held. A
+  thread holds its collection open only while the profile in use drives
+  that panel, and closes it otherwise, so with no aircraft loaded nothing
+  is read. The loop
   turns the number into a slot through the device's own `page_keys`, checks
   the modifier, and asks the engine for the slot. The engine knows slots and
   never keys. Keys are read on a dry run too, since reading sends nothing.
+- **The Kneeboard CDU's page keys are the keyboard's digits**, 1 to 6 on
+  the top row. It is a web page, not a panel, so `devices.json` gives it
+  buttons numbered 1 to 6 and one `keys digits` thread reads them by Raw
+  Input, which copies each keystroke whichever window has focus. A page
+  swaps without leaving DCS, and DCS still sees the key, so the modifier
+  wants a combination DCS leaves unbound. With a controller button as the
+  modifier, DCS sees the bare digit.
 - **Each MCDU swaps on its own.** Its keys change its own screen. A follower
   shares the leader's slots and start page, so both start alike, but its keys
   swap only its own screen, and two seats can look at different pages from

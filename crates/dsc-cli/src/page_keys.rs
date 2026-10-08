@@ -383,13 +383,13 @@ mod tests {
     fn a_reader_waits_until_its_device_is_driven() {
         let driven = Arc::new(Driven::default());
         let theirs = Arc::clone(&driven);
-        let reader = std::thread::spawn(move || theirs.wait_for("MCDU_Web"));
+        let reader = std::thread::spawn(move || theirs.wait_for("CDU_Kneeboard"));
         std::thread::sleep(Duration::from_millis(50));
         assert!(!reader.is_finished(), "returned before it was driven");
         driven.set(keys(&["MCDU_Captain"]));
         std::thread::sleep(Duration::from_millis(50));
         assert!(!reader.is_finished(), "another device woke it");
-        driven.set(keys(&["MCDU_Captain", "MCDU_Web"]));
+        driven.set(keys(&["MCDU_Captain", "CDU_Kneeboard"]));
         reader.join().unwrap();
     }
 
@@ -401,10 +401,10 @@ mod tests {
         driven.on_change(Box::new(move || {
             count.fetch_add(1, Ordering::SeqCst);
         }));
-        driven.set(keys(&["MCDU_Web"]));
-        driven.set(keys(&["MCDU_Web"]));
+        driven.set(keys(&["CDU_Kneeboard"]));
+        driven.set(keys(&["CDU_Kneeboard"]));
         driven.set(keys(&[]));
         assert_eq!(woken.load(Ordering::SeqCst), 2);
-        assert!(!driven.is("MCDU_Web"));
+        assert!(!driven.is("CDU_Kneeboard"));
     }
 }

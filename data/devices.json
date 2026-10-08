@@ -941,14 +941,14 @@
       ]
     },
     {
-      "key": "MCDU_Web",
-      "display_name": "Web MCDU",
+      "key": "CDU_Kneeboard",
+      "display_name": "Kneeboard CDU",
       "protocol": "web",
       "usb_pid": 0,
       "parts": [
         {
           "part_id": 0,
-          "name": "Web MCDU",
+          "name": "Kneeboard CDU",
           "display": "MCDU",
           "leds": [
             {
@@ -973,7 +973,7 @@
       ],
       "page_keys": ["KEY_1", "KEY_2", "KEY_3", "KEY_4", "KEY_5", "KEY_6"],
       "_notes": [
-        "Not hardware: the MCDU's text grid drawn in a web page, for anyone without a CDU. The page is a file, web-mcdu.html beside the settings, opened in OpenKneeboard or a browser on this PC (crates/dsc-config/src/web.rs); the converter answers it with the screen on 127.0.0.1:8310 once a profile turns the device on. See crates/dsc-cli/src/panels/web.rs.",
+        "Not hardware: the MCDU's text grid drawn in a web page, for anyone without a CDU. The page is a file, kneeboard-cdu.html beside the settings, opened in OpenKneeboard or a browser on this PC (crates/dsc-config/src/web.rs); the converter answers it with the screen on 127.0.0.1:8310 once a profile turns the device on. See crates/dsc-cli/src/panels/web.rs.",
         "One lamp, the screen backlight, which the page draws by fading the screen towards black. Not the MCDU's lamps, so it is not a variant of the MCDU and nothing can follow it or be followed by it. Its slots are its own.",
         "Its keys are the keyboard's 1 to 6, held with the page modifier, since the page has no keys a user in VR could press."
       ]

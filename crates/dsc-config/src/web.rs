@@ -12,10 +12,10 @@ use std::path::Path;
 
 /// The page: the grid drawn in the aircraft's CDU font, kept up to date by a
 /// long poll.
-pub const PAGE: &str = include_str!("web-mcdu.html");
+pub const PAGE: &str = include_str!("kneeboard-cdu.html");
 
 /// The file the page is written to, beside the settings.
-pub const PAGE_FILE: &str = "web-mcdu.html";
+pub const PAGE_FILE: &str = "kneeboard-cdu.html";
 
 /// Write the page to `path`, unless it is already there as it is. Left alone
 /// when unchanged, because OpenKneeboard reloads a file tab whenever its file

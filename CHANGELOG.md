@@ -15,18 +15,18 @@ unless this says what moved.
 
 ## 1.0.0-beta.011
 
-- **Web MCDU: the CDU screen in OpenKneeboard or a browser**, for anyone
-  without a CDU of their own. Turn on **Web MCDU** in a profile, fill its six
+- **Kneeboard CDU: the CDU screen in OpenKneeboard or a browser**, for anyone
+  without a CDU of their own. Turn on **Kneeboard CDU** in a profile, fill its six
   slots with CDU pages and pick the start page, as on any MCDU. Its section
   shows a file, with a **Copy** button, to add to OpenKneeboard as a **Single
   file** tab (OpenKneeboard 1.10 or later) or open in a browser on this PC. It
   says it is waiting until a mission starts, then shows the screen, drawing
   each page in the aircraft's own CDU font and the page's colours on a dark
   screen. The converter answers it on this PC only, and only once a profile
-  turns the Web MCDU on.
-- **The Web MCDU's screen backlight** can follow a cockpit lighting knob,
+  turns the Kneeboard CDU on.
+- **The Kneeboard CDU's screen backlight** can follow a cockpit lighting knob,
   like the MCDU's. Left unassigned, it stays at full brightness.
-- **Swap the Web MCDU's pages with the page modifier and 1 to 6** on the
+- **Swap the Kneeboard CDU's pages with the page modifier and 1 to 6** on the
   keyboard's top row, without leaving DCS. DCS still sees the keystroke, so
   pick a modifier whose number combinations DCS does not use. With a
   controller button as the modifier, DCS sees the bare number.

@@ -37,7 +37,7 @@
 
 # The web view's page, written beside the settings for OpenKneeboard by the
 # converter and the editor from the copy built into them.
-/data/web-mcdu.html
+/data/kneeboard-cdu.html
 
 # One developer's choice of layout, never something that ships. `.env.example`
 # is the tracked copy. env=dev points the editor and the daemon at

@@ -100,6 +100,13 @@
           canvas.width = screen.columns * w;
           canvas.height = screen.rows * h;
           fit();
+          // In OpenKneeboard, ask for a page the screen's shape, so it fills
+          // the kneeboard without bars, at twice its pixels so the glyphs stay
+          // sharp when the kneeboard is scaled up. Elsewhere there is no one
+          // to ask.
+          window.OpenKneeboard?.SetPreferredPixelSize(canvas.width * 2, canvas.height * 2).catch(
+            () => {},
+          );
         }
         ctx.fillStyle = COLOURS[0];
         ctx.fillRect(0, 0, canvas.width, canvas.height);

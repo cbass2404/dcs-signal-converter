@@ -6,7 +6,7 @@
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::net::{Ipv4Addr, UdpSocket};
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -33,7 +33,7 @@ mod keyboard;
 mod modifier;
 mod page_keys;
 mod panels;
-use panels::Panel;
+use panels::{Panel, Protocol};
 
 /// Say it on the console, as this has always done, and put it in the session
 /// log with a timestamp in front.
@@ -1880,8 +1880,9 @@ impl Did {
     const PAGE_KEY: u8 = 16;
     const AIRCRAFT: u8 = 32;
     const CATALOGUE: u8 = 64;
+    const PANELS: u8 = 128;
 
-    const NAMES: [(u8, &'static str); 7] = [
+    const NAMES: [(u8, &'static str); 8] = [
         (Did::FRAME, "frame"),
         (Did::PROFILE_CHECK, "profile check"),
         (Did::PROFILE_RELOAD, "profile reload"),
@@ -1889,6 +1890,7 @@ impl Did {
         (Did::PAGE_KEY, "page key"),
         (Did::AIRCRAFT, "aircraft change"),
         (Did::CATALOGUE, "catalogue rebuild"),
+        (Did::PANELS, "panel plugged or lost"),
     ];
 
     fn add(&mut self, what: u8) {
@@ -2116,6 +2118,11 @@ const DCS_RECHECK: Duration = Duration::from_secs(5);
 
 /// How often the log gets a line saying what has happened since the last one.
 const STATUS_EVERY: Duration = Duration::from_secs(60);
+
+/// How long after the last device notice the panels are looked at again. One
+/// panel arrives as several HID interfaces, each with its own notice, and
+/// looking after the last of them finds it whole.
+const REPLUG_SETTLE: Duration = Duration::from_millis(250);
 
 /// Whether DCS is running at all.
 ///
@@ -3087,7 +3094,7 @@ fn run(
 
     // Only drive hardware that is actually plugged in. A shared profile may
     // name panels this user does not own, which is not an error.
-    let protocols = panels::all()?;
+    let mut protocols = panels::all()?;
     // Everything of every known brand that is plugged in, known to this build
     // or not. A panel missing from the inventory and a panel nobody plugged in
     // look identical from the profile's side, and only this separates them.
@@ -3206,6 +3213,28 @@ fn run(
     };
     let mut engine = Engine::new(inventory, cat, profiles).with_displays(displays.clone());
     engine.set_connected(connected);
+
+    // A panel unplugged in flight is dropped rather than stopping the run, and
+    // one plugged in is opened and painted. Windows says when a HID device
+    // comes or goes, and the panels are looked at again once the notices stop.
+    let notices = Arc::new(AtomicU64::new(0));
+    let _device_changes = {
+        let notices = Arc::clone(&notices);
+        match dsc_input::on_device_change(Box::new(move || {
+            notices.fetch_add(1, Ordering::SeqCst);
+        })) {
+            Ok(changes) => Some(changes),
+            Err(e) => {
+                warn!("panels   Windows will not say when panels come and go ({e}), so one unplugged in flight stays off until the converter restarts");
+                None
+            }
+        }
+    };
+    let mut notices_seen = 0;
+    let mut look_at: Option<Instant> = None;
+    // Panels lost and looked for again once already; see the drop below.
+    let mut retried: BTreeSet<String> = BTreeSet::new();
+    let mut lost: Vec<(String, String)> = Vec::new();
 
     let mut listener = Listener::bind(Ipv4Addr::UNSPECIFIED)
         .context("joining the DCS-BIOS multicast group on 239.255.50.10:5010")?;
@@ -3408,13 +3437,15 @@ fn run(
         }
 
         // The key readers run only for panels the active profile drives.
-        // Compared in place, since the answer moves only with the aircraft or
-        // the profile; a new set is built only when it has.
+        // Compared in place, since the answer moves only with the aircraft,
+        // the profile or a panel coming or going; a new set is built only
+        // when it has.
         let drives = |k: &String| engine.active_profile().is_some_and(|p| p.drives(k));
         if engine
             .connected()
             .iter()
             .any(|k| drives(k) != reading_for.contains(k))
+            || reading_for.iter().any(|k| !engine.connected().contains(k))
         {
             reading_for = engine
                 .connected()
@@ -3489,6 +3520,12 @@ fn run(
                 }
                 page_keys::KeyEvent::Lost { device, why } => {
                     warn!("keys     {device}: stopped reading its keys ({why}); page keys do nothing until the converter restarts");
+                }
+                page_keys::KeyEvent::Gone { device, why } => {
+                    lost.push((device, format!("reading its keys: {why}")));
+                }
+                page_keys::KeyEvent::Unseen { device } => {
+                    warn!("keys     {device}: no collection with its buttons was found, so its page keys do nothing until the aircraft, the profile or the panel changes");
                 }
             }
         }
@@ -3609,12 +3646,59 @@ fn run(
             }
         }
 
+        // Panels that stopped answering, and panels Windows says came or went.
+        // After everything above, so this pass's writes are already with the
+        // writers, and a panel dropped here is not written again.
+        let heard = notices.load(Ordering::SeqCst);
+        if heard != notices_seen {
+            notices_seen = heard;
+            retried.clear();
+            look_at = Some(now + REPLUG_SETTLE);
+        }
+        lost.extend(panels.failed());
+        let looking = look_at.is_some_and(|t| now >= t);
+        if looking || !lost.is_empty() {
+            did.add(Did::PANELS);
+            let mut present = engine.connected().to_vec();
+            for (key, why) in lost.drain(..) {
+                if !present.contains(&key) {
+                    continue;
+                }
+                warn!("panels   {key} stopped answering ({why}); dropped until it is back");
+                present.retain(|k| k != &key);
+                panels.forget(&key);
+                // Looked for again once, for a panel that never left: a quick
+                // replug, or a glitch, sends no notice after the panel is
+                // dropped. After that only a notice brings it back, so a panel
+                // that fails every write is not reopened over and over.
+                if retried.insert(key) {
+                    look_at.get_or_insert(now + REPLUG_SETTLE);
+                }
+            }
+            if looking {
+                look_at = None;
+                present = look_for_panels(
+                    &mut protocols,
+                    engine.devices(),
+                    &present,
+                    &displays,
+                    dry_run,
+                    &mut panels,
+                );
+            }
+            if present != engine.connected() {
+                let batch = engine.replug(present);
+                apply(&batch, &mut panels, dry_run, &mut trace, elapsed)?;
+                if let Some(p) = engine.active_profile() {
+                    let p = p.clone();
+                    trace.follow(&p, engine.catalogue(), engine.connected());
+                }
+            }
+        }
+
         // The log's own housekeeping, last, because everything above may have
         // added to it. The status line goes out even on a pass that did
         // nothing: a quiet minute and a wedged daemon read alike otherwise.
-        // A write that failed on a panel's own thread stops the converter,
-        // as it did when the main loop wrote.
-        panels.check()?;
         trace.flush(now);
         trace.tally.pass(now.elapsed(), did);
         if now >= next_status {
@@ -3672,14 +3756,21 @@ impl Panels {
         }
     }
 
-    /// Fail if any panel's writes have.
-    fn check(&self) -> Result<()> {
-        for (key, writer) in &self.writers {
-            if let Some(why) = writer.failed() {
-                anyhow::bail!("writing to {key}: {why}");
-            }
-        }
-        Ok(())
+    /// Each panel whose writes have failed, and why.
+    fn failed(&self) -> Vec<(String, String)> {
+        self.writers
+            .iter()
+            .filter_map(|(key, writer)| {
+                Some((key.clone(), format!("writing: {}", writer.failed()?)))
+            })
+            .collect()
+    }
+
+    /// Stop writing a panel that has gone. Its counts go with it, so one
+    /// opened again in its place starts its status line from nothing.
+    fn forget(&mut self, key: &str) {
+        self.writers.remove(key);
+        self.reported.remove(key);
     }
 
     /// Let every writer finish what it has, the clear included, and stop.
@@ -3731,6 +3822,66 @@ impl Panels {
     }
 }
 
+/// Which panels are plugged in now, in inventory order, as at the start. One
+/// that has arrived is opened and given a writer, and one that has gone loses
+/// its writer. `current` is what the engine has as connected.
+fn look_for_panels(
+    protocols: &mut [Box<dyn Protocol>],
+    inventory: &DeviceInventory,
+    current: &[String],
+    displays: &DisplayCatalogue,
+    dry_run: bool,
+    panels: &mut Panels,
+) -> Vec<String> {
+    for protocol in protocols.iter_mut() {
+        if let Err(e) = protocol.refresh() {
+            warn!(
+                "panels   could not look at the {} panels again: {e:#}",
+                protocol.name()
+            );
+        }
+    }
+    let mut present = Vec::new();
+    for spec in &inventory.devices {
+        let Some(protocol) = protocols.iter().find(|p| p.name() == spec.protocol) else {
+            continue;
+        };
+        let was = current.contains(&spec.key);
+        // Not knowing is not a change.
+        let here = protocol.is_connected(spec).unwrap_or(was);
+        match (was, here) {
+            (true, true) => present.push(spec.key.clone()),
+            (true, false) => {
+                kept!("panels   {} unplugged", spec.display_name);
+                panels.forget(&spec.key);
+            }
+            (false, true) => {
+                if !dry_run {
+                    let opened = protocol
+                        .open(spec, displays)
+                        .and_then(|panel| panels::Writer::start(&spec.key, panel));
+                    match opened {
+                        Ok(writer) => {
+                            panels.writers.insert(spec.key.clone(), writer);
+                        }
+                        Err(e) => {
+                            warn!(
+                                "panels   {} plugged in, but could not be opened: {e:#}",
+                                spec.display_name
+                            );
+                            continue;
+                        }
+                    }
+                }
+                kept!("panels   {} plugged in", spec.display_name);
+                present.push(spec.key.clone());
+            }
+            (false, false) => {}
+        }
+    }
+    present
+}
+
 /// A text grid's buffer as the lines it shows, for the trace.
 fn text_rows(w: &dsc_engine::LcdWrite, displays: &DisplayCatalogue) -> Vec<String> {
     let columns = displays
@@ -3762,6 +3913,7 @@ fn apply(
         Cause::Shutdown => "clear",
         Cause::ProfileReload => "reload",
         Cause::PageSwap => "page",
+        Cause::Replug => "replug",
     };
     for w in &batch.writes {
         let lamp = trace.lamp(&w.id);

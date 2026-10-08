@@ -11,7 +11,7 @@ checklist, for when that is all that is wanted.
 **Verify nothing has rotted** (30 seconds, no hardware, no DCS):
 
 ```powershell
-cargo test --workspace            # expect 615 passing
+cargo test --workspace            # expect 620 passing
 cargo run --bin dcs-signal -- devices
 cargo run --bin dcs-signal -- catalogue --aircraft F-4E-45MC --find hook
 ```
@@ -21,6 +21,23 @@ on this machine, and a catalogue from a different DCS-BIOS release reads the
 wrong addresses silently, because addresses are allocated sequentially as
 controls are defined. Nothing needs doing after a clone: every command that
 reads the catalogue builds it first if it is missing or out of date (see below).
+
+**Built 2026-10-08, not yet flown: panels survive an unplug (#127).** A
+failed write used to end the run through `panels.check()`, and a key reader
+that failed to read ended its thread for good. Now either drops just that
+panel: its writer goes, it leaves the connected set, and `Engine::replug`
+forgets what it held there. `dsc_input::on_device_change` schedules a look
+at the panels 250 ms after the last notice (`REPLUG_SETTLE`), since one
+panel arrives as several HID interfaces. A panel found there is opened,
+given a writer, and swept and painted in full by `Engine::replug`, which
+also tracks its "latest" bindings' signals. A drop asks for one look of its
+own, for a replug too quick to send a notice after the drop; after that
+only a notice brings it back, so a panel failing every write is not
+reopened in a loop. Key readers wait on a generation count in `Driven`
+after a failed read, then reopen the old path or find the panel again by
+PID. Readers now start for every panel with page keys, plugged in or not.
+Still to fly: a lamp panel and the MCDU unplugged and plugged back in, and
+a panel plugged in after startup.
 
 **Built and flown 2026-09-30: beta.005, every shipped profile checked in
 its aircraft.** `69c3095` to `8a5af9a` on `beta005-profile-verification`,

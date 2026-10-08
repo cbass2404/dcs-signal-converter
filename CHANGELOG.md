@@ -33,6 +33,11 @@ unless this says what moved.
 - **Page keys are only read while their panel is in use.** A panel the
   profile turns off, and every panel while no aircraft is loaded, is not read
   at all.
+- **A panel unplugged in flight no longer stops the converter.** The other
+  panels carry on, and the unplugged one comes back on its own when it is
+  plugged in again, lamps, screen and page keys, showing the cockpit as it
+  is. A panel plugged in after the converter started is picked up the same
+  way. Before, pulling a panel stopped every panel until the next mission.
 - **A controller button page modifier is found the moment it is plugged
   back in**, instead of within a few seconds, and an unplugged one is in the
   log as it goes.

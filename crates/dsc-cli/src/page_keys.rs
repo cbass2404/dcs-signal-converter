@@ -1,7 +1,7 @@
 //! Page keys, read while the converter runs.
 //!
-//! Every connected panel that lists page keys in `devices.json` gets a thread
-//! reading its buttons, and each key going down arrives on one channel with
+//! Every panel that lists page keys in `devices.json` gets a thread reading
+//! its buttons, and each key going down arrives on one channel with
 //! whether the page modifier was held at that moment. What a key means is
 //! decided by the caller, from the device's own `page_keys`, so nothing here
 //! knows a slot or an MCDU.
@@ -19,6 +19,12 @@
 //! reader closes its handle until then, and the keyboard is not listened to
 //! at all, so a panel a profile leaves alone, or every panel while no
 //! aircraft is loaded, costs nothing.
+//!
+//! **A panel unplugged comes back.** A reader that cannot read its panel says
+//! so and waits for the driven set to change, which it does when the main
+//! loop drops the panel. Driven again, it opens the panel afresh, looking it
+//! up by product id if its old path has gone, as it has on another USB port.
+//! A panel not plugged in at the start is read the same way once it is.
 
 use std::collections::BTreeSet;
 use std::sync::mpsc::{self, Receiver};
@@ -38,9 +44,16 @@ pub enum KeyEvent {
         number: u16,
         modifier: bool,
     },
-    /// A reader stopped, most likely because the panel was unplugged. Its
-    /// keys do nothing until the converter starts again.
+    /// The keyboard's reader stopped. Its keys do nothing until the
+    /// converter starts again.
     Lost { device: String, why: String },
+    /// A panel's reader could not read it, most likely because it was
+    /// unplugged. Its keys come back with it.
+    Gone { device: String, why: String },
+    /// A panel driven but not found to read. Its keys are looked for again
+    /// the next time what is driven changes. The panel itself, and its
+    /// lamps, are not this reader's to drop.
+    Unseen { device: String },
 }
 
 /// The devices the active profile drives, for the readers to wait on.
@@ -53,6 +66,9 @@ pub struct Driven {
 #[derive(Default)]
 struct DrivenState {
     keys: BTreeSet<String>,
+    /// Counts changes, so a reader can wait for the next one even when the
+    /// set goes and comes back before it looks.
+    generation: u64,
     /// Told of every change, for a reader that waits on something other
     /// than the condvar, as the keyboard's waits on its messages.
     wakers: Vec<Box<dyn Fn() + Send>>,
@@ -71,6 +87,7 @@ impl Driven {
             return;
         }
         state.keys = keys;
+        state.generation += 1;
         for wake in &state.wakers {
             wake();
         }
@@ -87,6 +104,21 @@ impl Driven {
     fn wait_for(&self, key: &str) {
         let mut state = self.lock();
         while !state.keys.contains(key) {
+            state = self.changed.wait(state).unwrap_or_else(|e| e.into_inner());
+        }
+    }
+
+    /// How many times the set has changed.
+    #[cfg_attr(not(windows), allow(dead_code))]
+    fn generation(&self) -> u64 {
+        self.lock().generation
+    }
+
+    /// Wait until the set changes after `seen`, a [`generation`](Self::generation).
+    #[cfg_attr(not(windows), allow(dead_code))]
+    fn wait_past(&self, seen: u64) {
+        let mut state = self.lock();
+        while state.generation == seen {
             state = self.changed.wait(state).unwrap_or_else(|e| e.into_inner());
         }
     }
@@ -108,8 +140,23 @@ pub fn start(
     (mpsc::channel().1, Vec::new())
 }
 
-/// Start a reader for each connected device with page keys. Returns the
-/// channel keys arrive on and a line per device for the log.
+/// The collection that declares a panel's buttons, and its path: on the MCDU
+/// the game controller, one of several interfaces under the one PID.
+#[cfg(windows)]
+fn find(api: &hidapi::HidApi, pid: u16) -> Option<(String, buttons::Collection)> {
+    wctrl_hid::enumerate(api)
+        .iter()
+        .filter(|d| d.product_id == pid)
+        .filter_map(|d| {
+            buttons::Collection::open(&d.path)
+                .ok()
+                .map(|c| (d.path.clone(), c))
+        })
+        .find(|(_, c)| !c.buttons.is_empty())
+}
+
+/// Start a reader for each device with page keys. Returns the channel keys
+/// arrive on and a line per connected device for the log.
 #[cfg(windows)]
 pub fn start(
     inventory: &DeviceInventory,
@@ -126,7 +173,7 @@ pub fn start(
         // Only panels whose keys arrive over HID; another protocol's keys,
         // such as the web view's, come some other way.
         .filter(|d| d.protocol == dsc_config::DEFAULT_PROTOCOL)
-        .filter(|d| !d.page_keys.is_empty() && connected.contains(&d.key))
+        .filter(|d| !d.page_keys.is_empty())
         .collect();
     if with_keys.is_empty() {
         return (rx, lines);
@@ -140,34 +187,29 @@ pub fn start(
             return (rx, lines);
         }
     };
-    let found = wctrl_hid::enumerate(&api);
     for spec in with_keys {
-        // The collection that declares buttons: on the MCDU the game
-        // controller, one of several interfaces under the one PID. Its path
-        // is kept, to open it again whenever the panel is driven again.
-        let opened = found
-            .iter()
-            .filter(|d| d.product_id == spec.usb_pid)
-            .filter_map(|d| {
-                buttons::Collection::open(&d.path)
-                    .ok()
-                    .map(|c| (d.path.clone(), c))
-            })
-            .find(|(_, c)| !c.buttons.is_empty());
-        let Some((path, collection)) = opened else {
+        // Its path is kept, to open it again whenever the panel is driven
+        // again. One not plugged in is looked for once it is driven.
+        let opened = if connected.contains(&spec.key) {
+            let Some((path, collection)) = find(&api, spec.usb_pid) else {
+                lines.push(format!(
+                    "keys     {}: no collection declares buttons, so its page keys do nothing",
+                    spec.key
+                ));
+                continue;
+            };
             lines.push(format!(
-                "keys     {}: no collection declares buttons, so its page keys do nothing",
-                spec.key
+                "keys     {}: reading {} page key(s) on usage page 0x{:04x} usage 0x{:04x} while driven",
+                spec.key,
+                spec.page_keys.len(),
+                collection.usage_page,
+                collection.usage
             ));
-            continue;
+            Some((path, collection))
+        } else {
+            None
         };
-        lines.push(format!(
-            "keys     {}: reading {} page key(s) on usage page 0x{:04x} usage 0x{:04x} while driven",
-            spec.key,
-            spec.page_keys.len(),
-            collection.usage_page,
-            collection.usage
-        ));
+        let pid = spec.usb_pid;
         let tx = tx.clone();
         let device = spec.key.clone();
         let modifier = Arc::clone(modifier);
@@ -177,7 +219,10 @@ pub fn start(
         let spawned = std::thread::Builder::new()
             .name(format!("keys {device}"))
             .spawn(move || {
-                let mut collection = Some(collection);
+                let (mut path, mut collection) = match opened {
+                    Some((p, c)) => (Some(p), Some(c)),
+                    None => (None, None),
+                };
                 let mut buf = Vec::new();
                 let mut report: Vec<u8> = Vec::new();
                 let mut last: Vec<u16> = Vec::new();
@@ -192,26 +237,38 @@ pub fn start(
                         driven.wait_for(&device);
                     }
                     if collection.is_none() {
-                        match buttons::Collection::open(&path) {
-                            Ok(c) => collection = Some(c),
-                            Err(e) => {
-                                let _ = tx.send(KeyEvent::Lost {
-                                    device,
-                                    why: e.to_string(),
-                                });
-                                return;
-                            }
-                        }
+                        // The path it had, and failing that a fresh look, for
+                        // a panel plugged into another port or not seen yet.
+                        let opened = path
+                            .as_deref()
+                            .and_then(|p| buttons::Collection::open(p).ok())
+                            .map(|c| (path.clone().unwrap_or_default(), c))
+                            .or_else(|| hidapi::HidApi::new().ok().and_then(|api| find(&api, pid)));
+                        let Some((p, c)) = opened else {
+                            let seen = driven.generation();
+                            let _ = tx.send(KeyEvent::Unseen {
+                                device: device.clone(),
+                            });
+                            driven.wait_past(seen);
+                            continue;
+                        };
+                        path = Some(p);
+                        collection = Some(c);
                         report.clear();
                         fresh = true;
                     }
                     let c = collection.as_ref().expect("opened above");
                     if let Err(e) = c.read(&mut buf) {
-                        let _ = tx.send(KeyEvent::Lost {
-                            device,
+                        // Taken before saying so, so the main loop dropping
+                        // the panel cannot come and go unseen.
+                        let seen = driven.generation();
+                        collection = None;
+                        let _ = tx.send(KeyEvent::Gone {
+                            device: device.clone(),
                             why: e.to_string(),
                         });
-                        return;
+                        driven.wait_past(seen);
+                        continue;
                     }
                     // The panels send 100 reports a second whether or not
                     // anything moved. One the same as the last holds the same
@@ -391,6 +448,22 @@ mod tests {
         assert!(!reader.is_finished(), "another device woke it");
         driven.set(keys(&["MCDU_Captain", "CDU_Kneeboard"]));
         reader.join().unwrap();
+    }
+
+    #[test]
+    fn a_reader_sees_its_device_go_and_come_back() {
+        // Dropped and driven again before the reader looks: it still wakes,
+        // rather than waiting for a change that has already happened.
+        let driven = Arc::new(Driven::default());
+        driven.set(keys(&["MCDU_Captain"]));
+        let seen = driven.generation();
+        driven.set(keys(&[]));
+        driven.set(keys(&["MCDU_Captain"]));
+        let theirs = Arc::clone(&driven);
+        std::thread::spawn(move || theirs.wait_past(seen))
+            .join()
+            .unwrap();
+        assert!(driven.is("MCDU_Captain"));
     }
 
     #[test]

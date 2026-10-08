@@ -65,6 +65,12 @@ impl Protocol for Wctrl {
             .any(|d| d.product_id == spec.usb_pid))
     }
 
+    fn refresh(&mut self) -> Result<()> {
+        self.api
+            .refresh_devices()
+            .context("listing the HID devices again")
+    }
+
     fn open(&self, spec: &DeviceSpec, displays: &DisplayCatalogue) -> Result<Box<dyn Panel>> {
         let dev = Device::open(&self.api, spec.usb_pid)
             .with_context(|| format!("opening {}", spec.display_name))?;

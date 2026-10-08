@@ -1,0 +1,18 @@
+{
+  "module": "Christen Eagle II",
+  "pages": [],
+  "signals": [
+    {
+      "id": "b76kwk",
+      "name": "Master Caution",
+      "conditions": [
+        {
+          "source": "EXT_POSITION_LIGHT_LEFT",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
+    }
+  ]
+}

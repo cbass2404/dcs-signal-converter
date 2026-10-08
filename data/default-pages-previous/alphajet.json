@@ -1,0 +1,18 @@
+{
+  "module": "Alphajet",
+  "pages": [],
+  "signals": [
+    {
+      "id": "dzj86c",
+      "name": "Master Caution",
+      "conditions": [
+        {
+          "source": "AF_L",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "module": "Edge540",
+  "pages": [],
+  "signals": [
+    {
+      "id": "5yfz87",
+      "name": "Master Caution",
+      "conditions": [
+        {
+          "source": "COCKPIT_L",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
+    }
+  ]
+}

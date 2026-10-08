@@ -1,0 +1,18 @@
+{
+  "module": "Ka-50",
+  "pages": [],
+  "signals": [
+    {
+      "id": "umonds",
+      "name": "Master Caution",
+      "conditions": [
+        {
+          "source": "SC_MASTER_CAUTION_LED",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
+    }
+  ]
+}

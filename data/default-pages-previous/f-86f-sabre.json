@@ -1,0 +1,18 @@
+{
+  "module": "F-86F Sabre",
+  "pages": [],
+  "signals": [
+    {
+      "id": "h8cbta",
+      "name": "Master Caution",
+      "conditions": [
+        {
+          "source": "LMP_FIRE_DETECTION_AFTFIREWARNING",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
+    }
+  ]
+}

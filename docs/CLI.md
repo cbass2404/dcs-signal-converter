@@ -67,7 +67,8 @@ profile  FA-18                  23 set,  1 unset  for EA-18G, FA-18C_hornet, FA-
 device   PTO2                   pid 0xbf05
 device   Orion Throttle Base II pid 0xbd64
 device   MCDU Captain           pid 0xbb36  display MCDU
-keys     MCDU_Captain: reading 6 page key(s) on usage page 0x0001 usage 0x0004
+keys     MCDU_Captain: reading 6 page key(s) on usage page 0x0001 usage 0x0004 while driven
+keys     CDU_Kneeboard: reading the keyboard's digits [1, 2, 3, 4, 5, 6] as its page keys while driven
 keys     page modifier Ctrl
 Running. Ctrl-C to stop and clear the panels.
 aircraft A-10C_2  ->  profile A-10C
@@ -81,6 +82,8 @@ only lamps whose signals change.
 
 A `keys` line names each panel whose page keys are read and the modifier
 that counts, from `settings.json` (see "Swapping" in [CONFIG.md](CONFIG.md)).
+A panel's keys are read only while the profile in use drives it, so with no
+aircraft loaded none are.
 A `page` line is a page key swapping a screen's page. Changing the modifier in
 the editor's Settings reaches a running converter within half a second.
 

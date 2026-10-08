@@ -35,6 +35,10 @@
 # beside the profiles, and never something that ships.
 /data/settings.json
 
+# The web view's page, written beside the settings for OpenKneeboard by the
+# converter and the editor from the copy built into them.
+/data/kneeboard-cdu.html
+
 # One developer's choice of layout, never something that ships. `.env.example`
 # is the tracked copy. env=dev points the editor and the daemon at
 # data/defaults, so development never touches the profiles you fly.

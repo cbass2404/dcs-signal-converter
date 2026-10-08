@@ -50,6 +50,9 @@ pub struct SlotPart {
     /// The page's name, or its id where the page cannot be found. Empty for
     /// a blank slot.
     pub page: String,
+    /// The page's id as the source has it, so an import can say what becomes
+    /// of the page. None for a blank slot.
+    pub page_id: Option<String>,
     /// Whether the slot shows a blank screen rather than a page.
     pub blank: bool,
     /// Whether this is the slot the source starts on.
@@ -196,6 +199,7 @@ pub fn slot_parts(
                 page: slot.page.as_ref().map_or(String::new(), |id| {
                     name_of(id).unwrap_or_else(|| id.clone())
                 }),
+                page_id: slot.page.clone(),
                 blank: slot.page.is_none(),
                 start: slots.start == Some(i + 1),
             });

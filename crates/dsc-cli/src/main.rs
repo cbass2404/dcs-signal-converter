@@ -3,7 +3,7 @@
 //! Exists ahead of the UI so every layer can be exercised on real hardware and a
 //! real DCS-BIOS stream before any of it is wrapped in Tauri.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::net::{Ipv4Addr, UdpSocket};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -495,9 +495,9 @@ fn buttons_capture(_pid: u16, _raw: bool, _seconds: Option<u64>) -> Result<()> {
 }
 
 /// Every controller DirectInput lists, then each button going down or up,
-/// asked of all of them every 10 ms until the time is up.
+/// read from a controller as it sends something, until the time is up.
 fn controllers_watch(seconds: Option<u64>) -> Result<()> {
-    let (devices, failed) = dsc_input::open_all().context("listing the controllers")?;
+    let (mut devices, failed) = dsc_input::open_all().context("listing the controllers")?;
     if devices.is_empty() && failed.is_empty() {
         println!("No game controllers are connected.");
         return Ok(());
@@ -531,30 +531,36 @@ fn controllers_watch(seconds: Option<u64>) -> Result<()> {
     println!("Press buttons. Ctrl-C to stop.");
     let start = Instant::now();
     let until = seconds.map(|s| start + Duration::from_secs(s));
-    let mut gone = vec![false; devices.len()];
-    while until.map_or(true, |u| Instant::now() < u) {
-        std::thread::sleep(Duration::from_millis(10));
+    // Each controller still answering, by the number it was listed under.
+    let mut numbers: Vec<usize> = (0..devices.len()).collect();
+    while !devices.is_empty() {
+        let left = until.map(|u| u.saturating_duration_since(Instant::now()));
+        if left.is_some_and(|l| l.is_zero()) {
+            break;
+        }
+        let i = match dsc_input::wait_any(&devices, None, left)? {
+            dsc_input::Woke::Changed(i) => i,
+            dsc_input::Woke::Cancelled | dsc_input::Woke::TimedOut => break,
+        };
         let t = start.elapsed().as_secs_f64();
-        for (n, d) in devices.iter().enumerate() {
-            if gone[n] {
+        let (n, d) = (numbers[i], &devices[i]);
+        let now = match d.pressed() {
+            Ok(now) => now,
+            Err(e) => {
+                println!("{t:8.3}s  {n:>2}  {}: {e}", d.controller().name);
+                devices.remove(i);
+                numbers.remove(i);
+                last.remove(i);
                 continue;
             }
-            let now = match d.pressed() {
-                Ok(now) => now,
-                Err(e) => {
-                    println!("{t:8.3}s  {n:>2}  {}: {e}", d.controller().name);
-                    gone[n] = true;
-                    continue;
-                }
-            };
-            for b in now.iter().filter(|b| !last[n].contains(b)) {
-                println!("{t:8.3}s  {n:>2}  down {b:>3}  {}", d.controller().name);
-            }
-            for b in last[n].iter().filter(|b| !now.contains(b)) {
-                println!("{t:8.3}s  {n:>2}  up   {b:>3}  {}", d.controller().name);
-            }
-            last[n] = now;
+        };
+        for b in now.iter().filter(|b| !last[i].contains(b)) {
+            println!("{t:8.3}s  {n:>2}  down {b:>3}  {}", d.controller().name);
         }
+        for b in last[i].iter().filter(|b| !now.contains(b)) {
+            println!("{t:8.3}s  {n:>2}  up   {b:>3}  {}", d.controller().name);
+        }
+        last[i] = now;
     }
     Ok(())
 }
@@ -3100,6 +3106,21 @@ fn run(
             ));
         }
     }
+    // The web view's page as a file too, for OpenKneeboard, which loads it
+    // before any mission starts this converter. Kept current with the build.
+    if inventory
+        .devices
+        .iter()
+        .any(|d| d.protocol == dsc_config::WEB_PROTOCOL)
+    {
+        let page = settings_path.with_file_name(dsc_config::web::PAGE_FILE);
+        if let Err(e) = dsc_config::web::write_page(&page) {
+            warn!(
+                "could not write the web view's page to {}: {e}",
+                page.display()
+            );
+        }
+    }
     let mut connected = Vec::new();
     let mut handles: HashMap<String, Box<dyn Panel>> = HashMap::new();
     for spec in &inventory.devices {
@@ -3161,7 +3182,11 @@ fn run(
     let mut settings = load_settings(settings_path);
     let mut settings_seen = file_stamp(settings_path);
     let modifier = modifier::Watch::start(settings.page_modifier.clone());
-    let (keys, lines) = page_keys::start(&inventory, &connected, &modifier);
+    // Which panels the active profile drives, so a key reader runs only for
+    // those. Nothing is driven until an aircraft is.
+    let driven = Arc::new(page_keys::Driven::default());
+    let mut reading_for: BTreeSet<String> = BTreeSet::new();
+    let (keys, lines) = page_keys::start(&inventory, &connected, &modifier, &driven);
     for line in lines {
         kept!("{line}");
     }
@@ -3382,6 +3407,30 @@ fn run(
             }
         }
 
+        // The key readers run only for panels the active profile drives.
+        // Compared in place, since the answer moves only with the aircraft or
+        // the profile; a new set is built only when it has.
+        let drives = |k: &String| engine.active_profile().is_some_and(|p| p.drives(k));
+        if engine
+            .connected()
+            .iter()
+            .any(|k| drives(k) != reading_for.contains(k))
+        {
+            reading_for = engine
+                .connected()
+                .iter()
+                .filter(|k| drives(k))
+                .cloned()
+                .collect();
+            driven.set(reading_for.clone());
+            modifier.want(reading_for.iter().any(|k| {
+                engine
+                    .devices()
+                    .device(k)
+                    .is_some_and(|d| !d.page_keys.is_empty())
+            }));
+        }
+
         // Page keys pressed since the last pass. Before the stream's own
         // batch, so a swap goes out as soon as the loop wakes.
         while let Ok(event) = keys.try_recv() {
@@ -3400,6 +3449,12 @@ fn run(
                     let key = spec.page_keys[slot].clone();
                     // The chosen modifier alone, or the press is DCS's.
                     if !modifier {
+                        continue;
+                    }
+                    // A panel this aircraft leaves alone has no page to swap,
+                    // and a digit typed for a web view nobody turned on is
+                    // not worth a line in the log.
+                    if !engine.active_profile().is_some_and(|p| p.drives(&device)) {
                         continue;
                     }
                     match engine.show_slot(&device, slot) {

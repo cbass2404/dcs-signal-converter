@@ -253,10 +253,14 @@ function plural(n: number, one: string, many = `${one}s`): string {
  * The lights and page slots a profile could give another, every one ticked
  * to start with. Lights go a lamp at a time under a box per panel, slots under
  * a box per screen, and every group has a box over it.
+ *
+ * `pages` is given when merging from a file: each slot then says what becomes
+ * of its page here, since a page in several slots looks like several imports.
  */
 function mergeChecklist(
   parts: MergeParts,
   onChange: () => void,
+  pages?: PagePlan[],
 ): { node: HTMLElement; pick: () => MergePick } {
   const list = el("div", { class: "checklist" });
   const tick = (): HTMLInputElement => {
@@ -319,13 +323,16 @@ function mergeChecklist(
         el("label", { class: "sub" }, box, el("span", {}, `${group[0]?.screen ?? ""} pages`)),
       );
       group.forEach((s, i) => {
+        const plan = pages?.find((p) => p.id === s.page_id);
+        const meta = [s.start ? "starts" : ""];
+        if (plan) meta.push(plan.fate === "same" ? "page already here" : "new page");
         rows.push(
           el(
             "label",
             { class: "sub2" },
             boxes[i] as HTMLInputElement,
             el("span", {}, `Slot ${s.slot}: ${s.blank ? "blank screen" : s.page}`),
-            el("span", { class: "meta" }, s.start ? "starts" : ""),
+            el("span", { class: "meta" }, meta.filter((m) => m !== "").join("; ")),
           ),
         );
       });
@@ -334,6 +341,16 @@ function mergeChecklist(
       el("label", { class: "group" }, parentBox(screenBoxes), el("span", {}, "Page slots")),
       ...rows,
     );
+    const shown = parts.slots.flatMap((s) => (s.page_id === null ? [] : [s.page_id]));
+    if (pages && new Set(shown).size < shown.length) {
+      list.append(
+        el(
+          "p",
+          { class: "meta" },
+          "A slot shows a page, it does not hold one. A page in several slots comes in once, or not at all when it is already here.",
+        ),
+      );
+    }
   }
 
   if (lights.length === 0 && slots.length === 0) {
@@ -891,7 +908,7 @@ async function showImport(): Promise<void> {
     if (ready) make.removeAttribute("disabled");
     else make.setAttribute("disabled", "");
   };
-  const merge = mergeChecklist(picked.parts, () => sync());
+  const merge = mergeChecklist(picked.parts, () => sync(), picked.pages);
   const whole = el(
     "div",
     {},
@@ -2336,7 +2353,9 @@ function deviceSection(
   });
   applyDriveState();
 
-  section.append(summary, table);
+  section.append(summary);
+  if (device.web_file || device.web_file_problem) section.append(webPage(device));
+  section.append(table);
   // Every screen takes its fields from pages rather than from the profile.
   for (const display of device.displays) {
     section.append(
@@ -2354,6 +2373,51 @@ function deviceSection(
     );
   }
   return section;
+}
+
+/** A button that puts `text` on the clipboard and says so. */
+function copyButton(text: string, what: string): HTMLElement {
+  const copy = el("button", { class: "small", type: "button" }, "Copy");
+  copy.addEventListener("click", () => {
+    void navigator.clipboard.writeText(text).then(
+      () => {
+        copy.textContent = "Copied";
+        setTimeout(() => (copy.textContent = "Copy"), 1500);
+      },
+      (e: unknown) => showError(`Copying the ${what}`, e),
+    );
+  });
+  return copy;
+}
+
+/**
+ * Where a web device's page is, with a button to copy it, for OpenKneeboard
+ * or a browser on this PC. A file rather than an address because
+ * OpenKneeboard loads its tabs before a mission has started the converter,
+ * and a file loads whether or not the converter is there yet.
+ */
+function webPage(device: Device): HTMLElement {
+  const box = el("div", { class: "web-address" });
+  if (device.web_file) {
+    box.append(
+      el(
+        "div",
+        {},
+        el("span", {}, "Add "),
+        el("code", {}, device.web_file),
+        copyButton(device.web_file, "file"),
+        el(
+          "span",
+          { class: "meta" },
+          "as a Single file tab in OpenKneeboard, or open it in a browser.",
+        ),
+      ),
+    );
+  }
+  if (device.web_file_problem) {
+    box.append(el("div", { class: "meta" }, device.web_file_problem));
+  }
+  return box;
 }
 
 /**

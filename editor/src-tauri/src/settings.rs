@@ -5,9 +5,9 @@
 //!
 //! Also the dialog's "press the button" for a controller page modifier, which
 //! reads every controller shared and only while it waits, as DCS goes on
-//! reading them too.
+//! reading them too, and sleeps until one of them sends something.
 
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::OnceLock;
 use std::time::Duration;
 
 use dsc_config::paths::Paths;
@@ -32,8 +32,15 @@ pub struct SettingsView {
 const CAPTURE_FOR: Duration = Duration::from_secs(10);
 
 /// Set to stop a capture early, when the dialog is closed or the choice
-/// changed while it waited.
-static CAPTURE_CANCEL: AtomicBool = AtomicBool::new(false);
+/// changed while it waited. It wakes the wait rather than being looked at.
+static CAPTURE_CANCEL: OnceLock<Result<dsc_input::Cancel, String>> = OnceLock::new();
+
+fn capture_cancel() -> Reply<&'static dsc_input::Cancel> {
+    CAPTURE_CANCEL
+        .get_or_init(|| dsc_input::Cancel::new().map_err(|e| e.to_string()))
+        .as_ref()
+        .map_err(|e| fail("waiting for a button", e))
+}
 
 /// Whether the controller a button modifier names is attached now, by the
 /// same rule the converter finds it.
@@ -74,9 +81,10 @@ pub fn settings_save(settings: Settings) -> Reply<()> {
 /// main thread, so the window keeps drawing while it waits.
 #[tauri::command]
 pub async fn controller_capture() -> Reply<Option<ControllerButton>> {
-    CAPTURE_CANCEL.store(false, Ordering::Relaxed);
+    let cancel = capture_cancel()?;
+    cancel.reset();
     let pressed =
-        tauri::async_runtime::spawn_blocking(|| dsc_input::capture(CAPTURE_FOR, &CAPTURE_CANCEL))
+        tauri::async_runtime::spawn_blocking(move || dsc_input::capture(CAPTURE_FOR, cancel))
             .await
             .map_err(|e| fail("waiting for a button", e))?
             .map_err(|e| fail("reading the controllers", e))?;
@@ -90,5 +98,7 @@ pub async fn controller_capture() -> Reply<Option<ControllerButton>> {
 
 #[tauri::command]
 pub fn controller_capture_cancel() {
-    CAPTURE_CANCEL.store(true, Ordering::Relaxed);
+    if let Ok(cancel) = capture_cancel() {
+        cancel.set();
+    }
 }

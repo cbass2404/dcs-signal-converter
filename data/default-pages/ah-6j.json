@@ -1,0 +1,18 @@
+{
+  "module": "AH-6J",
+  "pages": [],
+  "signals": [
+    {
+      "id": "dj9uq8",
+      "name": "Master Caution",
+      "conditions": [
+        {
+          "source": "EXT_LAND_LIGHT",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
+    }
+  ]
+}

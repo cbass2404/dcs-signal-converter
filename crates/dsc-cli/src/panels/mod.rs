@@ -24,6 +24,7 @@ use dsc_config::{DeviceSpec, DisplayCatalogue};
 use dsc_engine::{LcdWrite, LedWrite};
 
 mod wctrl;
+mod web;
 mod writer;
 
 pub use writer::Writer;
@@ -33,7 +34,10 @@ pub use writer::Writer;
 /// Built once per run, because a protocol may hold an open bus: the WinCtrl
 /// one keeps the HID API it enumerates and opens through.
 pub fn all() -> Result<Vec<Box<dyn Protocol>>> {
-    Ok(vec![Box::new(wctrl::Wctrl::new()?)])
+    Ok(vec![
+        Box::new(wctrl::Wctrl::new()?),
+        Box::new(web::Web::new()),
+    ])
 }
 
 /// One device of a brand that is plugged in, whether or not this build knows

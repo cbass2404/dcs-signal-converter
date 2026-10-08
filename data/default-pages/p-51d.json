@@ -1,0 +1,18 @@
+{
+  "module": "P-51D",
+  "pages": [],
+  "signals": [
+    {
+      "id": "tcdqn4",
+      "name": "Master Caution",
+      "conditions": [
+        {
+          "source": "RADAR_WARNING_LIGHT",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "module": "FW-190D9",
+  "pages": [],
+  "signals": [
+    {
+      "id": "0m3b4z",
+      "name": "Master Caution",
+      "conditions": [
+        {
+          "source": "FUEL_LOW_FWD",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
+    }
+  ]
+}

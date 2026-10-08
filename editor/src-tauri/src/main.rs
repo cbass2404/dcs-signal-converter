@@ -54,9 +54,22 @@ fn devices() -> Reply<Vec<DeviceView>> {
         .devices
         .iter()
         .map(|d| {
-            DeviceView::of(d)
+            let mut view = DeviceView::of(d)
                 .with_displays(d, &maps)
-                .with_variants(d, &inv.devices)
+                .with_variants(d, &inv.devices);
+            // Written here as well as by the converter, so the file the window
+            // offers exists before a mission has ever started one.
+            if d.protocol == dsc_config::WEB_PROTOCOL {
+                let page = paths.web_page();
+                match dsc_config::web::write_page(&page) {
+                    Ok(()) => view.web_file = Some(page.display().to_string()),
+                    Err(e) => {
+                        view.web_file_problem =
+                            Some(format!("Could not write {}: {e}", page.display()))
+                    }
+                }
+            }
+            view
         })
         .collect();
     out.sort_by(|a, b| {
@@ -75,7 +88,8 @@ fn devices() -> Reply<Vec<DeviceView>> {
 /// `HidApi` each time, since one caches the list it was built with.
 ///
 /// Only devices on a protocol this build can list are ever reported; any other
-/// reads as not found, which is true as far as the editor can tell.
+/// reads as not found, which is true as far as the editor can tell. A web
+/// device is not plugged in at all, so it is always there.
 #[tauri::command]
 fn connected_devices() -> Reply<Vec<String>> {
     let paths = Paths::resolve();
@@ -88,7 +102,10 @@ fn connected_devices() -> Reply<Vec<String>> {
     Ok(inv
         .devices
         .iter()
-        .filter(|d| d.protocol == dsc_config::DEFAULT_PROTOCOL && pids.contains(&d.usb_pid))
+        .filter(|d| {
+            d.protocol == dsc_config::WEB_PROTOCOL
+                || (d.protocol == dsc_config::DEFAULT_PROTOCOL && pids.contains(&d.usb_pid))
+        })
         .map(|d| d.key.clone())
         .collect())
 }

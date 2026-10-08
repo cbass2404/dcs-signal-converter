@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kneeboard CDU</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #000;
+        overflow: hidden;
+      }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      canvas {
+        image-rendering: pixelated;
+        transition: opacity 0.15s linear;
+      }
+      #note {
+        position: fixed;
+        inset: auto 0 12px 0;
+        text-align: center;
+        font:
+          14px system-ui,
+          sans-serif;
+        color: #5c6670;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="glass"></canvas>
+    <div id="note"></div>
+    <script>
+      // Drawn the way the panel draws it: each cell a glyph from the font the
+      // aircraft's CDU uses, in the colour the page gave it, on black.
+
+      // By the ordinal the panel indexes them, which is what a cell carries.
+      // The same swatches the editor's preview uses.
+      const COLOURS = [
+        "#000000", // black
+        "#ff9d1c", // amber
+        "#f2f4f7", // white
+        "#3fe0e0", // cyan
+        "#36d14a", // green
+        "#e668d8", // magenta
+        "#f0564a", // red
+        "#f2e14c", // yellow
+        "#9a6b3f", // brown
+        "#9aa3ad", // grey
+        "#c3bb72", // khaki
+      ];
+
+      const canvas = document.getElementById("glass");
+      const note = document.getElementById("note");
+      const ctx = canvas.getContext("2d");
+      const device = new URLSearchParams(location.search).get("device");
+      // Opened from disk, so it asks the converter for the screen where the
+      // converter answers. The same address as WEB_ADDRESS in dsc-config,
+      // which a test holds it to.
+      const SERVER = "http://127.0.0.1:8310";
+      const fonts = new Map();
+
+      function fontFor(file) {
+        if (!fonts.has(file)) {
+          fonts.set(
+            file,
+            fetch(`${SERVER}/font?file=${encodeURIComponent(file)}`).then((r) =>
+              r.ok ? r.json() : null,
+            ),
+          );
+        }
+        return fonts.get(file);
+      }
+
+      // The whole grid as large as the window allows, keeping its shape.
+      function fit() {
+        if (!canvas.width) return;
+        const scale = Math.min(innerWidth / canvas.width, innerHeight / canvas.height);
+        canvas.style.width = `${Math.floor(canvas.width * scale)}px`;
+        canvas.style.height = `${Math.floor(canvas.height * scale)}px`;
+      }
+      addEventListener("resize", fit);
+
+      async function draw(screen) {
+        // The screen backlight: on black, fading the glass is dimming it.
+        canvas.style.opacity = String(screen.backlight / 255);
+        const font = screen.font ? await fontFor(screen.font) : null;
+        if (!font) {
+          note.textContent = "No font yet for this screen.";
+          return;
+        }
+        const w = font.cell;
+        const h = font.height;
+        if (canvas.width !== screen.columns * w || canvas.height !== screen.rows * h) {
+          canvas.width = screen.columns * w;
+          canvas.height = screen.rows * h;
+          fit();
+          // In OpenKneeboard, ask for a page the screen's shape, so it fills
+          // the kneeboard without bars, at twice its pixels so the glyphs stay
+          // sharp when the kneeboard is scaled up. Elsewhere there is no one
+          // to ask.
+          window.OpenKneeboard?.SetPreferredPixelSize(canvas.width * 2, canvas.height * 2).catch(
+            () => {},
+          );
+        }
+        ctx.fillStyle = COLOURS[0];
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        screen.cells.forEach(([ch, fg, bg, small], n) => {
+          const x = (n % screen.columns) * w;
+          const y = Math.floor(n / screen.columns) * h;
+          if (bg) {
+            ctx.fillStyle = COLOURS[bg] ?? COLOURS[0];
+            ctx.fillRect(x, y, w, h);
+          }
+          const rows = (small ? font.small : font.large)[ch];
+          if (!rows || ch === " ") return;
+          ctx.fillStyle = COLOURS[fg] ?? COLOURS[2];
+          rows.forEach((row, ry) => {
+            for (let rx = 0; rx < row.length; rx += 1) {
+              const bit = row[rx];
+              if (bit === "X" || bit === "1") ctx.fillRect(x + rx, y + ry, 1, 1);
+            }
+          });
+        });
+        note.textContent = "";
+      }
+
+      // Asks for the screen once it is newer than the one shown, so a paint
+      // arrives as soon as it happens and an idle page asks nothing.
+      async function poll() {
+        let version = 0;
+        for (;;) {
+          try {
+            const query = new URLSearchParams({ after: String(version) });
+            if (device) query.set("device", device);
+            const r = await fetch(`${SERVER}/screen?${query}`);
+            const screen = await r.json();
+            if (!screen.device) {
+              note.textContent = "Waiting for a profile to put a page on this screen.";
+            } else if (screen.version !== version) {
+              version = screen.version;
+              await draw(screen);
+            }
+          } catch {
+            // The converter stopped, or is restarting.
+            note.textContent = "Waiting for DCS Signal Converter.";
+            version = 0;
+            await new Promise((done) => setTimeout(done, 1000));
+          }
+        }
+      }
+      poll();
+    </script>
+  </body>
+</html>

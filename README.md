@@ -74,6 +74,12 @@ a profile can bind one you do not own without harm.
 
 Which lamps each one has is in [docs/PROTOCOL-WINCTRL.md](docs/PROTOCOL-WINCTRL.md).
 
+**Kneeboard CDU.** No CDU of your own? The converter draws the MCDU's screen
+in [OpenKneeboard](https://openkneeboard.com) (1.10 or later), or in a
+browser on the same PC, with its own six page slots. Turn it on in a profile
+and its section in the editor shows the file to add to OpenKneeboard as a
+**Single file** tab, with a **Copy** button.
+
 **Aircraft.** A profile ships for each of these. Any other aircraft gets a blank
 starter profile the first time you fly it, ready to fill in with the
 [editor](#4-make-it-yours).
@@ -107,11 +113,20 @@ starter profile the first time you fly it, ready to fill in with the
 | UH-60L         | The UH-60L and MH-60R mods                                                         |
 | FC3            | The Flaming Cliffs aircraft, and the mods and modules with no profile of their own |
 
+**Placeholder profiles** ship for the other aircraft DCS-BIOS supports: A-29B,
+AH-6J, Alphajet, Bf-109K-4, C-101, Christen Eagle II, Edge540, F-22A,
+F-4E-45MC, F-5E-3, F-86F Sabre, F4U-1D, FW-190A8, FW-190D9, I-16, Ka-50,
+L-39, MB-339, P-47D, P-51D, SA342 and Spitfire LF Mk IX. They are not
+finished: each lights a Master Caution and holds the backlights on, and
+leaves every other lamp for you. The finished versions arrive as ordinary
+updates, so anything you change in one stays yours.
+
 The A-10C, AH-64D, CH-47F and F-14B (Upgrade) also put their own CDU on the MCDU
 screen, and on a PFP's, which is the same screen. The A-4E-C, AJS37, F-16,
 F/A-18, Mi-8, Mi-24P, MiG-15bis, Mosquito and UH-1H get pages built from their
-own readings there instead. Most aircraft profiles also ship a page for the
-UFC, the ICP's DED, or both. Every screen is yours to change in the
+own readings there instead. Each of them gives the Kneeboard CDU the same
+pages, turned off until you turn it on. Most aircraft profiles also ship a
+page for the UFC, the ICP's DED, or both. Every screen is yours to change in the
 [editor](#4-make-it-yours): a label you type, a reading beside it, each in the
 colour and size you choose. Open a profile to see exactly what it drives.
 
@@ -119,7 +134,8 @@ Every aircraft profile ties every panel backlight to one row, which follows a
 cockpit lighting knob, so every panel dims with the cockpit. Point that row at
 another knob, or set it to Always on, to change that. The Flaming Cliffs
 profile holds it at a steady brightness, since those aircraft have no knob
-DCS-BIOS can read. The No aircraft profile leaves the panels dark, since
+DCS-BIOS can read, and so does each placeholder profile until it is
+finished. The No aircraft profile leaves the panels dark, since
 DCS-BIOS sends nothing to follow; set its backlights to Always on if you want
 them lit.
 
@@ -257,13 +273,14 @@ A few more things the editor does:
   glass, and can carry a label in the middle naming what it divides. The rule
   and the label each take their own colour. The A-4E-C, A-10C, AH-64D, AJS37,
   F-16, Mi-8, Mi-24P, MiG-15bis, Mosquito and UH-1H MCDU pages ship with one.
-- **Pages.** Every screen shows pages: the MCDU, the UFC and the ICP's DED
-  each have six slots, each showing a page, a blank screen, or nothing. In
-  flight, hold Ctrl and press a page key to swap the screen to that slot's
-  page: LSK 1L to 6L on the MCDU, A/P, IFF, TCN, ILS, D/N and BCN on the UFC,
-  and COM 1, COM 2, IFF, LIST, A-A and A-G on the ICP. DCS still sees the
-  press, so keep Ctrl with those keys unbound there, or pick Shift, Alt or a
-  button on any of your controllers in Settings.
+- **Pages.** Every screen shows pages: the MCDU, the UFC, the ICP's DED and
+  the Kneeboard CDU each have six slots, each showing a page, a blank
+  screen, or nothing. In flight, hold Ctrl and press a page key to swap the
+  screen to that slot's page: LSK 1L to 6L on the MCDU, A/P, IFF, TCN, ILS,
+  D/N and BCN on the UFC, COM 1, COM 2, IFF, LIST, A-A and A-G on the ICP,
+  and 1 to 6 on the keyboard's top row for the Kneeboard CDU. DCS still sees
+  the press, so keep Ctrl with those keys unbound there, or pick Shift, Alt
+  or a button on any of your controllers in Settings.
 - **Settings**, the gear at the top of the Profiles page, picks the window's
   theme and the key or controller button held to swap pages, and holds
   Import profile... and Manage Converter.

@@ -808,6 +808,10 @@ export interface Device {
    * has one slot per key, or one that never swaps when there are none.
    */
   page_keys: string[];
+  /** A web device's page, as a file for OpenKneeboard. Absent for a panel. */
+  web_file?: string;
+  /** Why a web device's page could not be written, when it could not. */
+  web_file_problem?: string;
 }
 
 /** A profile picked for import, before anything is written. */
@@ -866,6 +870,8 @@ export interface SlotPart {
   slot: number;
   /** The page's name, or its id where it cannot be found. Empty when blank. */
   page: string;
+  /** The page's id as the source has it; null when blank. */
+  page_id: string | null;
   /** Shows a blank screen rather than a page. */
   blank: boolean;
   start: boolean;

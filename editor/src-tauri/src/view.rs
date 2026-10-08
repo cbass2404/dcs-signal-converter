@@ -77,6 +77,13 @@ pub struct DeviceView {
     /// What each page key is called, in slot order: one slot per key. Empty
     /// for a device with none, which has one slot that never swaps.
     pub page_keys: Vec<String>,
+    /// A web device's page, as a file for OpenKneeboard's Single file tab or
+    /// a browser. Absent for a panel, or where the file could not be written.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub web_file: Option<String>,
+    /// Why a web device's page could not be written, when it could not.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub web_file_problem: Option<String>,
 }
 
 /// A segment display, described only as far as the window needs it.
@@ -288,6 +295,8 @@ impl DeviceView {
                     })
                 })
                 .collect(),
+            web_file: None,
+            web_file_problem: None,
         }
     }
 

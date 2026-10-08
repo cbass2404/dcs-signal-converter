@@ -1,0 +1,32 @@
+{
+  "module": "F-4E",
+  "pages": [],
+  "signals": [
+    {
+      "id": "n8d8bb",
+      "name": "Master Caution",
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "PLT_WCA_MASTER_CAUTION",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "WSO_WCA_MASTER_CAUTION",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

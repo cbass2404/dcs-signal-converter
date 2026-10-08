@@ -21,6 +21,7 @@ pub mod pages;
 pub mod paths;
 pub mod settings;
 pub mod stored;
+pub mod web;
 
 pub use pages::{Page, PageFile, PageLibrary, PageRun, PageSlots, Pages, Slot, SlotNote, SlotRun};
 pub use stored::{Join, StoredCache, StoredSignal, StoredValue, Term, Total};
@@ -675,6 +676,13 @@ pub struct Part {
 /// The protocol every device spoke before there was more than one, and what a
 /// device file that does not name one is taken to mean.
 pub const DEFAULT_PROTOCOL: &str = "wctrl";
+
+/// The protocol of a screen drawn in a web page rather than on a panel.
+pub const WEB_PROTOCOL: &str = "web";
+
+/// Where the converter answers a web device's page with the screen: this
+/// machine only.
+pub const WEB_ADDRESS: &str = "127.0.0.1:8310";
 
 fn default_protocol() -> String {
     DEFAULT_PROTOCOL.to_string()

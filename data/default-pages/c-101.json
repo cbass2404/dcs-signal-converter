@@ -1,0 +1,18 @@
+{
+  "module": "C-101",
+  "pages": [],
+  "signals": [
+    {
+      "id": "x2yn42",
+      "name": "Master Caution",
+      "conditions": [
+        {
+          "source": "CC_FRONT_CAUTION_L",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -64,6 +64,14 @@ pub trait Protocol {
     /// means, because a USB product id is only one brand's answer.
     fn is_connected(&self, spec: &DeviceSpec) -> Result<bool>;
 
+    /// Look again at what is plugged in, after Windows says a device came or
+    /// went, so [`is_connected`](Protocol::is_connected) and
+    /// [`open`](Protocol::open) see it. Nothing to do for a protocol that
+    /// keeps no list.
+    fn refresh(&mut self) -> Result<()> {
+        Ok(())
+    }
+
     /// Open a device [`is_connected`](Protocol::is_connected) has just found.
     ///
     /// The display catalogue comes in here because a screen's geometry and its

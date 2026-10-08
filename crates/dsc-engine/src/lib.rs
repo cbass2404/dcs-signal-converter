@@ -149,6 +149,8 @@ pub enum Cause {
     ProfileReload,
     /// One screen repainted with another of its page slots.
     PageSwap,
+    /// A panel plugged in while running, swept and painted in full.
+    Replug,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -515,6 +517,46 @@ impl Engine {
                 blink_index(&self.profiles[i], &self.devices, &self.connected);
         }
         self.index_paint();
+    }
+
+    /// The devices present have changed while running: a panel was
+    /// unplugged, or plugged in again.
+    ///
+    /// A panel that went is forgotten, so nothing is cleared on it later. One
+    /// that arrived powers up without anything we sent it, so it is swept and
+    /// painted in full, as for a new aircraft, and the panels that stayed are
+    /// left as they are.
+    pub fn replug(&mut self, keys: Vec<String>) -> Batch {
+        let arrived: HashSet<String> = keys
+            .iter()
+            .filter(|k| !self.connected.contains(k))
+            .cloned()
+            .collect();
+        let changed: HashSet<String> = self
+            .connected
+            .iter()
+            .filter(|k| !keys.contains(k))
+            .cloned()
+            .chain(arrived.iter().cloned())
+            .collect();
+        self.shadow.retain(|id, _| !changed.contains(&id.device));
+        self.screens.retain(|(d, _), _| !changed.contains(d));
+        self.set_connected(keys);
+        self.track_moves();
+        // With no aircraft yet, or its settle sweep still to come, that sweep
+        // takes in the new panel with the rest.
+        if arrived.is_empty() || self.aircraft.is_none() || self.pending.is_some() {
+            return Batch::empty(Cause::Replug);
+        }
+        let mut writes = self.sweep_only(|d| arrived.contains(d));
+        let (lamps, lcd, drawn) = self.paint();
+        writes.extend(lamps);
+        Batch {
+            cause: Cause::Replug,
+            writes,
+            lcd,
+            drawn,
+        }
     }
 
     /// The devices declared present, by key.
@@ -1147,9 +1189,20 @@ impl Engine {
 
         self.by_address = binding_index(profile, module, &self.connected);
         (self.blinking, self.blink_paint) = blink_index(profile, &self.devices, &self.connected);
+        self.track_moves();
+        self.index_paint();
+    }
 
-        // Kept across a profile reload, so saving in the editor does not
-        // forget which knob was turned last. Only what is still read is kept.
+    /// Track the signals the active profile's "latest" bindings read, on the
+    /// devices that run. Kept across a profile reload, so saving in the
+    /// editor does not forget which knob was turned last, and across a panel
+    /// coming or going. Only what is still read is kept.
+    fn track_moves(&mut self) {
+        let Some(i) = self.active else { return };
+        let profile = &self.profiles[i];
+        let Some(module) = self.catalogue.module(&profile.module) else {
+            return;
+        };
         let mut old = std::mem::take(&mut self.moves);
         for b in profile
             .bindings
@@ -1176,7 +1229,6 @@ impl Engine {
                 }
             }
         }
-        self.index_paint();
     }
 
     /// Bring every tracked signal up to date with the words that just moved.
@@ -1236,9 +1288,14 @@ impl Engine {
     /// ones take zero. Deliberately *not* a reset followed by a sync, which
     /// would write every LED twice and visibly flash the panel on every load.
     fn sweep(&mut self) -> Vec<LedWrite> {
+        self.sweep_only(|_| true)
+    }
+
+    /// [`sweep`](Self::sweep), on the devices `which` picks.
+    fn sweep_only(&mut self, which: impl Fn(&str) -> bool) -> Vec<LedWrite> {
         let bound = self.resolve_all();
         let mut writes = Vec::new();
-        for id in self.all_leds() {
+        for id in self.all_leds().into_iter().filter(|id| which(&id.device)) {
             let value = bound.get(&id).copied().unwrap_or(0);
             self.shadow.insert(id.clone(), value);
             writes.push(LedWrite { id, value });

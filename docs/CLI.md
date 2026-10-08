@@ -87,6 +87,17 @@ aircraft loaded none are.
 A `page` line is a page key swapping a screen's page. Changing the modifier in
 the editor's Settings reaches a running converter within half a second.
 
+A `panels` line is a panel unplugged or plugged in while running. One that
+stops answering is dropped and the rest carry on. Plugged in again, or for
+the first time after startup, it is opened and shown the cockpit as it is,
+page keys included:
+
+```
+panels   MCDU_Captain stopped answering (writing: ...); dropped until it is back
+panels   MCDU Captain unplugged
+panels   MCDU Captain plugged in
+```
+
 `n set, n unset` counts configured lamps against ones still to be decided. An
 unset lamp is a normal state, not an error; it is simply driven off.
 

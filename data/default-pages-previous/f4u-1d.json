@@ -1,0 +1,18 @@
+{
+  "module": "F4U-1D",
+  "pages": [],
+  "signals": [
+    {
+      "id": "27fgii",
+      "name": "Master Caution",
+      "conditions": [
+        {
+          "source": "DASH_STALL_WARN",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
+    }
+  ]
+}

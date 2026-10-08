@@ -57,6 +57,15 @@
       "same_as_device": "CarrierAce_MFD_C"
     },
     {
+      "device": "CDU_Kneeboard",
+      "led": "Screen_Backlight",
+      "conditions": [],
+      "same_as": "INST_PNL_Backlight",
+      "same_as_device": "CarrierAce_MFD_C",
+      "off": 255,
+      "note": "Held at full, because at 0 the screen shows nothing. It lights only while this profile puts fields on the screen, whatever it is bound to, so a screen with nothing on it stays black."
+    },
+    {
       "device": "MCDU_Captain",
       "led": "Backlight",
       "conditions": [],
@@ -1054,6 +1063,9 @@
       "note": "Held at full, because at 0 the screen shows nothing. It lights only while this profile puts fields on the screen, whatever it is bound to, so a screen with nothing on it stays black."
     }
   ],
+  "disabled_devices": [
+    "CDU_Kneeboard"
+  ],
   "follows": {
     "CarrierAce_MFD_L": "CarrierAce_MFD_C",
     "CarrierAce_MFD_R": "CarrierAce_MFD_C",
@@ -1067,6 +1079,23 @@
     "PFP7_Observer": "PFP7_Captain"
   },
   "screens": {
+    "CDU_Kneeboard": {
+      "start": 1,
+      "slots": [
+        {
+          "page": "aedqu1",
+          "key": null
+        },
+        {
+          "page": null,
+          "key": null
+        },
+        null,
+        null,
+        null,
+        null
+      ]
+    },
     "MCDU_Captain": {
       "start": 1,
       "slots": [

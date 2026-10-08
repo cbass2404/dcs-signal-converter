@@ -1,0 +1,18 @@
+{
+  "module": "P-47D",
+  "pages": [],
+  "signals": [
+    {
+      "id": "hqfuki",
+      "name": "Master Caution",
+      "conditions": [
+        {
+          "source": "FUEL_LVL_WARN_L",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
+    }
+  ]
+}

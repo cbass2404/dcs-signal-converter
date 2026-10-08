@@ -43,6 +43,14 @@
       "conditions": []
     },
     {
+      "device": "CDU_Kneeboard",
+      "led": "Screen_Backlight",
+      "conditions": [],
+      "always": true,
+      "off": 255,
+      "note": "Held at full, because at 0 the screen shows nothing. It lights only while this profile puts fields on the screen, whatever it is bound to, so a screen with nothing on it stays black."
+    },
+    {
       "device": "MCDU_Captain",
       "led": "Backlight",
       "conditions": []
@@ -814,6 +822,7 @@
     "PFP4_CoPilot",
     "PFP3N_Observer",
     "PFP7_Observer",
-    "PFP4_Observer"
+    "PFP4_Observer",
+    "CDU_Kneeboard"
   ]
 }

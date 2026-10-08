@@ -813,7 +813,7 @@ dependencies = [
 
 [[package]]
 name = "dsc-bios"
-version = "1.0.0-beta.11"
+version = "1.0.0-beta.12"
 dependencies = [
  "socket2 0.5.10",
  "thiserror 1.0.69",
@@ -821,7 +821,7 @@ dependencies = [
 
 [[package]]
 name = "dsc-cli"
-version = "1.0.0-beta.11"
+version = "1.0.0-beta.12"
 dependencies = [
  "anyhow",
  "clap",
@@ -839,7 +839,7 @@ dependencies = [
 
 [[package]]
 name = "dsc-config"
-version = "1.0.0-beta.11"
+version = "1.0.0-beta.12"
 dependencies = [
  "serde",
  "serde_json",
@@ -849,7 +849,7 @@ dependencies = [
 
 [[package]]
 name = "dsc-editor"
-version = "1.0.0-beta.11"
+version = "1.0.0-beta.12"
 dependencies = [
  "anyhow",
  "dsc-bios",
@@ -868,7 +868,7 @@ dependencies = [
 
 [[package]]
 name = "dsc-engine"
-version = "1.0.0-beta.11"
+version = "1.0.0-beta.12"
 dependencies = [
  "dsc-bios",
  "dsc-config",
@@ -877,7 +877,7 @@ dependencies = [
 
 [[package]]
 name = "dsc-input"
-version = "1.0.0-beta.11"
+version = "1.0.0-beta.12"
 dependencies = [
  "thiserror 1.0.69",
  "windows",
@@ -4414,7 +4414,7 @@ dependencies = [
 
 [[package]]
 name = "wctrl-hid"
-version = "1.0.0-beta.11"
+version = "1.0.0-beta.12"
 dependencies = [
  "hidapi",
  "serde_json",

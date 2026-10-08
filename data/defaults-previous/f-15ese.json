@@ -76,6 +76,15 @@
       "same_as_device": "CarrierAce_MFD_C"
     },
     {
+      "device": "CDU_Kneeboard",
+      "led": "Screen_Backlight",
+      "conditions": [],
+      "same_as": "INST_PNL_Backlight",
+      "same_as_device": "CarrierAce_MFD_C",
+      "off": 255,
+      "note": "Held at full, because at 0 the screen shows nothing. It lights only while this profile puts fields on the screen, whatever it is bound to, so a screen with nothing on it stays black."
+    },
+    {
       "device": "MCDU_Captain",
       "led": "Backlight",
       "conditions": [],
@@ -1037,6 +1046,9 @@
       "off": 255,
       "note": "Held at full, because at 0 the screen shows nothing. It lights only while this profile puts fields on the screen, whatever it is bound to, so a screen with nothing on it stays black."
     }
+  ],
+  "disabled_devices": [
+    "CDU_Kneeboard"
   ],
   "follows": {
     "CarrierAce_MFD_L": "CarrierAce_MFD_C",

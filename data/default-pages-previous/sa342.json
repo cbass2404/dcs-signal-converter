@@ -1,0 +1,18 @@
+{
+  "module": "SA342",
+  "pages": [],
+  "signals": [
+    {
+      "id": "38x5qm",
+      "name": "Master Caution",
+      "conditions": [
+        {
+          "source": "AC_115V_BUS_NAV",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
+    }
+  ]
+}

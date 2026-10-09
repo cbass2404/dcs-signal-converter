@@ -27,7 +27,7 @@ const HELLO: u8 = 0x01;
 const DESCRIBE: u8 = 0x02;
 const SET_LAMPS: u8 = 0x10;
 const ALL_OFF: u8 = 0x11;
-const HELLO_REPLY: u8 = 0x81;
+pub const HELLO_REPLY: u8 = 0x81;
 const LAMP: u8 = 0x82;
 const ERROR: u8 = 0xFF;
 
@@ -123,18 +123,18 @@ impl Reply {
                 version: r.byte()?,
                 lamps: r.byte()?,
                 flags: r.byte()?,
-                vendor: r.string()?,
-                model: r.string()?,
-                unit: r.string()?,
-                firmware: r.string()?,
+                vendor: r.string("vendor", 12)?,
+                model: r.string("model", 16)?,
+                unit: r.string("unit", 8)?,
+                firmware: r.string("firmware", 12)?,
             })),
             Some(&LAMP) => Ok(Reply::Lamp(LampInfo {
                 index: r.byte()?,
                 kind: r.byte()?,
                 max: r.byte()?.max(1),
                 flags: r.byte()?,
-                name: r.string()?,
-                label: r.string()?,
+                name: r.string("name", 20)?,
+                label: r.string("label", 30)?,
             })),
             Some(&ERROR) => Ok(Reply::Error {
                 of: r.byte()?,
@@ -162,6 +162,12 @@ pub enum WireError {
     Short,
     #[error("message type 0x{0:02x} is not one a board sends")]
     UnknownType(u8),
+    #[error("its {field} is {len} bytes, and the protocol allows {most}")]
+    TooLong {
+        field: &'static str,
+        len: usize,
+        most: usize,
+    },
 }
 
 struct Reader<'a> {
@@ -176,11 +182,18 @@ impl Reader<'_> {
         Ok(b)
     }
 
-    /// A length byte and that many bytes of ASCII. Anything outside printable
-    /// ASCII becomes `?`, so a confused board cannot put control characters
-    /// in the log or a file.
-    fn string(&mut self) -> Result<String, WireError> {
+    /// A length byte and that many bytes of ASCII, at most `most` of them.
+    /// Anything outside printable ASCII becomes `?`, so a confused board
+    /// cannot put control characters in the log or a file.
+    fn string(&mut self, field: &'static str, most: usize) -> Result<String, WireError> {
         let n = self.byte()? as usize;
+        if n > most {
+            return Err(WireError::TooLong {
+                field,
+                len: n,
+                most,
+            });
+        }
         let bytes = self.m.get(self.at..self.at + n).ok_or(WireError::Short)?;
         self.at += n;
         Ok(bytes
@@ -280,7 +293,8 @@ impl Deframer {
         let mut out = Vec::new();
         for &b in bytes {
             if b != 0 {
-                if self.pending.len() <= MAX_MESSAGE + 2 {
+                // The longest frame: a message, its CRC and one COBS code.
+                if self.pending.len() < MAX_MESSAGE + 2 {
                     self.pending.push(b);
                 } else {
                     self.overflow = true;
@@ -318,12 +332,13 @@ pub fn report(message: &[u8]) -> [u8; REPORT_LEN] {
 }
 
 /// The message in an input report, which may or may not still start with
-/// its report ID depending on how it was read.
+/// its report ID depending on how it was read. A whole report with another
+/// ID, or a read of any other size, is not ours.
 pub fn unreport(r: &[u8]) -> Option<Vec<u8>> {
-    let payload = if r.len() == REPORT_LEN && r[0] == REPORT_ID {
-        &r[1..]
-    } else {
-        r
+    let payload = match r.len() {
+        REPORT_LEN if r[0] == REPORT_ID => &r[1..],
+        n if n == REPORT_LEN - 1 => r,
+        _ => return None,
     };
     let n = *payload.first()? as usize;
     if n == 0 || n > MAX_MESSAGE {
@@ -444,6 +459,62 @@ mod tests {
         );
         assert_eq!(Reply::decode(&[0x81, 1]), Err(WireError::Short));
         assert_eq!(Reply::decode(&[0x05]), Err(WireError::UnknownType(0x05)));
+    }
+
+    /// Every message cut short at every length is refused, never read past.
+    #[test]
+    fn a_reply_cut_short_anywhere_is_refused() {
+        let mut hello = vec![0x81, 1, 4, 0];
+        for s in [&b"Arduino"[..], b"Panel", b"L", b"1.0"] {
+            hello.push(s.len() as u8);
+            hello.extend_from_slice(s);
+        }
+        let lamp = vec![0x82, 2, 1, 1, 0, 4, b'F', b'I', b'R', b'E', 1, b'F'];
+        for m in [hello, lamp, vec![0xFF, 0x10, 0x02]] {
+            assert!(Reply::decode(&m).is_ok(), "{m:?} whole");
+            for cut in 0..m.len() {
+                assert!(Reply::decode(&m[..cut]).is_err(), "{m:?} cut at {cut}");
+            }
+        }
+    }
+
+    #[test]
+    fn a_string_past_its_limit_is_refused() {
+        let mut m = vec![0x81, 1, 0, 0, 13];
+        m.extend_from_slice(b"Thirteen Byte");
+        m.extend([0, 0, 0]);
+        assert_eq!(
+            Reply::decode(&m),
+            Err(WireError::TooLong {
+                field: "vendor",
+                len: 13,
+                most: 12
+            })
+        );
+    }
+
+    #[test]
+    fn a_frame_longer_than_any_message_is_dropped() {
+        let longest = frame(&[0x55; MAX_MESSAGE]);
+        assert_eq!(longest.len(), MAX_MESSAGE + 3, "message, CRC, code, 0x00");
+        assert_eq!(Deframer::default().push(&longest).len(), 1);
+        // One byte more than that, valid COBS and a good CRC.
+        let mut raw = vec![0x55; MAX_MESSAGE + 1];
+        raw.push(crc8(&raw));
+        let mut over = cobs_encode(&raw);
+        over.push(0);
+        assert!(Deframer::default().push(&over).is_empty());
+    }
+
+    #[test]
+    fn a_report_with_another_id_or_size_is_not_ours() {
+        let mut r = report(&[0xFF, 0x10, 0x02]);
+        r[0] = 0x02;
+        assert_eq!(unreport(&r), None);
+        assert_eq!(unreport(&report(&[0x11])[..10]), None);
+        let mut lying = report(&[0x11]);
+        lying[1] = 63;
+        assert_eq!(unreport(&lying), None, "a length above 62");
     }
 
     #[test]

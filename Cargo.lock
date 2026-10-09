@@ -888,6 +888,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "dsc-firmware"
+version = "1.0.0-beta.12"
+dependencies = [
+ "cc",
+ "dsc-device",
+]
+
+[[package]]
 name = "dsc-input"
 version = "1.0.0-beta.12"
 dependencies = [

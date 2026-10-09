@@ -67,7 +67,12 @@ impl Link for FakeLink {
     fn send(&mut self, m: &[u8]) -> io::Result<()> {
         let mut b = self.0.lock().unwrap();
         b.heard.push(m.to_vec());
+        // Checked as the firmware checks: too short for its fields is
+        // `ERROR` 0x03, and nothing in it applies.
+        let short = |t: u8| Some(vec![0xFF, t, 0x03]);
         let reply = match m.first() {
+            Some(&t) if matches!(t, 0x01 | 0x02 | 0x10) && m.len() < 2 => short(t),
+            Some(0x10) if m.len() < 2 + 2 * m[1] as usize => short(0x10),
             Some(0x01) => {
                 if b.deaf_for > 0 {
                     b.deaf_for -= 1;
@@ -165,6 +170,26 @@ mod tests {
             scan(&mut link, Duration::from_millis(100)),
             Err(ScanError::TooOld(0))
         ));
+    }
+
+    #[test]
+    fn a_board_whose_reply_breaks_a_limit_is_refused_saying_so() {
+        let (mut link, _) = board("A vendor too long", "B", "", vec![]);
+        let err = scan(&mut link, Duration::from_millis(100)).unwrap_err();
+        assert!(err.to_string().contains("vendor is 17 bytes"), "{err}");
+    }
+
+    #[test]
+    fn a_request_cut_short_is_refused_and_changes_nothing() {
+        let (mut link, board) = board("A", "B", "", vec![lamp(0, "FIRE", 1)]);
+        for m in [&[0x01][..], &[0x02], &[0x10], &[0x10, 2, 0, 1]] {
+            link.send(m).unwrap();
+            assert_eq!(
+                link.receive(Duration::ZERO).unwrap(),
+                Some(vec![0xFF, m[0], 0x03])
+            );
+        }
+        assert_eq!(board.lock().unwrap().values, [0]);
     }
 
     #[test]

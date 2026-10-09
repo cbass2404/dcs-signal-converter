@@ -26,6 +26,8 @@ pub enum DescribeError {
     NoIdentity,
     #[error("lamp {0} has no name, so a profile cannot bind it")]
     Unnamed(u8),
+    #[error("lamp {0} is called {1:?}; a name is letters, digits and _ only")]
+    BadName(u8, String),
     #[error("two lamps are called {0:?}; a profile could not say which it means")]
     NameTwice(String),
     #[error("lamp {0} answered as lamp {1}")]
@@ -90,6 +92,13 @@ impl Description {
             }
             if lamp.name.is_empty() {
                 return Err(DescribeError::Unnamed(lamp.index));
+            }
+            if !lamp
+                .name
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '_')
+            {
+                return Err(DescribeError::BadName(lamp.index, lamp.name.clone()));
             }
             if !names.insert(lamp.name.as_str()) {
                 return Err(DescribeError::NameTwice(lamp.name.clone()));
@@ -216,6 +225,10 @@ mod tests {
         assert_eq!(
             two("FIRE", "").spec().unwrap_err(),
             DescribeError::Unnamed(1)
+        );
+        assert_eq!(
+            two("FIRE", "GEAR DOWN").spec().unwrap_err(),
+            DescribeError::BadName(1, "GEAR DOWN".into())
         );
         let nobody = Description {
             hello: hello("", "", "", 0),

@@ -6,7 +6,7 @@ use thiserror::Error;
 
 use crate::describe::Description;
 use crate::link::Link;
-use crate::wire::{HelloReply, Reply, Request, WireError, OLDEST};
+use crate::wire::{HelloReply, Reply, Request, WireError, HELLO_REPLY, OLDEST};
 
 /// How long a serial board gets to answer: opening its port resets most of
 /// them, and the bootloader runs first.
@@ -35,7 +35,8 @@ pub enum ScanError {
 }
 
 /// Ask until the board answers `HELLO` or `wait` runs out. A board that
-/// answers with a version older than [`OLDEST`] is refused.
+/// answers with a version older than [`OLDEST`], or with a reply laid out
+/// wrong, is refused.
 pub fn hello(link: &mut dyn Link, wait: Duration) -> Result<HelloReply, ScanError> {
     let until = Instant::now() + wait;
     while Instant::now() < until {
@@ -43,15 +44,19 @@ pub fn hello(link: &mut dyn Link, wait: Duration) -> Result<HelloReply, ScanErro
         let asked = Instant::now();
         while asked.elapsed() < HELLO_EVERY {
             match link.receive(HELLO_EVERY.saturating_sub(asked.elapsed()))? {
-                Some(m) => {
-                    // Anything else is left over from before; skip it.
-                    if let Ok(Reply::Hello(h)) = Reply::decode(&m) {
+                Some(m) => match Reply::decode(&m) {
+                    Ok(Reply::Hello(h)) => {
                         if h.version < OLDEST {
                             return Err(ScanError::TooOld(h.version));
                         }
                         return Ok(h);
                     }
-                }
+                    // The CRC or USB vouched for the bytes, so a reply laid
+                    // out wrong is the board's fault, not noise.
+                    Err(e) if m.first() == Some(&HELLO_REPLY) => return Err(e.into()),
+                    // Anything else is left over from before; skip it.
+                    _ => {}
+                },
                 None => break,
             }
         }

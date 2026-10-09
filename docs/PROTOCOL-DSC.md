@@ -98,6 +98,28 @@ agreed version, so this is a fallback for firmware that leaves out part of its
 version, not the way a host finds out what a device can do. A message the
 device refused had no effect, and the host does not count on it.
 
+### Malformed messages
+
+The serial CRC catches noise on the wire. It says nothing about whether a
+message is laid out right, and HID has no CRC at all, so every receiver checks
+each message against its layout before reading a field.
+
+- A frame or report that breaks its transport's rules is dropped without an
+  answer, as under "Transports": bad COBS, a failed CRC, a frame longer than
+  64 bytes before its `0x00`, a report with another ID, or a length byte of 0,
+  above 62 or past the end of the report.
+- A receiver never reads past the end of a message. A device answers a message
+  too short for its fields with `ERROR` code `0x03`, and nothing in it
+  applies: a `SET_LAMPS` whose `count` promises more pairs than it holds sets
+  no lamp at all.
+- A string longer than its field allows makes the message invalid, as does a
+  lamp name outside its characters. The host refuses a device that sends one,
+  saying which field, and does not drive it.
+- Bytes after the known fields are not malformed. They are from a newer
+  version, and "Versions" says to ignore them.
+- A sender never sends what a receiver would refuse. The host refuses its own
+  message longer than 62 bytes rather than send it.
+
 ### `HELLO` and `HELLO_REPLY`
 
 ```text

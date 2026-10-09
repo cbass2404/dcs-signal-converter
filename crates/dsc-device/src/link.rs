@@ -17,6 +17,22 @@ pub trait Link: Send {
     fn receive(&mut self, timeout: Duration) -> io::Result<Option<Vec<u8>>>;
 }
 
+/// A message the protocol can carry, or an error saying why not, so a bad
+/// request from the host fails here rather than in the board.
+fn fits(message: &[u8]) -> io::Result<()> {
+    if message.is_empty() || message.len() > wire::MAX_MESSAGE {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            format!(
+                "a message of {} bytes; the protocol carries 1 to {}",
+                message.len(),
+                wire::MAX_MESSAGE
+            ),
+        ));
+    }
+    Ok(())
+}
+
 // ------------------------------------------------------------------ serial
 
 /// A board on a COM port.
@@ -44,6 +60,7 @@ impl SerialLink {
 
 impl Link for SerialLink {
     fn send(&mut self, message: &[u8]) -> io::Result<()> {
+        fits(message)?;
         self.port.write_all(&wire::frame(message))?;
         self.port.flush()
     }
@@ -92,6 +109,7 @@ fn hid_error(e: hidapi::HidError) -> io::Error {
 
 impl Link for HidLink {
     fn send(&mut self, message: &[u8]) -> io::Result<()> {
+        fits(message)?;
         self.dev.write(&wire::report(message)).map_err(hid_error)?;
         Ok(())
     }

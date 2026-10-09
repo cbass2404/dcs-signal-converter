@@ -30,9 +30,9 @@ uint8_t crc8(const uint8_t *data, uint8_t len) {
   return crc;
 }
 
-// Decode one COBS frame without its 0x00. Returns the decoded length, or 0
-// for a frame that is not valid COBS.
-uint8_t cobsDecode(const uint8_t *in, uint8_t len, uint8_t *out) {
+// Decode one COBS frame without its 0x00 into at most `most` bytes. Returns
+// the decoded length, or 0 for a frame that is not valid COBS or will not fit.
+uint8_t cobsDecode(const uint8_t *in, uint8_t len, uint8_t *out, uint8_t most) {
   uint8_t i = 0;
   uint8_t o = 0;
   while (i < len) {
@@ -41,12 +41,15 @@ uint8_t cobsDecode(const uint8_t *in, uint8_t len, uint8_t *out) {
       return 0;
     }
     for (uint8_t k = 1; k < code; k++) {
-      if (i >= len) {
+      if (i >= len || o >= most) {
         return 0;
       }
       out[o++] = in[i++];
     }
     if (code < 0xFF && i < len) {
+      if (o >= most) {
+        return 0;
+      }
       out[o++] = 0;
     }
   }
@@ -92,7 +95,7 @@ uint8_t DscSerial::receive(uint8_t *buf) {
       continue;
     }
     uint8_t raw[DSC_MAX_MESSAGE + 1];
-    uint8_t n = cobsDecode(frame_, got, raw);
+    uint8_t n = cobsDecode(frame_, got, raw, sizeof(raw));
     // At least a type byte and the CRC, and no longer than a message can be.
     if (n < 2 || n > DSC_MAX_MESSAGE + 1) {
       continue;
@@ -168,7 +171,12 @@ void DscDevice::poll() {
   }
 }
 
+// Every case checks the message is long enough for its fields before
+// reading one; bytes after them are from a newer version and ignored.
 void DscDevice::handle(const uint8_t *m, uint8_t n) {
+  if (n == 0) {
+    return;
+  }
   switch (m[0]) {
     case HELLO:
       if (n < 2) {

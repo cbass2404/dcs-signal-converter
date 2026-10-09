@@ -45,6 +45,16 @@ pub struct SavedBoard {
     pub lamps: usize,
 }
 
+/// A board just added, and whether one by the same key was there already.
+#[derive(serde::Serialize)]
+pub struct AddedBoard {
+    #[serde(flatten)]
+    pub board: SavedBoard,
+    /// The same board added again, or a second board with the same identity:
+    /// the editor cannot tell which, so it says both.
+    pub replaced: bool,
+}
+
 #[derive(serde::Serialize)]
 pub struct BoardsView {
     /// HID boards first, then every COM port.
@@ -96,13 +106,13 @@ pub fn boards_list() -> Reply<BoardsView> {
 /// entry for the same board. A serial port is allowed for the converter too.
 /// Off the main thread: a serial board can take three seconds to answer.
 #[tauri::command]
-pub async fn board_add(place: String) -> Reply<SavedBoard> {
+pub async fn board_add(place: String) -> Reply<AddedBoard> {
     tauri::async_runtime::spawn_blocking(move || add(&place))
         .await
         .map_err(|e| fail("adding the board", e))?
 }
 
-fn add(place: &str) -> Reply<SavedBoard> {
+fn add(place: &str) -> Reply<AddedBoard> {
     let paths = Paths::resolve();
     dev_only(&paths)?;
     let serial = !place.starts_with('\\') && place.to_ascii_uppercase().starts_with("COM");
@@ -136,6 +146,10 @@ fn add(place: &str) -> Reply<SavedBoard> {
             spec.key
         ));
     }
+    let replaced = user_devices::read(&paths.user_devices)
+        .map_err(|e| fail("reading the added boards", e))?
+        .iter()
+        .any(|d| d.key == spec.key);
     user_devices::save(&paths.user_devices, &spec).map_err(|e| fail("saving the board", e))?;
     if serial {
         let mut settings = Settings::load(&paths.settings).unwrap_or_default();
@@ -150,7 +164,10 @@ fn add(place: &str) -> Reply<SavedBoard> {
                 .map_err(|e| fail("allowing the port", e))?;
         }
     }
-    Ok(saved(&spec))
+    Ok(AddedBoard {
+        board: saved(&spec),
+        replaced,
+    })
 }
 
 /// Every profile in the active folder that names `key`, as its file and the

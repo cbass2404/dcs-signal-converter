@@ -6,6 +6,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { ruleFromDivider } from "./content";
 
 import type {
+  AddedBoard,
   BoardsView,
   CatalogueStatus,
   CellDraw,
@@ -29,7 +30,6 @@ import type {
   Profile,
   ProfileSummary,
   RuleCell,
-  SavedBoard,
   Settings,
   SettingsView,
   SignalView,
@@ -96,7 +96,7 @@ export const controllerCaptureCancel = () => invoke<void>("controller_capture_ca
 /** Where boards could be, and those added. Opens nothing. */
 export const boardsList = () => invoke<BoardsView>("boards_list");
 /** Ask the board at `place` what it has and keep it. A serial board takes up to 3 s. */
-export const boardAdd = (place: string) => invoke<SavedBoard>("board_add", { place });
+export const boardAdd = (place: string) => invoke<AddedBoard>("board_add", { place });
 /** The profiles removing a board would change, by name. */
 export const boardRemovePlan = (key: string) => invoke<string[]>("board_remove_plan", { key });
 /** Take a board out of every profile that names it, then out of the list. Returns those changed. */

@@ -631,6 +631,11 @@ export interface SavedBoard {
   lamps: number;
 }
 
+export interface AddedBoard extends SavedBoard {
+  /** One by the same key was there already: this board again, or a second with the same identity. */
+  replaced: boolean;
+}
+
 export interface BoardsView {
   places: BoardPlace[];
   saved: SavedBoard[];

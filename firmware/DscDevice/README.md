@@ -44,7 +44,9 @@ DscDevice panel("Arduino", "Caution Panel", "", "1.0", lamps, DSC_COUNT(lamps));
 - **Name** is what profiles store. Rename a lamp and every binding to it is
   lost, so choose names once.
 - **Vendor, model and unit** are the board's identity. Two boards of the same
-  model need different units, such as `"L"` and `"R"`.
+  model need different units, such as `"L"` and `"R"`, so flash each with its
+  own. A replacement board flashed with the same sketch needs nothing else:
+  profiles find it as they found the old one.
 - **`DSC_BACKLIGHT`** joins the lamp to the pit-wide backlight dimming.
 - **`DSC_NO_PIN`** with `panel.onLamp(writer)` hands every lamp to your own
   code, for shift registers or LED drivers.

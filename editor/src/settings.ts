@@ -394,7 +394,11 @@ function boardsSection(changed: () => void): HTMLDivElement {
     void boardAdd(chosen).then(
       (b) => {
         changed();
-        say(`${b.display_name} added, ${b.lamps} lamps.`);
+        say(
+          b.replaced
+            ? `${b.display_name} was already added; its lamps were updated, ${b.lamps} lamps. If this is a second board, give it its own unit in its sketch.`
+            : `${b.display_name} added, ${b.lamps} lamps.`,
+        );
         void refresh();
       },
       (e: unknown) => {

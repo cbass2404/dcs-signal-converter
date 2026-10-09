@@ -135,7 +135,8 @@ impl Dsc {
                     let key = description.key();
                     if let Some(other) = self.boards.get(&key) {
                         self.lines.push(format!(
-                            "dsc      {place} and {} both say they are {key}; give one a unit in its sketch. {place} is left alone",
+                            "dsc      {place} and {} both say they are {key}; {} is driven and {place} left alone. Give one a unit in its sketch",
+                            other.place,
                             other.place
                         ));
                         self.passed_over.insert(place.clone());

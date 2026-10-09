@@ -141,7 +141,15 @@ change between plugs, and a firmware update should keep them. On our sketch the
 builder sets `model` and `unit` in the same table as the lamps.
 
 Two devices answering with the same identity are a conflict the host reports
-and does not guess at: the second is left alone until one is given a `unit`.
+and does not guess at: it drives the one it found first, leaves the other
+alone, and names both in its log. Which it finds first can change when ports
+are renumbered, so the fix is a `unit` on one of them, never the order.
+
+Nothing in the identity is tied to the hardware, by design. A board replaced
+by another running the same firmware is the same device to the host, and every
+profile binding it carries on unchanged. A new serial board may come up on
+another COM port; the user adds it in the editor as they did the first, since
+the host opens only ports it was given.
 
 ### `DESCRIBE` and `LAMP`
 
@@ -166,7 +174,9 @@ one source so the whole pit dims together, and a lamp flagged here joins in.
 
 A name is the lamp's identity, as the model is the device's. Renaming a lamp in
 a firmware update leaves any binding to the old name pointing at nothing, which
-the editor reports; renumbering lamps while keeping their names is harmless.
+the editor reports. Renumbering lamps while keeping their names loses no
+binding, but the host drives lamps by index and checks the numbering when it
+opens the device, so it waits until the board is added again.
 
 ### `SET_LAMPS`
 

@@ -261,6 +261,11 @@ numbers move and the words do not.
       writable folder, read after the shipped one; a key in both is refused
       today and should become a warning once users can add devices.
 
+      Spec drafted 2026-10-09 in [PROTOCOL-DSC.md](PROTOCOL-DSC.md): HID and
+      serial with one message set, devices describe their lamps with names,
+      and a described device is saved to the user's devices folder so it can
+      be bound unplugged. Next: the reference sketch, then the `dsc` backend.
+
       The same protocol can serve small commercial makers. Total Controls
       (Apache MPDs and other panels) is being asked (2026-10-08) about putting
       it in their firmware; their MPDs have no host brightness control today,

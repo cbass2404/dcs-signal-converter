@@ -52,7 +52,7 @@ impl Slot {
 
 /// A screen's slots and the one shown when a mission starts.
 ///
-/// There is one slot per page key the device lists in `devices.json`, so slot
+/// There is one slot per page key the device lists in `data/devices`, so slot
 /// n is the nth key whatever is filled around it; see
 /// [`DeviceSpec::slot_count`](crate::DeviceSpec::slot_count).
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]

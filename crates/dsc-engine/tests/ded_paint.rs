@@ -40,7 +40,7 @@ fn engine() -> (Engine, DisplayCatalogue) {
 }
 
 fn capped() -> (Engine, DisplayCatalogue) {
-    let devices = DeviceInventory::load(&r("data/devices.json")).expect("devices");
+    let devices = DeviceInventory::load_dir(&r("data/devices")).expect("devices");
     let cat = Catalogue::load_dir(&r("data/catalogue")).expect("catalogue");
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).expect("displays");
     let mut e = Engine::new(devices, cat, vec![profile()]).with_displays(displays.clone());
@@ -164,7 +164,7 @@ fn backlight(batch: &Batch) -> Option<u8> {
 
 #[test]
 fn the_ded_backlight_is_a_lamp_a_profile_can_bind() {
-    let devices = DeviceInventory::load(&r("data/devices.json")).unwrap();
+    let devices = DeviceInventory::load_dir(&r("data/devices")).unwrap();
     let icp = devices.device("ViperAce_ICP").unwrap();
     assert!(icp.led("Screen_Backlight").is_some(), "offered to profiles");
     assert!(

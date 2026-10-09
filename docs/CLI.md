@@ -33,7 +33,7 @@ installed program and the profiles folder chosen at install.
 | `--profiles <DIR>` | `data/profiles` | Where profiles are read from, and where a starter profile is written for an aircraft that has none. Seeded from `--defaults` at startup. |
 | `--defaults <DIR>` | `data/defaults` | Shipped profiles. Copied into `--profiles` for any name not already there, and never over one that is. |
 | `--catalogue <DIR>` | `data/catalogue` | Generated signal catalogue. See above. |
-| `--devices <FILE>` | `data/devices.json` | Hardware inventory: which LEDs exist, and what values each accepts. |
+| `--devices <DIR>` | `data/devices` | Hardware inventory, one file per maker: which LEDs exist, and what values each accepts. |
 | `--log-dir <DIR>` | `Saved Games\DCS\Logs` installed, `data/logs` in a checkout | Where the session log goes. |
 | `--no-log` | off | Writes no session log at all. |
 

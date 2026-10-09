@@ -239,7 +239,7 @@ numbers move and the words do not.
       part id (a lamp lights at all), the five lamps, the LSK page keys, and
       whether the 31px rows sit acceptably against the keys or the 32px
       fonts are worth a per-part glyph height. Then mark `verified` in
-      `devices.json`. [STATUS.md](STATUS.md), "Built 2026-09-24: the PFP-3N"
+      `winctrl.json`. [STATUS.md](STATUS.md), "Built 2026-09-24: the PFP-3N"
 
 ## Deferred, not scheduled
 
@@ -254,6 +254,12 @@ numbers move and the words do not.
       once, the board and its lamps added in the editor, bound per aircraft
       like any panel. Needs our own protocol (HID, serial or both), a
       user-owned device file and an Add a device form. Tracked in #123.
+
+      The inventory is now a folder, `data/devices`, one file per maker
+      (`winctrl.json`, `virtual.json`), read by `DeviceInventory::load_dir`.
+      A user's boards go in a `devices` folder of the same shape in the
+      writable folder, read after the shipped one; a key in both is refused
+      today and should become a warning once users can add devices.
 
       The same protocol can serve small commercial makers. Total Controls
       (Apache MPDs and other panels) is being asked (2026-10-08) about putting

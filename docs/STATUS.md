@@ -2157,7 +2157,7 @@ data/profiles         active profiles, gitignored, seeded from data/defaults
 editor/               Tauri 2 editor: vanilla TS + Vite, src-tauri in the workspace
 crates/dsc-cli        `dcs-signal`  devices/parts/led/blink/sweep/listen/learn/run
 data/catalogue        51 modules, generated, version-stamped
-data/devices.json     every connected panel verified; each names its protocol
+data/devices/        one file per maker; every connected panel verified, each names its protocol
 tools/                HID probe, WWTHID log parser and tail, release,
                       version and snapshot scripts, the pinned DCS-BIOS
                       fetch, daemon benchmark (docs/PERFORMANCE.md), DED

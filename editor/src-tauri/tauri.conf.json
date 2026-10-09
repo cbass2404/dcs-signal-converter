@@ -32,7 +32,7 @@
       "../../target/release/dcs-signal.exe": "dcs-signal.exe",
       "../../tools/hook/run-hidden.vbs": "run-hidden.vbs",
       "../../tools/hook/dcs-signal-hook.lua": "hook/dcs-signal-hook.lua",
-      "../../data/devices.json": "data/devices.json",
+      "../../data/devices/": "data/devices/",
       "../../data/nightly-only.json": "data/nightly-only.json",
       "../../data/defaults/": "data/defaults/",
       "../../data/defaults-previous/": "data/defaults-previous/",

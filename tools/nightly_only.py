@@ -68,7 +68,7 @@ def main():
 
 def checkout_env():
     """The checkout's `data`, named outright. A Tauri build copies
-    `data/devices.json` beside `target/*/dcs-signal.exe`, which then takes
+    `data/devices` beside `target/*/dcs-signal.exe`, which then takes
     itself for an installed copy and would write elsewhere."""
     return dict(os.environ, DSC_DATA=os.path.join(ROOT, "data"))
 

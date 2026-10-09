@@ -38,7 +38,7 @@ fn module() -> Module {
 }
 
 fn devices() -> DeviceInventory {
-    DeviceInventory::load(&r("data/devices.json")).expect("devices")
+    DeviceInventory::load_dir(&r("data/devices")).expect("devices")
 }
 
 fn displays() -> DisplayCatalogue {

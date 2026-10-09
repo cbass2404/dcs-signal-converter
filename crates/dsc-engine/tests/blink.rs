@@ -97,7 +97,7 @@ struct Pit {
 impl Pit {
     /// Loaded and settled at 1 s on the flash clock, warning off.
     fn loaded() -> Self {
-        let devices = DeviceInventory::load(&root().join("data/devices.json")).expect("devices");
+        let devices = DeviceInventory::load_dir(&root().join("data/devices")).expect("devices");
         let mut engine = Engine::new(devices, catalogue(), vec![profile()]);
         engine.set_connected(vec![PTO2.to_string()]);
         let t0 = Instant::now();
@@ -220,7 +220,7 @@ fn nothing_flashing_means_no_beat_to_wait_for() {
             branch.blink = dsc_config::Blink::Steady;
         }
     }
-    let devices = DeviceInventory::load(&root().join("data/devices.json")).expect("devices");
+    let devices = DeviceInventory::load_dir(&root().join("data/devices")).expect("devices");
     let mut engine = Engine::new(devices, catalogue(), vec![profile]);
     engine.set_connected(vec![PTO2.to_string()]);
     let t0 = Instant::now();

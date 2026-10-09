@@ -167,7 +167,7 @@ the whole `0-255` span.
 
 The fourteen indicators at indices 4-17 take **`0` or `1` only**, verified on
 hardware 2026-09-16. `1` lights, `0` clears, and `255` is out of range: it acks
-and lights nothing, so it is not truthy. `data/devices.json` records them as
+and lights nothing, so it is not truthy. `data/devices/winctrl.json` records them as
 `kind: indicator` with `max: 1`. Index 17 (HOOK) is a physically dim lamp,
 visibly weaker than its neighbours at full brightness, and not a protocol
 difference.
@@ -398,7 +398,7 @@ ever written 1 or 0. Indices 3 to 7 were never written.
 is WwDevicesDotnet's (commit `2bf28fa`: `SupportedDevices.cs`,
 `Winctrl/README.md`, `Winctrl/Pfp*/`). Its PFP support has been confirmed
 working by other owners, which is why it was taken on; every lamp and key is
-still marked unverified in `devices.json` until a panel is seen here.
+still marked unverified in `winctrl.json` until a panel is seen here.
 
 Each PFP has three names, each its own PID, as the MCDU does:
 

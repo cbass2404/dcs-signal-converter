@@ -78,7 +78,7 @@ fn profile(bindings: &str) -> Profile {
 }
 
 fn devices() -> DeviceInventory {
-    DeviceInventory::load(&r("data/devices.json")).expect("devices")
+    DeviceInventory::load_dir(&r("data/devices")).expect("devices")
 }
 
 /// What each lamp row reads with the seat and both cockpit lamps as given.

@@ -7,7 +7,7 @@
 //! whether a screen has to be committed, whether a font has to be uploaded
 //! first.
 //!
-//! Each device in `data/devices.json` names its protocol, and [`all`] builds
+//! Each device in `data/devices` names its protocol, and [`all`] builds
 //! the ones this release can drive. Adding a brand means a new module here and
 //! a new name in that list; nothing above this module changes.
 //!
@@ -150,8 +150,8 @@ mod tests {
     /// and wrong for the one we ship. This is the difference between the two.
     #[test]
     fn every_shipped_device_asks_for_a_protocol_this_build_can_drive() {
-        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/devices.json");
-        let inventory = DeviceInventory::load(&path).expect("data/devices.json parses");
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/devices");
+        let inventory = DeviceInventory::load_dir(&path).expect("data/devices parses");
         let protocols = all().expect("the protocols start");
         let names: Vec<&str> = protocols.iter().map(|p| p.name()).collect();
         assert!(

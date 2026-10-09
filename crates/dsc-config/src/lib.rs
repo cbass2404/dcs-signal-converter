@@ -1,7 +1,7 @@
 //! Catalogue, device inventory and profile types.
 //!
 //! The catalogue is generated from DCS-BIOS by [`catalogue_build`]; the
-//! device inventory is `data/devices.json`. Profiles are authored by the user,
+//! device inventory is `data/devices`, one file per maker. Profiles are authored by the user,
 //! keyed by LED rather than by signal  see docs/CONFIG.md.
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -215,10 +215,12 @@ pub enum Error {
     SlotsWithoutScreen(String),
     #[error("{0:?} has {1} page slots, but {2} page keys; a disabled slot is written as null")]
     SlotCount(String, usize, usize),
-    #[error("devices.json lists {1} twice on {0:?}")]
+    #[error("the device inventory lists {1} twice on {0:?}")]
     ButtonTwice(String, String),
-    #[error("devices.json gives {0:?} the page key {1:?}, which is none of its buttons")]
+    #[error("the device inventory gives {0:?} the page key {1:?}, which is none of its buttons")]
     UnknownPageKey(String, String),
+    #[error("the device {0:?} is in both {1} and {2}; a key can name only one device")]
+    DeviceTwice(String, String, String),
     #[error("{0:?} starts on slot {1}, which holds no page")]
     StartNotFilled(String, usize),
     #[error("{0:?} has pages in its slots but does not say which one to start on")]
@@ -838,11 +840,47 @@ pub struct DeviceInventory {
 }
 
 impl DeviceInventory {
-    /// Read the inventory, refusing one whose buttons contradict themselves:
-    /// two keys under one name or one number, or a page key naming no button
-    /// of its own device.
+    /// Read one inventory file, refusing one whose buttons contradict
+    /// themselves: two keys under one name or one number, or a page key naming
+    /// no button of its own device.
     pub fn load(path: &Path) -> Result<Self> {
         let inv: DeviceInventory = read_json(path)?;
+        inv.check_buttons()?;
+        Ok(inv)
+    }
+
+    /// Read every file in an inventory folder, one per maker, as one
+    /// inventory.
+    ///
+    /// Files are read in name order and each keeps its own order, so the
+    /// result never depends on how the folder happens to list. A key in two
+    /// files is refused rather than one quietly winning, since bindings name
+    /// devices by key and could not say which was meant.
+    pub fn load_dir(dir: &Path) -> Result<Self> {
+        let mut files = Vec::new();
+        for entry in std::fs::read_dir(dir)? {
+            let path = entry?.path();
+            if path.extension().and_then(|e| e.to_str()) == Some("json") {
+                files.push(path);
+            }
+        }
+        files.sort();
+        let mut devices: Vec<DeviceSpec> = Vec::new();
+        let mut from: HashMap<String, String> = HashMap::new();
+        for path in files {
+            let file = path
+                .file_name()
+                .map(|f| f.to_string_lossy().into_owned())
+                .unwrap_or_default();
+            let part: DeviceInventory = read_json(&path)?;
+            for d in part.devices {
+                if let Some(first) = from.insert(d.key.clone(), file.clone()) {
+                    return Err(Error::DeviceTwice(d.key, first, file));
+                }
+                devices.push(d);
+            }
+        }
+        let inv = DeviceInventory { devices };
         inv.check_buttons()?;
         Ok(inv)
     }
@@ -5071,12 +5109,12 @@ mod tests {
         assert_eq!(spec.protocol, DEFAULT_PROTOCOL);
     }
 
-    /// Parses the real inventory, so a change to `data/devices.json` that the
+    /// Parses the real inventory, so a change to `data/devices` that the
     /// Rust types cannot represent fails here rather than at runtime.
     #[test]
     fn ships_a_parseable_device_inventory() {
-        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/devices.json");
-        let inventory = DeviceInventory::load(&path).expect("data/devices.json parses");
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/devices");
+        let inventory = DeviceInventory::load_dir(&path).expect("data/devices parses");
 
         let pto2 = inventory
             .device("TAKEOFF_PLANEL_2")
@@ -5106,8 +5144,8 @@ mod tests {
     /// broke the earlier flat model.
     #[test]
     fn a_device_may_span_several_parts() {
-        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/devices.json");
-        let inventory = DeviceInventory::load(&path).unwrap();
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/devices");
+        let inventory = DeviceInventory::load_dir(&path).unwrap();
         let orion = inventory.device("Orion_Throttle_Base_II").unwrap();
         assert!(orion.parts.len() > 1, "base plus handles");
 

@@ -70,7 +70,7 @@ fn field(source: &str, cells: &str, seat: Option<u32>) -> String {
 }
 
 fn check(m: &Module, p: &Profile) -> dsc_config::Result<()> {
-    let devices = DeviceInventory::load(&r("data/devices.json")).expect("devices");
+    let devices = DeviceInventory::load_dir(&r("data/devices")).expect("devices");
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).expect("displays");
     p.validate(m, &devices, &displays, &dsc_config::PageLibrary::default())
 }

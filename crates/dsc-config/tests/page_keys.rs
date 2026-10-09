@@ -1,7 +1,7 @@
 //! Page keys: which of a panel's buttons swap its pages, and what each slot
 //! holds once a profile runs.
 //!
-//! A panel's buttons are its own, listed by name in its `devices.json` entry,
+//! A panel's buttons are its own, listed by name in its `data/devices` entry,
 //! and its page keys name some of them. The count of keys is the count of
 //! slots. See docs/CONFIG.md "Swapping".
 
@@ -19,7 +19,7 @@ fn r(p: &str) -> PathBuf {
 }
 
 /// An inventory of one panel, written to a file so it is read the way
-/// `devices.json` is.
+/// an inventory file is.
 fn inventory(buttons: &str, page_keys: &str) -> dsc_config::Result<DeviceInventory> {
     let dir = std::env::temp_dir().join(format!("dsc-page-keys-{}-{:x}", std::process::id(), {
         use std::hash::{Hash, Hasher};
@@ -28,7 +28,7 @@ fn inventory(buttons: &str, page_keys: &str) -> dsc_config::Result<DeviceInvento
         h.finish()
     }));
     std::fs::create_dir_all(&dir).unwrap();
-    let path = dir.join("devices.json");
+    let path = dir.join("inventory.json");
     std::fs::write(
         &path,
         format!(
@@ -44,7 +44,7 @@ fn inventory(buttons: &str, page_keys: &str) -> dsc_config::Result<DeviceInvento
 
 #[test]
 fn the_mcdu_page_keys_are_the_left_line_select_keys() {
-    let devices = DeviceInventory::load(&r("data/devices.json")).expect("devices");
+    let devices = DeviceInventory::load_dir(&r("data/devices")).expect("devices");
     for key in [CAPTAIN, COPILOT, "MCDU_Observer"] {
         let d = devices.device(key).expect("an MCDU entry");
         assert_eq!(d.slot_count(), 6, "{key}");

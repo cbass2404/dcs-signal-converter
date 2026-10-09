@@ -804,7 +804,7 @@ export interface Device {
    */
   variants: string[];
   /**
-   * What each page key is called, in slot order, from devices.json. A screen
+   * What each page key is called, in slot order, from data/devices. A screen
    * has one slot per key, or one that never swaps when there are none.
    */
   page_keys: string[];

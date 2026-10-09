@@ -11,8 +11,8 @@ use dsc_config::merge::{self, LampPick, Pick, SlotPick};
 use dsc_config::{DeviceInventory, PageSlots, Profile, Slot};
 
 fn inventory() -> DeviceInventory {
-    DeviceInventory::load(&Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/devices.json"))
-        .expect("devices.json loads")
+    DeviceInventory::load_dir(&Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/devices"))
+        .expect("the inventory loads")
 }
 
 fn lamps(device: &str, leds: &[&str]) -> Vec<LampPick> {

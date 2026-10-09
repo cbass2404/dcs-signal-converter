@@ -63,7 +63,7 @@ fn profile(body: &str) -> Profile {
 }
 
 fn found(p: &Profile) -> Vec<String> {
-    let devices = DeviceInventory::load(&r("data/devices.json")).expect("devices");
+    let devices = DeviceInventory::load_dir(&r("data/devices")).expect("devices");
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).expect("displays");
     p.problems(
         &module(),
@@ -114,7 +114,7 @@ fn every_fault_is_reported_not_just_the_first() {
 #[test]
 fn validate_still_stops_at_the_first_one() {
     // The daemon's contract is unchanged: one error, and the profile is skipped.
-    let devices = DeviceInventory::load(&r("data/devices.json")).expect("devices");
+    let devices = DeviceInventory::load_dir(&r("data/devices")).expect("devices");
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).expect("displays");
     let p = profile(
         r#""bindings": [
@@ -376,7 +376,7 @@ fn two_bands_claiming_one_reading_are_a_caution() {
         ]"#,
     );
     assert!(found(&p).is_empty(), "{:?}", found(&p));
-    let devices = DeviceInventory::load(&r("data/devices.json")).expect("devices");
+    let devices = DeviceInventory::load_dir(&r("data/devices")).expect("devices");
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).expect("displays");
     let cautions = p.field_cautions(&module(), &devices, &displays);
     assert_eq!(cautions.len(), 1, "{cautions:?}");
@@ -406,7 +406,7 @@ fn a_band_nothing_can_reach_is_a_caution() {
     );
     // A caution, so the profile still loads and the panel settles it.
     assert!(found(&p).is_empty(), "{:?}", found(&p));
-    let devices = DeviceInventory::load(&r("data/devices.json")).expect("devices");
+    let devices = DeviceInventory::load_dir(&r("data/devices")).expect("devices");
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).expect("displays");
     let cautions = p.field_cautions(&module(), &devices, &displays);
     assert_eq!(cautions.len(), 1, "{cautions:?}");
@@ -439,7 +439,7 @@ const TANK: &str = r#"[
 ]"#;
 
 fn cautions(p: &Profile) -> Vec<String> {
-    let devices = DeviceInventory::load(&r("data/devices.json")).expect("devices");
+    let devices = DeviceInventory::load_dir(&r("data/devices")).expect("devices");
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).expect("displays");
     p.field_cautions(&module(), &devices, &displays)
         .into_iter()
@@ -551,7 +551,7 @@ fn what_dcs_bios_says_a_signal_is_cautions_rather_than_refuses() {
         ]"#,
     );
     assert!(found(&p).is_empty(), "{:?}", found(&p));
-    let devices = DeviceInventory::load(&r("data/devices.json")).expect("devices");
+    let devices = DeviceInventory::load_dir(&r("data/devices")).expect("devices");
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).expect("displays");
     let cautions = p.field_cautions(&module(), &devices, &displays);
     assert_eq!(cautions.len(), 1, "{cautions:?}");
@@ -571,7 +571,7 @@ fn a_field_too_narrow_for_its_text_is_cautioned_on_that_field() {
             {"device": "CarrierAce_UFC", "display": "UFC1", "cells": "30-31", "text": "ABCDE"}
         ]"#,
     );
-    let devices = DeviceInventory::load(&r("data/devices.json")).expect("devices");
+    let devices = DeviceInventory::load_dir(&r("data/devices")).expect("devices");
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).expect("displays");
     let cautions = p.field_cautions(&module(), &devices, &displays);
     assert_eq!(cautions.len(), 1, "{cautions:?}");

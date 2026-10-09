@@ -31,13 +31,13 @@ fn fail(context: &str, e: impl std::fmt::Display) -> String {
 }
 
 fn inventory(paths: &Paths) -> Reply<DeviceInventory> {
-    DeviceInventory::load(&paths.devices)
+    DeviceInventory::load_dir(&paths.devices)
         .map_err(|e| fail(&format!("reading {}", paths.devices.display()), e))
 }
 
 /// Every device we have mapped, ordered by the name the user actually sees.
 ///
-/// Sorted once here rather than in `data/devices.json`, which is edited by hand
+/// Sorted once here rather than in `data/devices`, which is edited by hand
 /// and would drift the first time a device was appended at the bottom, and by
 /// `display_name` rather than `key`, because `PTO2` and `TAKEOFF_PLANEL_2` do
 /// not sort the same way and only one of them is ever on screen.

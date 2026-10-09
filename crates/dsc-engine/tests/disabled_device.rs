@@ -34,7 +34,7 @@ fn engine(drive_ufc: bool) -> Engine {
 }
 
 fn engine_with(drive_ufc: bool, plugged_in: bool) -> Engine {
-    let devices = DeviceInventory::load(&r("data/devices.json")).expect("devices");
+    let devices = DeviceInventory::load_dir(&r("data/devices")).expect("devices");
     let cat = Catalogue::load_dir(&r("data/catalogue")).expect("catalogue");
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).expect("displays");
     let mut profile =

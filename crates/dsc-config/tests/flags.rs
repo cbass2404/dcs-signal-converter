@@ -38,7 +38,7 @@ fn profile(body: &str) -> Profile {
 }
 
 fn loads(p: &Profile) {
-    let devices = DeviceInventory::load(&r("data/devices.json")).expect("devices");
+    let devices = DeviceInventory::load_dir(&r("data/devices")).expect("devices");
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).expect("displays");
     p.validate(
         &module(),

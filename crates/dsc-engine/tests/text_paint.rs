@@ -60,7 +60,7 @@ fn fixture(name: &str) -> std::path::PathBuf {
 }
 
 fn engine(p: Profile) -> Engine {
-    let devices = DeviceInventory::load(&r("data/devices.json")).expect("devices");
+    let devices = DeviceInventory::load_dir(&r("data/devices")).expect("devices");
     let cat = Catalogue::load_dir(&r("data/catalogue")).expect("catalogue");
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).expect("displays");
     let mut e = Engine::new(devices, cat, vec![p]).with_displays(displays);
@@ -102,7 +102,7 @@ fn fly(e: &mut Engine, aircraft: &str, lines: &[(usize, &[u8])]) -> Batch {
 /// Everything the daemon would refuse this profile for, in its own words.
 fn refusals(p: &Profile) -> Vec<String> {
     let e = engine(p.clone());
-    let devices = DeviceInventory::load(&r("data/devices.json")).unwrap();
+    let devices = DeviceInventory::load_dir(&r("data/devices")).unwrap();
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).unwrap();
     let module = e.catalogue().module(&p.module).expect("the module");
     resolved(p)
@@ -504,7 +504,7 @@ fn a_colour_line_is_checked_like_any_other_signal() {
     colours.source = "PLT_CDU_LINE1_COLOUR".into();
     colours.codes.insert("gr".into(), Colour::Green);
     let e = engine(p.clone());
-    let devices = DeviceInventory::load(&r("data/devices.json")).unwrap();
+    let devices = DeviceInventory::load_dir(&r("data/devices")).unwrap();
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).unwrap();
     let module = e.catalogue().module(&p.module).unwrap();
     let problems: Vec<String> = resolved(&p)

@@ -68,8 +68,8 @@ const TO_UP: &[u16] = &[
 ];
 
 fn devices() -> DeviceInventory {
-    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/devices.json");
-    DeviceInventory::load(&path).expect("data/devices.json should parse")
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/devices");
+    DeviceInventory::load_dir(&path).expect("data/devices should parse")
 }
 
 fn catalogue() -> Catalogue {

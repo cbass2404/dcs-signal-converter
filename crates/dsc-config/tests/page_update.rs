@@ -349,7 +349,7 @@ fn a_development_checkout_is_left_alone() {
 // ------------------------------------------------------------- profile slots
 
 fn inventory() -> DeviceInventory {
-    DeviceInventory::load(&Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/devices.json"))
+    DeviceInventory::load_dir(&Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/devices"))
         .unwrap()
 }
 

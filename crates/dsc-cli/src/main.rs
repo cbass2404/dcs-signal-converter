@@ -166,7 +166,7 @@ enum Command {
     /// this exits, and a power cycle clears the font.
     McduTest {
         /// Any panel with the MCDU screen. MCDU CAPTAIN 0xbb36, CO-PILOT
-        /// 0xbb3e, OBSERVER 0xbb3a; the PFPs are in devices.json.
+        /// 0xbb3e, OBSERVER 0xbb3a; the PFPs are in data/devices/winctrl.json.
         #[arg(long, value_parser = parse_hex16, default_value = "0xbb36")]
         pid: u16,
         /// Which part at that PID carries the screen.
@@ -601,7 +601,7 @@ fn mcdu_test(
         .context("the MCDU display has no text grid")?;
     // The part is the panel's, not the screen's: the MCDU and each PFP carry
     // the same screen under their own part id.
-    let inventory = DeviceInventory::load(devices)?;
+    let inventory = DeviceInventory::load_dir(devices)?;
     let part = inventory
         .devices
         .iter()
@@ -2528,7 +2528,7 @@ mod tests {
 
         let (cat, _) = fixture();
         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-        let inventory = DeviceInventory::load(&root.join("data/devices.json")).unwrap();
+        let inventory = DeviceInventory::load_dir(&root.join("data/devices")).unwrap();
         let displays = DisplayCatalogue::load_dir(&root.join("data/displays")).unwrap();
         let dir = std::env::temp_dir().join(format!("dsc-flagged-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
@@ -2587,7 +2587,7 @@ mod page_load_tests {
 
         let (cat, _) = fixture();
         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-        let inventory = DeviceInventory::load(&root.join("data/devices.json")).unwrap();
+        let inventory = DeviceInventory::load_dir(&root.join("data/devices")).unwrap();
         let displays = DisplayCatalogue::load_dir(&root.join("data/displays")).unwrap();
         let dir = std::env::temp_dir().join(format!("dsc-paged-{}", std::process::id()));
         let pages = dir.join("pages");
@@ -2634,7 +2634,7 @@ mod page_load_tests {
 
         let (cat, _) = fixture();
         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-        let inventory = DeviceInventory::load(&root.join("data/devices.json")).unwrap();
+        let inventory = DeviceInventory::load_dir(&root.join("data/devices")).unwrap();
         let displays = DisplayCatalogue::load_dir(&root.join("data/displays")).unwrap();
         let dir = std::env::temp_dir().join(format!("dsc-v1-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
@@ -2998,7 +2998,7 @@ fn run(
     ] {
         dlog::header(&format!("paths    {what} {}", path.display()));
     }
-    let inventory = DeviceInventory::load(devices_path)
+    let inventory = DeviceInventory::load_dir(devices_path)
         .with_context(|| format!("loading {}", devices_path.display()))?;
     let cat = load_catalogue(catalogue_dir, bios)?;
     let bios_json = catalogue_build::locate_bios_json(catalogue_dir, bios);

@@ -11,7 +11,7 @@ use std::path::Path;
 use dsc_config::{DeviceInventory, Profile};
 
 fn devices() -> DeviceInventory {
-    DeviceInventory::load(&Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/devices.json"))
+    DeviceInventory::load_dir(&Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/devices"))
         .expect("devices")
 }
 

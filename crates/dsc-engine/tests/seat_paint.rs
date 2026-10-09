@@ -77,7 +77,7 @@ fn profile() -> Profile {
 }
 
 fn engine() -> (Engine, DisplayCatalogue) {
-    let devices = DeviceInventory::load(&r("data/devices.json")).expect("devices");
+    let devices = DeviceInventory::load_dir(&r("data/devices")).expect("devices");
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).expect("displays");
     let cat = Catalogue::from_modules(vec![module()]);
     let mut e = Engine::new(devices, cat, vec![profile()]).with_displays(displays.clone());

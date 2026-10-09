@@ -38,8 +38,8 @@ fn scratch(name: &str) -> Scratch {
 }
 
 fn inventory() -> DeviceInventory {
-    DeviceInventory::load(&Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/devices.json"))
-        .expect("devices.json loads")
+    DeviceInventory::load_dir(&Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/devices"))
+        .expect("the inventory loads")
 }
 
 /// The MFD L backlight at a brightness, so an edit can be told from the default.

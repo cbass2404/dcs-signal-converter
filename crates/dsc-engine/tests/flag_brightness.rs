@@ -34,7 +34,7 @@ fn root() -> PathBuf {
 }
 
 fn devices() -> DeviceInventory {
-    DeviceInventory::load(&root().join("data/devices.json")).expect("devices.json should parse")
+    DeviceInventory::load_dir(&root().join("data/devices")).expect("the inventory should parse")
 }
 
 fn profile() -> Profile {

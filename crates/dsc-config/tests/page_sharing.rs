@@ -196,7 +196,7 @@ fn a_name_already_taken_is_refused() {
 
 #[test]
 fn a_merge_takes_slot_n_for_slot_n() {
-    let devices = DeviceInventory::load(&r("data/devices.json")).unwrap();
+    let devices = DeviceInventory::load_dir(&r("data/devices")).unwrap();
     let source = profile(&[Some("a"), None, Some("c")], 3);
     let target = profile(&[Some("x"), Some("y"), None], 2);
     let pick = Pick {

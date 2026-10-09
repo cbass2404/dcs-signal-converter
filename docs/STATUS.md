@@ -1570,6 +1570,18 @@ update never rewrites a row the user has changed: a fix reaches them only if
 they reset that lamp, and they cannot choose to unless the notes name it. The
 alpha.002 release notes do that for the two MCDU dividers.
 
+**`tools/changed_defaults.py` lists what to name** (2026-10-09), and
+`release.cmd` runs it before asking whether the notes are written. It reads
+the last `v*` tag from git, not the `-previous` folders, so a drifted snapshot
+cannot hide a change; `snapshot.py --check` catches the drift separately.
+Everything is matched on the keys the update reconciles on: a lamp row on
+device and lamp, a follow on device, a slot on device and slot number, a page
+on id, a field on cells, a signal on id. Order in the file never shows as a
+change. A change made identically in several profiles is pulled out under
+"Every profile" or "In N profiles", and devices with identical changes share
+a line, so a new device across 49 profiles reads once. Run against alpha.007
+to alpha.008 it gives everything the hand-written notes named, in 187 lines.
+
 ## Development mode, and three faults it uncovered
 
 **`.env` beside `data`, 2026-09-19.** `env=dev` makes `Paths::resolve` return

@@ -32,6 +32,13 @@ pub const REGISTRY_DATA: &str = "DataDir";
 /// DCS's own Saved Games folder, the one holding `Config` and `Scripts`.
 pub const REGISTRY_DCS: &str = "DcsDir";
 
+/// The device inventory's folder in `data`: one file per maker.
+pub const DEVICES: &str = "devices";
+
+/// Boards the user added, which describe themselves, in the folder the user's
+/// files are written to. Never shipped, so an update leaves it alone.
+pub const USER_DEVICES: &str = "user-devices";
+
 /// The file a checkout uses to say it is being developed in, beside `data`.
 /// Untracked, so it is one developer's choice and never something that ships.
 pub const DEV_FILE: &str = ".env";
@@ -53,8 +60,11 @@ pub enum Layout {
 /// Every location the daemon and the editor read or write.
 pub struct Paths {
     pub layout: Layout,
-    /// Hardware inventory. Read-only.
+    /// Hardware inventory, a folder of one file per maker. Read-only.
     pub devices: PathBuf,
+    /// Boards the user added, read after [`devices`](Self::devices). Written
+    /// by the editor; absent until the first is added.
+    pub user_devices: PathBuf,
     /// Cell and glyph maps for panels with glass. Read-only.
     pub displays: PathBuf,
     /// What the shipped defaults read that only the DCS-BIOS nightly has.
@@ -72,6 +82,18 @@ pub struct Paths {
 }
 
 impl Paths {
+    /// The shipped inventory with the user's boards after it, and what to say
+    /// about any of theirs that could not be taken.
+    pub fn inventory(&self) -> crate::Result<(crate::DeviceInventory, Vec<String>)> {
+        crate::DeviceInventory::load_with_user(&self.devices, &self.user_devices)
+    }
+
+    /// Whether this is a development checkout, where features not yet open to
+    /// everyone can be tried.
+    pub fn is_dev(&self) -> bool {
+        self.layout == Layout::Dev
+    }
+
     /// Where the web view's page is kept as a file, for OpenKneeboard: beside
     /// the settings, in the folder the user's own files are written to.
     pub fn web_page(&self) -> PathBuf {
@@ -89,8 +111,8 @@ impl Paths {
     ///    development run look installed, writing to the profiles the
     ///    developer actually flies. Looked for with its own climb, for the
     ///    same reason: see [`climb_dev`].
-    /// 3. `data/devices.json` beside the executable: installed.
-    /// 4. A `data/devices.json` in the current directory or any ancestor, then
+    /// 3. `data/devices` beside the executable: installed.
+    /// 4. A `data/devices` in the current directory or any ancestor, then
     ///    the executable's: a checkout. `tauri dev` runs from
     ///    `editor/src-tauri` and cargo from `target/debug`, both below the root.
     ///
@@ -118,7 +140,7 @@ impl Paths {
         }
         if let Some(dir) = &exe_dir {
             let shipped = dir.join("data");
-            if shipped.join("devices.json").is_file() {
+            if holds_inventory(&shipped) {
                 return Self::installed(shipped, writable_dir());
             }
         }
@@ -143,7 +165,8 @@ impl Paths {
     pub fn dev(root: PathBuf) -> Self {
         Paths {
             layout: Layout::Dev,
-            devices: root.join("devices.json"),
+            devices: root.join(DEVICES),
+            user_devices: root.join(USER_DEVICES),
             displays: root.join("displays"),
             nightly_only: root.join("nightly-only.json"),
             catalogue: root.join("catalogue"),
@@ -156,7 +179,8 @@ impl Paths {
     fn in_one(layout: Layout, root: PathBuf) -> Self {
         Paths {
             layout,
-            devices: root.join("devices.json"),
+            devices: root.join(DEVICES),
+            user_devices: root.join(USER_DEVICES),
             displays: root.join("displays"),
             nightly_only: root.join("nightly-only.json"),
             catalogue: root.join("catalogue"),
@@ -170,7 +194,8 @@ impl Paths {
     pub fn installed(shipped: PathBuf, writable: PathBuf) -> Self {
         Paths {
             layout: Layout::Installed,
-            devices: shipped.join("devices.json"),
+            devices: shipped.join(DEVICES),
+            user_devices: writable.join(USER_DEVICES),
             displays: shipped.join("displays"),
             nightly_only: shipped.join("nightly-only.json"),
             catalogue: writable.join("catalogue"),
@@ -181,14 +206,19 @@ impl Paths {
     }
 }
 
+/// Whether `data` is ours: it holds the inventory folder. Testing for that
+/// rather than for `data` alone avoids matching some unrelated `data`
+/// directory on the way up.
+fn holds_inventory(data: &Path) -> bool {
+    data.join(DEVICES).is_dir()
+}
+
 /// Walk up looking for a `data` directory that actually holds the inventory.
-/// Testing for `devices.json` rather than the folder avoids matching some
-/// unrelated `data` directory on the way up.
 fn climb(start: &Path) -> Option<PathBuf> {
     start
         .ancestors()
         .map(|dir| dir.join("data"))
-        .find(|candidate| candidate.join("devices.json").is_file())
+        .find(|candidate| holds_inventory(candidate))
 }
 
 /// The nearest checkout above `start` that asks for development mode.
@@ -203,7 +233,7 @@ fn climb(start: &Path) -> Option<PathBuf> {
 fn climb_dev(start: &Path) -> Option<PathBuf> {
     start.ancestors().find_map(|dir| {
         let data = dir.join("data");
-        if data.join("devices.json").is_file() && dev_requested(&data) {
+        if holds_inventory(&data) && dev_requested(&data) {
             Some(data)
         } else {
             None
@@ -419,7 +449,11 @@ mod tests {
             PathBuf::from("C:/app/data"),
             PathBuf::from("D:/sg/DCS Signal Converter"),
         );
-        assert_eq!(p.devices, Path::new("C:/app/data/devices.json"));
+        assert_eq!(p.devices, Path::new("C:/app/data/devices"));
+        assert_eq!(
+            p.user_devices,
+            Path::new("D:/sg/DCS Signal Converter/user-devices")
+        );
         assert_eq!(p.profiles.defaults, Path::new("C:/app/data/defaults"));
         assert_eq!(
             p.profiles.active,
@@ -444,7 +478,7 @@ mod tests {
     fn a_checkout_finds_its_data_from_below() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..");
         let found = climb(&root.join("editor").join("src-tauri")).expect("the repository's data");
-        assert!(found.join("devices.json").is_file());
+        assert!(found.join(DEVICES).join("winctrl.json").is_file());
     }
 
     /// A build folder carries a copy of `data` beside the executable, and the
@@ -456,10 +490,9 @@ mod tests {
         let root = std::env::temp_dir().join(format!("dsc-paths-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         let beside = root.join("target").join("debug");
-        std::fs::create_dir_all(root.join("data")).expect("the checkout's data");
-        std::fs::create_dir_all(beside.join("data")).expect("the copy beside the exe");
-        std::fs::write(root.join("data").join("devices.json"), "{}").expect("devices");
-        std::fs::write(beside.join("data").join("devices.json"), "{}").expect("the copy");
+        std::fs::create_dir_all(root.join("data").join(DEVICES)).expect("the checkout's data");
+        std::fs::create_dir_all(beside.join("data").join(DEVICES))
+            .expect("the copy beside the exe");
         std::fs::write(
             root.join(DEV_FILE),
             "env=dev
@@ -485,8 +518,7 @@ mod tests {
     fn an_install_is_not_mistaken_for_a_dev_checkout() {
         let root = std::env::temp_dir().join(format!("dsc-paths-installed-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
-        std::fs::create_dir_all(root.join("data")).expect("the installed data");
-        std::fs::write(root.join("data").join("devices.json"), "{}").expect("devices");
+        std::fs::create_dir_all(root.join("data").join(DEVICES)).expect("the installed data");
 
         assert_eq!(climb_dev(&root), None);
         let _ = std::fs::remove_dir_all(&root);

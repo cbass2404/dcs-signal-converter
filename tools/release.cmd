@@ -16,6 +16,7 @@ rem    2. tag from VERSION.md must not already exist, locally or on origin
 rem    3. the checks the pipeline would fail on: every version in the repo
 rem       agrees with VERSION.md, in HEAD as well as in the working tree,
 rem       every file in HEAD has the same name on disk (case included),
+rem       nothing from testing a board ships in data\devices or data\defaults,
 rem       data\nightly-only.json is current, and data\defaults-previous and
 rem       data\default-pages-previous still hold what the last release shipped
 rem    4. CHANGELOG.md has a section for this version, or you say go anyway
@@ -316,6 +317,19 @@ if errorlevel 1 (
     echo ERROR: git holds names that differ from the disk by case. Record the
     echo   renames above, merge them to main through a pull request, then
     echo   pull and re-run.
+    goto :fail
+)
+echo(
+
+rem A dev checkout flies data\defaults, so a board bound while testing writes
+rem itself into a shipped default, and every other user's copy is refused.
+rem CI checks the same; this says so before a tag exists.
+echo   checking HEAD for test boards in the shipped devices and defaults ...
+python tools\shipped_devices.py --ref HEAD
+if errorlevel 1 (
+    echo(
+    echo ERROR: HEAD ships something from testing a board. Take it out, merge
+    echo   that to main through a pull request, then pull and re-run.
     goto :fail
 )
 echo(

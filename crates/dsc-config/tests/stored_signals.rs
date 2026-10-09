@@ -148,7 +148,7 @@ fn profile(readouts: Vec<Readout>) -> Profile {
 }
 
 fn refusals(p: &Profile) -> Vec<String> {
-    let devices = DeviceInventory::load(&r("data/devices.json")).expect("devices");
+    let devices = DeviceInventory::load_dir(&r("data/devices")).expect("devices");
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).expect("displays");
     p.problems(&module(), &devices, &displays, &PageLibrary::default())
         .iter()

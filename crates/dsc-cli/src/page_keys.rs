@@ -1,6 +1,6 @@
 //! Page keys, read while the converter runs.
 //!
-//! Every panel that lists page keys in `devices.json` gets a thread reading
+//! Every panel that lists page keys in `data/devices` gets a thread reading
 //! its buttons, and each key going down arrives on one channel with
 //! whether the page modifier was held at that moment. What a key means is
 //! decided by the caller, from the device's own `page_keys`, so nothing here

@@ -80,7 +80,9 @@ pub struct MergeReport {
 }
 
 pub fn inventory(paths: &Paths) -> Result<DeviceInventory, String> {
-    DeviceInventory::load(&paths.devices)
+    paths
+        .inventory()
+        .map(|(devices, _)| devices)
         .map_err(|e| format!("reading {}: {e}", paths.devices.display()))
 }
 
@@ -269,7 +271,8 @@ pub fn export_pages(file: String) -> Result<Vec<ExportPage>, String> {
 /// or nothing if the dialog was cancelled.
 ///
 /// The profile is written as it is on disk, so what is shared is exactly what
-/// flies here. Async because the dialog blocks, and a blocking dialog on the
+/// flies here, less anything for boards this user added, which nobody else
+/// has. Async because the dialog blocks, and a blocking dialog on the
 /// main thread would hang the window it belongs to.
 #[tauri::command]
 pub async fn export_profile(
@@ -302,6 +305,14 @@ pub async fn export_profile(
             profile.name
         ));
     }
+    // Boards this user added are theirs alone; the profile goes without them.
+    let boards: std::collections::BTreeSet<String> =
+        dsc_config::user_devices::read(&paths.user_devices)
+            .map_err(|e| format!("reading the added boards: {e}"))?
+            .into_iter()
+            .map(|d| d.key)
+            .collect();
+    let profile = profile.without_devices(&boards);
     Bundle::of(&profile, &paths.pages.library(), &also)
         .save(&to)
         .map_err(|e| format!("writing {}: {e}", to.display()))?;

@@ -1,7 +1,7 @@
 //! Catalogue, device inventory and profile types.
 //!
 //! The catalogue is generated from DCS-BIOS by [`catalogue_build`]; the
-//! device inventory is `data/devices.json`. Profiles are authored by the user,
+//! device inventory is `data/devices`, one file per maker. Profiles are authored by the user,
 //! keyed by LED rather than by signal  see docs/CONFIG.md.
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -21,6 +21,7 @@ pub mod pages;
 pub mod paths;
 pub mod settings;
 pub mod stored;
+pub mod user_devices;
 pub mod web;
 
 pub use pages::{Page, PageFile, PageLibrary, PageRun, PageSlots, Pages, Slot, SlotNote, SlotRun};
@@ -215,10 +216,12 @@ pub enum Error {
     SlotsWithoutScreen(String),
     #[error("{0:?} has {1} page slots, but {2} page keys; a disabled slot is written as null")]
     SlotCount(String, usize, usize),
-    #[error("devices.json lists {1} twice on {0:?}")]
+    #[error("the device inventory lists {1} twice on {0:?}")]
     ButtonTwice(String, String),
-    #[error("devices.json gives {0:?} the page key {1:?}, which is none of its buttons")]
+    #[error("the device inventory gives {0:?} the page key {1:?}, which is none of its buttons")]
     UnknownPageKey(String, String),
+    #[error("the device {0:?} is in both {1} and {2}; a key can name only one device")]
+    DeviceTwice(String, String, String),
     #[error("{0:?} starts on slot {1}, which holds no page")]
     StartNotFilled(String, usize),
     #[error("{0:?} has pages in its slots but does not say which one to start on")]
@@ -680,6 +683,10 @@ pub const DEFAULT_PROTOCOL: &str = "wctrl";
 /// The protocol of a screen drawn in a web page rather than on a panel.
 pub const WEB_PROTOCOL: &str = "web";
 
+/// The protocol of a board that describes its own lamps, over HID or serial.
+/// See docs/PROTOCOL-DSC.md.
+pub const DSC_PROTOCOL: &str = "dsc";
+
 /// Where the converter answers a web device's page with the screen: this
 /// machine only.
 pub const WEB_ADDRESS: &str = "127.0.0.1:8310";
@@ -838,13 +845,83 @@ pub struct DeviceInventory {
 }
 
 impl DeviceInventory {
-    /// Read the inventory, refusing one whose buttons contradict themselves:
-    /// two keys under one name or one number, or a page key naming no button
-    /// of its own device.
+    /// Read one inventory file, refusing one whose buttons contradict
+    /// themselves: two keys under one name or one number, or a page key naming
+    /// no button of its own device.
     pub fn load(path: &Path) -> Result<Self> {
         let inv: DeviceInventory = read_json(path)?;
         inv.check_buttons()?;
         Ok(inv)
+    }
+
+    /// Read every file in an inventory folder, one per maker, as one
+    /// inventory.
+    ///
+    /// Files are read in name order and each keeps its own order, so the
+    /// result never depends on how the folder happens to list. A key in two
+    /// files is refused rather than one quietly winning, since bindings name
+    /// devices by key and could not say which was meant.
+    pub fn load_dir(dir: &Path) -> Result<Self> {
+        let mut files = Vec::new();
+        for entry in std::fs::read_dir(dir)? {
+            let path = entry?.path();
+            if path.extension().and_then(|e| e.to_str()) == Some("json") {
+                files.push(path);
+            }
+        }
+        files.sort();
+        let mut devices: Vec<DeviceSpec> = Vec::new();
+        let mut from: HashMap<String, String> = HashMap::new();
+        for path in files {
+            let file = path
+                .file_name()
+                .map(|f| f.to_string_lossy().into_owned())
+                .unwrap_or_default();
+            let part: DeviceInventory = read_json(&path)?;
+            for d in part.devices {
+                if let Some(first) = from.insert(d.key.clone(), file.clone()) {
+                    return Err(Error::DeviceTwice(d.key, first, file));
+                }
+                devices.push(d);
+            }
+        }
+        let inv = DeviceInventory { devices };
+        inv.check_buttons()?;
+        Ok(inv)
+    }
+
+    /// The shipped folder, then the user's boards from `user` after it.
+    ///
+    /// The shipped inventory has to load. The user's folder need not exist,
+    /// and a problem with it never stops the rest: a board that will not
+    /// read, or whose key a shipped device already has, is left out and
+    /// named in the notes for the caller to show.
+    pub fn load_with_user(shipped: &Path, user: &Path) -> Result<(Self, Vec<String>)> {
+        let mut inv = DeviceInventory::load_dir(shipped)?;
+        let mut notes = Vec::new();
+        if !user.is_dir() {
+            return Ok((inv, notes));
+        }
+        match DeviceInventory::load_dir(user) {
+            Ok(theirs) => {
+                for d in theirs.devices {
+                    if inv.device(&d.key).is_some() {
+                        notes.push(format!(
+                            "{} in {} has the key of a device this release ships, so it is left out",
+                            d.display_name,
+                            user.display()
+                        ));
+                    } else {
+                        inv.devices.push(d);
+                    }
+                }
+            }
+            Err(e) => notes.push(format!(
+                "the boards in {} could not be read, so none are used: {e}",
+                user.display()
+            )),
+        }
+        Ok((inv, notes))
     }
 
     fn check_buttons(&self) -> Result<()> {
@@ -1717,6 +1794,51 @@ impl Profile {
     /// the engine itself lit there for an earlier aircraft is taken back.
     pub fn drives(&self, device: &str) -> bool {
         !self.disabled_devices.iter().any(|d| d == device)
+    }
+
+    /// This profile with nothing left that names any of `devices`: their
+    /// lamps and fields, their screens, their place in `follows` and in the
+    /// disabled list. A lamp elsewhere that mirrors one of theirs is left
+    /// unconfigured, a placeholder, rather than pointing at nothing.
+    ///
+    /// For sharing: boards a user added are theirs alone, so a profile goes
+    /// to someone else without them.
+    pub fn without_devices(&self, devices: &BTreeSet<String>) -> Profile {
+        let gone = |d: &str| devices.contains(d);
+        let mut p = self.clone();
+        p.bindings.retain(|b| !gone(&b.device));
+        for b in &mut p.bindings {
+            if b.same_as.is_some() && b.same_as_device.as_deref().is_some_and(gone) {
+                b.same_as = None;
+                b.same_as_device = None;
+            }
+        }
+        p.readouts.retain(|r| !gone(&r.device));
+        p.disabled_devices.retain(|d| !gone(d));
+        p.follows
+            .retain(|follower, source| !gone(follower) && !gone(source));
+        p.screens.retain(|d, _| !gone(d));
+        p
+    }
+
+    /// Whether anything in this profile names one of `devices`: exactly what
+    /// [`without_devices`](Self::without_devices) would take out or change.
+    pub fn names_any(&self, devices: &BTreeSet<String>) -> bool {
+        let gone = |d: &str| devices.contains(d);
+        self.bindings.iter().any(|b| {
+            gone(&b.device)
+                || (b.same_as.is_some() && b.same_as_device.as_deref().is_some_and(gone))
+        }) || self.readouts.iter().any(|r| gone(&r.device))
+            || self.disabled_devices.iter().any(|d| gone(d))
+            || self.follows.iter().any(|(f, s)| gone(f) || gone(s))
+            || self.screens.keys().any(|d| gone(d))
+    }
+
+    /// Whether a device's page keys are worth reading as this profile runs:
+    /// it is driven and has a page to swap to. A panel whose lamps are in use
+    /// but whose screen has one slot or none is left unread.
+    pub fn reads_page_keys(&self, device: &str) -> bool {
+        self.drives(device) && self.page_runs.get(device).is_some_and(PageRun::swaps)
     }
 
     /// This profile as it runs: every device that follows another given a
@@ -5071,12 +5193,12 @@ mod tests {
         assert_eq!(spec.protocol, DEFAULT_PROTOCOL);
     }
 
-    /// Parses the real inventory, so a change to `data/devices.json` that the
+    /// Parses the real inventory, so a change to `data/devices` that the
     /// Rust types cannot represent fails here rather than at runtime.
     #[test]
     fn ships_a_parseable_device_inventory() {
-        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/devices.json");
-        let inventory = DeviceInventory::load(&path).expect("data/devices.json parses");
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/devices");
+        let inventory = DeviceInventory::load_dir(&path).expect("data/devices parses");
 
         let pto2 = inventory
             .device("TAKEOFF_PLANEL_2")
@@ -5106,8 +5228,8 @@ mod tests {
     /// broke the earlier flat model.
     #[test]
     fn a_device_may_span_several_parts() {
-        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/devices.json");
-        let inventory = DeviceInventory::load(&path).unwrap();
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/devices");
+        let inventory = DeviceInventory::load_dir(&path).unwrap();
         let orion = inventory.device("Orion_Throttle_Base_II").unwrap();
         assert!(orion.parts.len() > 1, "base plus handles");
 

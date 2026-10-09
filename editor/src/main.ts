@@ -563,6 +563,9 @@ async function showLibrary(): Promise<void> {
   // once it has closed, so two dialogs are never open at once.
   header.querySelector("#settings")?.addEventListener("click", () => {
     void showSettings().then((next) => {
+      // Boards added or removed: the inventory is read once, at startup, and
+      // Settings opens only here, with no profile open to lose.
+      if (next === "boards") location.reload();
       if (next === "import") void showImport();
       if (next === "converter") {
         void manageConverter().then((said) => {

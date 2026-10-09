@@ -1,6 +1,6 @@
 //! End-to-end tests for the module-load sequence.
 //!
-//! These run against the real `data/devices.json`, so the LED counts and the
+//! These run against the real `data/devices`, so the LED counts and the
 //! dimmer/indicator split are the measured hardware facts rather than a mock.
 //! The catalogue is a fixture: `data/catalogue` is generated per machine and
 //! gitignored, so a test depending on it would fail on a fresh clone.
@@ -43,8 +43,8 @@ fn pto2_led_count() -> usize {
 }
 
 fn devices() -> DeviceInventory {
-    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/devices.json");
-    DeviceInventory::load(&path).expect("data/devices.json should parse")
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/devices");
+    DeviceInventory::load_dir(&path).expect("data/devices should parse")
 }
 
 fn catalogue() -> Catalogue {

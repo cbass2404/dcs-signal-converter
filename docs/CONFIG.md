@@ -222,7 +222,7 @@ and the last writer wins. Detect it and warn rather than silently flickering.
 
 ### Output brightness
 
-Constrained by the **LED**, not the signal: `data/devices.json` records each
+Constrained by the **LED**, not the signal: `data/devices` records each
 lamp's `max`. A dimmable lamp offers 0-255; `Master_Caution`, recorded as `max: 1`,
 offers only on/off. The editor should not present a brightness slider for a lamp
 that cannot dim.
@@ -290,7 +290,7 @@ Give it a floor, or leave it at `"always": true`.
 
 In the editor the floor is the **at zero** field under a dimmer's output, shown
 whenever the lamp is assigned and not always on. A lamp that hides others at 0
-is marked in `devices.json` with `governs`, the names of the lamps beneath it.
+is marked in `data/devices` with `governs`, the names of the lamps beneath it.
 For those the check cautions, without blocking Save, when the lamp resolves to 0
 with every signal at 0, and the daemon logs the same caution on load. A newly
 generated profile starts both gates held at full with the floor already set, so
@@ -368,7 +368,7 @@ profile claims.
 **One collapsible section per device**, ordered alphabetically by `display_name`
 and all collapsed on open, with a single control to expand and collapse
 everything. Ordering is done once when the inventory loads, not per render and
-not by hand in `devices.json`: that file is edited by hand, so a sort order
+not by hand in `data/devices`: its files are edited by hand, so a sort order
 maintained there would drift the first time a device was appended at the bottom.
 It also has to be `display_name` rather than the key, because `PTO2` and
 `TAKEOFF_PLANEL_2` do not sort the same way and the user only ever sees one of
@@ -409,7 +409,7 @@ it.
 
 **Cautions** sit beside problems, for a profile that loads but probably does not
 do what was meant. They come from `Profile::cautions` and never withhold Save.
-The profile-wide one is a gate, a dimmer marked in `devices.json` with
+The profile-wide one is a gate, a dimmer marked in `data/devices` with
 `governs`, that resolves to 0 with every signal at 0, which hides its lamps in
 daylight. The daemon logs the same cautions on load. A display field has its
 own, from `Profile::field_cautions`, shown on the field they are about: content
@@ -876,7 +876,7 @@ follows, under its own name, when the engine loads the profile. Rules:
 
 - **Only the same hardware.** Two devices qualify when their parts carry the
   same lamps at the same indices and the same displays. This is worked out from
-  `devices.json` rather than listed, so a new variant needs nothing else.
+  `data/devices` rather than listed, so a new variant needs nothing else.
 - **One step deep.** A device that follows cannot be followed, so there is
   always one place to edit.
 - **The follower's own rows are kept and not used**, the way a disabled
@@ -1666,7 +1666,7 @@ editor shows it on the slot.
 ```
 
 - **One slot per page key.** `slots` holds one entry for each key in the
-  device's `page_keys` in `devices.json`, so slot 3 is the same slot whatever
+  device's `page_keys` in `data/devices`, so slot 3 is the same slot whatever
   is filled around it, and slot n is the nth key: on the MCDU, six slots and
   LSK nL. The editor labels each slot with its key. See "Swapping".
 - **A slot shows a page, shows a blank screen, or is disabled.** A page is
@@ -2112,7 +2112,7 @@ the keyboard held at that moment. It only reads.
 - **Every input belongs to the device it comes from**, as every lamp does.
   The keyboard is one source and owns Ctrl, Shift and Alt, and the modifier
   setting names one of those, or a controller's button. The MCDU's line select keys are the MCDU's, and
-  a panel's buttons are listed in its own entry in `devices.json`, by name and
+  a panel's buttons are listed in its own entry in `data/devices`, by name and
   by the number Windows gives them:
 
   ```jsonc
@@ -2129,7 +2129,7 @@ the keyboard held at that moment. It only reads.
   adding a device to map needs no change anywhere else. Only captured buttons
   are listed; the MCDU's other keys wait for a capture of their own.
 
-  The keyboard is not a panel and has no entry in `devices.json`. Its three
+  The keyboard is not a panel and has no entry in `data/devices`. Its three
   inputs are fixed by Windows, one virtual key for both sides of each, and
   live with the keyboard reader.
 - **The page keys are some of the device's buttons**, by name:
@@ -2144,7 +2144,7 @@ the keyboard held at that moment. It only reads.
   `label`. A
   device that takes pages and lists no keys has one slot, its start page,
   which nothing swaps. A page key naming no button of its device is refused
-  when `devices.json` loads, and `validate` refuses a profile whose slots do
+  when `data/devices` loads, and `validate` refuses a profile whose slots do
   not number the device's keys. `key` in a slot stays reserved and null.
 - **The MCDU's page keys are buttons 1 to 6**, LSK 1L to 6L, the numbers
   SimAppPro lights. The same list goes in all three MCDU entries. Captured
@@ -2175,13 +2175,15 @@ the keyboard held at that moment. It only reads.
   with page keys a thread on the collection that declares buttons, and hands
   each key going down to the daemon's loop with the modifiers held. A
   thread holds its collection open only while the profile in use drives
-  that panel, and closes it otherwise, so with no aircraft loaded nothing
-  is read. The loop
+  that panel and gives its screen at least two slots that are not off (a
+  blank counts), and closes it otherwise. With one, it is the start slot and
+  always showing, so no press could change anything; with no aircraft
+  loaded nothing is read. The loop
   turns the number into a slot through the device's own `page_keys`, checks
   the modifier, and asks the engine for the slot. The engine knows slots and
   never keys. Keys are read on a dry run too, since reading sends nothing.
 - **The Kneeboard CDU's page keys are the keyboard's digits**, 1 to 6 on
-  the top row. It is a web page, not a panel, so `devices.json` gives it
+  the top row. It is a web page, not a panel, so `data/devices/virtual.json` gives it
   buttons numbered 1 to 6 and one `keys digits` thread reads them by Raw
   Input, which copies each keystroke whichever window has focus. A page
   swaps without leaving DCS, and DCS still sees the key, so the modifier

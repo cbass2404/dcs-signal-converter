@@ -76,7 +76,7 @@ const ADF: &str = r#"{"switch": "BAND", "source": "NEEDLE", "colour": "green",
     }}"#;
 
 fn refusals(p: &Profile) -> Vec<String> {
-    let devices = DeviceInventory::load(&r("data/devices.json")).expect("devices");
+    let devices = DeviceInventory::load_dir(&r("data/devices")).expect("devices");
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).expect("displays");
     p.problems(
         &module(),
@@ -91,7 +91,7 @@ fn refusals(p: &Profile) -> Vec<String> {
 }
 
 fn cautions(p: &Profile) -> Vec<String> {
-    let devices = DeviceInventory::load(&r("data/devices.json")).expect("devices");
+    let devices = DeviceInventory::load_dir(&r("data/devices")).expect("devices");
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).expect("displays");
     p.field_cautions(&module(), &devices, &displays)
         .into_iter()

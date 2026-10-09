@@ -52,7 +52,7 @@ impl Slot {
 
 /// A screen's slots and the one shown when a mission starts.
 ///
-/// There is one slot per page key the device lists in `devices.json`, so slot
+/// There is one slot per page key the device lists in `data/devices`, so slot
 /// n is the nth key whatever is filled around it; see
 /// [`DeviceSpec::slot_count`](crate::DeviceSpec::slot_count).
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -162,6 +162,19 @@ pub struct PageRun {
     /// The slot showing now, counting from 0.
     pub shown: usize,
     pub slots: Vec<SlotRun>,
+}
+
+impl PageRun {
+    /// Whether a page key can ever change the screen: two slots or more that
+    /// are not off. With one, it is the start slot and always showing, so
+    /// every press would be a no-op.
+    pub fn swaps(&self) -> bool {
+        self.slots
+            .iter()
+            .filter(|s| !matches!(s, SlotRun::Off))
+            .count()
+            >= 2
+    }
 }
 
 /// A named screen's worth of display fields.

@@ -609,6 +609,40 @@ export interface SettingsView extends Settings {
   problem: string | null;
   /** The modifier is a controller button and that controller is not connected. */
   modifier_missing: boolean;
+  /** A development checkout, where features not yet open to everyone show. */
+  dev: boolean;
+}
+
+/** Somewhere a self-describing board could be. */
+export interface BoardPlace {
+  /** A COM port's name, or a HID path. */
+  place: string;
+  serial: boolean;
+  /** What USB says is there, when it says. */
+  what: string;
+  /** A serial port the converter may open. */
+  allowed: boolean;
+}
+
+/** A board the user added. */
+export interface SavedBoard {
+  key: string;
+  display_name: string;
+  lamps: number;
+  /** The serial port it was added on; null for a HID board. */
+  port: string | null;
+  /** That port is not there now. */
+  missing: boolean;
+}
+
+export interface AddedBoard extends SavedBoard {
+  /** One by the same key was there already: this board again, or a second with the same identity. */
+  replaced: boolean;
+}
+
+export interface BoardsView {
+  places: BoardPlace[];
+  saved: SavedBoard[];
 }
 
 export interface ConverterState {
@@ -804,7 +838,7 @@ export interface Device {
    */
   variants: string[];
   /**
-   * What each page key is called, in slot order, from devices.json. A screen
+   * What each page key is called, in slot order, from data/devices. A screen
    * has one slot per key, or one that never swaps when there are none.
    */
   page_keys: string[];

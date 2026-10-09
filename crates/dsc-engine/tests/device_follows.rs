@@ -47,7 +47,7 @@ fn hornet() -> Profile {
 }
 
 fn fly(profile: Profile) -> Vec<Batch> {
-    let devices = DeviceInventory::load(&r("data/devices.json")).expect("devices");
+    let devices = DeviceInventory::load_dir(&r("data/devices")).expect("devices");
     let cat = Catalogue::load_dir(&r("data/catalogue")).expect("catalogue");
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).expect("displays");
     let mut e = Engine::new(devices, cat, vec![profile]).with_displays(displays);
@@ -102,7 +102,7 @@ fn without_following_the_two_differ() {
 }
 
 fn problems(p: &Profile) -> Vec<Error> {
-    let devices = DeviceInventory::load(&r("data/devices.json")).expect("devices");
+    let devices = DeviceInventory::load_dir(&r("data/devices")).expect("devices");
     let cat = Catalogue::load_dir(&r("data/catalogue")).expect("catalogue");
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).expect("displays");
     let module = cat.module(&p.module).expect("the module");
@@ -138,7 +138,7 @@ fn a_follower_cannot_be_followed() {
 
 #[test]
 fn the_mfds_are_one_device_under_three_names() {
-    let devices = DeviceInventory::load(&r("data/devices.json")).expect("devices");
+    let devices = DeviceInventory::load_dir(&r("data/devices")).expect("devices");
     let d = |k: &str| devices.device(k).expect(k);
     assert!(d("CarrierAce_MFD_L").same_hardware(d("CarrierAce_MFD_R")));
     assert!(d("CarrierAce_MFD_L").same_hardware(d("CarrierAce_MFD_C")));

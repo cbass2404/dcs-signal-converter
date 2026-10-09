@@ -71,3 +71,6 @@ __pycache__/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Boards added in a dev checkout; once installed they live in the user's own folder.
+/data/user-devices/

@@ -6,6 +6,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { ruleFromDivider } from "./content";
 
 import type {
+  AddedBoard,
+  BoardsView,
   CatalogueStatus,
   CellDraw,
   CellInk,
@@ -88,6 +90,19 @@ export const settingsSave = (settings: Settings) => invoke<void>("settings_save"
 /** Wait up to 10 s for a button on any controller; null when none was pressed. */
 export const controllerCapture = () => invoke<ControllerButton | null>("controller_capture");
 export const controllerCaptureCancel = () => invoke<void>("controller_capture_cancel");
+
+// Self-describing boards. Development checkouts only until one has been
+// flown; the backend refuses these anywhere else.
+/** Where boards could be, and those added. Opens nothing. */
+export const boardsList = () => invoke<BoardsView>("boards_list");
+/** Ask the board at `place` what it has and keep it. A serial board takes up to 3 s. */
+export const boardAdd = (place: string) => invoke<AddedBoard>("board_add", { place });
+/** The profiles removing a board would change, by name. */
+export const boardRemovePlan = (key: string) => invoke<string[]>("board_remove_plan", { key });
+/** Take a board out of every profile that names it, then out of the list. Returns those changed. */
+export const boardRemove = (key: string) => invoke<string[]>("board_remove", { key });
+/** Stop the converter opening a serial port. */
+export const boardPortForget = (port: string) => invoke<void>("board_port_forget", { port });
 
 export const openProfile = (file: string) => invoke<Profile>("open_profile", { file });
 export const defaultProfile = (file: string) => invoke<Profile | null>("default_profile", { file });

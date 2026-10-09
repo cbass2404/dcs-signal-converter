@@ -46,8 +46,8 @@ fn scratch(name: &str) -> Scratch {
 }
 
 fn inventory() -> DeviceInventory {
-    DeviceInventory::load(&Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/devices.json"))
-        .expect("devices.json loads")
+    DeviceInventory::load_dir(&Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/devices"))
+        .expect("the inventory loads")
 }
 
 /// A profile holding exactly the readouts given, as JSON text.

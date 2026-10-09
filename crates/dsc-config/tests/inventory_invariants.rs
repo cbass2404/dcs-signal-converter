@@ -1,4 +1,4 @@
-//! Invariants the shipped `data/devices.json` has to hold.
+//! Invariants the shipped `data/devices` has to hold.
 //!
 //! These check data, not code. The data is transcribed from captures and edited
 //! by hand, which is exactly the kind of thing that drifts silently.
@@ -13,7 +13,7 @@ fn root() -> &'static Path {
 }
 
 fn inventory() -> DeviceInventory {
-    DeviceInventory::load(&root().join("../../data/devices.json")).expect("devices.json loads")
+    DeviceInventory::load_dir(&root().join("../../data/devices")).expect("the inventory loads")
 }
 
 #[test]
@@ -88,7 +88,7 @@ fn the_cdus_share_a_screen_and_nothing_else() {
                 let key = format!("{family}_{seat}");
                 inventory
                     .device(&key)
-                    .unwrap_or_else(|| panic!("{key} is in devices.json"))
+                    .unwrap_or_else(|| panic!("{key} is in data/devices"))
             })
             .collect()
     };

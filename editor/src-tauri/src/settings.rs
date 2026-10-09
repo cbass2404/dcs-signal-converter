@@ -26,6 +26,8 @@ pub struct SettingsView {
     /// The page modifier is a controller button and that controller is not
     /// connected, so the converter swaps no pages until it is.
     pub modifier_missing: bool,
+    /// A development checkout, where features not yet open to everyone show.
+    pub dev: bool,
 }
 
 /// How long the dialog waits for a button before giving up.
@@ -54,16 +56,19 @@ fn missing(modifier: &PageModifier) -> bool {
 #[tauri::command]
 pub fn settings_read() -> Reply<SettingsView> {
     let paths = Paths::resolve();
+    let dev = paths.is_dev();
     Ok(match Settings::load(&paths.settings) {
         Ok(settings) => SettingsView {
             modifier_missing: missing(&settings.page_modifier),
             settings,
             problem: None,
+            dev,
         },
         Err(e) => SettingsView {
             settings: Settings::default(),
             problem: Some(e.to_string()),
             modifier_missing: false,
+            dev,
         },
     })
 }
@@ -71,6 +76,13 @@ pub fn settings_read() -> Reply<SettingsView> {
 #[tauri::command]
 pub fn settings_save(settings: Settings) -> Reply<()> {
     let paths = Paths::resolve();
+    // The dialog owns the theme and the modifier, not the boards' ports, which
+    // are added with a board; keep whatever the file already allows.
+    let mut settings = settings;
+    if let Ok(on_file) = Settings::load(&paths.settings) {
+        settings.dsc_ports = on_file.dsc_ports;
+        settings.dsc_board_ports = on_file.dsc_board_ports;
+    }
     settings
         .save(&paths.settings)
         .map_err(|e| fail("saving the settings", e))

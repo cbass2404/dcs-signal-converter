@@ -508,7 +508,7 @@ impl Device {
     }
 
     /// Set one LED. `value` is 0..=255; lamps that are not dimmable treat any
-    /// non-zero as on (see `data/devices.json` for per-LED ranges).
+    /// non-zero as on (see `data/devices/winctrl.json` for per-LED ranges).
     pub fn set_led(&self, part_id: u32, index: u8, value: u8) -> Result<()> {
         self.send(part_id, &[CMD_SET_LEDX, index, value])
     }

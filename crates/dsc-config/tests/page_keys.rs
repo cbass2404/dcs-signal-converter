@@ -1,7 +1,7 @@
 //! Page keys: which of a panel's buttons swap its pages, and what each slot
 //! holds once a profile runs.
 //!
-//! A panel's buttons are its own, listed by name in its `devices.json` entry,
+//! A panel's buttons are its own, listed by name in its `data/devices` entry,
 //! and its page keys name some of them. The count of keys is the count of
 //! slots. See docs/CONFIG.md "Swapping".
 
@@ -19,7 +19,7 @@ fn r(p: &str) -> PathBuf {
 }
 
 /// An inventory of one panel, written to a file so it is read the way
-/// `devices.json` is.
+/// an inventory file is.
 fn inventory(buttons: &str, page_keys: &str) -> dsc_config::Result<DeviceInventory> {
     let dir = std::env::temp_dir().join(format!("dsc-page-keys-{}-{:x}", std::process::id(), {
         use std::hash::{Hash, Hasher};
@@ -28,7 +28,7 @@ fn inventory(buttons: &str, page_keys: &str) -> dsc_config::Result<DeviceInvento
         h.finish()
     }));
     std::fs::create_dir_all(&dir).unwrap();
-    let path = dir.join("devices.json");
+    let path = dir.join("inventory.json");
     std::fs::write(
         &path,
         format!(
@@ -44,7 +44,7 @@ fn inventory(buttons: &str, page_keys: &str) -> dsc_config::Result<DeviceInvento
 
 #[test]
 fn the_mcdu_page_keys_are_the_left_line_select_keys() {
-    let devices = DeviceInventory::load(&r("data/devices.json")).expect("devices");
+    let devices = DeviceInventory::load_dir(&r("data/devices")).expect("devices");
     for key in [CAPTAIN, COPILOT, "MCDU_Observer"] {
         let d = devices.device(key).expect("an MCDU entry");
         assert_eq!(d.slot_count(), 6, "{key}");
@@ -183,4 +183,39 @@ fn a_follower_has_the_leaders_slots_and_its_own_page() {
         vec!["0-1"],
         "and the leader stays where it was"
     );
+}
+
+#[test]
+fn page_keys_are_read_only_where_a_press_can_swap() {
+    let lib = library();
+    let run = profile().with_pages(&lib);
+    assert!(run.reads_page_keys(CAPTAIN), "two pages and a blank");
+    assert!(!run.reads_page_keys(COPILOT), "no screen in this profile");
+
+    // One usable slot is the start slot, always showing, so no press changes
+    // anything: the gone page and the disabled slots do not count.
+    let mut one = profile();
+    let s = one.screens.get_mut(CAPTAIN).unwrap();
+    s.slots[1] = None;
+    s.slots[3] = None;
+    assert!(!one.with_pages(&lib).reads_page_keys(CAPTAIN));
+
+    // A blank is something to swap to.
+    let mut blank = profile();
+    blank.screens.get_mut(CAPTAIN).unwrap().slots[3] = None;
+    assert!(blank.with_pages(&lib).reads_page_keys(CAPTAIN));
+
+    let mut off = profile();
+    off.disabled_devices.push(CAPTAIN.into());
+    assert!(!off.with_pages(&lib).reads_page_keys(CAPTAIN), "disabled");
+}
+
+#[test]
+fn a_follower_reads_its_keys_when_the_leader_swaps() {
+    let mut p = profile();
+    p.follows.insert(COPILOT.into(), CAPTAIN.into());
+    assert!(p
+        .with_pages(&library())
+        .with_followers()
+        .reads_page_keys(COPILOT));
 }

@@ -6,8 +6,20 @@
 // things on this page that are not about one profile, Import and Manage
 // Converter, moved here to keep the header short. Laid out like converter.ts.
 
-import { controllerCapture, controllerCaptureCancel, settingsRead, settingsSave } from "./api";
+import {
+  boardAdd,
+  boardPortForget,
+  boardRemove,
+  boardRemovePlan,
+  boardsList,
+  controllerCapture,
+  controllerCaptureCancel,
+  settingsRead,
+  settingsSave,
+} from "./api";
+import { confirmAction } from "./confirm";
 import type {
+  BoardsView,
   ControllerButton,
   ModifierKey,
   PageModifier,
@@ -16,8 +28,11 @@ import type {
   Theme,
 } from "./types";
 
-/** What the dialog closed on: nothing, or one of the dialogs it hands on to. */
-export type SettingsExit = null | "import" | "converter";
+/**
+ * What the dialog closed on: nothing, one of the dialogs it hands on to, or
+ * "boards" when boards were added or removed and the device list is stale.
+ */
+export type SettingsExit = null | "import" | "converter" | "boards";
 
 /** Draw the window in a theme. System leaves it to Windows, as the stylesheet always did. */
 export function applyTheme(theme: Theme): void {
@@ -76,7 +91,13 @@ export function showSettings(): Promise<SettingsExit> {
       (view) => open(view, view.problem, resolve),
       (e) =>
         open(
-          { page_modifier: "ctrl", theme: "system", problem: String(e), modifier_missing: false },
+          {
+            page_modifier: "ctrl",
+            theme: "system",
+            problem: String(e),
+            modifier_missing: false,
+            dev: false,
+          },
           String(e),
           resolve,
         ),
@@ -227,6 +248,16 @@ function open(
   another.addEventListener("click", () => void capture());
   dialog.append(modifierField, missing, modifierNote, anotherRow);
 
+  // Development checkouts only, until a board has been flown.
+  let boardsChanged = false;
+  if (current.dev) {
+    dialog.append(
+      boardsSection(() => {
+        boardsChanged = true;
+      }),
+    );
+  }
+
   const importButton = document.createElement("button");
   importButton.textContent = "Import profile...";
   const converterButton = document.createElement("button");
@@ -252,19 +283,146 @@ function open(
     resolve(exit);
   };
 
-  close.addEventListener("click", () => finish(null));
+  close.addEventListener("click", () => finish(boardsChanged ? "boards" : null));
   importButton.addEventListener("click", () => finish("import"));
   converterButton.addEventListener("click", () => finish("converter"));
-  dialog.addEventListener("close", () => finish(null));
+  dialog.addEventListener("close", () => finish(boardsChanged ? "boards" : null));
   dialog.addEventListener("click", (e) => {
     if (e.target !== dialog) return;
     const r = dialog.getBoundingClientRect();
     const inside =
       e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
-    if (!inside) finish(null);
+    if (!inside) finish(boardsChanged ? "boards" : null);
   });
 
   document.body.append(dialog);
   dialog.showModal();
   close.focus();
+}
+
+const BOARDS_NOTE =
+  "Development only. Adding asks the board what it has, which resets a serial board, and keeps what it said. A serial port is allowed for the converter as it is added.";
+
+/** Boards that describe themselves: where one could be, and those added. */
+function boardsSection(changed: () => void): HTMLDivElement {
+  const section = document.createElement("div");
+  const [field, place] = choice<string>("Boards (development)", [], "");
+  const add = document.createElement("button");
+  add.textContent = "Add board";
+  const forget = document.createElement("button");
+  forget.textContent = "Forget port";
+  const buttons = document.createElement("div");
+  buttons.append(add, forget);
+  const status = note(BOARDS_NOTE);
+  const saved = document.createElement("div");
+  section.append(field, buttons, status, saved);
+
+  let view: BoardsView = { places: [], saved: [] };
+
+  const say = (text: string, bad = false): void => {
+    status.textContent = text;
+    status.classList.toggle("bad", bad);
+  };
+
+  const draw = (): void => {
+    const was = place.value;
+    place.replaceChildren();
+    for (const p of view.places) {
+      const option = document.createElement("option");
+      option.value = p.place;
+      const where = p.serial ? p.place : "HID";
+      option.textContent = `${where}${p.what ? ` ${p.what}` : ""}${p.allowed ? " (allowed)" : ""}`;
+      place.append(option);
+    }
+    if (view.places.some((p) => p.place === was)) place.value = was;
+    const chosen = view.places.find((p) => p.place === place.value);
+    add.disabled = !chosen;
+    forget.hidden = !chosen?.allowed;
+    saved.replaceChildren();
+    for (const b of view.saved) {
+      const row = document.createElement("div");
+      const text = note(
+        `${b.display_name}, ${b.lamps} lamps${b.port ? `, on ${b.port}` : ""}${
+          b.missing
+            ? `. ${b.port} is not plugged in; if the board's cable moved to another USB socket, add it again on its new port.`
+            : ""
+        }`,
+      );
+      const remove = document.createElement("button");
+      remove.className = "small";
+      remove.textContent = "Remove";
+      remove.addEventListener("click", () => void removeBoard(b.key, b.display_name));
+      row.append(text, remove);
+      saved.append(row);
+    }
+  };
+
+  // Profiles that bind the board lose those rows first, so none is left
+  // naming a device that is gone; asked about by name beforehand.
+  const removeBoard = async (key: string, name: string): Promise<void> => {
+    try {
+      const profiles = await boardRemovePlan(key);
+      if (profiles.length > 0) {
+        const ok = await confirmAction(
+          `Remove ${name}?\n\nIts lamps and screens come out of these profiles:\n${profiles.join("\n")}\n\nAdding the board again does not bring them back.`,
+          "Remove",
+          profiles,
+        );
+        if (!ok) return;
+      }
+      const touched = await boardRemove(key);
+      changed();
+      say(
+        touched.length > 0
+          ? `${name} removed, and taken out of ${touched.join(", ")}.`
+          : `${name} removed.`,
+      );
+      await refresh();
+    } catch (e) {
+      say(String(e), true);
+    }
+  };
+
+  const refresh = async (): Promise<void> => {
+    try {
+      view = await boardsList();
+      draw();
+    } catch (e) {
+      say(String(e), true);
+    }
+  };
+
+  place.addEventListener("change", draw);
+  add.addEventListener("click", () => {
+    const chosen = place.value;
+    add.disabled = true;
+    say(`Asking ${chosen.startsWith("COM") ? chosen : "the board"}...`);
+    void boardAdd(chosen).then(
+      (b) => {
+        changed();
+        say(
+          b.replaced
+            ? `${b.display_name} was already added; its lamps were updated, ${b.lamps} lamps. If this is a second board, give it its own unit in its sketch.`
+            : `${b.display_name} added, ${b.lamps} lamps.`,
+        );
+        void refresh();
+      },
+      (e: unknown) => {
+        say(String(e), true);
+        add.disabled = false;
+      },
+    );
+  });
+  forget.addEventListener("click", () => {
+    void boardPortForget(place.value).then(
+      () => {
+        say(`${place.value} is no longer opened by the converter.`);
+        void refresh();
+      },
+      (e: unknown) => say(String(e), true),
+    );
+  });
+
+  void refresh();
+  return section;
 }

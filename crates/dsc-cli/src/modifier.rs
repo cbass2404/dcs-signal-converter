@@ -10,9 +10,9 @@
 //! loop should. What the watch finds goes into lines the main loop writes to
 //! the log.
 //!
-//! A controller is held open only while some panel with page keys is driven,
-//! as the key readers are: with nothing to swap, nothing asks for the
-//! modifier, so nothing looks for it either.
+//! A controller is held open only while some panel's page keys are read,
+//! which is while it is driven with a page to swap to: with nothing to swap,
+//! nothing asks for the modifier, so nothing looks for it either.
 
 use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 use std::time::Duration;

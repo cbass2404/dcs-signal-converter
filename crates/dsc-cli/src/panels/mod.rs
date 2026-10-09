@@ -7,7 +7,7 @@
 //! whether a screen has to be committed, whether a font has to be uploaded
 //! first.
 //!
-//! Each device in `data/devices.json` names its protocol, and [`all`] builds
+//! Each device in `data/devices` names its protocol, and [`all`] builds
 //! the ones this release can drive. Adding a brand means a new module here and
 //! a new name in that list; nothing above this module changes.
 //!
@@ -17,12 +17,14 @@
 //! they call [`wctrl_hid`] directly and a second brand gets its own commands
 //! rather than a shared vocabulary that fits neither.
 
+use std::path::Path;
 use std::time::{Duration, Instant};
 
 use anyhow::Result;
 use dsc_config::{DeviceSpec, DisplayCatalogue};
 use dsc_engine::{LcdWrite, LedWrite};
 
+mod dsc;
 mod wctrl;
 mod web;
 mod writer;
@@ -32,11 +34,14 @@ pub use writer::Writer;
 /// Every protocol this build can drive.
 ///
 /// Built once per run, because a protocol may hold an open bus: the WinCtrl
-/// one keeps the HID API it enumerates and opens through.
-pub fn all() -> Result<Vec<Box<dyn Protocol>>> {
+/// one keeps the HID API it enumerates and opens through, and the DSC one the
+/// boards it has found. `settings` is where the DSC one reads which serial
+/// ports it may open.
+pub fn all(settings: &Path) -> Result<Vec<Box<dyn Protocol>>> {
     Ok(vec![
         Box::new(wctrl::Wctrl::new()?),
         Box::new(web::Web::new()),
+        Box::new(dsc::Dsc::new(settings.to_path_buf())?),
     ])
 }
 
@@ -70,6 +75,12 @@ pub trait Protocol {
     /// keeps no list.
     fn refresh(&mut self) -> Result<()> {
         Ok(())
+    }
+
+    /// What it has to say for the log since it was last asked, such as a
+    /// board found or a place that did not answer. The caller writes these.
+    fn lines(&mut self) -> Vec<String> {
+        Vec::new()
     }
 
     /// Open a device [`is_connected`](Protocol::is_connected) has just found.
@@ -137,6 +148,19 @@ pub trait Panel: Send {
 
     /// Everything sent so far.
     fn sent(&self) -> Sent;
+
+    /// How often [`check`](Panel::check) wants calling while the panel is
+    /// open, for a protocol that can ask its device whether it is still in
+    /// step. `None`, the default, for one that cannot.
+    fn check_every(&self) -> Option<Duration> {
+        None
+    }
+
+    /// Ask the device whether it holds what it was sent, and put it right if
+    /// not. An error drops the panel, as a failed write does.
+    fn check(&mut self) -> Result<()> {
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -150,9 +174,9 @@ mod tests {
     /// and wrong for the one we ship. This is the difference between the two.
     #[test]
     fn every_shipped_device_asks_for_a_protocol_this_build_can_drive() {
-        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/devices.json");
-        let inventory = DeviceInventory::load(&path).expect("data/devices.json parses");
-        let protocols = all().expect("the protocols start");
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/devices");
+        let inventory = DeviceInventory::load_dir(&path).expect("data/devices parses");
+        let protocols = all(Path::new("settings.json")).expect("the protocols start");
         let names: Vec<&str> = protocols.iter().map(|p| p.name()).collect();
         assert!(
             !inventory.devices.is_empty(),

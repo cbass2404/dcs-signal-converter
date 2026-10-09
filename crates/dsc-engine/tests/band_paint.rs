@@ -53,7 +53,7 @@ fn profile() -> Profile {
 }
 
 fn engine(p: Profile) -> Engine {
-    let devices = DeviceInventory::load(&r("data/devices.json")).expect("devices");
+    let devices = DeviceInventory::load_dir(&r("data/devices")).expect("devices");
     let cat = Catalogue::load_dir(&r("data/catalogue")).expect("catalogue");
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).expect("displays");
     let mut e = Engine::new(devices, cat, vec![p]).with_displays(displays);
@@ -139,7 +139,7 @@ fn trim(e: &mut Engine, pitch: f64, roll: f64, yaw: f64) -> Batch {
 fn the_band_fixture_is_valid() {
     let p = profile();
     let e = engine(p.clone());
-    let devices = DeviceInventory::load(&r("data/devices.json")).unwrap();
+    let devices = DeviceInventory::load_dir(&r("data/devices")).unwrap();
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).unwrap();
     let module = e.catalogue().module(&p.module).expect("the module");
     let refusals: Vec<String> = resolved(&p)

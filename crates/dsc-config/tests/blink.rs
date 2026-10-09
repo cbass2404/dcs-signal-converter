@@ -15,7 +15,7 @@ fn r(p: &str) -> PathBuf {
 }
 
 fn devices() -> DeviceInventory {
-    DeviceInventory::load(&r("data/devices.json")).expect("devices")
+    DeviceInventory::load_dir(&r("data/devices")).expect("devices")
 }
 
 /// How long each stretch of lit or dark lasts across `ms`, at one rate.

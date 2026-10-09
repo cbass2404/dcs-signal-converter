@@ -1,0 +1,13 @@
+[package]
+name = "dsc-device"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "The DSC device protocol: boards that describe their own lamps"
+
+[dependencies]
+dsc-config = { path = "../dsc-config" }
+thiserror.workspace = true
+hidapi = { version = "2.6", default-features = false, features = ["windows-native"] }
+serialport = { version = "4", default-features = false }

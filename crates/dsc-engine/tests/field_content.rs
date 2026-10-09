@@ -67,7 +67,7 @@ fn fixture(name: &str) -> std::path::PathBuf {
 }
 
 fn engine(p: Profile) -> Engine {
-    let devices = DeviceInventory::load(&r("data/devices.json")).expect("devices");
+    let devices = DeviceInventory::load_dir(&r("data/devices")).expect("devices");
     let cat = Catalogue::load_dir(&r("data/catalogue")).expect("catalogue");
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).expect("displays");
     let mut e = Engine::new(devices, cat, vec![p]).with_displays(displays);
@@ -121,7 +121,7 @@ fn row(w: &LcdWrite, n: usize) -> String {
 /// but wants a second look.
 fn cautions(p: &Profile) -> Vec<String> {
     let e = engine(p.clone());
-    let devices = DeviceInventory::load(&r("data/devices.json")).unwrap();
+    let devices = DeviceInventory::load_dir(&r("data/devices")).unwrap();
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).unwrap();
     let module = e.catalogue().module(&p.module).expect("the module");
     p.field_cautions(module, &devices, &displays)
@@ -132,7 +132,7 @@ fn cautions(p: &Profile) -> Vec<String> {
 
 fn refusals(p: &Profile) -> Vec<String> {
     let e = engine(p.clone());
-    let devices = DeviceInventory::load(&r("data/devices.json")).unwrap();
+    let devices = DeviceInventory::load_dir(&r("data/devices")).unwrap();
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).unwrap();
     let module = e.catalogue().module(&p.module).expect("the module");
     resolved(p)

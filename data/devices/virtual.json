@@ -1,0 +1,43 @@
+{
+  "_comment": "Virtual devices: drawn or driven by DCS Signal Converter itself, with no maker's hardware behind them.",
+  "devices": [
+    {
+      "key": "CDU_Kneeboard",
+      "display_name": "Kneeboard CDU",
+      "protocol": "web",
+      "usb_pid": 0,
+      "parts": [
+        {
+          "part_id": 0,
+          "name": "Kneeboard CDU",
+          "display": "MCDU",
+          "leds": [
+            {
+              "index": 0,
+              "name": "Screen_Backlight",
+              "label": "Screen backlight",
+              "kind": "dimmer",
+              "max": 255,
+              "verified": true,
+              "lights_display": true
+            }
+          ]
+        }
+      ],
+      "buttons": [
+        { "number": 1, "name": "KEY_1", "label": "1", "verified": true },
+        { "number": 2, "name": "KEY_2", "label": "2", "verified": true },
+        { "number": 3, "name": "KEY_3", "label": "3", "verified": true },
+        { "number": 4, "name": "KEY_4", "label": "4", "verified": true },
+        { "number": 5, "name": "KEY_5", "label": "5", "verified": true },
+        { "number": 6, "name": "KEY_6", "label": "6", "verified": true }
+      ],
+      "page_keys": ["KEY_1", "KEY_2", "KEY_3", "KEY_4", "KEY_5", "KEY_6"],
+      "_notes": [
+        "Not hardware: the MCDU's text grid drawn in a web page, for anyone without a CDU. The page is a file, kneeboard-cdu.html beside the settings, opened in OpenKneeboard or a browser on this PC (crates/dsc-config/src/web.rs); the converter answers it with the screen on 127.0.0.1:8310 once a profile turns the device on. See crates/dsc-cli/src/panels/web.rs.",
+        "One lamp, the screen backlight, which the page draws by fading the screen towards black. Not the MCDU's lamps, so it is not a variant of the MCDU and nothing can follow it or be followed by it. Its slots are its own.",
+        "Its keys are the keyboard's 1 to 6, held with the page modifier, since the page has no keys a user in VR could press."
+      ]
+    }
+  ]
+}

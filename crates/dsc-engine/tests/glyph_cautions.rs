@@ -25,7 +25,7 @@ fn fixture(name: &str) -> Profile {
 
 /// What the editor shows on the fields, and what the daemon refuses.
 fn checks(p: &Profile) -> (Vec<String>, Vec<String>) {
-    let devices = DeviceInventory::load(&r("data/devices.json")).unwrap();
+    let devices = DeviceInventory::load_dir(&r("data/devices")).unwrap();
     let displays = DisplayCatalogue::load_dir(&r("data/displays")).unwrap();
     let cat = Catalogue::load_dir(&r("data/catalogue")).unwrap();
     let module = cat.module(&p.module).expect("the module");

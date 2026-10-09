@@ -239,7 +239,22 @@ numbers move and the words do not.
       part id (a lamp lights at all), the five lamps, the LSK page keys, and
       whether the 31px rows sit acceptably against the keys or the 32px
       fonts are worth a per-part glyph height. Then mark `verified` in
-      `devices.json`. [STATUS.md](STATUS.md), "Built 2026-09-24: the PFP-3N"
+      `winctrl.json`. [STATUS.md](STATUS.md), "Built 2026-09-24: the PFP-3N"
+
+- [ ] **Fly DSC boards before `dev_only` comes off.** Everything is built
+      and tested on the PC against the real firmware (`crates/dsc-firmware`);
+      nothing has driven a board yet. On an Uno (serial), a Leonardo (HID) and
+      a Pico (HID, TinyUSB):
+      - [ ] Leonardo and Pico on their own power: pull the cable while lamps
+            are lit, and the lamps go out.
+      - [ ] Uno: stall `loop()` while driven; the converter logs "stopped
+            answering" and catches the board up when it recovers.
+      - [ ] `tools/dsc_probe.py describe`, `walk` and `state` on each board.
+      - [ ] Fly a profile bound to a board in DCS, light by light.
+      - [ ] Then take `dev_only` out of `editor/src-tauri/src/boards.rs`.
+
+      What each case should do, and why: "Recovery" in
+      [PROTOCOL-DSC.md](PROTOCOL-DSC.md). Tracked in #132, under #123.
 
 ## Deferred, not scheduled
 
@@ -254,6 +269,61 @@ numbers move and the words do not.
       once, the board and its lamps added in the editor, bound per aircraft
       like any panel. Needs our own protocol (HID, serial or both), a
       user-owned device file and an Add a device form. Tracked in #123.
+
+      The inventory is now a folder, `data/devices`, one file per maker
+      (`winctrl.json`, `virtual.json`), read by `DeviceInventory::load_dir`.
+      A user's boards go in a `devices` folder of the same shape in the
+      writable folder, read after the shipped one; a key in both is refused
+      today and should become a warning once users can add devices.
+
+      Spec drafted 2026-10-09 in [PROTOCOL-DSC.md](PROTOCOL-DSC.md): HID and
+      serial with one message set, devices describe their lamps with names,
+      and a described device is saved to the user's devices folder so it can
+      be bound unplugged. The reference library is `firmware/DscDevice`
+      (serial, HID on 32u4 and RP2040 TinyUSB, a shift register example),
+      compiled but untested until boards arrive; `tools/dsc_probe.py` drives
+      one without the converter. The `dsc` backend and the editor's Boards
+      section in Settings are built; the section, and every command behind
+      it, works only in a dev checkout until a real board has been flown
+      (`boards.rs`, `dev_only`). Added boards go in `user-devices/boards.json`.
+
+      Hardened 2026-10-09: version negotiation, identity conflicts, malformed
+      messages and recovery are written into the spec with their reasons. A
+      driven board is checked with `STATE` every 2 s and caught up when it
+      drifts or stops answering; native USB boards turn their lamps off when
+      the link goes. `crates/dsc-firmware` builds the real library on the PC
+      against stand-ins and tests the host against it (`DSC_ASAN=1` adds
+      AddressSanitizer; the MSVC bin folder must be on PATH to run it).
+      Waiting on boards: "Fly DSC boards" under Blocked on hardware, #132.
+
+      A profile binding a device the inventory lacks is still refused
+      (`UnknownLed`), so boards never reach one that lacks them: an export
+      leaves out the boards this PC added (`Profile::without_devices`), and
+      removing a board takes it out of every profile that names it first,
+      after a confirm naming them. A dev checkout flies data/defaults, so a
+      board bound while testing lands in a shipped default:
+      `tools/shipped_devices.py` fails CI and the release on that, and on a
+      `dsc` device in data/devices.
+
+      **Then a Build Sketch screen**, once the backend has driven a real
+      board: board, transport, model and unit, then rows of pin, name, label,
+      kind and backlight, with a 74HC595 chain as an option, saved as an
+      `.ino` for the Arduino IDE to flash. The value is in per-board pin
+      tables (which pins exist, which dim, which to avoid such as the serial
+      pins 0 and 1), taken from the boards' own documentation and checked on
+      hardware, and in validating names against the protocol's limits.
+      Flashing from the app is out: it would mean bundling arduino-cli and
+      the cores. Configuring lamps over the protocol into EEPROM is out too:
+      the spec writes nothing persistent. A "these pins are buttons" option
+      fits here too, adding a game controller on native USB boards.
+
+      **Maybe a protocol v2: inputs over serial.** A serial board cannot be a
+      game controller and cannot share its COM port with a DCS-BIOS sketch,
+      so today its switches need a second board. v2 would have the board
+      report raw input events and a profile map them to DCS-BIOS commands,
+      keeping aircraft logic out of the sketch. A whole input-binding feature
+      in the engine and editor; wait for someone to ask. See "Buttons and
+      switches" in PROTOCOL-DSC.md.
 
       The same protocol can serve small commercial makers. Total Controls
       (Apache MPDs and other panels) is being asked (2026-10-08) about putting

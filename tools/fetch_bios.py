@@ -83,7 +83,7 @@ def main():
         cmd = ["cargo", "run", "--quiet", "--locked", "--bin", "dcs-signal", "--",
                "--bios", bios_json, "catalogue", "--rebuild"]
         # DSC_DATA names the checkout's `data` outright: a Tauri build copies
-        # `data/devices.json` beside `target/*/dcs-signal.exe`, which then
+        # `data/devices` beside `target/*/dcs-signal.exe`, which then
         # takes itself for an installed copy and would build elsewhere.
         env = dict(os.environ, DSC_DATA=os.path.join(ROOT, "data"))
         out = subprocess.run(cmd, cwd=ROOT, env=env, capture_output=True, text=True)

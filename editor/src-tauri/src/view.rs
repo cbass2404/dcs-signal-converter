@@ -1,7 +1,7 @@
 //! Shapes the window receives.
 //!
 //! These exist so the frontend is not handed the on-disk structures directly.
-//! `data/devices.json` carries measurement notes and verification flags that
+//! `data/devices` carries measurement notes and verification flags that
 //! are meaningful to whoever is mapping hardware and noise to everyone else,
 //! and a profile summary is cheaper than the profile it summarises.
 
@@ -582,7 +582,7 @@ mod tests {
         let paths = Paths::resolve();
         let maps =
             DisplayCatalogue::load_dir(&paths.displays).expect("the shipped display maps load");
-        let inv = DeviceInventory::load(&paths.devices).expect("the shipped inventory loads");
+        let inv = DeviceInventory::load_dir(&paths.devices).expect("the shipped inventory loads");
         let views: Vec<DisplayView> = inv
             .devices
             .iter()

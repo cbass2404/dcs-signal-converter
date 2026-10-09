@@ -26,14 +26,14 @@ installed program and the profiles folder chosen at install.
 
 | Flag | Default | What it does |
 | --- | --- | --- |
-| `--dry-run` | off | Prints every write and writes to no device. Nothing touches the hardware; it only reads the panels' page keys, which sends them nothing. Worth one pass to confirm the aircraft is detected and the right profile is picked. |
+| `--dry-run` | off | Prints every write and writes to no device. Nothing touches the hardware; it only reads the panels' page keys, which sends them nothing, and asks DSC boards who they are, which sets no lamp. Opening a serial port resets most boards, so a serial DSC board starts dark. Worth one pass to confirm the aircraft is detected and the right profile is picked. |
 | `--verbose` | off | Puts every action on the console as it happens. See below. The session log holds it either way, so this is only for watching a run live. |
 | `--seconds <N>` | runs until Ctrl-C | Stops after N seconds. Useful for a quick check without having to interrupt it. |
 | `--exit-when-idle <N>` | off | Clears the panels and exits once there has been no export stream for N seconds and DCS is no longer running, once it has seen the stream at least once. Used by the DCS hook. |
 | `--profiles <DIR>` | `data/profiles` | Where profiles are read from, and where a starter profile is written for an aircraft that has none. Seeded from `--defaults` at startup. |
 | `--defaults <DIR>` | `data/defaults` | Shipped profiles. Copied into `--profiles` for any name not already there, and never over one that is. |
 | `--catalogue <DIR>` | `data/catalogue` | Generated signal catalogue. See above. |
-| `--devices <FILE>` | `data/devices.json` | Hardware inventory: which LEDs exist, and what values each accepts. |
+| `--devices <DIR>` | `data/devices` | Hardware inventory, one file per maker: which LEDs exist, and what values each accepts. |
 | `--log-dir <DIR>` | `Saved Games\DCS\Logs` installed, `data/logs` in a checkout | Where the session log goes. |
 | `--no-log` | off | Writes no session log at all. |
 

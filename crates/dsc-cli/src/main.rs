@@ -166,7 +166,7 @@ enum Command {
     /// this exits, and a power cycle clears the font.
     McduTest {
         /// Any panel with the MCDU screen. MCDU CAPTAIN 0xbb36, CO-PILOT
-        /// 0xbb3e, OBSERVER 0xbb3a; the PFPs are in devices.json.
+        /// 0xbb3e, OBSERVER 0xbb3a; the PFPs are in data/devices/winctrl.json.
         #[arg(long, value_parser = parse_hex16, default_value = "0xbb36")]
         pid: u16,
         /// Which part at that PID carries the screen.
@@ -601,7 +601,7 @@ fn mcdu_test(
         .context("the MCDU display has no text grid")?;
     // The part is the panel's, not the screen's: the MCDU and each PFP carry
     // the same screen under their own part id.
-    let inventory = DeviceInventory::load(devices)?;
+    let inventory = DeviceInventory::load_dir(devices)?;
     let part = inventory
         .devices
         .iter()
@@ -716,7 +716,12 @@ fn main() -> Result<()> {
             // Asks every protocol this build knows, so a panel of a brand the
             // user has just plugged in shows up here even before anything can
             // drive it. The diagnostics below it stay single-protocol.
-            let protocols = panels::all()?;
+            let mut protocols = panels::all(&paths.settings)?;
+            for protocol in protocols.iter_mut() {
+                for line in protocol.lines() {
+                    println!("{line}");
+                }
+            }
             let mut any = false;
             for protocol in &protocols {
                 for d in protocol.present()? {
@@ -927,6 +932,7 @@ fn main() -> Result<()> {
             }
             let result = run(
                 &devices.unwrap_or(paths.devices),
+                &paths.user_devices,
                 &catalogue.unwrap_or(paths.catalogue),
                 &profiles.unwrap_or(paths.profiles.active),
                 &defaults.unwrap_or(paths.profiles.defaults),
@@ -2528,7 +2534,7 @@ mod tests {
 
         let (cat, _) = fixture();
         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-        let inventory = DeviceInventory::load(&root.join("data/devices.json")).unwrap();
+        let inventory = DeviceInventory::load_dir(&root.join("data/devices")).unwrap();
         let displays = DisplayCatalogue::load_dir(&root.join("data/displays")).unwrap();
         let dir = std::env::temp_dir().join(format!("dsc-flagged-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
@@ -2587,7 +2593,7 @@ mod page_load_tests {
 
         let (cat, _) = fixture();
         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-        let inventory = DeviceInventory::load(&root.join("data/devices.json")).unwrap();
+        let inventory = DeviceInventory::load_dir(&root.join("data/devices")).unwrap();
         let displays = DisplayCatalogue::load_dir(&root.join("data/displays")).unwrap();
         let dir = std::env::temp_dir().join(format!("dsc-paged-{}", std::process::id()));
         let pages = dir.join("pages");
@@ -2634,7 +2640,7 @@ mod page_load_tests {
 
         let (cat, _) = fixture();
         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-        let inventory = DeviceInventory::load(&root.join("data/devices.json")).unwrap();
+        let inventory = DeviceInventory::load_dir(&root.join("data/devices")).unwrap();
         let displays = DisplayCatalogue::load_dir(&root.join("data/displays")).unwrap();
         let dir = std::env::temp_dir().join(format!("dsc-v1-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
@@ -2963,6 +2969,7 @@ fn file_stamp(path: &Path) -> Option<(u64, u64)> {
 /// in `dsc-engine`, where it is tested without DCS or hardware.
 fn run(
     devices_path: &PathBuf,
+    user_devices_path: &Path,
     catalogue_dir: &PathBuf,
     profiles_dir: &PathBuf,
     defaults_dir: &PathBuf,
@@ -2987,6 +2994,7 @@ fn run(
     // somewhere by DSC_DATA all look alike from the outside.
     for (what, path) in [
         ("devices  ", devices_path.as_path()),
+        ("boards   ", user_devices_path),
         ("catalogue", catalogue_dir.as_path()),
         ("profiles ", profiles_dir.as_path()),
         ("defaults ", defaults_dir.as_path()),
@@ -2998,8 +3006,13 @@ fn run(
     ] {
         dlog::header(&format!("paths    {what} {}", path.display()));
     }
-    let inventory = DeviceInventory::load(devices_path)
+    // The user's own boards after the shipped inventory. A problem with
+    // theirs is said and left out; it never stops the run.
+    let (inventory, notes) = DeviceInventory::load_with_user(devices_path, user_devices_path)
         .with_context(|| format!("loading {}", devices_path.display()))?;
+    for note in notes {
+        warn!("devices  {note}");
+    }
     let cat = load_catalogue(catalogue_dir, bios)?;
     let bios_json = catalogue_build::locate_bios_json(catalogue_dir, bios);
     let displays = DisplayCatalogue::load_dir(displays_dir)
@@ -3094,10 +3107,15 @@ fn run(
 
     // Only drive hardware that is actually plugged in. A shared profile may
     // name panels this user does not own, which is not an error.
-    let mut protocols = panels::all()?;
+    let mut protocols = panels::all(settings_path)?;
     // Everything of every known brand that is plugged in, known to this build
     // or not. A panel missing from the inventory and a panel nobody plugged in
     // look identical from the profile's side, and only this separates them.
+    for protocol in protocols.iter_mut() {
+        for line in protocol.lines() {
+            kept!("{line}");
+        }
+    }
     for protocol in &protocols {
         for d in protocol.present()? {
             dlog::header(&format!(
@@ -3436,30 +3454,30 @@ fn run(
             }
         }
 
-        // The key readers run only for panels the active profile drives.
-        // Compared in place, since the answer moves only with the aircraft,
-        // the profile or a panel coming or going; a new set is built only
-        // when it has.
-        let drives = |k: &String| engine.active_profile().is_some_and(|p| p.drives(k));
+        // The key readers run only for panels the active profile drives and
+        // whose screen has a page to swap to. Compared in place, since the
+        // answer moves only with the aircraft, the profile or a panel coming
+        // or going; a new set is built only when it has.
+        let reads = |k: &String| {
+            engine
+                .active_profile()
+                .is_some_and(|p| p.reads_page_keys(k))
+        };
         if engine
             .connected()
             .iter()
-            .any(|k| drives(k) != reading_for.contains(k))
+            .any(|k| reads(k) != reading_for.contains(k))
             || reading_for.iter().any(|k| !engine.connected().contains(k))
         {
             reading_for = engine
                 .connected()
                 .iter()
-                .filter(|k| drives(k))
+                .filter(|k| reads(k))
                 .cloned()
                 .collect();
             driven.set(reading_for.clone());
-            modifier.want(reading_for.iter().any(|k| {
-                engine
-                    .devices()
-                    .device(k)
-                    .is_some_and(|d| !d.page_keys.is_empty())
-            }));
+            // Everything in the set has slots, so page keys of its own.
+            modifier.want(!reading_for.is_empty());
         }
 
         // Page keys pressed since the last pass. Before the stream's own
@@ -3839,6 +3857,9 @@ fn look_for_panels(
                 "panels   could not look at the {} panels again: {e:#}",
                 protocol.name()
             );
+        }
+        for line in protocol.lines() {
+            kept!("{line}");
         }
     }
     let mut present = Vec::new();

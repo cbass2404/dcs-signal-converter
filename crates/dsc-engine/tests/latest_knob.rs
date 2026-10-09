@@ -87,7 +87,7 @@ struct Pit {
 impl Pit {
     /// Loaded, settled, with the front knob at 2 and the rear at 8.
     fn loaded() -> Self {
-        let devices = DeviceInventory::load(&root().join("data/devices.json")).expect("devices");
+        let devices = DeviceInventory::load_dir(&root().join("data/devices")).expect("devices");
         let mut engine = Engine::new(devices, catalogue(), vec![profile()]);
         engine.set_connected(vec![PTO2.to_string()]);
         let mut pit = Pit {

@@ -184,3 +184,38 @@ fn a_follower_has_the_leaders_slots_and_its_own_page() {
         "and the leader stays where it was"
     );
 }
+
+#[test]
+fn page_keys_are_read_only_where_a_press_can_swap() {
+    let lib = library();
+    let run = profile().with_pages(&lib);
+    assert!(run.reads_page_keys(CAPTAIN), "two pages and a blank");
+    assert!(!run.reads_page_keys(COPILOT), "no screen in this profile");
+
+    // One usable slot is the start slot, always showing, so no press changes
+    // anything: the gone page and the disabled slots do not count.
+    let mut one = profile();
+    let s = one.screens.get_mut(CAPTAIN).unwrap();
+    s.slots[1] = None;
+    s.slots[3] = None;
+    assert!(!one.with_pages(&lib).reads_page_keys(CAPTAIN));
+
+    // A blank is something to swap to.
+    let mut blank = profile();
+    blank.screens.get_mut(CAPTAIN).unwrap().slots[3] = None;
+    assert!(blank.with_pages(&lib).reads_page_keys(CAPTAIN));
+
+    let mut off = profile();
+    off.disabled_devices.push(CAPTAIN.into());
+    assert!(!off.with_pages(&lib).reads_page_keys(CAPTAIN), "disabled");
+}
+
+#[test]
+fn a_follower_reads_its_keys_when_the_leader_swaps() {
+    let mut p = profile();
+    p.follows.insert(COPILOT.into(), CAPTAIN.into());
+    assert!(p
+        .with_pages(&library())
+        .with_followers()
+        .reads_page_keys(COPILOT));
+}

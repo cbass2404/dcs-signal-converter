@@ -30,9 +30,9 @@ unless this says what moved.
   keyboard's top row, without leaving DCS. DCS still sees the keystroke, so
   pick a modifier whose number combinations DCS does not use. With a
   controller button as the modifier, DCS sees the bare number.
-- **Page keys are only read while their panel is in use.** A panel the
-  profile turns off, and every panel while no aircraft is loaded, is not read
-  at all.
+- **Page keys are only read while there is a page to swap to.** A panel the
+  profile turns off, one whose screen has fewer than two slots in use, and
+  every panel while no aircraft is loaded, is not read at all.
 - **A panel unplugged in flight no longer stops the converter.** The other
   panels carry on, and the unplugged one comes back on its own when it is
   plugged in again, lamps, screen and page keys, showing the cockpit as it

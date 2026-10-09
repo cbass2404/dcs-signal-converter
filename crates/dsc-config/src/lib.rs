@@ -1757,6 +1757,13 @@ impl Profile {
         !self.disabled_devices.iter().any(|d| d == device)
     }
 
+    /// Whether a device's page keys are worth reading as this profile runs:
+    /// it is driven and has a page to swap to. A panel whose lamps are in use
+    /// but whose screen has one slot or none is left unread.
+    pub fn reads_page_keys(&self, device: &str) -> bool {
+        self.drives(device) && self.page_runs.get(device).is_some_and(PageRun::swaps)
+    }
+
     /// This profile as it runs: every device that follows another given a
     /// copy of that device's lamps and fields in place of its own.
     ///

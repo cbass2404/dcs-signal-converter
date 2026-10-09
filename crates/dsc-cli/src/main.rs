@@ -3436,30 +3436,30 @@ fn run(
             }
         }
 
-        // The key readers run only for panels the active profile drives.
-        // Compared in place, since the answer moves only with the aircraft,
-        // the profile or a panel coming or going; a new set is built only
-        // when it has.
-        let drives = |k: &String| engine.active_profile().is_some_and(|p| p.drives(k));
+        // The key readers run only for panels the active profile drives and
+        // whose screen has a page to swap to. Compared in place, since the
+        // answer moves only with the aircraft, the profile or a panel coming
+        // or going; a new set is built only when it has.
+        let reads = |k: &String| {
+            engine
+                .active_profile()
+                .is_some_and(|p| p.reads_page_keys(k))
+        };
         if engine
             .connected()
             .iter()
-            .any(|k| drives(k) != reading_for.contains(k))
+            .any(|k| reads(k) != reading_for.contains(k))
             || reading_for.iter().any(|k| !engine.connected().contains(k))
         {
             reading_for = engine
                 .connected()
                 .iter()
-                .filter(|k| drives(k))
+                .filter(|k| reads(k))
                 .cloned()
                 .collect();
             driven.set(reading_for.clone());
-            modifier.want(reading_for.iter().any(|k| {
-                engine
-                    .devices()
-                    .device(k)
-                    .is_some_and(|d| !d.page_keys.is_empty())
-            }));
+            // Everything in the set has slots, so page keys of its own.
+            modifier.want(!reading_for.is_empty());
         }
 
         // Page keys pressed since the last pass. Before the stream's own

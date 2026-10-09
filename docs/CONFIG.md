@@ -2175,8 +2175,10 @@ the keyboard held at that moment. It only reads.
   with page keys a thread on the collection that declares buttons, and hands
   each key going down to the daemon's loop with the modifiers held. A
   thread holds its collection open only while the profile in use drives
-  that panel, and closes it otherwise, so with no aircraft loaded nothing
-  is read. The loop
+  that panel and gives its screen at least two slots that are not off (a
+  blank counts), and closes it otherwise. With one, it is the start slot and
+  always showing, so no press could change anything; with no aircraft
+  loaded nothing is read. The loop
   turns the number into a slot through the device's own `page_keys`, checks
   the modifier, and asks the engine for the slot. The engine knows slots and
   never keys. Keys are read on a dry run too, since reading sends nothing.

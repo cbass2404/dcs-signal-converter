@@ -164,6 +164,19 @@ pub struct PageRun {
     pub slots: Vec<SlotRun>,
 }
 
+impl PageRun {
+    /// Whether a page key can ever change the screen: two slots or more that
+    /// are not off. With one, it is the start slot and always showing, so
+    /// every press would be a no-op.
+    pub fn swaps(&self) -> bool {
+        self.slots
+            .iter()
+            .filter(|s| !matches!(s, SlotRun::Off))
+            .count()
+            >= 2
+    }
+}
+
 /// A named screen's worth of display fields.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Page {

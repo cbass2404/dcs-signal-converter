@@ -10,12 +10,14 @@ import {
   boardAdd,
   boardPortForget,
   boardRemove,
+  boardRemovePlan,
   boardsList,
   controllerCapture,
   controllerCaptureCancel,
   settingsRead,
   settingsSave,
 } from "./api";
+import { confirmAction } from "./confirm";
 import type {
   BoardsView,
   ControllerButton,
@@ -343,18 +345,35 @@ function boardsSection(changed: () => void): HTMLDivElement {
       const remove = document.createElement("button");
       remove.className = "small";
       remove.textContent = "Remove";
-      remove.addEventListener("click", () => {
-        void boardRemove(b.key).then(
-          () => {
-            changed();
-            say(`${b.display_name} removed.`);
-            void refresh();
-          },
-          (e: unknown) => say(String(e), true),
-        );
-      });
+      remove.addEventListener("click", () => void removeBoard(b.key, b.display_name));
       row.append(text, remove);
       saved.append(row);
+    }
+  };
+
+  // Profiles that bind the board lose those rows first, so none is left
+  // naming a device that is gone; asked about by name beforehand.
+  const removeBoard = async (key: string, name: string): Promise<void> => {
+    try {
+      const profiles = await boardRemovePlan(key);
+      if (profiles.length > 0) {
+        const ok = await confirmAction(
+          `Remove ${name}?\n\nIts lamps and screens come out of these profiles:\n${profiles.join("\n")}\n\nAdding the board again does not bring them back.`,
+          "Remove",
+          profiles,
+        );
+        if (!ok) return;
+      }
+      const touched = await boardRemove(key);
+      changed();
+      say(
+        touched.length > 0
+          ? `${name} removed, and taken out of ${touched.join(", ")}.`
+          : `${name} removed.`,
+      );
+      await refresh();
+    } catch (e) {
+      say(String(e), true);
     }
   };
 

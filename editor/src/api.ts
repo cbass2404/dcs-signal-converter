@@ -97,7 +97,10 @@ export const controllerCaptureCancel = () => invoke<void>("controller_capture_ca
 export const boardsList = () => invoke<BoardsView>("boards_list");
 /** Ask the board at `place` what it has and keep it. A serial board takes up to 3 s. */
 export const boardAdd = (place: string) => invoke<SavedBoard>("board_add", { place });
-export const boardRemove = (key: string) => invoke<void>("board_remove", { key });
+/** The profiles removing a board would change, by name. */
+export const boardRemovePlan = (key: string) => invoke<string[]>("board_remove_plan", { key });
+/** Take a board out of every profile that names it, then out of the list. Returns those changed. */
+export const boardRemove = (key: string) => invoke<string[]>("board_remove", { key });
 /** Stop the converter opening a serial port. */
 export const boardPortForget = (port: string) => invoke<void>("board_port_forget", { port });
 

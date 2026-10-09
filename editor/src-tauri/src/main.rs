@@ -637,6 +637,7 @@ fn main() {
             settings::controller_capture_cancel,
             boards::boards_list,
             boards::board_add,
+            boards::board_remove_plan,
             boards::board_remove,
             boards::board_port_forget,
             open_profile,

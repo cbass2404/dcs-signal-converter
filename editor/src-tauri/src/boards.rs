@@ -153,15 +153,58 @@ fn add(place: &str) -> Reply<SavedBoard> {
     Ok(saved(&spec))
 }
 
-/// Take a board out. Its bindings stay in the profiles, and today a profile
-/// binding a device the inventory lacks is refused until it is added again;
-/// see TODO.md under #123.
+/// Every profile in the active folder that names `key`, as its file and the
+/// profile. A profile that will not read is skipped: it names nothing usable.
+fn binding(paths: &Paths, key: &str) -> Vec<(std::path::PathBuf, dsc_config::Profile)> {
+    let keys = std::collections::BTreeSet::from([key.to_string()]);
+    let Ok(dir) = std::fs::read_dir(&paths.profiles.active) else {
+        return Vec::new();
+    };
+    let mut out: Vec<_> = dir
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| p.extension().is_some_and(|x| x == "json"))
+        .filter_map(|p| {
+            dsc_config::Profile::load(&p)
+                .ok()
+                .map(|profile| (p, profile))
+        })
+        .filter(|(_, profile)| profile.names_any(&keys))
+        .collect();
+    out.sort_by(|a, b| a.1.name.cmp(&b.1.name));
+    out
+}
+
+/// The profiles removing `key` would change, by name, for the window to ask
+/// about first.
 #[tauri::command]
-pub fn board_remove(key: String) -> Reply<()> {
+pub fn board_remove_plan(key: String) -> Reply<Vec<String>> {
     let paths = Paths::resolve();
     dev_only(&paths)?;
+    Ok(binding(&paths, &key)
+        .into_iter()
+        .map(|(_, p)| p.name)
+        .collect())
+}
+
+/// Take a board out, and out of every profile that names it first, so none
+/// is left binding a device that is no longer there. Returns the profiles
+/// changed. A running converter picks them up as it does any saved profile.
+#[tauri::command]
+pub fn board_remove(key: String) -> Reply<Vec<String>> {
+    let paths = Paths::resolve();
+    dev_only(&paths)?;
+    let keys = std::collections::BTreeSet::from([key.clone()]);
+    let mut changed = Vec::new();
+    for (file, profile) in binding(&paths, &key) {
+        profile
+            .without_devices(&keys)
+            .save(&file)
+            .map_err(|e| fail(&format!("saving {}", profile.name), e))?;
+        changed.push(profile.name);
+    }
     user_devices::remove(&paths.user_devices, &key).map_err(|e| fail("removing the board", e))?;
-    Ok(())
+    Ok(changed)
 }
 
 /// Stop the converter opening a serial port.

@@ -5,6 +5,7 @@
 //! choice. Neither belongs in a profile, where an export would carry it to
 //! someone else's PC. Both live in one small file beside the profiles.
 
+use std::collections::BTreeMap;
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
@@ -123,6 +124,11 @@ pub struct Settings {
     /// can upset it. See docs/PROTOCOL-DSC.md.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub dsc_ports: Vec<String>,
+    /// The port each serial board was added on, by device key, so the editor
+    /// can say when that port is not there. A board is never followed to
+    /// another port: see "Recovery" in docs/PROTOCOL-DSC.md.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub dsc_board_ports: BTreeMap<String, String>,
 }
 
 impl Settings {
@@ -222,6 +228,7 @@ mod tests {
             page_modifier: PageModifier::Key(Modifier::Alt),
             theme: Theme::Light,
             dsc_ports: vec!["COM5".into()],
+            dsc_board_ports: BTreeMap::from([("Arduino_Panel".into(), "COM5".into())]),
         };
         chosen.save(&path).unwrap();
         assert_eq!(Settings::load(&path).unwrap(), chosen);

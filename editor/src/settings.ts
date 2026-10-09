@@ -341,7 +341,13 @@ function boardsSection(changed: () => void): HTMLDivElement {
     saved.replaceChildren();
     for (const b of view.saved) {
       const row = document.createElement("div");
-      const text = note(`${b.display_name}, ${b.lamps} lamps`);
+      const text = note(
+        `${b.display_name}, ${b.lamps} lamps${b.port ? `, on ${b.port}` : ""}${
+          b.missing
+            ? `. ${b.port} is not plugged in; if the board's cable moved to another USB socket, add it again on its new port.`
+            : ""
+        }`,
+      );
       const remove = document.createElement("button");
       remove.className = "small";
       remove.textContent = "Remove";

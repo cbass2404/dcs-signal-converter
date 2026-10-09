@@ -29,11 +29,15 @@ public:
   bool sendReport(uint8_t id, const void *report, uint16_t len);
 };
 
+// Whether the PC has the board, which a test turns off to pull the cable.
+extern bool dscUsbUp;
+
 class Adafruit_USBD_Device {
 public:
   bool isInitialized() { return true; }
   bool begin(uint8_t) { return true; }
-  bool mounted() { return false; }
+  bool mounted() { return dscUsbUp; }
+  bool suspended() { return false; }
   bool detach() { return true; }
   bool attach() { return true; }
 };

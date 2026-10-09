@@ -50,6 +50,9 @@ public:
   // length, or 0 when none is waiting. Never blocks.
   virtual uint8_t receive(uint8_t *buf) = 0;
   virtual void send(const uint8_t *msg, uint8_t len) = 0;
+  // Whether the link to the PC is up, where the board can tell. A board
+  // behind a USB serial bridge cannot, and always says yes.
+  virtual bool linked() { return true; }
 };
 
 // Messages over a serial port: COBS frames ending in 0x00, each message
@@ -86,7 +89,8 @@ public:
   // Use writer for every lamp instead of the pins. Call before begin.
   void onLamp(DscLampWriter writer) { writer_ = writer; }
 
-  // Lamps off, then listen on transport.
+  // Lamps off, then listen on transport. Takes one byte of RAM per lamp,
+  // to answer the converter's STATE check.
   void begin(DscTransport &transport);
 
   // Handle every message waiting. Call from loop() as often as it runs.
@@ -96,6 +100,7 @@ private:
   void handle(const uint8_t *m, uint8_t n);
   void hello();
   void describe(uint8_t index);
+  void state();
   void set(uint8_t index, uint8_t value);
   void error(uint8_t type, uint8_t code);
 
@@ -107,4 +112,7 @@ private:
   uint8_t count_;
   DscLampWriter writer_ = nullptr;
   DscTransport *transport_ = nullptr;
+  // Each lamp's value as last set, for STATE. Null if there was no memory.
+  uint8_t *values_ = nullptr;
+  bool linked_ = false;
 };

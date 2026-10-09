@@ -629,6 +629,10 @@ export interface SavedBoard {
   key: string;
   display_name: string;
   lamps: number;
+  /** The serial port it was added on; null for a HID board. */
+  port: string | null;
+  /** That port is not there now. */
+  missing: boolean;
 }
 
 export interface AddedBoard extends SavedBoard {

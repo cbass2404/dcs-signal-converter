@@ -18,7 +18,7 @@ use anyhow::{bail, Context, Result};
 use dsc_config::log::{self as dlog, Level};
 use dsc_config::settings::Settings;
 use dsc_config::{DeviceSpec, DisplayCatalogue, DSC_PROTOCOL};
-use dsc_device::wire::{set_lamps, Reply, Request};
+use dsc_device::wire::{self, crc16, set_lamps, Reply, Request};
 use dsc_device::{scan, Description, Link};
 use dsc_engine::{LcdWrite, LedWrite};
 
@@ -230,12 +230,18 @@ impl Protocol for Dsc {
         link.send(&Request::AllOff.encode())
             .with_context(|| format!("clearing {}", spec.display_name))?;
         drop(link);
+        let lamps = &board.description.lamps;
         Ok(Box::new(DscPanel {
             name: spec.display_name.clone(),
             link: Arc::clone(&board.link),
             pending: Vec::new(),
+            values: vec![0; lamps.len()],
+            max: lamps.iter().map(|l| l.max).collect(),
             sent: Sent::default(),
             refused: HashSet::new(),
+            checking: true,
+            lost: false,
+            differed_logged: None,
         }))
     }
 }
@@ -260,15 +266,74 @@ fn same_lamps(a: &DeviceSpec, b: &DeviceSpec) -> bool {
     lamps(a) == lamps(b)
 }
 
+/// How often an open board is asked whether it holds what it was sent, and
+/// how long it has to answer. Why, and why these: "Recovery" in
+/// docs/PROTOCOL-DSC.md.
+const CHECK_EVERY: Duration = Duration::from_secs(2);
+const CHECK_WAIT: Duration = Duration::from_millis(500);
+/// A board that keeps differing is logged no more often than this.
+const DIFFERED_LOG_EVERY: Duration = Duration::from_secs(60);
+
 struct DscPanel {
     name: String,
     link: SharedLink,
     /// Lamps set since the last flush, last value winning.
     pending: Vec<(u8, u8)>,
+    /// Each lamp's value as the board should hold it: what it was sent,
+    /// clamped to the lamp's max as the board clamps it. What a `STATE` is
+    /// checked against, and what is sent again when it differs.
+    values: Vec<u8>,
+    max: Vec<u8>,
     sent: Sent,
     /// Each message type and error code the board has answered with, so the
     /// log has each once rather than once per batch.
     refused: HashSet<(u8, u8)>,
+    /// False once the board has refused `STATE`; it is then driven unchecked.
+    checking: bool,
+    /// The last check went unanswered.
+    lost: bool,
+    differed_logged: Option<Instant>,
+}
+
+impl DscPanel {
+    /// Something the board sent unasked. A refusal is logged, once for each
+    /// kind; anything else, such as a late answer to an earlier check, is
+    /// left. A refused message had no effect, and the rest of its batch
+    /// still applied, so the board is kept.
+    fn heard(&mut self, m: &[u8]) {
+        if let Ok(Reply::Error { of, code }) = Reply::decode(m) {
+            if self.refused.insert((of, code)) {
+                dlog::record(
+                    Level::Warn,
+                    &format!(
+                        "dsc      {} refused {of:#04x}: {}",
+                        self.name,
+                        Reply::error_text(code)
+                    ),
+                );
+            }
+        }
+    }
+
+    /// Lamps to the board, and into what it should now hold.
+    fn send_lamps(&mut self, link: &mut dyn Link, pairs: &[(u8, u8)]) -> Result<()> {
+        let started = Instant::now();
+        for request in set_lamps(pairs) {
+            let bytes = request.encode();
+            link.send(&bytes)
+                .with_context(|| format!("writing {}", self.name))?;
+            self.sent.reports += 1;
+            self.sent.bytes += bytes.len() as u64;
+        }
+        self.sent.writing += started.elapsed();
+        for &(index, value) in pairs {
+            let i = index as usize;
+            if let (Some(v), Some(&max)) = (self.values.get_mut(i), self.max.get(i)) {
+                *v = value.min(max);
+            }
+        }
+        Ok(())
+    }
 }
 
 impl Panel for DscPanel {
@@ -289,33 +354,13 @@ impl Panel for DscPanel {
             return Ok(());
         }
         let pairs = std::mem::take(&mut self.pending);
-        let mut link = self.link.lock().unwrap();
-        let started = Instant::now();
-        for request in set_lamps(&pairs) {
-            let bytes = request.encode();
-            link.send(&bytes)
-                .with_context(|| format!("writing {}", self.name))?;
-            self.sent.reports += 1;
-            self.sent.bytes += bytes.len() as u64;
-        }
-        self.sent.writing += started.elapsed();
+        let shared = Arc::clone(&self.link);
+        let mut link = shared.lock().unwrap();
+        self.send_lamps(&mut **link, &pairs)?;
         // A board answers lamps only when something is wrong. Take what is
-        // waiting so it never piles up. A refusal is logged and the board
-        // kept, as the protocol promises: what it refused had no effect, and
-        // the rest of the batch still applied.
+        // waiting so it never piles up.
         while let Some(m) = link.receive(Duration::ZERO)? {
-            if let Ok(Reply::Error { of, code }) = Reply::decode(&m) {
-                if self.refused.insert((of, code)) {
-                    dlog::record(
-                        Level::Warn,
-                        &format!(
-                            "dsc      {} refused {of:#04x}: {}",
-                            self.name,
-                            Reply::error_text(code)
-                        ),
-                    );
-                }
-            }
+            self.heard(&m);
         }
         Ok(())
     }
@@ -326,6 +371,110 @@ impl Panel for DscPanel {
 
     fn sent(&self) -> Sent {
         self.sent
+    }
+
+    fn check_every(&self) -> Option<Duration> {
+        Some(CHECK_EVERY)
+    }
+
+    /// `STATE`, compared with what the board was sent. One that does not
+    /// answer is logged and asked again on the next beat; one that holds
+    /// something else, from a lost message, a reset or a batch half taken,
+    /// is sent every lamp again. Only a failed write drops the panel.
+    fn check(&mut self) -> Result<()> {
+        if !self.checking {
+            return Ok(());
+        }
+        let shared = Arc::clone(&self.link);
+        let mut link = shared.lock().unwrap();
+        // Anything still waiting, a late answer to the last check included.
+        while let Some(m) = link.receive(Duration::ZERO)? {
+            self.heard(&m);
+        }
+        let bytes = Request::State.encode();
+        link.send(&bytes)
+            .with_context(|| format!("checking {}", self.name))?;
+        self.sent.reports += 1;
+        self.sent.bytes += bytes.len() as u64;
+        let asked = Instant::now();
+        let mut answer = None;
+        while let Some(m) = link.receive(CHECK_WAIT.saturating_sub(asked.elapsed()))? {
+            match Reply::decode(&m) {
+                Ok(Reply::State(crc)) => {
+                    answer = Some(crc);
+                    break;
+                }
+                Ok(Reply::Error {
+                    of: wire::STATE, ..
+                }) => {
+                    self.checking = false;
+                    dlog::record(
+                        Level::Warn,
+                        &format!(
+                            "dsc      {} does not answer STATE, so it is driven without being checked",
+                            self.name
+                        ),
+                    );
+                    return Ok(());
+                }
+                _ => self.heard(&m),
+            }
+            if asked.elapsed() >= CHECK_WAIT {
+                break;
+            }
+        }
+        let Some(crc) = answer else {
+            if !self.lost {
+                self.lost = true;
+                dlog::record(
+                    Level::Warn,
+                    &format!(
+                        "dsc      {} stopped answering; asked again every {} s, and caught up when it answers",
+                        self.name,
+                        CHECK_EVERY.as_secs()
+                    ),
+                );
+            }
+            return Ok(());
+        };
+        let differs = crc != crc16(&self.values);
+        if std::mem::take(&mut self.lost) {
+            dlog::record(
+                Level::Info,
+                &format!(
+                    "dsc      {} answering again{}",
+                    self.name,
+                    if differs {
+                        "; every lamp sent again"
+                    } else {
+                        ""
+                    }
+                ),
+            );
+        } else if differs
+            && self
+                .differed_logged
+                .is_none_or(|t| t.elapsed() >= DIFFERED_LOG_EVERY)
+        {
+            self.differed_logged = Some(Instant::now());
+            dlog::record(
+                Level::Info,
+                &format!(
+                    "dsc      {} held other lamps than it was sent, as after a lost message or a reset; every lamp sent again",
+                    self.name
+                ),
+            );
+        }
+        if differs {
+            let all: Vec<(u8, u8)> = self
+                .values
+                .iter()
+                .enumerate()
+                .map(|(i, &v)| (i as u8, v))
+                .collect();
+            self.send_lamps(&mut **link, &all)?;
+        }
+        Ok(())
     }
 }
 
@@ -434,6 +583,47 @@ mod tests {
         panel.flush().unwrap();
         panel.set_lamp(&write(&spec, 0, 1)).unwrap();
         panel.flush().unwrap();
+        assert_eq!(board.lock().unwrap().values, [1, 0]);
+    }
+
+    #[test]
+    fn a_lost_message_is_put_right_by_the_check() {
+        let (board, spec) = caution();
+        let dsc = Dsc::with(Box::new(FakePlaces {
+            boards: HashMap::from([("COM5".to_string(), Arc::clone(&board))]),
+            opened: Arc::default(),
+        }));
+        let mut panel = dsc.open(&spec, &DisplayCatalogue::default()).unwrap();
+        panel.set_lamp(&write(&spec, 0, 1)).unwrap();
+        panel.set_lamp(&write(&spec, 1, 90)).unwrap();
+        panel.flush().unwrap();
+        panel.check().unwrap();
+        let before = panel.sent().reports;
+        panel.check().unwrap();
+        assert_eq!(panel.sent().reports, before + 1, "in step: only the check");
+
+        // A frame lost on the wire, or the board reset.
+        board.lock().unwrap().values = vec![0, 0];
+        panel.check().unwrap();
+        assert_eq!(board.lock().unwrap().values, [1, 90]);
+    }
+
+    #[test]
+    fn a_board_that_stops_answering_is_caught_up_when_it_does() {
+        let (board, spec) = caution();
+        let dsc = Dsc::with(Box::new(FakePlaces {
+            boards: HashMap::from([("COM5".to_string(), Arc::clone(&board))]),
+            opened: Arc::default(),
+        }));
+        let mut panel = dsc.open(&spec, &DisplayCatalogue::default()).unwrap();
+        board.lock().unwrap().hung = true;
+        panel.set_lamp(&write(&spec, 0, 1)).unwrap();
+        panel.flush().unwrap();
+        panel.check().unwrap();
+        assert_eq!(board.lock().unwrap().values, [0, 0], "taken by nobody");
+
+        board.lock().unwrap().hung = false;
+        panel.check().unwrap();
         assert_eq!(board.lock().unwrap().values, [1, 0]);
     }
 

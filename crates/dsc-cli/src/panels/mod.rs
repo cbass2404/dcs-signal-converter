@@ -148,6 +148,19 @@ pub trait Panel: Send {
 
     /// Everything sent so far.
     fn sent(&self) -> Sent;
+
+    /// How often [`check`](Panel::check) wants calling while the panel is
+    /// open, for a protocol that can ask its device whether it is still in
+    /// step. `None`, the default, for one that cannot.
+    fn check_every(&self) -> Option<Duration> {
+        None
+    }
+
+    /// Ask the device whether it holds what it was sent, and put it right if
+    /// not. An error drops the panel, as a failed write does.
+    fn check(&mut self) -> Result<()> {
+        Ok(())
+    }
 }
 
 #[cfg(test)]

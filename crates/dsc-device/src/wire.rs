@@ -25,10 +25,12 @@ pub const PAIRS_PER_MESSAGE: usize = 30;
 
 const HELLO: u8 = 0x01;
 const DESCRIBE: u8 = 0x02;
+pub const STATE: u8 = 0x03;
 const SET_LAMPS: u8 = 0x10;
 const ALL_OFF: u8 = 0x11;
 pub const HELLO_REPLY: u8 = 0x81;
 const LAMP: u8 = 0x82;
+const STATE_REPLY: u8 = 0x83;
 const ERROR: u8 = 0xFF;
 
 /// What the host sends.
@@ -36,6 +38,8 @@ const ERROR: u8 = 0xFF;
 pub enum Request {
     Hello,
     Describe(u8),
+    /// What the board holds, as a CRC: see [`crc16`].
+    State,
     /// At most [`PAIRS_PER_MESSAGE`] (index, value) pairs; see [`set_lamps`].
     SetLamps(Vec<(u8, u8)>),
     AllOff,
@@ -46,6 +50,7 @@ impl Request {
         match self {
             Request::Hello => vec![HELLO, VERSION],
             Request::Describe(i) => vec![DESCRIBE, *i],
+            Request::State => vec![STATE],
             Request::SetLamps(pairs) => {
                 let mut m = vec![SET_LAMPS, pairs.len() as u8];
                 for (i, v) in pairs {
@@ -108,6 +113,8 @@ impl LampInfo {
 pub enum Reply {
     Hello(HelloReply),
     Lamp(LampInfo),
+    /// [`crc16`] over every lamp's value as the board holds it.
+    State(u16),
     /// The message type that failed, and why.
     Error {
         of: u8,
@@ -136,6 +143,7 @@ impl Reply {
                 name: r.string("name", 20)?,
                 label: r.string("label", 30)?,
             })),
+            Some(&STATE_REPLY) => Ok(Reply::State(u16::from_le_bytes([r.byte()?, r.byte()?]))),
             Some(&ERROR) => Ok(Reply::Error {
                 of: r.byte()?,
                 code: r.byte()?,
@@ -218,6 +226,22 @@ pub fn crc8(data: &[u8]) -> u8 {
         for _ in 0..8 {
             crc = if crc & 0x80 != 0 {
                 (crc << 1) ^ 0x07
+            } else {
+                crc << 1
+            };
+        }
+        crc
+    })
+}
+
+/// CRC-16/CCITT-FALSE: polynomial 0x1021, initial 0xFFFF, no reflection, no
+/// final XOR. Over every lamp's value in index order, it is a `STATE`.
+pub fn crc16(data: &[u8]) -> u16 {
+    data.iter().fold(0xFFFFu16, |mut crc, &b| {
+        crc ^= (b as u16) << 8;
+        for _ in 0..8 {
+            crc = if crc & 0x8000 != 0 {
+                (crc << 1) ^ 0x1021
             } else {
                 crc << 1
             };
@@ -354,6 +378,7 @@ mod tests {
     #[test]
     fn the_crc_matches_the_specs_check_value() {
         assert_eq!(crc8(b"123456789"), 0xF4);
+        assert_eq!(crc16(b"123456789"), 0x29B1);
     }
 
     #[test]
@@ -406,6 +431,11 @@ mod tests {
             [0x10, 2, 0, 1, 3, 200]
         );
         assert_eq!(Request::AllOff.encode(), [0x11]);
+        assert_eq!(Request::State.encode(), [0x03]);
+        assert_eq!(
+            Reply::decode(&[0x83, 0xB1, 0x29]).unwrap(),
+            Reply::State(0x29B1)
+        );
     }
 
     #[test]

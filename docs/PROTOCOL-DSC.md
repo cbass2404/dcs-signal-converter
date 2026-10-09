@@ -19,7 +19,9 @@ The host sends `HELLO`; the device answers with who it is and how many lamps it
 has. The host asks for each lamp with `DESCRIBE`; the device answers with its
 index, kind, highest value and names. From then on the host sends `SET_LAMPS`
 with index and value pairs, and the device sets them. No acknowledgements on the
-hot path; the device answers with `ERROR` only when something is wrong.
+hot path; the device answers with `ERROR` only when something is wrong. Every
+two seconds the host asks for `STATE`, a checksum of what the device holds, and
+sends every lamp again if it is not what the host sent. "Recovery" says why.
 
 ## Transports
 
@@ -47,7 +49,7 @@ Payload byte 0 is the message length `n` (1 to 62), bytes 1 to `n` are the
 message, and the rest is padding the receiver ignores. Host messages go out as
 output reports and device messages come back as input reports. A device sends
 input reports only in answer to a host message, never on its own, so an idle
-device costs the bus nothing.
+device costs the bus one `STATE` question and answer every two seconds.
 
 ### Serial
 
@@ -64,8 +66,8 @@ COBS( message bytes ... , crc8 ) 0x00
 The CRC is CRC-8/SMBUS (polynomial `0x07`, initial value `0x00`, no reflection,
 no final XOR) over the message bytes. Its check value for the ASCII string
 `123456789` is `0xF4`. A frame whose CRC fails, or which decodes to more than 63
-bytes, is dropped without an answer; the host notices the silence and asks
-again.
+bytes, is dropped without an answer. The host notices the silence where it
+waits for an answer, and the next `STATE` catches a lost `SET_LAMPS`.
 
 Opening the port resets most of these boards. The host waits for the device: it
 sends `HELLO` every 250 ms for up to 3 seconds before giving up on the port.
@@ -73,8 +75,9 @@ sends `HELLO` every 250 ms for up to 3 seconds before giving up on the port.
 **The host never probes serial ports on its own.** A COM port can be a
 DCS-BIOS Arduino, a GPS or a flight controller, and bytes it did not expect can
 upset it. The user chooses the port in the editor once; from then on the host
-opens only ports it was given, recognising the board by its USB identity where
-it has one and by the `HELLO` answer in any case.
+opens only ports it was given, and knows the board by its `HELLO` answer. A
+board that comes back on another port is not followed there; "Recovery" says
+why.
 
 ## Messages
 
@@ -88,6 +91,8 @@ by that many bytes of ASCII, no terminator. Message types from the host are
 | `0x81` | `HELLO_REPLY` | device → host |
 | `0x02` | `DESCRIBE`    | host → device |
 | `0x82` | `LAMP`        | device → host |
+| `0x03` | `STATE`       | host → device |
+| `0x83` | `STATE_REPLY` | device → host |
 | `0x10` | `SET_LAMPS`   | host → device |
 | `0x11` | `ALL_OFF`     | host → device |
 | `0xFF` | `ERROR`       | device → host |
@@ -217,9 +222,12 @@ above `max` rather than ignoring it.
 No answer on success. An index past the end is `ERROR` code `0x02`, and the
 pairs before it still apply.
 
-The host sends at most one batch per DCS-BIOS update, and nothing at all while
-the cockpit is still. A batch can be several messages back to back, and a
-device should take them without dropping any.
+The host sends at most one batch per DCS-BIOS update, and no lamps at all
+while the cockpit is still. A batch is up to 9 messages back to back, for 255
+lamps, and a device must take them all without dropping any: a sketch's
+`loop()` can be busy while they arrive, so the device queues them or holds the
+bus until it has room. Our sketch queues 15 on TinyUSB, and on a 32u4 USB holds
+the next report until the last is read.
 
 ### `ALL_OFF`
 
@@ -232,7 +240,39 @@ aircraft changes to one whose profile leaves the device alone, or DCS exits.
 No answer.
 
 Lamps hold their value until told otherwise. A device must not turn them off
-by itself on a timer, because a still cockpit sends nothing for minutes.
+by itself on a timer: a still cockpit sends no lamps for minutes, and a device
+that changed on its own would differ from what the host sent, which the next
+`STATE` would put back.
+
+Losing the link is different. A device that can tell its USB link is gone,
+unplugged or the PC asleep, turns every lamp off: on its own power it would
+otherwise hold a cockpit nobody is flying, with nothing left to clear it. Our
+sketch does this on native USB boards. A board behind a USB serial chip cannot
+tell, so it should be powered from its USB cable.
+
+### `STATE` and `STATE_REPLY`
+
+```text
+STATE        03
+STATE_REPLY  83  crc:u16
+```
+
+`crc` is CRC-16/CCITT-FALSE (polynomial `0x1021`, initial value `0xFFFF`, no
+reflection, no final XOR) over every lamp's value as the device holds it, one
+byte each, from lamp 0 to `lamps - 1`. A value is held as applied, clamped to
+the lamp's `max`. From reset, and after `ALL_OFF`, every value is 0. The check
+value for the ASCII string `123456789` is `0x29B1`.
+
+The host computes the same over what it sent. They differ after a lost
+message, a device reset or a batch partly taken, and then the host sends every
+lamp again. Why a checksum and not the values: 255 lamps do not fit in one
+message, and the answer stays three bytes for any device. Why 16 bits, when the
+serial frame makes do with 8: a missed difference stays wrong until that lamp
+next changes, perhaps the whole flight, so the 1 in 256 chance of CRC-8 is too
+high.
+
+A device that cannot hold its values answers `ERROR` code `0x01`, and the host
+drives it unchecked.
 
 ### `ERROR`
 
@@ -268,6 +308,62 @@ converter promises.
 - **Never anything persistent.** Version 1 has no message that writes to a
   device's flash or EEPROM, and later versions keep it that way: lamp state is
   volatile and belongs to the converter.
+- **Checked while in use.** Every 2 seconds the host sends `STATE` and waits
+  half a second for the answer. A difference sends every lamp again in one
+  batch. No answer is logged once, asked again on the same beat, and caught up
+  when the device answers. Only a write that fails, as when the device is
+  unplugged, closes it.
+
+## Recovery
+
+What happens when things go wrong, and why it was built that way. The reasons
+are here so a later change does not have to find them again.
+
+**Why not acknowledgements.** The hot path stays one way: a batch goes out and
+the next DCS-BIOS update is not held up waiting for an answer. Without answers
+the host cannot see a message that went missing, so a slow check covers what
+acknowledgements would have: `STATE` every two seconds costs a few bytes and
+puts anything wrong right within that time. Two seconds is short enough that a
+wrong lamp is a blink, not a flight, and long enough to cost nothing. Half a
+second to answer is far more than any device needs over USB, so a device that
+misses it is stopped, not slow.
+
+**A device disconnects while its lamps are lit.** The host sees the USB device
+go, or a write fail, and forgets the device; nothing is sent to it again.
+When it comes back it is described again and every lamp is sent in full, as
+for a device seen for the first time, since it starts from nothing the host
+sent. On the device, a native USB board turns its lamps off when it loses the
+link (see `ALL_OFF`). A board behind a USB serial chip cannot tell, so on its
+own power it holds its last lamps until it is reset. Powering such a board from
+USB is the answer: the spec forbids a timer, and the chip gives the board no
+other sign.
+
+**A USB serial adapter comes back on another COM port.** The device is not
+found there, and the editor shows the port it was added on as not plugged in.
+The host does not follow it, because it could only do that by opening ports it
+was not given, which the spec forbids. Following it by USB identity was
+considered and dropped: Windows already keeps the COM number for an adapter
+with a USB serial number, so the case that happens is a clone adapter moved to
+another socket, and a clone has no unique identity to follow. The user adds
+the board again on its new port.
+
+**The firmware stops responding after it was found.** The host sees it at the
+next `STATE`. On native USB a stopped device usually stops taking reports too,
+a write fails, and it is handled as unplugged. Behind a USB serial chip the
+chip keeps taking bytes for a sketch that no longer reads them, so writes never
+fail and `STATE` is the only sign. The host logs it, keeps asking every two
+seconds without blocking anything else, and sends every lamp again once the
+device answers. A device that reset without its USB link dropping, a watchdog
+or a brownout behind a serial chip, answers with every lamp off, and the same
+check puts its lamps back.
+
+**A `SET_LAMPS` is lost, or a batch only partly taken.** Each message stands
+alone and is applied whole or not at all, so no message leaves its own lamps
+half set. A whole message can still go: a frame dropped for its CRC, a serial
+buffer that overflowed while `loop()` was busy, or a report that found a full
+queue. Without answers the host does not know, and because it sends only
+changes, those lamps would stay wrong until each next changed. The next `STATE`
+differs, and every lamp is sent again.
 
 ## Buttons and switches
 

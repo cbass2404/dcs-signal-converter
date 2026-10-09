@@ -43,6 +43,10 @@ pub struct SavedBoard {
     pub key: String,
     pub display_name: String,
     pub lamps: usize,
+    /// The serial port it was added on; none for a HID board.
+    pub port: Option<String>,
+    /// That port is not there now.
+    pub missing: bool,
 }
 
 /// A board just added, and whether one by the same key was there already.
@@ -62,11 +66,17 @@ pub struct BoardsView {
     pub saved: Vec<SavedBoard>,
 }
 
-fn saved(spec: &dsc_config::DeviceSpec) -> SavedBoard {
+/// `here` is the serial ports there now.
+fn saved(spec: &dsc_config::DeviceSpec, settings: &Settings, here: &[String]) -> SavedBoard {
+    let port = settings.dsc_board_ports.get(&spec.key).cloned();
     SavedBoard {
         key: spec.key.clone(),
         display_name: spec.display_name.clone(),
         lamps: spec.leds().count(),
+        missing: port
+            .as_ref()
+            .is_some_and(|p| !here.iter().any(|h| h.eq_ignore_ascii_case(p))),
+        port,
     }
 }
 
@@ -75,9 +85,8 @@ fn saved(spec: &dsc_config::DeviceSpec) -> SavedBoard {
 pub fn boards_list() -> Reply<BoardsView> {
     let paths = Paths::resolve();
     dev_only(&paths)?;
-    let allowed = Settings::load(&paths.settings)
-        .map(|s| s.dsc_ports)
-        .unwrap_or_default();
+    let settings = Settings::load(&paths.settings).unwrap_or_default();
+    let allowed = &settings.dsc_ports;
     let api = dsc_device::hidapi::HidApi::new().map_err(|e| fail("listing HID devices", e))?;
     let mut places: Vec<Place> = hid_boards(&api)
         .into_iter()
@@ -94,10 +103,15 @@ pub fn boards_list() -> Reply<BoardsView> {
         serial: true,
         what,
     }));
+    let here: Vec<String> = places
+        .iter()
+        .filter(|p| p.serial)
+        .map(|p| p.place.clone())
+        .collect();
     let saved = user_devices::read(&paths.user_devices)
         .map_err(|e| fail("reading the added boards", e))?
         .iter()
-        .map(saved)
+        .map(|spec| saved(spec, &settings, &here))
         .collect();
     Ok(BoardsView { places, saved })
 }
@@ -151,21 +165,29 @@ fn add(place: &str) -> Reply<AddedBoard> {
         .iter()
         .any(|d| d.key == spec.key);
     user_devices::save(&paths.user_devices, &spec).map_err(|e| fail("saving the board", e))?;
+    let mut settings = Settings::load(&paths.settings).unwrap_or_default();
+    let before = settings.clone();
     if serial {
-        let mut settings = Settings::load(&paths.settings).unwrap_or_default();
         if !settings
             .dsc_ports
             .iter()
             .any(|p| p.eq_ignore_ascii_case(place))
         {
             settings.dsc_ports.push(place.to_string());
-            settings
-                .save(&paths.settings)
-                .map_err(|e| fail("allowing the port", e))?;
         }
+        settings
+            .dsc_board_ports
+            .insert(spec.key.clone(), place.to_string());
+    } else {
+        settings.dsc_board_ports.remove(&spec.key);
+    }
+    if settings != before {
+        settings
+            .save(&paths.settings)
+            .map_err(|e| fail("allowing the port", e))?;
     }
     Ok(AddedBoard {
-        board: saved(&spec),
+        board: saved(&spec, &settings, &[place.to_string()]),
         replaced,
     })
 }
@@ -221,6 +243,13 @@ pub fn board_remove(key: String) -> Reply<Vec<String>> {
         changed.push(profile.name);
     }
     user_devices::remove(&paths.user_devices, &key).map_err(|e| fail("removing the board", e))?;
+    if let Ok(mut settings) = Settings::load(&paths.settings) {
+        if settings.dsc_board_ports.remove(&key).is_some() {
+            settings
+                .save(&paths.settings)
+                .map_err(|e| fail("saving the settings", e))?;
+        }
+    }
     Ok(changed)
 }
 

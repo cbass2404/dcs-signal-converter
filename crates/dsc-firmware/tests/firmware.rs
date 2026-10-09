@@ -5,7 +5,7 @@ use std::collections::VecDeque;
 use std::io;
 use std::time::Duration;
 
-use dsc_device::wire::{frame, report, unreport, Deframer, Reply, Request};
+use dsc_device::wire::{crc16, frame, report, unreport, Deframer, Reply, Request};
 use dsc_device::{scan, Link};
 use dsc_firmware::{pin, HidBoard, SerialBoard, BACKLIGHT, FIRE, GAUGE};
 
@@ -117,6 +117,25 @@ fn lamps_are_set_clamped_to_their_max_and_cleared() {
 }
 
 #[test]
+fn state_is_what_the_host_expects_from_what_it_sent() {
+    let mut s = Serial::new();
+    let state = |s: &mut Serial| match Reply::decode(&s.ask(&Request::State.encode())[0]) {
+        Ok(Reply::State(crc)) => crc,
+        other => panic!("{other:?}"),
+    };
+    assert_eq!(
+        state(&mut s),
+        crc16(&[0, 0, 0]),
+        "every lamp off from reset"
+    );
+    s.ask(&Request::SetLamps(vec![(0, 1), (1, 128), (2, 200)]).encode());
+    assert_eq!(state(&mut s), crc16(&[1, 128, 100]), "as clamped");
+    // A board that reset says so: back to all off.
+    let mut fresh = Serial::new();
+    assert_ne!(state(&mut fresh), crc16(&[1, 128, 100]));
+}
+
+#[test]
 fn a_request_cut_short_is_refused_and_changes_nothing() {
     let mut s = Serial::new();
     let cut: [&[u8]; 5] = [
@@ -196,7 +215,7 @@ fn random_serial_input_never_breaks_the_firmware() {
         let len = rng.below(70);
         let mut m = rng.bytes(len);
         // Mostly types it knows, so each handler sees every length.
-        let t = [0x01, 0x02, 0x10, 0x11, rng.byte()][rng.below(5)];
+        let t = [0x01, 0x02, 0x03, 0x10, 0x11, rng.byte()][rng.below(6)];
         if let Some(first) = m.first_mut() {
             *first = t;
         }
@@ -251,6 +270,40 @@ fn hid_reports_are_taken_either_way_and_bad_ones_dropped() {
 
     h.report(0, &report(&[0x02]));
     assert_eq!(unreport(&h.take().unwrap()), Some(error(0x02, SHORT)));
+}
+
+/// The USB stack takes reports while `loop()` is busy; a full batch for
+/// 255 lamps is 9 of them, and the queue holds 15.
+#[test]
+fn a_batch_taken_while_loop_is_busy_is_all_handled() {
+    let mut h = HidBoard::open();
+    for v in 1..=15u8 {
+        h.queue(0, &report(&Request::SetLamps(vec![(1, v)]).encode()));
+    }
+    h.queue(0, &report(&Request::State.encode()));
+    h.poll();
+    assert_eq!(pin(BACKLIGHT), Some(15), "all fifteen reached the lamp");
+    assert_eq!(h.take(), None, "the sixteenth, past a full queue, was lost");
+}
+
+#[test]
+fn pulling_the_cable_turns_the_lamps_off() {
+    let mut h = HidBoard::open();
+    h.report(
+        0,
+        &report(&Request::SetLamps(vec![(0, 1), (1, 90)]).encode()),
+    );
+    assert_eq!((pin(FIRE), pin(BACKLIGHT)), (Some(1), Some(90)));
+    h.link(false);
+    assert_eq!((pin(FIRE), pin(BACKLIGHT)), (Some(0), Some(0)));
+    h.link(true);
+    h.report(0, &report(&Request::State.encode()));
+    let m = unreport(&h.take().unwrap()).unwrap();
+    assert_eq!(
+        Reply::decode(&m),
+        Ok(Reply::State(crc16(&[0, 0, 0]))),
+        "so the host's check sees the lamps went"
+    );
 }
 
 #[test]

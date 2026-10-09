@@ -67,6 +67,7 @@ void delay(unsigned long) {}
 void yield() {}
 
 Adafruit_USBD_Device TinyUSBDevice;
+bool dscUsbUp = true;
 
 void Adafruit_USBD_HID::setReportCallback(dsc_get_report_cb,
                                           dsc_set_report_cb set) {
@@ -112,6 +113,7 @@ size_t dsc_serial_take(void *board, uint8_t *out, size_t cap) {
 int dsc_pin(uint8_t pin) { return pins[pin]; }
 
 void dsc_hid_begin() {
+  dscUsbUp = true;
   static bool begun = false;
   if (!begun) {
     hidLink.begin();
@@ -123,6 +125,18 @@ void dsc_hid_begin() {
 
 void dsc_hid_report(uint8_t id, const uint8_t *data, uint16_t len) {
   setReport(id, HID_REPORT_TYPE_OUTPUT, data, len);
+  hidDevice.poll();
+}
+
+// As the USB stack takes a report while loop() is busy elsewhere.
+void dsc_hid_queue(uint8_t id, const uint8_t *data, uint16_t len) {
+  setReport(id, HID_REPORT_TYPE_OUTPUT, data, len);
+}
+
+void dsc_hid_poll() { hidDevice.poll(); }
+
+void dsc_hid_link(bool up) {
+  dscUsbUp = up;
   hidDevice.poll();
 }
 

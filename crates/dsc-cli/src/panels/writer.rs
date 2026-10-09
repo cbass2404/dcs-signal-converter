@@ -14,6 +14,10 @@
 //! queue of old ones. A screen that is not ready for its next paint, as the
 //! MCDU's text grid is not for 40 ms after each, leaves its paint in the
 //! mailbox, where a newer one replaces it, until it is.
+//!
+//! A panel that can check its device is still in step says how often, and
+//! its writer calls the check on that beat, idle or not, on the same thread
+//! as its writes so the two never cross.
 
 use std::collections::BTreeMap;
 use std::sync::{Arc, Condvar, Mutex};
@@ -164,6 +168,8 @@ impl Drop for Writer {
 }
 
 fn run(mut panel: Box<dyn Panel>, shared: &Shared) {
+    let every = panel.check_every();
+    let mut next_check = every.map(|e| Instant::now() + e);
     loop {
         let (lamps, screens) = {
             let mut mb = shared.mailbox.lock().expect("mailbox poisoned");
@@ -184,7 +190,11 @@ fn run(mut panel: Box<dyn Panel>, shared: &Shared) {
                 if mb.closing && mb.screens.is_empty() {
                     return;
                 }
-                mb = match soonest {
+                if next_check.is_some_and(|t| now >= t) {
+                    break;
+                }
+                // Until a held screen is ready or a check is due.
+                mb = match soonest.into_iter().chain(next_check).min() {
                     Some(t) => {
                         shared
                             .wake
@@ -209,14 +219,22 @@ fn run(mut panel: Box<dyn Panel>, shared: &Shared) {
 
         // Lamps before screens, as the main loop always sent them.
         let result = (|| -> Result<()> {
-            for w in lamps.values() {
-                panel.set_lamp(w)?;
+            if !lamps.is_empty() || !screens.is_empty() {
+                for w in lamps.values() {
+                    panel.set_lamp(w)?;
+                }
+                for w in &screens {
+                    panel.write_display(w)?;
+                }
+                // Lamps too: a panel may hold them for one message per batch.
+                panel.flush()?;
             }
-            for w in &screens {
-                panel.write_display(w)?;
+            if let (Some(e), Some(t)) = (every, next_check) {
+                if Instant::now() >= t {
+                    panel.check()?;
+                    next_check = Some(Instant::now() + e);
+                }
             }
-            // Lamps too: a panel may hold them for one message per batch.
-            panel.flush()?;
             Ok(())
         })();
         *shared.sent.lock().expect("sent poisoned") = panel.sent();
@@ -246,6 +264,9 @@ mod tests {
         entered: Option<mpsc::Sender<()>>,
         go: Option<mpsc::Receiver<()>>,
         unplugged: bool,
+        /// Checked this often, failing once `check_fails`.
+        check: Option<Duration>,
+        check_fails: bool,
     }
 
     impl Panel for Fake {
@@ -276,6 +297,14 @@ mod tests {
         }
         fn sent(&self) -> Sent {
             Sent::default()
+        }
+        fn check_every(&self) -> Option<Duration> {
+            self.check
+        }
+        fn check(&mut self) -> Result<()> {
+            anyhow::ensure!(!self.check_fails, "stopped answering");
+            self.log.lock().unwrap().push("check".into());
+            Ok(())
         }
     }
 
@@ -382,6 +411,33 @@ mod tests {
         w.post(&[lamp(1, 5)], &[]);
         w.finish(LIMIT).unwrap();
         assert_eq!(*log.lock().unwrap(), ["lamp 1 = 5", "flush"]);
+    }
+
+    #[test]
+    fn a_panel_that_checks_is_checked_while_idle_and_nothing_flushed() {
+        let fake = Fake {
+            check: Some(Duration::from_millis(20)),
+            ..Fake::default()
+        };
+        let log = Arc::clone(&fake.log);
+        let w = Writer::start("PANEL", Box::new(fake)).unwrap();
+        std::thread::sleep(Duration::from_millis(90));
+        w.finish(LIMIT).unwrap();
+        let log = log.lock().unwrap();
+        assert!(log.len() >= 2, "{log:?}");
+        assert!(log.iter().all(|l| l == "check"), "{log:?}");
+    }
+
+    #[test]
+    fn a_failed_check_stops_the_writer_as_a_failed_write_does() {
+        let fake = Fake {
+            check: Some(Duration::from_millis(10)),
+            check_fails: true,
+            ..Fake::default()
+        };
+        let w = Writer::start("PANEL", Box::new(fake)).unwrap();
+        std::thread::sleep(Duration::from_millis(50));
+        assert!(w.failed().is_some_and(|e| e.contains("stopped answering")));
     }
 
     #[test]

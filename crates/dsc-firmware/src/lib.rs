@@ -18,6 +18,9 @@ extern "C" {
     fn dsc_pin(pin: u8) -> i32;
     fn dsc_hid_begin();
     fn dsc_hid_report(id: u8, data: *const u8, len: u16);
+    fn dsc_hid_queue(id: u8, data: *const u8, len: u16);
+    fn dsc_hid_poll();
+    fn dsc_hid_link(up: bool);
     fn dsc_hid_take(out: *mut u8, cap: usize) -> usize;
 }
 
@@ -83,6 +86,23 @@ impl HidBoard {
     pub fn report(&mut self, id: u8, data: &[u8]) {
         let len = u16::try_from(data.len()).expect("a report fits in u16");
         unsafe { dsc_hid_report(id, data.as_ptr(), len) }
+    }
+
+    /// An output report taken by the USB stack while the sketch's `loop()`
+    /// is busy elsewhere: queued, not yet handled.
+    pub fn queue(&mut self, id: u8, data: &[u8]) {
+        let len = u16::try_from(data.len()).expect("a report fits in u16");
+        unsafe { dsc_hid_queue(id, data.as_ptr(), len) }
+    }
+
+    /// The sketch's `loop()` reaching `poll()`.
+    pub fn poll(&mut self) {
+        unsafe { dsc_hid_poll() }
+    }
+
+    /// The cable in or out, then one `poll()`.
+    pub fn link(&mut self, up: bool) {
+        unsafe { dsc_hid_link(up) }
     }
 
     /// The next input report the board sent, its ID first.

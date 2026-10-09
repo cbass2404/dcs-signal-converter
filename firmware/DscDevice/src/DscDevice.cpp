@@ -1,14 +1,18 @@
 #include "DscDevice.h"
 
+#include <stdlib.h>
+
 namespace {
 
 enum : uint8_t {
   HELLO = 0x01,
   DESCRIBE = 0x02,
+  STATE = 0x03,
   SET_LAMPS = 0x10,
   ALL_OFF = 0x11,
   HELLO_REPLY = 0x81,
   LAMP = 0x82,
+  STATE_REPLY = 0x83,
   ERROR = 0xFF,
 };
 
@@ -25,6 +29,19 @@ uint8_t crc8(const uint8_t *data, uint8_t len) {
     crc ^= data[i];
     for (uint8_t bit = 0; bit < 8; bit++) {
       crc = (crc & 0x80) ? (uint8_t)((crc << 1) ^ 0x07) : (uint8_t)(crc << 1);
+    }
+  }
+  return crc;
+}
+
+// CRC-16/CCITT-FALSE: polynomial 0x1021, initial 0xFFFF, no reflection, no
+// final XOR.
+uint16_t crc16(const uint8_t *data, uint8_t len) {
+  uint16_t crc = 0xFFFF;
+  for (uint8_t i = 0; i < len; i++) {
+    crc ^= (uint16_t)data[i] << 8;
+    for (uint8_t bit = 0; bit < 8; bit++) {
+      crc = (crc & 0x8000) ? (uint16_t)((crc << 1) ^ 0x1021) : (uint16_t)(crc << 1);
     }
   }
   return crc;
@@ -152,6 +169,9 @@ DscDevice::DscDevice(const char *vendor, const char *model, const char *unit,
 
 void DscDevice::begin(DscTransport &transport) {
   transport_ = &transport;
+  if (!values_ && count_) {
+    values_ = (uint8_t *)calloc(count_, 1);
+  }
   for (uint8_t i = 0; i < count_; i++) {
     if (!writer_ && lamps_[i].pin != DSC_NO_PIN) {
       pinMode(lamps_[i].pin, OUTPUT);
@@ -164,6 +184,17 @@ void DscDevice::poll() {
   if (!transport_) {
     return;
   }
+  // The PC gone, unplugged or asleep: lamps off, so a board on its own
+  // power does not hold a cockpit nobody is flying. Not a timer: a still
+  // cockpit keeps its link.
+  bool linked = transport_->linked();
+  if (linked_ && !linked) {
+    for (uint8_t i = 0; i < count_; i++) {
+      set(i, 0);
+    }
+  }
+  linked_ = linked;
+
   uint8_t m[DSC_MAX_MESSAGE];
   uint8_t n;
   while ((n = transport_->receive(m)) > 0) {
@@ -192,6 +223,10 @@ void DscDevice::handle(const uint8_t *m, uint8_t n) {
         return;
       }
       describe(m[1]);
+      return;
+
+    case STATE:
+      state();
       return;
 
     case SET_LAMPS: {
@@ -255,11 +290,24 @@ void DscDevice::describe(uint8_t index) {
   transport_->send(out, at);
 }
 
+void DscDevice::state() {
+  if (!values_) {
+    error(STATE, UNKNOWN_TYPE);
+    return;
+  }
+  uint16_t crc = crc16(values_, count_);
+  uint8_t out[3] = {STATE_REPLY, (uint8_t)crc, (uint8_t)(crc >> 8)};
+  transport_->send(out, 3);
+}
+
 void DscDevice::set(uint8_t index, uint8_t value) {
   const DscLamp &lamp = lamps_[index];
   uint8_t max = lamp.max ? lamp.max : 1;
   if (value > max) {
     value = max;
+  }
+  if (values_) {
+    values_[index] = value;
   }
   if (writer_) {
     writer_(index, value);

@@ -18,6 +18,9 @@ pub struct Board {
     pub values: Vec<u8>,
     /// `HELLO`s to ignore first, as a board does while it resets.
     pub deaf_for: usize,
+    /// Takes nothing and answers nothing, as a board whose sketch has
+    /// stopped behind a USB serial chip that still takes every byte.
+    pub hung: bool,
     /// Every message it was sent, in order.
     pub heard: Vec<Vec<u8>>,
     outbox: VecDeque<Vec<u8>>,
@@ -67,6 +70,9 @@ impl Link for FakeLink {
     fn send(&mut self, m: &[u8]) -> io::Result<()> {
         let mut b = self.0.lock().unwrap();
         b.heard.push(m.to_vec());
+        if b.hung {
+            return Ok(());
+        }
         // Checked as the firmware checks: too short for its fields is
         // `ERROR` 0x03, and nothing in it applies.
         let short = |t: u8| Some(vec![0xFF, t, 0x03]);
@@ -109,6 +115,10 @@ impl Link for FakeLink {
                     b.values[index] = value.min(max);
                 }
                 err
+            }
+            Some(0x03) => {
+                let crc = crate::wire::crc16(&b.values);
+                Some(vec![0x83, crc as u8, (crc >> 8) as u8])
             }
             Some(0x11) => {
                 b.values.iter_mut().for_each(|v| *v = 0);

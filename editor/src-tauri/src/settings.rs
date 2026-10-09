@@ -81,6 +81,7 @@ pub fn settings_save(settings: Settings) -> Reply<()> {
     let mut settings = settings;
     if let Ok(on_file) = Settings::load(&paths.settings) {
         settings.dsc_ports = on_file.dsc_ports;
+        settings.dsc_board_ports = on_file.dsc_board_ports;
     }
     settings
         .save(&paths.settings)

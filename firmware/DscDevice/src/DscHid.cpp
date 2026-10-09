@@ -125,6 +125,13 @@ Usb &usb() {
 
 DscHid::DscHid() { usb(); }
 
+// VBUS is read from the pad itself: the core's configured flag stays set after
+// the cable is pulled from a board on its own power.
+bool DscHid::linked() {
+  return (USBSTA & (1 << VBUS)) && USBDevice.configured() &&
+         !USBDevice.isSuspended();
+}
+
 void DscHid::begin() {}
 
 uint8_t DscHid::receive(uint8_t *buf) {
@@ -160,9 +167,12 @@ namespace {
 
 const uint8_t reportDescriptor[] = {DSC_REPORT_DESCRIPTOR};
 
-// Output reports arrive in TinyUSB's callback and wait here for poll(). A
-// lamp batch can be several reports back to back, so there is room for a few.
-const uint8_t QUEUE = 8;
+// Output reports arrive in TinyUSB's callback and wait here for poll(),
+// which a busy loop() may not reach before a whole batch is in. A full batch
+// for 255 lamps is 9 reports, and the ring holds one less than its size, so
+// 16 holds a batch and a STATE check with room to spare. A report that finds
+// it full is lost, which STATE then catches.
+const uint8_t QUEUE = 16;
 uint8_t queue[QUEUE][PAYLOAD];
 uint8_t sizes[QUEUE];
 volatile uint8_t head = 0;
@@ -204,6 +214,10 @@ Adafruit_USBD_HID &hid() {
 }  // namespace
 
 DscHid::DscHid() {}
+
+bool DscHid::linked() {
+  return TinyUSBDevice.mounted() && !TinyUSBDevice.suspended();
+}
 
 void DscHid::begin() {
   if (!TinyUSBDevice.isInitialized()) {

@@ -28,6 +28,8 @@ public:
   void begin();
   uint8_t receive(uint8_t *buf) override;
   void send(const uint8_t *msg, uint8_t len) override;
+  // False while unplugged or while the PC sleeps.
+  bool linked() override;
 };
 
 #else

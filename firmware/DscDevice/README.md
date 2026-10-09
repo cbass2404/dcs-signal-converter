@@ -51,6 +51,13 @@ DscDevice panel("Arduino", "Caution Panel", "", "1.0", lamps, DSC_COUNT(lamps));
 - **`DSC_NO_PIN`** with `panel.onLamp(writer)` hands every lamp to your own
   code, for shift registers or LED drivers.
 
+**Power a serial board from its USB cable.** A native USB board (Leonardo, Pro
+Micro, RP2040) turns its lamps off when the cable is pulled or the PC sleeps.
+An Uno, Nano or Mega talks through a USB serial chip and cannot tell, so on its
+own power it holds its last lamps until it is reset. Keep `loop()` quick, too:
+the converter checks every two seconds that the board holds what it was sent,
+and a board that does not answer within half a second is treated as stopped.
+
 ## Buttons and switches
 
 This library drives lamps only. On a native USB board, add a game controller

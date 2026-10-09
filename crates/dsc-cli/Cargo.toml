@@ -16,6 +16,7 @@ dsc-bios = { path = "../dsc-bios" }
 dsc-config = { path = "../dsc-config" }
 dsc-engine = { path = "../dsc-engine" }
 dsc-input = { path = "../dsc-input" }
+dsc-device = { path = "../dsc-device" }
 anyhow.workspace = true
 clap = { version = "4", features = ["derive"] }
 ctrlc = "3"

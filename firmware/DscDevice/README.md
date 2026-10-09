@@ -43,6 +43,15 @@ DscDevice panel("Arduino", "Caution Panel", "", "1.0", lamps, DSC_COUNT(lamps));
 - **`DSC_NO_PIN`** with `panel.onLamp(writer)` hands every lamp to your own
   code, for shift registers or LED drivers.
 
+## Buttons and switches
+
+This library drives lamps only. On a native USB board, add a game controller
+to the same sketch (the Joystick library on a Leonardo or Pro Micro, a TinyUSB
+gamepad on an RP2040) and bind its buttons in DCS like any button box. A
+serial board (Uno, Nano, Mega) cannot share its COM port with a DCS-BIOS
+sketch, so its switches go on a second board running DCS-BIOS. See "Buttons
+and switches" in the protocol document.
+
 ## Testing a board
 
 `tools/dsc_probe.py` in the repository talks to a board without the converter:

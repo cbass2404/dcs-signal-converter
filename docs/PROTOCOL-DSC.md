@@ -10,8 +10,8 @@ what it is told, so one firmware serves every aircraft and changing what a lamp
 means never needs a reflash.
 
 Version 1 covers lamps: indicators and dimmers. Displays come later, the way the
-UFC followed the lamps. Buttons stay out: DCS reads a device's buttons as a game
-controller, so this protocol never carries them.
+UFC followed the lamps. Buttons and switches are not carried in version 1; see
+"Buttons and switches" for where they go instead.
 
 ## In one paragraph
 
@@ -217,6 +217,30 @@ converter promises.
 - **Never anything persistent.** Version 1 has no message that writes to a
   device's flash or EEPROM, and later versions keep it that way: lamp state is
   volatile and belongs to the converter.
+
+## Buttons and switches
+
+Version 1 carries lamps only. A board with buttons or switches gives them to
+DCS another way, and which way depends on the board.
+
+- **Native USB** (Leonardo, Pro Micro, RP2040, ESP32-S2 and S3, and any HID
+  panel): the firmware adds a game controller beside this protocol's
+  collection, on the same USB cable. DCS binds its buttons like any stick or
+  button box, and the converter is not involved. A toggle switch is a button
+  per position, which DCS's "switch to position" bindings cover for most
+  modules. On Arduino this is the Joystick library on a 32u4, or a TinyUSB
+  gamepad on an RP2040.
+- **Serial only** (Uno, Nano, Mega): the board cannot be a game controller,
+  and the usual DIY answer, the DCS-BIOS Arduino library sending commands over
+  the COM port, cannot share the port with the converter: one program holds a
+  COM port at a time. Today such a pit uses two boards, one running a DCS-BIOS
+  sketch for its inputs and one running this protocol for its lamps.
+
+A later version may carry inputs over serial: the board would report raw
+events, input 5 on or off, and a profile would turn them into DCS-BIOS
+commands, which keeps the aircraft logic in the converter. It would arrive as
+new message types, which version 1 boards already answer with `ERROR` code
+`0x01`, so nothing built against version 1 breaks.
 
 ## Versions
 

@@ -17,12 +17,14 @@
 //! they call [`wctrl_hid`] directly and a second brand gets its own commands
 //! rather than a shared vocabulary that fits neither.
 
+use std::path::Path;
 use std::time::{Duration, Instant};
 
 use anyhow::Result;
 use dsc_config::{DeviceSpec, DisplayCatalogue};
 use dsc_engine::{LcdWrite, LedWrite};
 
+mod dsc;
 mod wctrl;
 mod web;
 mod writer;
@@ -32,11 +34,14 @@ pub use writer::Writer;
 /// Every protocol this build can drive.
 ///
 /// Built once per run, because a protocol may hold an open bus: the WinCtrl
-/// one keeps the HID API it enumerates and opens through.
-pub fn all() -> Result<Vec<Box<dyn Protocol>>> {
+/// one keeps the HID API it enumerates and opens through, and the DSC one the
+/// boards it has found. `settings` is where the DSC one reads which serial
+/// ports it may open.
+pub fn all(settings: &Path) -> Result<Vec<Box<dyn Protocol>>> {
     Ok(vec![
         Box::new(wctrl::Wctrl::new()?),
         Box::new(web::Web::new()),
+        Box::new(dsc::Dsc::new(settings.to_path_buf())?),
     ])
 }
 
@@ -70,6 +75,12 @@ pub trait Protocol {
     /// keeps no list.
     fn refresh(&mut self) -> Result<()> {
         Ok(())
+    }
+
+    /// What it has to say for the log since it was last asked, such as a
+    /// board found or a place that did not answer. The caller writes these.
+    fn lines(&mut self) -> Vec<String> {
+        Vec::new()
     }
 
     /// Open a device [`is_connected`](Protocol::is_connected) has just found.
@@ -152,7 +163,7 @@ mod tests {
     fn every_shipped_device_asks_for_a_protocol_this_build_can_drive() {
         let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/devices");
         let inventory = DeviceInventory::load_dir(&path).expect("data/devices parses");
-        let protocols = all().expect("the protocols start");
+        let protocols = all(Path::new("settings.json")).expect("the protocols start");
         let names: Vec<&str> = protocols.iter().map(|p| p.name()).collect();
         assert!(
             !inventory.devices.is_empty(),

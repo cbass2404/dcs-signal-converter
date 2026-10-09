@@ -26,7 +26,7 @@ installed program and the profiles folder chosen at install.
 
 | Flag | Default | What it does |
 | --- | --- | --- |
-| `--dry-run` | off | Prints every write and writes to no device. Nothing touches the hardware; it only reads the panels' page keys, which sends them nothing. Worth one pass to confirm the aircraft is detected and the right profile is picked. |
+| `--dry-run` | off | Prints every write and writes to no device. Nothing touches the hardware; it only reads the panels' page keys, which sends them nothing, and asks DSC boards who they are, which sets no lamp. Opening a serial port resets most boards, so a serial DSC board starts dark. Worth one pass to confirm the aircraft is detected and the right profile is picked. |
 | `--verbose` | off | Puts every action on the console as it happens. See below. The session log holds it either way, so this is only for watching a run live. |
 | `--seconds <N>` | runs until Ctrl-C | Stops after N seconds. Useful for a quick check without having to interrupt it. |
 | `--exit-when-idle <N>` | off | Clears the panels and exits once there has been no export stream for N seconds and DCS is no longer running, once it has seen the stream at least once. Used by the DCS hook. |

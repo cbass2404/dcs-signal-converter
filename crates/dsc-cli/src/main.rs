@@ -716,7 +716,12 @@ fn main() -> Result<()> {
             // Asks every protocol this build knows, so a panel of a brand the
             // user has just plugged in shows up here even before anything can
             // drive it. The diagnostics below it stay single-protocol.
-            let protocols = panels::all()?;
+            let mut protocols = panels::all(&paths.settings)?;
+            for protocol in protocols.iter_mut() {
+                for line in protocol.lines() {
+                    println!("{line}");
+                }
+            }
             let mut any = false;
             for protocol in &protocols {
                 for d in protocol.present()? {
@@ -3094,10 +3099,15 @@ fn run(
 
     // Only drive hardware that is actually plugged in. A shared profile may
     // name panels this user does not own, which is not an error.
-    let mut protocols = panels::all()?;
+    let mut protocols = panels::all(settings_path)?;
     // Everything of every known brand that is plugged in, known to this build
     // or not. A panel missing from the inventory and a panel nobody plugged in
     // look identical from the profile's side, and only this separates them.
+    for protocol in protocols.iter_mut() {
+        for line in protocol.lines() {
+            kept!("{line}");
+        }
+    }
     for protocol in &protocols {
         for d in protocol.present()? {
             dlog::header(&format!(
@@ -3839,6 +3849,9 @@ fn look_for_panels(
                 "panels   could not look at the {} panels again: {e:#}",
                 protocol.name()
             );
+        }
+        for line in protocol.lines() {
+            kept!("{line}");
         }
     }
     let mut present = Vec::new();

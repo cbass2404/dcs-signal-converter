@@ -264,7 +264,30 @@ numbers move and the words do not.
       Spec drafted 2026-10-09 in [PROTOCOL-DSC.md](PROTOCOL-DSC.md): HID and
       serial with one message set, devices describe their lamps with names,
       and a described device is saved to the user's devices folder so it can
-      be bound unplugged. The reference library is `firmware/DscDevice` (serial, HID on 32u4 and RP2040 TinyUSB, a shift register example), compiled but untested until boards arrive; `tools/dsc_probe.py` drives one without the converter. Next: the `dsc` backend.
+      be bound unplugged. The reference library is `firmware/DscDevice`
+      (serial, HID on 32u4 and RP2040 TinyUSB, a shift register example),
+      compiled but untested until boards arrive; `tools/dsc_probe.py` drives
+      one without the converter. Next: the `dsc` backend.
+
+      **Then a Build Sketch screen**, once the backend has driven a real
+      board: board, transport, model and unit, then rows of pin, name, label,
+      kind and backlight, with a 74HC595 chain as an option, saved as an
+      `.ino` for the Arduino IDE to flash. The value is in per-board pin
+      tables (which pins exist, which dim, which to avoid such as the serial
+      pins 0 and 1), taken from the boards' own documentation and checked on
+      hardware, and in validating names against the protocol's limits.
+      Flashing from the app is out: it would mean bundling arduino-cli and
+      the cores. Configuring lamps over the protocol into EEPROM is out too:
+      the spec writes nothing persistent. A "these pins are buttons" option
+      fits here too, adding a game controller on native USB boards.
+
+      **Maybe a protocol v2: inputs over serial.** A serial board cannot be a
+      game controller and cannot share its COM port with a DCS-BIOS sketch,
+      so today its switches need a second board. v2 would have the board
+      report raw input events and a profile map them to DCS-BIOS commands,
+      keeping aircraft logic out of the sketch. A whole input-binding feature
+      in the engine and editor; wait for someone to ask. See "Buttons and
+      switches" in PROTOCOL-DSC.md.
 
       The same protocol can serve small commercial makers. Total Controls
       (Apache MPDs and other panels) is being asked (2026-10-08) about putting

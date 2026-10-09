@@ -118,6 +118,11 @@ pub struct Settings {
     pub page_modifier: PageModifier,
     #[serde(default)]
     pub theme: Theme,
+    /// Serial ports a DSC board may be on, such as `COM5`. Only these are
+    /// ever opened: a COM port can be anything, and bytes it did not expect
+    /// can upset it. See docs/PROTOCOL-DSC.md.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub dsc_ports: Vec<String>,
 }
 
 impl Settings {
@@ -216,6 +221,7 @@ mod tests {
         let chosen = Settings {
             page_modifier: PageModifier::Key(Modifier::Alt),
             theme: Theme::Light,
+            dsc_ports: vec!["COM5".into()],
         };
         chosen.save(&path).unwrap();
         assert_eq!(Settings::load(&path).unwrap(), chosen);
@@ -228,6 +234,7 @@ mod tests {
                 button: 12,
             }),
             theme: Theme::System,
+            ..Settings::default()
         };
         button.save(&path).unwrap();
         assert_eq!(Settings::load(&path).unwrap(), button);

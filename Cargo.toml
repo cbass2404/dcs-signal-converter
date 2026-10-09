@@ -6,6 +6,7 @@ members = [
     "crates/dsc-config",
     "crates/dsc-engine",
     "crates/dsc-input",
+    "crates/dsc-device",
     "crates/dsc-cli",
     "editor/src-tauri",
 ]

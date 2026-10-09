@@ -682,6 +682,10 @@ pub const DEFAULT_PROTOCOL: &str = "wctrl";
 /// The protocol of a screen drawn in a web page rather than on a panel.
 pub const WEB_PROTOCOL: &str = "web";
 
+/// The protocol of a board that describes its own lamps, over HID or serial.
+/// See docs/PROTOCOL-DSC.md.
+pub const DSC_PROTOCOL: &str = "dsc";
+
 /// Where the converter answers a web device's page with the screen: this
 /// machine only.
 pub const WEB_ADDRESS: &str = "127.0.0.1:8310";

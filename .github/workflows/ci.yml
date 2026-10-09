@@ -52,6 +52,11 @@ jobs:
       - name: Versions agree with VERSION.md
         run: python tools/version.py --check
 
+      # A dev checkout flies data/defaults, so a board bound while testing
+      # lands in a shipped default, which every other user's copy then refuses.
+      - name: No test boards in the shipped devices or defaults
+        run: python tools/shipped_devices.py
+
       # The editor crate embeds editor/dist at compile time, so the frontend
       # has to exist before cargo test compiles the workspace.
       - name: Build the editor frontend

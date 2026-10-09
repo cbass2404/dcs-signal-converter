@@ -99,3 +99,49 @@ fn a_broken_user_file_never_stops_the_shipped_inventory() {
     assert!(inv.device("TAKEOFF_PLANEL_2").is_some());
     assert!(notes[0].contains("could not be read"), "{notes:?}");
 }
+
+#[test]
+fn a_shared_profile_carries_nothing_of_a_board_this_pc_added() {
+    let mut p: dsc_config::Profile = serde_json::from_str(
+        r#"{"schema_version": 2, "name": "T", "aircraft": ["TEST"], "module": "TEST",
+            "bindings": [
+              {"device": "Arduino_Panel", "led": "FIRE", "always": true},
+              {"device": "TAKEOFF_PLANEL_2", "led": "SL", "always": true},
+              {"device": "TAKEOFF_PLANEL_2", "led": "Backlight",
+               "same_as": "FIRE", "same_as_device": "Arduino_Panel"}
+            ],
+            "disabled_devices": ["Arduino_Panel", "CarrierAce_UFC"],
+            "follows": {"Arduino_Copy": "Arduino_Panel", "MCDU_CoPilot": "MCDU_Captain"}}"#,
+    )
+    .unwrap();
+    p.screens
+        .insert("Arduino_Panel".into(), dsc_config::PageSlots::empty(6));
+    let boards = ["Arduino_Panel".to_string(), "Arduino_Copy".to_string()].into();
+    assert!(p.names_any(&boards));
+    let shared = p.without_devices(&boards);
+    assert!(
+        !shared.names_any(&boards),
+        "names_any and without_devices agree"
+    );
+
+    let rows: Vec<(&str, &str)> = shared
+        .bindings
+        .iter()
+        .map(|b| (b.device.as_str(), b.led.as_str()))
+        .collect();
+    assert_eq!(
+        rows,
+        [
+            ("TAKEOFF_PLANEL_2", "SL"),
+            ("TAKEOFF_PLANEL_2", "Backlight")
+        ]
+    );
+    let mirror = &shared.bindings[1];
+    assert!(
+        mirror.same_as.is_none() && mirror.same_as_device.is_none(),
+        "a lamp that followed the board is left for the other user to set"
+    );
+    assert_eq!(shared.disabled_devices, ["CarrierAce_UFC"]);
+    assert_eq!(shared.follows.len(), 1, "{:?}", shared.follows);
+    assert!(shared.screens.is_empty());
+}

@@ -1,5 +1,7 @@
 # DscDevice
 
+**DISCLAIMER** _THIS IS NOT YET COMPLETED DO NOT TRY TO USE THIS YET_
+
 An Arduino library for lamps driven from DCS World by DCS Signal Converter. Flash
 it once; what each lamp means is set per aircraft in the converter's editor,
 never in the sketch.
@@ -13,8 +15,12 @@ the converter cannot drive it yet.
 | -------------------------- | ----------- | ----------------------------------------------------- |
 | Uno, Nano, Mega            | Serial      | `SerialLamps`                                         |
 | Leonardo, Pro Micro, Micro | Serial, HID | `SerialLamps`, `HidLamps`                             |
-| RP2040 (Pico and others)   | Serial, HID | `HidLamps` needs Tools > USB Stack > Adafruit TinyUSB |
+| Raspberry Pi Pico          | Serial, HID | `HidLamps` needs Tools > USB Stack > Adafruit TinyUSB |
 | More lamps than pins       | Serial      | `ShiftRegisterLamps`                                  |
+
+These are the supported boards, and the ones it will be tested on. Others may
+work but are not supported; pick one of these for your pit. A Pro Micro has to be the
+5V/16MHz version. The Pico runs at 3.3 V, so keep 5 V away from its pins.
 
 HID boards are found on their own. A serial board's port is chosen once in the
 editor; the converter never opens a port it was not given.

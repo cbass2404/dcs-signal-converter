@@ -1796,6 +1796,44 @@ impl Profile {
         !self.disabled_devices.iter().any(|d| d == device)
     }
 
+    /// This profile with nothing left that names any of `devices`: their
+    /// lamps and fields, their screens, their place in `follows` and in the
+    /// disabled list. A lamp elsewhere that mirrors one of theirs is left
+    /// unconfigured, a placeholder, rather than pointing at nothing.
+    ///
+    /// For sharing: boards a user added are theirs alone, so a profile goes
+    /// to someone else without them.
+    pub fn without_devices(&self, devices: &BTreeSet<String>) -> Profile {
+        let gone = |d: &str| devices.contains(d);
+        let mut p = self.clone();
+        p.bindings.retain(|b| !gone(&b.device));
+        for b in &mut p.bindings {
+            if b.same_as.is_some() && b.same_as_device.as_deref().is_some_and(gone) {
+                b.same_as = None;
+                b.same_as_device = None;
+            }
+        }
+        p.readouts.retain(|r| !gone(&r.device));
+        p.disabled_devices.retain(|d| !gone(d));
+        p.follows
+            .retain(|follower, source| !gone(follower) && !gone(source));
+        p.screens.retain(|d, _| !gone(d));
+        p
+    }
+
+    /// Whether anything in this profile names one of `devices`: exactly what
+    /// [`without_devices`](Self::without_devices) would take out or change.
+    pub fn names_any(&self, devices: &BTreeSet<String>) -> bool {
+        let gone = |d: &str| devices.contains(d);
+        self.bindings.iter().any(|b| {
+            gone(&b.device)
+                || (b.same_as.is_some() && b.same_as_device.as_deref().is_some_and(gone))
+        }) || self.readouts.iter().any(|r| gone(&r.device))
+            || self.disabled_devices.iter().any(|d| gone(d))
+            || self.follows.iter().any(|(f, s)| gone(f) || gone(s))
+            || self.screens.keys().any(|d| gone(d))
+    }
+
     /// Whether a device's page keys are worth reading as this profile runs:
     /// it is driven and has a page to swap to. A panel whose lamps are in use
     /// but whose screen has one slot or none is left unread.

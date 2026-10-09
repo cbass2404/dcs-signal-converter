@@ -272,11 +272,14 @@ numbers move and the words do not.
       it, works only in a dev checkout until a real board has been flown
       (`boards.rs`, `dev_only`). Added boards go in `user-devices/boards.json`.
 
-      **Open:** a profile binding a device the inventory lacks is refused
-      (`UnknownLed`). Fine for shipped panels, wrong for boards: removing
-      one, or importing a profile that binds someone else's, would refuse the
-      whole profile. A signal the DCS-BIOS lacks is already flagged and turned
-      off by `runnable` instead; a missing device could be the same.
+      A profile binding a device the inventory lacks is still refused
+      (`UnknownLed`), so boards never reach one that lacks them: an export
+      leaves out the boards this PC added (`Profile::without_devices`), and
+      removing a board takes it out of every profile that names it first,
+      after a confirm naming them. A dev checkout flies data/defaults, so a
+      board bound while testing lands in a shipped default:
+      `tools/shipped_devices.py` fails CI and the release on that, and on a
+      `dsc` device in data/devices.
 
       **Then a Build Sketch screen**, once the backend has driven a real
       board: board, transport, model and unit, then rows of pin, name, label,

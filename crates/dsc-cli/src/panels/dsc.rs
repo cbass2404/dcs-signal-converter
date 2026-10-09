@@ -43,7 +43,10 @@ struct Hardware {
 impl Places for Hardware {
     fn places(&mut self) -> Vec<String> {
         let _ = self.api.refresh_devices();
-        let mut out = dsc_device::hid_boards(&self.api);
+        let mut out: Vec<String> = dsc_device::hid_boards(&self.api)
+            .into_iter()
+            .map(|(path, _)| path)
+            .collect();
         // Read each time, so a port chosen in the editor counts without a
         // restart. A file that will not parse allows no ports.
         let allowed = Settings::load(&self.settings)
@@ -52,7 +55,7 @@ impl Places for Hardware {
         if !allowed.is_empty() {
             let existing: HashSet<String> = dsc_device::serial_ports()
                 .into_iter()
-                .map(|p| p.to_ascii_uppercase())
+                .map(|(p, _)| p.to_ascii_uppercase())
                 .collect();
             out.extend(
                 allowed

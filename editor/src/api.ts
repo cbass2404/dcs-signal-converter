@@ -6,6 +6,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { ruleFromDivider } from "./content";
 
 import type {
+  BoardsView,
   CatalogueStatus,
   CellDraw,
   CellInk,
@@ -28,6 +29,7 @@ import type {
   Profile,
   ProfileSummary,
   RuleCell,
+  SavedBoard,
   Settings,
   SettingsView,
   SignalView,
@@ -88,6 +90,16 @@ export const settingsSave = (settings: Settings) => invoke<void>("settings_save"
 /** Wait up to 10 s for a button on any controller; null when none was pressed. */
 export const controllerCapture = () => invoke<ControllerButton | null>("controller_capture");
 export const controllerCaptureCancel = () => invoke<void>("controller_capture_cancel");
+
+// Self-describing boards. Development checkouts only until one has been
+// flown; the backend refuses these anywhere else.
+/** Where boards could be, and those added. Opens nothing. */
+export const boardsList = () => invoke<BoardsView>("boards_list");
+/** Ask the board at `place` what it has and keep it. A serial board takes up to 3 s. */
+export const boardAdd = (place: string) => invoke<SavedBoard>("board_add", { place });
+export const boardRemove = (key: string) => invoke<void>("board_remove", { key });
+/** Stop the converter opening a serial port. */
+export const boardPortForget = (port: string) => invoke<void>("board_port_forget", { port });
 
 export const openProfile = (file: string) => invoke<Profile>("open_profile", { file });
 export const defaultProfile = (file: string) => invoke<Profile | null>("default_profile", { file });

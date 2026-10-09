@@ -40,7 +40,7 @@ impl Cache {
     /// since the pages are written with the profile. Every page on the module
     /// is checked, slotted here or not, because every one of them is written.
     pub fn problems(&self, paths: &Paths, profile: &Profile, pages: &PageLibrary) -> Vec<String> {
-        let devices = match DeviceInventory::load_dir(&paths.devices) {
+        let devices = match paths.inventory().map(|(devices, _)| devices) {
             Ok(d) => d,
             Err(e) => {
                 return vec![format!(
@@ -104,7 +104,7 @@ impl Cache {
         device: &str,
     ) -> Vec<String> {
         let (devices, displays) = match (
-            DeviceInventory::load_dir(&paths.devices),
+            paths.inventory().map(|(devices, _)| devices),
             DisplayCatalogue::load_dir(&paths.displays),
         ) {
             (Ok(d), Ok(m)) => (d, m),
@@ -195,7 +195,7 @@ impl Cache {
         profile: &Profile,
         pages: &PageLibrary,
     ) -> (Vec<FlagView>, Option<String>) {
-        let devices = DeviceInventory::load_dir(&paths.devices).ok();
+        let devices = paths.inventory().map(|(devices, _)| devices).ok();
         // A lamp lit by a stored signal is flagged through the signal, which
         // is attached only when a profile runs with its pages.
         let mut profile = profile.clone();
@@ -257,7 +257,9 @@ impl Cache {
     /// Empty when the inventory cannot be read. `problems` already says so, and
     /// saying it twice would only lengthen the list.
     pub fn cautions(&self, paths: &Paths, profile: &Profile) -> Vec<String> {
-        DeviceInventory::load_dir(&paths.devices)
+        paths
+            .inventory()
+            .map(|(devices, _)| devices)
             .map(|devices| profile.cautions(&devices))
             .unwrap_or_default()
     }
@@ -278,7 +280,7 @@ impl Cache {
         pages: &PageLibrary,
     ) -> Vec<FieldCaution> {
         let (Ok(devices), Ok(displays)) = (
-            DeviceInventory::load_dir(&paths.devices),
+            paths.inventory().map(|(devices, _)| devices),
             DisplayCatalogue::load_dir(&paths.displays),
         ) else {
             return Vec::new();

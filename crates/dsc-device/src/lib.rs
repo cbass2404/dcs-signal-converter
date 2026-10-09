@@ -15,6 +15,9 @@ pub mod link;
 pub mod session;
 pub mod wire;
 
+/// The HID API the links open through, for callers that list and open boards.
+pub use hidapi;
+
 pub use describe::{key, DescribeError, Description};
 pub use link::{hid_boards, serial_ports, HidLink, Link, SerialLink};
 pub use session::{scan, ScanError, HID_WAIT, SERIAL_WAIT};

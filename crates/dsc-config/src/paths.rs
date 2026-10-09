@@ -35,6 +35,10 @@ pub const REGISTRY_DCS: &str = "DcsDir";
 /// The device inventory's folder in `data`: one file per maker.
 pub const DEVICES: &str = "devices";
 
+/// Boards the user added, which describe themselves, in the folder the user's
+/// files are written to. Never shipped, so an update leaves it alone.
+pub const USER_DEVICES: &str = "user-devices";
+
 /// The file a checkout uses to say it is being developed in, beside `data`.
 /// Untracked, so it is one developer's choice and never something that ships.
 pub const DEV_FILE: &str = ".env";
@@ -58,6 +62,9 @@ pub struct Paths {
     pub layout: Layout,
     /// Hardware inventory, a folder of one file per maker. Read-only.
     pub devices: PathBuf,
+    /// Boards the user added, read after [`devices`](Self::devices). Written
+    /// by the editor; absent until the first is added.
+    pub user_devices: PathBuf,
     /// Cell and glyph maps for panels with glass. Read-only.
     pub displays: PathBuf,
     /// What the shipped defaults read that only the DCS-BIOS nightly has.
@@ -75,6 +82,18 @@ pub struct Paths {
 }
 
 impl Paths {
+    /// The shipped inventory with the user's boards after it, and what to say
+    /// about any of theirs that could not be taken.
+    pub fn inventory(&self) -> crate::Result<(crate::DeviceInventory, Vec<String>)> {
+        crate::DeviceInventory::load_with_user(&self.devices, &self.user_devices)
+    }
+
+    /// Whether this is a development checkout, where features not yet open to
+    /// everyone can be tried.
+    pub fn is_dev(&self) -> bool {
+        self.layout == Layout::Dev
+    }
+
     /// Where the web view's page is kept as a file, for OpenKneeboard: beside
     /// the settings, in the folder the user's own files are written to.
     pub fn web_page(&self) -> PathBuf {
@@ -147,6 +166,7 @@ impl Paths {
         Paths {
             layout: Layout::Dev,
             devices: root.join(DEVICES),
+            user_devices: root.join(USER_DEVICES),
             displays: root.join("displays"),
             nightly_only: root.join("nightly-only.json"),
             catalogue: root.join("catalogue"),
@@ -160,6 +180,7 @@ impl Paths {
         Paths {
             layout,
             devices: root.join(DEVICES),
+            user_devices: root.join(USER_DEVICES),
             displays: root.join("displays"),
             nightly_only: root.join("nightly-only.json"),
             catalogue: root.join("catalogue"),
@@ -174,6 +195,7 @@ impl Paths {
         Paths {
             layout: Layout::Installed,
             devices: shipped.join(DEVICES),
+            user_devices: writable.join(USER_DEVICES),
             displays: shipped.join("displays"),
             nightly_only: shipped.join("nightly-only.json"),
             catalogue: writable.join("catalogue"),
@@ -428,6 +450,10 @@ mod tests {
             PathBuf::from("D:/sg/DCS Signal Converter"),
         );
         assert_eq!(p.devices, Path::new("C:/app/data/devices"));
+        assert_eq!(
+            p.user_devices,
+            Path::new("D:/sg/DCS Signal Converter/user-devices")
+        );
         assert_eq!(p.profiles.defaults, Path::new("C:/app/data/defaults"));
         assert_eq!(
             p.profiles.active,

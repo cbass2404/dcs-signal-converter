@@ -932,6 +932,7 @@ fn main() -> Result<()> {
             }
             let result = run(
                 &devices.unwrap_or(paths.devices),
+                &paths.user_devices,
                 &catalogue.unwrap_or(paths.catalogue),
                 &profiles.unwrap_or(paths.profiles.active),
                 &defaults.unwrap_or(paths.profiles.defaults),
@@ -2968,6 +2969,7 @@ fn file_stamp(path: &Path) -> Option<(u64, u64)> {
 /// in `dsc-engine`, where it is tested without DCS or hardware.
 fn run(
     devices_path: &PathBuf,
+    user_devices_path: &Path,
     catalogue_dir: &PathBuf,
     profiles_dir: &PathBuf,
     defaults_dir: &PathBuf,
@@ -2992,6 +2994,7 @@ fn run(
     // somewhere by DSC_DATA all look alike from the outside.
     for (what, path) in [
         ("devices  ", devices_path.as_path()),
+        ("boards   ", user_devices_path),
         ("catalogue", catalogue_dir.as_path()),
         ("profiles ", profiles_dir.as_path()),
         ("defaults ", defaults_dir.as_path()),
@@ -3003,8 +3006,13 @@ fn run(
     ] {
         dlog::header(&format!("paths    {what} {}", path.display()));
     }
-    let inventory = DeviceInventory::load_dir(devices_path)
+    // The user's own boards after the shipped inventory. A problem with
+    // theirs is said and left out; it never stops the run.
+    let (inventory, notes) = DeviceInventory::load_with_user(devices_path, user_devices_path)
         .with_context(|| format!("loading {}", devices_path.display()))?;
+    for note in notes {
+        warn!("devices  {note}");
+    }
     let cat = load_catalogue(catalogue_dir, bios)?;
     let bios_json = catalogue_build::locate_bios_json(catalogue_dir, bios);
     let displays = DisplayCatalogue::load_dir(displays_dir)

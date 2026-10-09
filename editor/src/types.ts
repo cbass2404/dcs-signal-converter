@@ -609,6 +609,31 @@ export interface SettingsView extends Settings {
   problem: string | null;
   /** The modifier is a controller button and that controller is not connected. */
   modifier_missing: boolean;
+  /** A development checkout, where features not yet open to everyone show. */
+  dev: boolean;
+}
+
+/** Somewhere a self-describing board could be. */
+export interface BoardPlace {
+  /** A COM port's name, or a HID path. */
+  place: string;
+  serial: boolean;
+  /** What USB says is there, when it says. */
+  what: string;
+  /** A serial port the converter may open. */
+  allowed: boolean;
+}
+
+/** A board the user added. */
+export interface SavedBoard {
+  key: string;
+  display_name: string;
+  lamps: number;
+}
+
+export interface BoardsView {
+  places: BoardPlace[];
+  saved: SavedBoard[];
 }
 
 export interface ConverterState {

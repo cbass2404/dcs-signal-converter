@@ -21,6 +21,7 @@ pub mod pages;
 pub mod paths;
 pub mod settings;
 pub mod stored;
+pub mod user_devices;
 pub mod web;
 
 pub use pages::{Page, PageFile, PageLibrary, PageRun, PageSlots, Pages, Slot, SlotNote, SlotRun};
@@ -887,6 +888,40 @@ impl DeviceInventory {
         let inv = DeviceInventory { devices };
         inv.check_buttons()?;
         Ok(inv)
+    }
+
+    /// The shipped folder, then the user's boards from `user` after it.
+    ///
+    /// The shipped inventory has to load. The user's folder need not exist,
+    /// and a problem with it never stops the rest: a board that will not
+    /// read, or whose key a shipped device already has, is left out and
+    /// named in the notes for the caller to show.
+    pub fn load_with_user(shipped: &Path, user: &Path) -> Result<(Self, Vec<String>)> {
+        let mut inv = DeviceInventory::load_dir(shipped)?;
+        let mut notes = Vec::new();
+        if !user.is_dir() {
+            return Ok((inv, notes));
+        }
+        match DeviceInventory::load_dir(user) {
+            Ok(theirs) => {
+                for d in theirs.devices {
+                    if inv.device(&d.key).is_some() {
+                        notes.push(format!(
+                            "{} in {} has the key of a device this release ships, so it is left out",
+                            d.display_name,
+                            user.display()
+                        ));
+                    } else {
+                        inv.devices.push(d);
+                    }
+                }
+            }
+            Err(e) => notes.push(format!(
+                "the boards in {} could not be read, so none are used: {e}",
+                user.display()
+            )),
+        }
+        Ok((inv, notes))
     }
 
     fn check_buttons(&self) -> Result<()> {

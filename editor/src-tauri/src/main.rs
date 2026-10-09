@@ -7,6 +7,7 @@
 //! daemon read and write profiles through exactly the same code, so a profile
 //! the editor produces cannot be one the daemon rejects.
 
+mod boards;
 mod check;
 mod claims;
 mod converter;
@@ -31,7 +32,9 @@ fn fail(context: &str, e: impl std::fmt::Display) -> String {
 }
 
 fn inventory(paths: &Paths) -> Reply<DeviceInventory> {
-    DeviceInventory::load_dir(&paths.devices)
+    paths
+        .inventory()
+        .map(|(devices, _)| devices)
         .map_err(|e| fail(&format!("reading {}", paths.devices.display()), e))
 }
 
@@ -89,7 +92,9 @@ fn devices() -> Reply<Vec<DeviceView>> {
 ///
 /// Only devices on a protocol this build can list are ever reported; any other
 /// reads as not found, which is true as far as the editor can tell. A web
-/// device is not plugged in at all, so it is always there.
+/// device is not plugged in at all, so it is always there, and a DSC board
+/// counts as there too: which board is which is only known by asking it,
+/// which opens it, and on serial resets it.
 #[tauri::command]
 fn connected_devices() -> Reply<Vec<String>> {
     let paths = Paths::resolve();
@@ -104,6 +109,7 @@ fn connected_devices() -> Reply<Vec<String>> {
         .iter()
         .filter(|d| {
             d.protocol == dsc_config::WEB_PROTOCOL
+                || d.protocol == dsc_config::DSC_PROTOCOL
                 || (d.protocol == dsc_config::DEFAULT_PROTOCOL && pids.contains(&d.usb_pid))
         })
         .map(|d| d.key.clone())
@@ -629,6 +635,10 @@ fn main() {
             settings::settings_save,
             settings::controller_capture,
             settings::controller_capture_cancel,
+            boards::boards_list,
+            boards::board_add,
+            boards::board_remove,
+            boards::board_port_forget,
             open_profile,
             default_profile,
             create_profile,

@@ -267,7 +267,16 @@ numbers move and the words do not.
       be bound unplugged. The reference library is `firmware/DscDevice`
       (serial, HID on 32u4 and RP2040 TinyUSB, a shift register example),
       compiled but untested until boards arrive; `tools/dsc_probe.py` drives
-      one without the converter. Next: the `dsc` backend.
+      one without the converter. The `dsc` backend and the editor's Boards
+      section in Settings are built; the section, and every command behind
+      it, works only in a dev checkout until a real board has been flown
+      (`boards.rs`, `dev_only`). Added boards go in `user-devices/boards.json`.
+
+      **Open:** a profile binding a device the inventory lacks is refused
+      (`UnknownLed`). Fine for shipped panels, wrong for boards: removing
+      one, or importing a profile that binds someone else's, would refuse the
+      whole profile. A signal the DCS-BIOS lacks is already flagged and turned
+      off by `runnable` instead; a missing device could be the same.
 
       **Then a Build Sketch screen**, once the backend has driven a real
       board: board, transport, model and unit, then rows of pin, name, label,

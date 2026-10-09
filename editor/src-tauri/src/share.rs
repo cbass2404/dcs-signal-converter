@@ -80,7 +80,9 @@ pub struct MergeReport {
 }
 
 pub fn inventory(paths: &Paths) -> Result<DeviceInventory, String> {
-    DeviceInventory::load_dir(&paths.devices)
+    paths
+        .inventory()
+        .map(|(devices, _)| devices)
         .map_err(|e| format!("reading {}: {e}", paths.devices.display()))
 }
 

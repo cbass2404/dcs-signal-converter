@@ -865,6 +865,7 @@ dependencies = [
  "anyhow",
  "dsc-bios",
  "dsc-config",
+ "dsc-device",
  "dsc-engine",
  "dsc-input",
  "hidapi",

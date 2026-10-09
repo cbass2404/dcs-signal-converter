@@ -110,21 +110,43 @@ impl Link for HidLink {
     }
 }
 
-/// The paths of every HID collection that is one of our boards, by its usage
-/// page and usage, so a board is found whatever its vendor and product ids.
-pub fn hid_boards(api: &hidapi::HidApi) -> Vec<String> {
+/// Every HID collection that is one of our boards, as its path and what the
+/// USB device calls itself, found by usage page and usage so a board is found
+/// whatever its vendor and product ids.
+pub fn hid_boards(api: &hidapi::HidApi) -> Vec<(String, String)> {
     api.device_list()
         .filter(|d| d.usage_page() == wire::USAGE_PAGE && d.usage() == wire::USAGE)
-        .map(|d| d.path().to_string_lossy().into_owned())
+        .map(|d| {
+            (
+                d.path().to_string_lossy().into_owned(),
+                [d.manufacturer_string(), d.product_string()]
+                    .iter()
+                    .flatten()
+                    .copied()
+                    .collect::<Vec<_>>()
+                    .join(" "),
+            )
+        })
         .collect()
 }
 
-/// The serial ports that exist now, by name, such as `COM5`. Listing them
-/// opens none.
-pub fn serial_ports() -> Vec<String> {
+/// The serial ports that exist now, as their name, such as `COM5`, and what
+/// is on the other end where USB says. Listing them opens none.
+pub fn serial_ports() -> Vec<(String, String)> {
     serialport::available_ports()
         .unwrap_or_default()
         .into_iter()
-        .map(|p| p.port_name)
+        .map(|p| {
+            let what = match p.port_type {
+                serialport::SerialPortType::UsbPort(u) => [u.manufacturer, u.product]
+                    .into_iter()
+                    .flatten()
+                    .collect::<Vec<_>>()
+                    .join(" "),
+                serialport::SerialPortType::BluetoothPort => "Bluetooth".to_string(),
+                _ => String::new(),
+            };
+            (p.port_name, what)
+        })
         .collect()
 }

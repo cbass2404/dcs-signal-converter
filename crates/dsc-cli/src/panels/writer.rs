@@ -215,9 +215,8 @@ fn run(mut panel: Box<dyn Panel>, shared: &Shared) {
             for w in &screens {
                 panel.write_display(w)?;
             }
-            if !screens.is_empty() {
-                panel.flush()?;
-            }
+            // Lamps too: a panel may hold them for one message per batch.
+            panel.flush()?;
             Ok(())
         })();
         *shared.sent.lock().expect("sent poisoned") = panel.sent();
@@ -344,7 +343,7 @@ mod tests {
 
         assert_eq!(
             *log.lock().unwrap(),
-            ["lamp 1 = 1", "lamp 1 = 3", "screen C", "flush"]
+            ["lamp 1 = 1", "flush", "lamp 1 = 3", "screen C", "flush"]
         );
         assert_eq!(sent.superseded, 1);
     }
@@ -363,11 +362,26 @@ mod tests {
         w.post(&[lamp(1, 1)], &[text("A")]);
         w.post(&[], &[text("B")]);
         std::thread::sleep(Duration::from_millis(50));
-        assert_eq!(*log.lock().unwrap(), ["lamp 1 = 1"]);
+        assert_eq!(*log.lock().unwrap(), ["lamp 1 = 1", "flush"]);
 
         let sent = w.finish(LIMIT).unwrap();
-        assert_eq!(*log.lock().unwrap(), ["lamp 1 = 1", "screen B", "flush"]);
+        assert_eq!(
+            *log.lock().unwrap(),
+            ["lamp 1 = 1", "flush", "screen B", "flush"]
+        );
         assert_eq!(sent.superseded, 1);
+    }
+
+    /// A DSC board sends its lamps in one message at the flush, so a batch
+    /// with no screen in it is flushed too.
+    #[test]
+    fn a_batch_of_lamps_alone_is_flushed() {
+        let fake = Fake::default();
+        let log = Arc::clone(&fake.log);
+        let w = Writer::start("PANEL", Box::new(fake)).unwrap();
+        w.post(&[lamp(1, 5)], &[]);
+        w.finish(LIMIT).unwrap();
+        assert_eq!(*log.lock().unwrap(), ["lamp 1 = 5", "flush"]);
     }
 
     #[test]

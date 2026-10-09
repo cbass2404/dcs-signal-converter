@@ -6,7 +6,7 @@ use thiserror::Error;
 
 use crate::describe::Description;
 use crate::link::Link;
-use crate::wire::{HelloReply, Reply, Request, WireError};
+use crate::wire::{HelloReply, Reply, Request, WireError, OLDEST};
 
 /// How long a serial board gets to answer: opening its port resets most of
 /// them, and the bootloader runs first.
@@ -24,6 +24,8 @@ pub enum ScanError {
     Io(#[from] std::io::Error),
     #[error("no answer to HELLO: not a board running the DSC protocol, or not running yet")]
     NoAnswer,
+    #[error("the board speaks protocol {0}, and this converter needs {OLDEST} or later")]
+    TooOld(u8),
     #[error("no answer describing lamp {0}")]
     NoLamp(u8),
     #[error("the board refused {of:#04x}: {}", Reply::error_text(*.code))]
@@ -32,7 +34,8 @@ pub enum ScanError {
     Wire(#[from] WireError),
 }
 
-/// Ask until the board answers `HELLO` or `wait` runs out.
+/// Ask until the board answers `HELLO` or `wait` runs out. A board that
+/// answers with a version older than [`OLDEST`] is refused.
 pub fn hello(link: &mut dyn Link, wait: Duration) -> Result<HelloReply, ScanError> {
     let until = Instant::now() + wait;
     while Instant::now() < until {
@@ -43,6 +46,9 @@ pub fn hello(link: &mut dyn Link, wait: Duration) -> Result<HelloReply, ScanErro
                 Some(m) => {
                     // Anything else is left over from before; skip it.
                     if let Ok(Reply::Hello(h)) = Reply::decode(&m) {
+                        if h.version < OLDEST {
+                            return Err(ScanError::TooOld(h.version));
+                        }
                         return Ok(h);
                     }
                 }

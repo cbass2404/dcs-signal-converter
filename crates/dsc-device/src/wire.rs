@@ -7,6 +7,8 @@
 use thiserror::Error;
 
 pub const VERSION: u8 = 1;
+/// The oldest version a board may answer with and still be driven.
+pub const OLDEST: u8 = 1;
 pub const MAX_MESSAGE: usize = 62;
 
 /// Where a host finds a board over HID: its collection's usage page and usage.

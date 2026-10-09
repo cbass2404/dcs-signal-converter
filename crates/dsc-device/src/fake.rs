@@ -158,6 +158,16 @@ mod tests {
     }
 
     #[test]
+    fn a_board_answering_version_0_is_refused() {
+        let (mut link, board) = board("A", "B", "", vec![]);
+        board.lock().unwrap().hello.as_mut().unwrap().version = 0;
+        assert!(matches!(
+            scan(&mut link, Duration::from_millis(100)),
+            Err(ScanError::TooOld(0))
+        ));
+    }
+
+    #[test]
     fn something_that_never_answers_is_given_up_on() {
         let (mut link, board) = board("A", "B", "", vec![]);
         board.lock().unwrap().hello = None;

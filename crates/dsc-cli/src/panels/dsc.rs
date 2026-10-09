@@ -15,6 +15,7 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use anyhow::{bail, Context, Result};
+use dsc_config::log::{self as dlog, Level};
 use dsc_config::settings::Settings;
 use dsc_config::{DeviceSpec, DisplayCatalogue, DSC_PROTOCOL};
 use dsc_device::wire::{set_lamps, Reply, Request};
@@ -233,6 +234,7 @@ impl Protocol for Dsc {
             link: Arc::clone(&board.link),
             pending: Vec::new(),
             sent: Sent::default(),
+            refused: HashSet::new(),
         }))
     }
 }
@@ -263,6 +265,9 @@ struct DscPanel {
     /// Lamps set since the last flush, last value winning.
     pending: Vec<(u8, u8)>,
     sent: Sent,
+    /// Each message type and error code the board has answered with, so the
+    /// log has each once rather than once per batch.
+    refused: HashSet<(u8, u8)>,
 }
 
 impl Panel for DscPanel {
@@ -294,15 +299,21 @@ impl Panel for DscPanel {
         }
         self.sent.writing += started.elapsed();
         // A board answers lamps only when something is wrong. Take what is
-        // waiting so it never piles up; an index past the end cannot happen
-        // to a board that matched its inventory entry on opening.
+        // waiting so it never piles up. A refusal is logged and the board
+        // kept, as the protocol promises: what it refused had no effect, and
+        // the rest of the batch still applied.
         while let Some(m) = link.receive(Duration::ZERO)? {
             if let Ok(Reply::Error { of, code }) = Reply::decode(&m) {
-                bail!(
-                    "{} refused {of:#04x}: {}",
-                    self.name,
-                    Reply::error_text(code)
-                );
+                if self.refused.insert((of, code)) {
+                    dlog::record(
+                        Level::Warn,
+                        &format!(
+                            "dsc      {} refused {of:#04x}: {}",
+                            self.name,
+                            Reply::error_text(code)
+                        ),
+                    );
+                }
             }
         }
         Ok(())
@@ -408,6 +419,21 @@ mod tests {
         }));
         dsc.open(&spec, &DisplayCatalogue::default()).unwrap();
         assert_eq!(board.lock().unwrap().values, [0, 0]);
+    }
+
+    #[test]
+    fn a_refusal_is_logged_and_the_board_kept() {
+        let (board, spec) = caution();
+        let dsc = Dsc::with(Box::new(FakePlaces {
+            boards: HashMap::from([("COM5".to_string(), Arc::clone(&board))]),
+            opened: Arc::default(),
+        }));
+        let mut panel = dsc.open(&spec, &DisplayCatalogue::default()).unwrap();
+        panel.set_lamp(&write(&spec, 9, 1)).unwrap();
+        panel.flush().unwrap();
+        panel.set_lamp(&write(&spec, 0, 1)).unwrap();
+        panel.flush().unwrap();
+        assert_eq!(board.lock().unwrap().values, [1, 0]);
     }
 
     #[test]

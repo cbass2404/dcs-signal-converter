@@ -93,7 +93,10 @@ by that many bytes of ASCII, no terminator. Message types from the host are
 | `0xFF` | `ERROR`       | device → host |
 
 A device answers a type it does not know with `ERROR` code `0x01` and otherwise
-carries on, so a newer host can try a message and fall back.
+carries on in the version it agreed. The host sends only the messages of the
+agreed version, so this is a fallback for firmware that leaves out part of its
+version, not the way a host finds out what a device can do. A message the
+device refused had no effect, and the host does not count on it.
 
 ### `HELLO` and `HELLO_REPLY`
 
@@ -103,8 +106,24 @@ HELLO_REPLY  81  version:u8  lamps:u8  flags:u8
                  vendor:str  model:str  unit:str  firmware:str
 ```
 
-`version` is the highest protocol version the sender speaks. Both sides use the
-lower of the two. This document is version 1.
+`version` is the highest protocol version the sender speaks, from 1 up; 0 is
+not a version. Both sides then speak the lower of the two, the agreed version,
+with no further message to settle it: the host knows it on reading
+`HELLO_REPLY`, the device on reading `HELLO`. This document is version 1.
+
+A device speaks version 1 from reset until its first `HELLO`, and each `HELLO`
+sets the agreed version again: the host repeats `HELLO` while a serial board
+resets, and a later host can be a different program. The device sends nothing
+from a version newer than the agreed one, neither a message type nor anything
+it would send unasked. `HELLO_REPLY` goes out before both sides agree, so its
+fields up to `firmware` keep this layout in every version.
+
+A device never stops speaking an older version, which the rule under
+"Versions" makes free, so there is always a version both sides speak. Only the
+host may decide a version is too old. It then leaves the device closed and says
+why in its log, for example that the firmware speaks protocol 1 and the
+converter needs 2. A device answering 0 is treated the same way. There is no
+message for a device to refuse a host; it always answers `HELLO`.
 
 `lamps` is how many lamps the device has, numbered 0 to `lamps - 1`. `flags` is
 0 in version 1; a receiver ignores bits it does not know.
@@ -197,7 +216,7 @@ ERROR  FF  type:u8  code:u8
 | `0x02` | Lamp index past the end        |
 | `0x03` | Message too short for its type |
 
-The host logs these and carries on.
+The host logs these and carries on driving the device.
 
 ## What the host does
 
@@ -250,4 +269,6 @@ new message types, which version 1 boards already answer with `ERROR` code
 
 A later version adds message types or appends fields at the end of an
 existing message, never changes the meaning of one already here. A receiver
-ignores bytes after the fields it knows.
+ignores bytes after the fields it knows. So every version includes the ones
+before it, and a device needs no reflash when the host moves on, unless the
+host decides its version is too old (see `HELLO`).

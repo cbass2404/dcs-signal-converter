@@ -6,8 +6,9 @@ rem
 rem  Order of checks:
 rem    0. the shipped profiles and pages: everything else here can be
 rem       checked by the machine, and this cannot. Changes to data\defaults
-rem       and data\default-pages are not written up as they land, so this is
-rem       the one thing reconstructed from memory.
+rem       and data\default-pages are not written up as they land, so
+rem       tools\changed_defaults.py lists every row and field that moved,
+rem       and a person says whether the notes name them.
 rem    1. on main, and main matches origin - releases build only from main,
 rem       and main takes changes through pull requests, so nothing is pushed
 rem       but the tag. Uncommitted changes warn and ask.
@@ -58,25 +59,17 @@ rem
 rem The shipped pages are the same: a fix to a page reaches somebody who
 rem edited it only if the notes name it, so they are listed beside the profiles.
 rem
-rem The files that moved are listed, so the answer is not from memory. A
-rem previous tag is needed to compare against; without one, the question is
-rem asked on its own rather than skipped.
+rem Every row, slot and page field that moved since the last release is listed,
+rem matched on what it is rather than where it sits in the file, so the answer
+rem is not from memory. HEAD, because that is what the tag will hold. Run it
+rem alone, redirected to a file, to write the notes from:
+rem     python tools\changed_defaults.py --ref HEAD > changed.txt
 
-set "LASTTAG="
-for /f "usebackq tokens=* delims= " %%t in (`git describe --tags --abbrev^=0 --match "v*" 2^>nul`) do set "LASTTAG=%%t"
-
-if defined LASTTAG (
-    echo   Shipped profiles and pages changed since %LASTTAG%:
+python tools\changed_defaults.py --ref HEAD
+if errorlevel 1 (
     echo(
-    set "MOVED="
-    for /f "usebackq tokens=* delims= " %%f in (`git diff --name-only %LASTTAG% HEAD -- data/defaults data/default-pages 2^>nul`) do (
-        set "MOVED=1"
-        echo       %%f
-    )
-    if not defined MOVED echo       none.
-) else (
-    echo   No previous v* tag to compare against, so the changed profiles
-    echo   and pages cannot be listed here.
+    echo ERROR: tools\changed_defaults.py failed.
+    goto :fail
 )
 echo(
 echo   An update leaves a row or page field you have changed alone, so a fix

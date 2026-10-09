@@ -174,14 +174,12 @@ numbers move and the words do not.
       version numbers say: `alpha_to_beta_is_offered_though_the_number_drops`
       in `editor/src-tauri/src/update.rs`.
 
-- [ ] **The release-notes list of changed default rows.** Written by hand
-      for alpha.008, per profile and per page module, from a throwaway diff of
-      `data/defaults` and `data/default-pages` against their `-previous`
-      snapshots. That diff belongs in `tools/` as a release step. An update
-      never rewrites a row the user has changed, so a fix reaches them only if
-      the notes name the row and they choose to reset it.
-      [STATUS.md](STATUS.md), "Release notes", and
-      [CHANGELOG.md:9](../CHANGELOG.md#L9)
+- [x] ~~**The release-notes list of changed default rows.**~~ Done
+      2026-10-09: `tools/changed_defaults.py` lists every lamp row, follow,
+      page slot, page field and stored signal that moved since the last tag,
+      matched on what it is rather than where it sits, with a change made the
+      same way in several profiles listed once. `release.cmd` runs it at step
+      0. [STATUS.md](STATUS.md), "Release notes"
 
 ## Smaller
 

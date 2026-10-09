@@ -8,6 +8,7 @@
   python tools/dsc_probe.py set  --port COM5 MASTER_CAUTION=1 BACKLIGHT=128
   python tools/dsc_probe.py walk --hid [--hold 0.5]
   python tools/dsc_probe.py off  --port COM5
+  python tools/dsc_probe.py state --port COM5 MASTER_CAUTION=1 BACKLIGHT=128
 
 For testing a board before the converter drives it. Needs pyserial for
 --port and hidapi for --hid (pip install pyserial hidapi).
@@ -21,8 +22,8 @@ import argparse
 import sys
 import time
 
-HELLO, DESCRIBE, SET_LAMPS, ALL_OFF = 0x01, 0x02, 0x10, 0x11
-HELLO_REPLY, LAMP, ERROR = 0x81, 0x82, 0xFF
+HELLO, DESCRIBE, STATE, SET_LAMPS, ALL_OFF = 0x01, 0x02, 0x03, 0x10, 0x11
+HELLO_REPLY, LAMP, STATE_REPLY, ERROR = 0x81, 0x82, 0x83, 0xFF
 VERSION = 1
 MAX_MESSAGE = 62
 USAGE_PAGE, USAGE = 0xFFD5, 0x01
@@ -37,6 +38,16 @@ def crc8(data):
         crc ^= b
         for _ in range(8):
             crc = ((crc << 1) ^ 0x07) & 0xFF if crc & 0x80 else (crc << 1) & 0xFF
+    return crc
+
+
+def crc16(data):
+    """CRC-16/CCITT-FALSE: polynomial 0x1021, initial 0xFFFF, no reflection, no final XOR."""
+    crc = 0xFFFF
+    for b in data:
+        crc ^= b << 8
+        for _ in range(8):
+            crc = ((crc << 1) ^ 0x1021) & 0xFFFF if crc & 0x8000 else (crc << 1) & 0xFFFF
     return crc
 
 
@@ -75,10 +86,11 @@ def cobs_decode(data):
 
 def self_test():
     assert crc8(b"123456789") == 0xF4, "CRC-8/SMBUS check value"
+    assert crc16(b"123456789") == 0x29B1, "CRC-16/CCITT-FALSE check value"
     for sample in (b"\x01", b"\x00", b"\x10\x02\x00\x01\x03\xff", bytes(range(63))):
         assert cobs_decode(cobs_encode(sample)) == sample, sample
         assert 0 not in cobs_encode(sample), sample
-    print("self-test ok: CRC check value 0xF4, COBS round trips")
+    print("self-test ok: CRC check values 0xF4 and 0x29B1, COBS round trips")
 
 
 class SerialLink:
@@ -200,8 +212,8 @@ def open_link(args):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("command", choices=["self-test", "list", "describe", "set", "walk", "off"])
-    p.add_argument("pairs", nargs="*", help="NAME=VALUE for set")
+    p.add_argument("command", choices=["self-test", "list", "describe", "set", "walk", "off", "state"])
+    p.add_argument("pairs", nargs="*", help="NAME=VALUE for set and state")
     how = p.add_mutually_exclusive_group()
     how.add_argument("--port", help="serial port, such as COM5")
     how.add_argument("--hid", action="store_true", help="the first HID device on usage page 0xFFD5")
@@ -238,14 +250,27 @@ def main():
         for lamp in lamps:
             print(f"  {lamp['index']:3}  {lamp['name']:<20} {lamp['kind']:<9} max {lamp['max']:<3} "
                   f"{'backlight ' if lamp['backlight'] else ''}{lamp['label']}")
-    elif args.command == "set":
+    elif args.command in ("set", "state"):
         pairs = []
         for item in args.pairs:
             name, _, value = item.partition("=")
             if name not in by_name:
                 raise SystemExit(f"no lamp {name!r}; see describe")
             pairs.append((by_name[name]["index"], int(value)))
+        if args.command == "state":
+            # From all off, so the board's STATE can be compared with what the
+            # converter would expect after sending these.
+            link.send(bytes([ALL_OFF]))
         set_lamps(link, pairs)
+        if args.command == "state":
+            values = [0] * len(lamps)
+            for index, value in pairs:
+                values[index] = min(value, lamps[index]["max"])
+            reply = ask(link, bytes([STATE]), STATE_REPLY)
+            if not reply:
+                raise SystemExit("no STATE_REPLY")
+            held, want = reply[1] | reply[2] << 8, crc16(bytes(values))
+            print(f"STATE 0x{held:04x}, expected 0x{want:04x}: {'match' if held == want else 'DIFFERENT'}")
     elif args.command == "walk":
         # One lamp at a time, gently, so a wiring fault shows as the one that
         # stays dark.

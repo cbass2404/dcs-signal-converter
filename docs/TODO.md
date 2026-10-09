@@ -241,6 +241,21 @@ numbers move and the words do not.
       fonts are worth a per-part glyph height. Then mark `verified` in
       `winctrl.json`. [STATUS.md](STATUS.md), "Built 2026-09-24: the PFP-3N"
 
+- [ ] **Fly DSC boards before `dev_only` comes off.** Everything is built
+      and tested on the PC against the real firmware (`crates/dsc-firmware`);
+      nothing has driven a board yet. On an Uno (serial), a Leonardo (HID) and
+      a Pico (HID, TinyUSB):
+      - [ ] Leonardo and Pico on their own power: pull the cable while lamps
+            are lit, and the lamps go out.
+      - [ ] Uno: stall `loop()` while driven; the converter logs "stopped
+            answering" and catches the board up when it recovers.
+      - [ ] `tools/dsc_probe.py describe`, `walk` and `state` on each board.
+      - [ ] Fly a profile bound to a board in DCS, light by light.
+      - [ ] Then take `dev_only` out of `editor/src-tauri/src/boards.rs`.
+
+      What each case should do, and why: "Recovery" in
+      [PROTOCOL-DSC.md](PROTOCOL-DSC.md). Tracked in #132, under #123.
+
 ## Deferred, not scheduled
 
 - [ ] **Profile inheritance.** Leaning no for v1.
@@ -271,6 +286,15 @@ numbers move and the words do not.
       section in Settings are built; the section, and every command behind
       it, works only in a dev checkout until a real board has been flown
       (`boards.rs`, `dev_only`). Added boards go in `user-devices/boards.json`.
+
+      Hardened 2026-10-09: version negotiation, identity conflicts, malformed
+      messages and recovery are written into the spec with their reasons. A
+      driven board is checked with `STATE` every 2 s and caught up when it
+      drifts or stops answering; native USB boards turn their lamps off when
+      the link goes. `crates/dsc-firmware` builds the real library on the PC
+      against stand-ins and tests the host against it (`DSC_ASAN=1` adds
+      AddressSanitizer; the MSVC bin folder must be on PATH to run it).
+      Waiting on boards: "Fly DSC boards" under Blocked on hardware, #132.
 
       A profile binding a device the inventory lacks is still refused
       (`UnknownLed`), so boards never reach one that lacks them: an export

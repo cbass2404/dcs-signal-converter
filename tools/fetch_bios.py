@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Fetch the DCS-BIOS nightly the shipped defaults are written against.
+"""Fetch the current DCS-BIOS nightly.
 
   python tools/fetch_bios.py [--zip PATH] [--build-catalogue]
 
 A pipeline step. DCS-BIOS publishes nightlies as one rolling `latest`
-pre-release, and each nightly replaces the last, so the one the defaults were
-written against cannot be fetched from DCS-BIOS again. We keep our own copy as
-an asset on a release in this repository, named in `tools/dcs-bios-pin.json`
-with its SHA-256. This downloads it, checks the hash and the version inside,
-and unpacks it to `target/dcs-bios-pin`.
+pre-release, each replacing the last. The shipped defaults follow the nightly
+as it moves, so this takes whatever `latest` holds today, unpacks it to
+`target/dcs-bios`, and prints the version inside. Nothing pins it: a nightly
+that drops or renames a signal the defaults read fails the tests, which is the
+point of running them against it.
 
 `--build-catalogue` then builds `data/catalogue` from it, which the tests and
 `tools/nightly_only.py` read. The catalogue remembers where it was built from,
@@ -16,12 +16,9 @@ so on a development machine this repoints it away from the DCS-BIOS installed
 in Saved Games; `dcs-signal --bios <that doc/json> catalogue --rebuild` puts it
 back.
 
-`--zip` checks and unpacks a local copy instead of downloading, for pinning a
-new nightly: hash the zip, update the pin, attach the zip to a release named
-by `release`, and run this against the local copy to prove the pin matches.
+`--zip` unpacks a local nightly zip instead of downloading.
 """
 import argparse
-import hashlib
 import json
 import os
 import re
@@ -32,52 +29,53 @@ import urllib.request
 import zipfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-REPO = "cbass2404/dcs-signal-converter"
-OUT = os.path.join(ROOT, "target", "dcs-bios-pin")
+REPO = "DCS-Skunkworks/dcs-bios"
+OUT = os.path.join(ROOT, "target", "dcs-bios")
 
 
-def sha256(path):
-    h = hashlib.sha256()
-    with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(1 << 20), b""):
-            h.update(chunk)
-    return h.hexdigest()
+def latest_asset():
+    url = "https://api.github.com/repos/%s/releases/tags/latest" % REPO
+    headers = {"Accept": "application/vnd.github+json"}
+    # The pipeline passes its token: unauthenticated calls share a small
+    # hourly limit across every job on the runner's address.
+    if os.environ.get("GITHUB_TOKEN"):
+        headers["Authorization"] = "Bearer " + os.environ["GITHUB_TOKEN"]
+    req = urllib.request.Request(url, headers=headers)
+    with urllib.request.urlopen(req) as resp:
+        rel = json.load(resp)
+    assets = [a for a in rel["assets"]
+              if a["name"].startswith("DCS-BIOS") and a["name"].endswith(".zip")]
+    if not assets:
+        sys.exit("the DCS-BIOS latest release has no DCS-BIOS zip")
+    return assets[0]
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--zip", help="a local copy of the pinned zip instead of downloading")
+    ap.add_argument("--zip", help="a local nightly zip instead of downloading")
     ap.add_argument("--build-catalogue", action="store_true",
                     help="build data/catalogue from it afterwards")
     args = ap.parse_args()
-
-    with open(os.path.join(ROOT, "tools", "dcs-bios-pin.json"), encoding="utf-8") as f:
-        pin = json.load(f)
 
     shutil.rmtree(OUT, ignore_errors=True)
     os.makedirs(OUT)
     archive = args.zip
     if not archive:
-        archive = os.path.join(OUT, pin["asset"])
-        url = "https://github.com/%s/releases/download/%s/%s" % (REPO, pin["release"], pin["asset"])
-        print("fetching %s" % url, flush=True)
-        urllib.request.urlretrieve(url, archive)
-
-    have = sha256(archive)
-    if have != pin["sha256"]:
-        sys.exit("%s has SHA-256 %s, the pin says %s" % (archive, have, pin["sha256"]))
+        asset = latest_asset()
+        archive = os.path.join(OUT, asset["name"])
+        print("fetching %s" % asset["browser_download_url"], flush=True)
+        urllib.request.urlretrieve(asset["browser_download_url"], archive)
 
     with zipfile.ZipFile(archive) as z:
         z.extractall(OUT)
     config = os.path.join(OUT, "DCS-BIOS", "BIOSConfig.lua")
     with open(config, encoding="utf-8") as f:
         found = re.search(r'version\s*=\s*"([^"]+)"', f.read())
-    if not found or found.group(1) != pin["version"]:
-        sys.exit("%s says %s, the pin says %s"
-                 % (config, found.group(1) if found else "no version", pin["version"]))
+    if not found:
+        sys.exit("%s names no version" % config)
 
     bios_json = os.path.join(OUT, "DCS-BIOS", "doc", "json")
-    print("DCS-BIOS %s at %s" % (pin["version"], bios_json), flush=True)
+    print("DCS-BIOS %s at %s" % (found.group(1), bios_json), flush=True)
 
     if args.build_catalogue:
         cmd = ["cargo", "run", "--quiet", "--locked", "--bin", "dcs-signal", "--",

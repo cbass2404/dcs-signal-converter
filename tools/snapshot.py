@@ -63,8 +63,8 @@ def git(*args):
 def last_release_tag():
     """The newest released version tag.
 
-    Filtered to `v*`, because the repo also tags the DCS-BIOS nightly the
-    defaults were written against and that is not a release of this project.
+    Filtered to `v*`, because the repo once tagged a pinned DCS-BIOS nightly
+    and that is not a release of this project.
     At release time the tag being cut does not exist yet, which release.cmd
     has already checked, so the newest here is the previous release.
 

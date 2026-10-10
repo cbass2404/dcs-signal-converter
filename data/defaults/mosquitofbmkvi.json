@@ -14,7 +14,7 @@
       "led": "INST_PNL_Backlight",
       "conditions": [
         {
-          "source": "BOMB_PANEL_L_DIM",
+          "source": "L_SIDE_L_DIM",
           "on_when": {
             "scale": [
               0,

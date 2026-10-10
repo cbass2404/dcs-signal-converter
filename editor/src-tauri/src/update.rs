@@ -47,8 +47,8 @@ pub struct Found(Mutex<Option<Update>>);
 ///
 /// While `current` is a pre-release, pre-releases count, or an alpha user would
 /// never hear of the next alpha. A stable user is offered only stable ones.
-/// Only `v*` tags are releases of the program: the repository also holds the
-/// pinned DCS-BIOS nightly as a release of its own.
+/// Only `v*` tags are releases of the program: the repository once held a
+/// pinned DCS-BIOS nightly as a release of its own, and may hold others.
 fn newest<'a>(current: &str, releases: &'a [Release]) -> Option<&'a Release> {
     let stable = !current.contains('-');
     releases

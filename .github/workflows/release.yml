@@ -86,7 +86,9 @@ jobs:
       - name: Pin the production layout
         run: echo env=prod > .env
 
-      - name: Fetch the pinned DCS-BIOS nightly and build the catalogue
+      - name: Fetch the current DCS-BIOS nightly and build the catalogue
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: python tools/fetch_bios.py --build-catalogue
 
       # The installer ships data/nightly-only.json as committed, so what ships
@@ -131,7 +133,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          pin="$(python -c "import json; print(json.load(open('tools/dcs-bios-pin.json'))['version'])")"
+          bios="$(python -c "import json; print(json.load(open('data/catalogue/index.json'))['bios_version'])")"
           # This version's section of the changelog, if it has one: everything
           # between its heading and the next release heading. A release with
           # nothing written for it still gets the provenance below, rather than
@@ -141,7 +143,7 @@ jobs:
             if [ -s entry.md ]; then cat entry.md; echo; echo "---"; echo; fi
             echo "Built from \`$DSC_COMMIT\` on main by [this run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)."
             echo
-            echo "Shipped defaults written against DCS-BIOS \`$pin\`."
+            echo "Tested against DCS-BIOS \`$bios\`."
             echo
             echo "Check an installer came from this build:"
             echo

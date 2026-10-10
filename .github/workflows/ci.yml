@@ -71,7 +71,9 @@ jobs:
       - name: Pin the production layout
         run: echo env=prod > .env
 
-      - name: Fetch the pinned DCS-BIOS nightly and build the catalogue
+      - name: Fetch the current DCS-BIOS nightly and build the catalogue
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: python tools/fetch_bios.py --build-catalogue
 
       # The editor's build script checks that everything the installer

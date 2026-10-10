@@ -18,8 +18,8 @@ the JSON and draws the tables, so only the JSON changes when this reruns.
 Chiclet ladders are listed too: a bar of lamps DCS-BIOS sends one signal
 each, read off its `defineLadderChiclet` calls with each chiclet's colour.
 
-`--bios` is DCS-BIOS's lib/modules/aircraft_modules. It defaults to the pinned
-nightly in target/dcs-bios-pin (tools/fetch_bios.py), then to Saved Games.
+`--bios` is DCS-BIOS's lib/modules/aircraft_modules. It defaults to the
+nightly in target/dcs-bios (tools/fetch_bios.py), then to Saved Games.
 
 It is parsed data. Units are read off the dial by hand in `UNITS`, and a
 module update can move any breakpoint, so rerun this after either updates and
@@ -34,7 +34,7 @@ import re
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "docs", "gauges.json")
 EDITOR_OUT = os.path.join(ROOT, "editor", "src", "gauge-data.json")
-BIOS_PIN = os.path.join(ROOT, "target", "dcs-bios-pin", "DCS-BIOS", "lib", "modules", "aircraft_modules")
+BIOS_FETCHED = os.path.join(ROOT, "target", "dcs-bios", "DCS-BIOS", "lib", "modules", "aircraft_modules")
 BIOS_SAVED = os.path.join(os.path.expanduser("~"), "Saved Games", "DCS", "Scripts", "DCS-BIOS",
                           "lib", "modules", "aircraft_modules")
 MODS_SAVED = os.path.join(os.path.expanduser("~"), "Saved Games", "DCS", "Mods", "aircraft")
@@ -676,7 +676,7 @@ def main():
     ap.add_argument("--bios", help="DCS-BIOS lib/modules/aircraft_modules")
     ap.add_argument("--mods", default=MODS_SAVED, help="Saved Games Mods/aircraft, for mods installed there")
     args = ap.parse_args()
-    bios = args.bios or (BIOS_PIN if os.path.isdir(BIOS_PIN) else BIOS_SAVED)
+    bios = args.bios or (BIOS_FETCHED if os.path.isdir(BIOS_FETCHED) else BIOS_SAVED)
     roots = [os.path.join(args.dcs, "Mods", "aircraft"), args.mods]
     found, left_out, empty, not_covered, missing = collect(roots, bios)
     doc = {

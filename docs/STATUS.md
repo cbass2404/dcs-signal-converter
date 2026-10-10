@@ -1178,6 +1178,13 @@ Done 2026-09-20: the pinned nightly's zip is attached to the
 `dcs-bios-2026.09.18-nightly` release, and on GitHub `main` requires CI and
 `v*` tags are protected.
 
+Pin dropped 2026-10-10: the nightly moves too fast for a pinned copy to be
+worth keeping in step. `tools/fetch_bios.py` now takes whatever DCS-BIOS's
+rolling `latest` pre-release holds, with no hash, and the release notes name
+the version the catalogue was built from. `tools/dcs-bios-pin.json` is gone.
+A nightly that drops a signal the defaults read now fails CI, not a later
+pin bump.
+
 Still to do: the release-notes list of changed default rows.
 
 **Then, in order:**
@@ -2159,7 +2166,7 @@ crates/dsc-cli        `dcs-signal`  devices/parts/led/blink/sweep/listen/learn/r
 data/catalogue        51 modules, generated, version-stamped
 data/devices/        one file per maker; every connected panel verified, each names its protocol
 tools/                HID probe, WWTHID log parser and tail, release,
-                      version and snapshot scripts, the pinned DCS-BIOS
+                      version and snapshot scripts, the DCS-BIOS nightly
                       fetch, daemon benchmark (docs/PERFORMANCE.md), DED
                       font generator
 ```

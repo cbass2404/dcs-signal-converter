@@ -305,6 +305,18 @@ numbers move and the words do not.
       `tools/shipped_devices.py` fails CI and the release on that, and on a
       `dsc` device in data/devices.
 
+      **Lamp names and labels in flash on AVR**, before anyone builds a big
+      panel on an Uno. AVR copies constant data from flash into SRAM at
+      startup, so each lamp's name and label (up to about 50 bytes) comes out
+      of the Uno's 2 KB: around 30 fully labelled lamps would run out. Keep
+      them in flash with `PROGMEM` and read them with `pgm_read_byte` when
+      answering `DESCRIBE`. One code path for every board: the RP2040 core
+      defines `PROGMEM` as nothing and `pgm_read_byte` as a plain read, since
+      its constants already stay in flash, so only AVR changes. The protocol
+      and the converter do not change. Check it with the RAM figure `arduino-cli`
+      prints for a large table, and give the PC stand-in in
+      `crates/dsc-firmware` the same macros so its tests still run.
+
       **Then a Build Sketch screen**, once the backend has driven a real
       board: board, transport, model and unit, then rows of pin, name, label,
       kind and backlight, with a 74HC595 chain as an option, saved as an

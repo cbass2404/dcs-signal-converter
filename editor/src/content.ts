@@ -118,15 +118,43 @@ export type SpanKind = "text" | "signal" | "stored" | "gap" | "rule" | "switch";
  * profile check refuses one there. No switch `inCase`, since a switch cannot
  * sit inside another.
  */
-export function pieceKinds(textGrid: boolean, inCase = false): { kind: SpanKind; label: string }[] {
-  const out: { kind: SpanKind; label: string }[] = [
-    { kind: "signal", label: "a reading" },
-    { kind: "stored", label: "a shared result" },
+export function pieceKinds(textGrid: boolean, inCase = false): PieceChoice[] {
+  const out: PieceChoice[] = [
+    { kind: "signal", label: "a reading", hint: "Draw one DCS-BIOS signal's value." },
+    {
+      kind: "stored",
+      label: "a shared result",
+      hint: "Draw a value made once in Shared Results, for any page on this aircraft.",
+    },
   ];
-  if (!inCase) out.push({ kind: "switch", label: "a switch" });
-  out.push({ kind: "text", label: "text" }, { kind: "gap", label: "a gap" });
-  if (textGrid) out.push({ kind: "rule", label: "a rule" });
+  if (!inCase)
+    out.push({
+      kind: "switch",
+      label: "a switch",
+      hint: "Draw something different for each position of another signal, such as a band selector.",
+    });
+  out.push(
+    { kind: "text", label: "text", hint: "Characters you type, drawn as they are." },
+    {
+      kind: "gap",
+      label: "a gap",
+      hint: "Blanks that take whatever room the rest of the line leaves, or a set number of them.",
+    },
+  );
+  if (textGrid)
+    out.push({
+      kind: "rule",
+      label: "a rule",
+      hint: "A gap drawn as dashes, with an optional label in its middle.",
+    });
   return out;
+}
+
+/** One kind of piece, with the label and tooltip its add button carries. */
+export interface PieceChoice {
+  kind: SpanKind;
+  label: string;
+  hint: string;
 }
 
 /**

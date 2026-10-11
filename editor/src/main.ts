@@ -2309,7 +2309,20 @@ function deviceSection(
         refreshCount();
       }),
     );
-  summary.append(el("label", { class: "drive meta" }, drive, " drive this panel"));
+  summary.append(
+    el(
+      "label",
+      {
+        class: "drive meta",
+        title:
+          "On: this profile runs the panel, and any lamp it does not bind goes dark.\n" +
+          "Off: this profile leaves the panel alone, as it is. Useful for a panel you cannot see, " +
+          "such as an ICP and UFC sharing one swing arm.",
+      },
+      drive,
+      " drive this panel",
+    ),
+  );
   summary.addEventListener("click", (e) => {
     if ((e.target as Element).closest("label")) return;
     if (shut()) {

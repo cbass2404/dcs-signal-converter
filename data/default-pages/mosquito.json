@@ -2322,6 +2322,7 @@
                 -4000.0,
                 4000.0
               ],
+              "round": "down",
               "colour": "amber"
             },
             {
@@ -2335,6 +2336,7 @@
                 0.0,
                 10.0
               ],
+              "round": "down",
               "wrap": 10.0,
               "colour": "amber"
             },
@@ -2345,6 +2347,7 @@
                 0.0,
                 10.0
               ],
+              "round": "down",
               "wrap": 10.0,
               "colour": "amber"
             },
@@ -2357,6 +2360,7 @@
                 1000.0
               ],
               "digits": 3,
+              "round": "down",
               "wrap": 1000.0,
               "colour": "amber"
             },
@@ -2444,12 +2448,13 @@
             },
             {
               "source": "ALT_METER_SET_PRESS_G",
-              "width": 4,
+              "width": 6,
               "align": "right",
               "reads": [
                 798.0,
                 1052.0
               ],
+              "decimals": 1,
               "colour": "cyan"
             },
             {

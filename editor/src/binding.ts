@@ -819,6 +819,9 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
         opts.conditionsOnly ? "+ Add condition" : "Assign a signal",
       );
       const first = groups[0] ?? { conditions: binding.conditions };
+      assign.title = opts.conditionsOnly
+        ? "Add a test on a DCS-BIOS signal that lights these conditions."
+        : "Light this lamp from a DCS-BIOS signal, such as a cockpit lamp or a dimmer.";
       assign.addEventListener("click", () => addCondition(first));
       // A stored signal's conditions have nothing but conditions to offer.
       if (opts.conditionsOnly) {

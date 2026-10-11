@@ -13,22 +13,36 @@ release shipped it is brought up to the new one for you. A fix to something
 you have touched only reaches you if you reset it, and you cannot decide to
 unless this says what moved.
 
-## 1.0.0-beta.012
+## 1.0.0-beta.013
 
-- **Page keys are only read while a press can swap the page.** A panel whose
-  screen has fewer than two page slots in use is no longer read at all, nor
-  is the page modifier while no panel needs it. A blank slot counts as in
-  use; a slot set to off does not.
+- **Panels in the profile editor show they open.** Each panel's title now
+  has a chevron that points right while it is closed and down while it is
+  open.
+- **More buttons explain themselves.** Hovering "drive this panel", "Assign
+  a signal", Learn, "Edit page", "+ New page" or any of the buttons that
+  add a piece to a field (a reading, a shared result, a switch, text, a gap
+  or a rule) says what it does, as the other choices on a lamp already did.
 
 ### Profiles
 
-- **Mosquito: the panel backlights follow the L.H. Flood Light Dimmer.**
-  The INST_PNL_Backlight row on the CarrierAce MFD C read the Bomb Panel
-  Flood Dimmer instead. Every other panel backlight follows that
-  row, so they all move with it. If you have changed that row, set its
-  source to L_SIDE_L_DIM yourself.
-- **UH-1H: the ADF gain bar on the CDU Radios page fills the right way.**
-  It showed a full green bar with the GAIN knob turned all the way down and
-  an empty red one at full gain. It now fills as the knob turns up. If you
-  have changed that page field (the ADF line, cells 288-311), reset it to
-  pick this up.
+- **Mosquito: the altimeter setting on the MCDU Cruise page shows a
+  decimal.** It read whole hPa only, so 1013.2 showed as 1013. It now shows
+  one decimal place. If you have changed that page field (the hPa line,
+  cells 72-95), reset it to pick this up.
+- **Mosquito: the altitude on the MCDU Cruise page no longer jumps ahead.**
+  Its ten-thousands and thousands digits rounded to the nearest, so they
+  turned over before the hundreds did: 950 ft read as 1950. Every altitude
+  digit now rounds down, and so does the climb rate beside them. If you
+  have changed that page field (the airspeed line, cells 48-71), reset it
+  to pick this up.
+- **P-51D: the MFD backlight follows the cockpit lighting.** The centre
+  CarrierAce MFD, and the two that follow it, stayed fully lit. They now
+  dim and brighten with the left fluorescent light. If you have changed
+  the CarrierAce_MFD_C INST_PNL_Backlight row, reset it to pick this up.
+- **P-51D: the Orion throttle A/A and A/G lamps show weapon state.** A/A
+  lights while the gun switch is on guns. A/G blinks slowly while bombs are
+  selected and a bomb arm switch is armed, and lights steady while rockets
+  are selected with a release mode set. Both rows were empty before.
+- **P-51D: the TakeOff panel landing gear lamp shows the gear lights.** It
+  lights steady with the green gear light and blinks slowly with the red.
+  The row was empty before.

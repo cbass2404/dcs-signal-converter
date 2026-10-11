@@ -35,3 +35,14 @@ unless this says what moved.
   digit now rounds down, and so does the climb rate beside them. If you
   have changed that page field (the airspeed line, cells 48-71), reset it
   to pick this up.
+- **P-51D: the MFD backlight follows the cockpit lighting.** The centre
+  CarrierAce MFD, and the two that follow it, stayed fully lit. They now
+  dim and brighten with the left fluorescent light. If you have changed
+  the CarrierAce_MFD_C INST_PNL_Backlight row, reset it to pick this up.
+- **P-51D: the Orion throttle A/A and A/G lamps show weapon state.** A/A
+  lights while the gun switch is on guns. A/G blinks slowly while bombs are
+  selected and a bomb arm switch is armed, and lights steady while rockets
+  are selected with a release mode set. Both rows were empty before.
+- **P-51D: the TakeOff panel landing gear lamp shows the gear lights.** It
+  lights steady with the green gear light and blinks slowly with the red.
+  The row was empty before.

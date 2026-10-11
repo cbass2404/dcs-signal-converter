@@ -492,11 +492,13 @@ somebody who had never opened it. Nothing recorded what a field said when it
 shipped, so a field sitting exactly as delivered and a field somebody had spent
 an evening on looked identical.
 
-`data/defaults-previous` is that record: the defaults as the **last release**
-shipped them, beside the current ones. A field is ours to correct only while it
-still matches that exactly. Five cases, keyed on device, display and cells:
+The **base** is that record: for each profile the user has, a copy of the
+shipped default as it was last seeded or merged into that file, kept in
+`.base` in the profiles folder under the same file name. A field is ours to
+correct only while it still matches the base exactly. Five cases, keyed on
+device, display and cells:
 
-| In the profile | Last release | Now | What happens |
+| In the profile | Base | Now | What happens |
 | --- | --- | --- | --- |
 | matches what shipped | yes | yes | takes the new one |
 | matches what shipped | yes | no | taken out |
@@ -507,7 +509,7 @@ still matches that exactly. Five cases, keyed on device, display and cells:
 The last row is why a snapshot is needed rather than a flag. Deleting a field
 used to be undone on the next start, because "deleted" and "never had it" were
 the same thing to look at. The fourth and fifth rows differ only in what the
-last release shipped.
+base holds.
 
 The cells being part of the key is what handles a field that **moved**: the old
 one reads as retired and the new one as new, so it is drawn once at its new row
@@ -520,13 +522,27 @@ not on every start. Otherwise somebody who put a field back the way they liked
 it would have it taken away again at the next launch, and every launch after
 that. Between releases their file is entirely theirs.
 
-Two deliberate costs. Only one snapshot is kept, so a profile two releases
-behind matches nothing and is left alone for good; a frozen field still works,
-and the alternative is overwriting somebody who deliberately went back to an
-older layout. And a missing, empty or stale snapshot silently means "correct
-nothing", which is the safe direction but says nothing, so `tools/snapshot.py
---check` runs in `tools/release.cmd` before the tag and the refresh runs after
-the push. Lamp rows are not part of any of this.
+**The base is per file, not per release.** It holds what that user was
+actually given, so somebody who skipped releases is judged against the release
+they last merged, and every default changed since reaches them. Judging
+against the previous release alone, as `data/defaults-previous` used to, read
+each of those changes as their own edit and kept it for good (issue #137: a
+Hornet still disabling the ICP as beta.002 shipped it, on beta.012). After the
+merge the base becomes the default just merged in, never the merged result, so
+a row the user kept still differs from it at the next release. Seeding a
+shipped profile writes its base at the same time; a profile the user made has
+no shipped default and no base. Reset restores the shipped default and leaves
+the base alone, and deleting a profile deletes its base.
+
+**Changeover.** A file with no base yet is judged against
+`data/defaults-previous` once and has a base from then on. That folder is
+deprecated and frozen at v1.0.0-beta.012, never refreshed: any file with no
+base was last merged by beta.012 or earlier, so a later snapshot could match
+none of them, and beta.012 is exact for the most likely of them. It ships
+from beta.013 to beta.017, giving users five releases to install one, and
+goes in beta.018 with `data/default-pages-previous` and their
+`bundle.resources` entries. A missing base and a missing snapshot both mean
+"correct nothing", the safe direction.
 
 In a development checkout the defaults and the active profiles are one folder,
 so the whole thing is skipped: there is nothing to reconcile against and the
@@ -563,12 +579,12 @@ finds its aircraft claimed by the old one and is not seeded.
 **Splitting a shipped profile.** DCS-BIOS can report two variants under one
 module that want different signals for the same lamp (the A-10C and A-10C II
 on the ICP's radio lines), and the answer is a shipped profile each. The
-aircraft list is reconciled against `data/defaults-previous` once per version,
+aircraft list is reconciled against the profile's base once per version,
 like a field:
 
 | The profile's aircraft | What happens |
 | --- | --- |
-| as the last release shipped them | an aircraft moved to another shipped default is dropped; one added is taken on if nothing else flies it |
+| as the base has them | an aircraft moved to another shipped default is dropped; one added is taken on if nothing else flies it |
 | changed | left alone, and the update log names what the release moved |
 
 An aircraft the last release listed and no default lists now is kept, since
@@ -1947,31 +1963,32 @@ An update reconciles pages and profiles as two separate checks. Neither reads
 the other's files, and each leaves the other valid whatever it decides, since
 a slot only names an id and a page knows nothing of the slots using it. So
 they need no order and no knowledge of each other. Both follow "Correcting a
-display field an update changed", each against a snapshot of its own.
+display field an update changed", each against a base of its own.
 
-**Pages**, against `data/default-pages-previous`, the pages as the last
-release shipped them:
+**Pages**, each module against its base in `.base` in the pages folder, the
+shipped page file as it was last seeded or merged in. A module with no base
+yet uses `data/default-pages-previous` once, as profiles do.
 
-- **New and deleted.** A shipped page the snapshot lacks is new in this
-  release and is copied in. One the snapshot has but the library does not
+- **New and deleted.** A shipped page the base lacks is new in this
+  release and is copied in. One the base has but the library does not
   was deleted by the user, and stays deleted. This is the same pair of rows
   that tells a new field from a deleted one, and it is why pages are not
   seeded by "copy every id not already there", which would put a deleted page
   back on every update.
 - **A field at a time**, keyed on cells, with the five cases in the table.
   The name is one more field: it follows the shipped name only while it still
-  matches the snapshot's.
+  matches the base's.
 - **A new shipped page whose name a user page already has** gets a number
   added, as on import.
 - **A page the release no longer ships** goes only while it is still exactly
-  as the snapshot has it, name and fields both. One the user changed stays.
+  as the base has it, name and fields both. One the user changed stays.
 - **Stored signals** go by the same rules a whole signal at a time: a new one
   comes in, renamed with a number if its name is taken; one still as the
-  snapshot has it follows the release; one the user changed or deleted is
+  base has it follows the release; one the user changed or deleted is
   left as they left it; one the release no longer ships goes only while it is
   untouched and no page draws it.
 
-**Profiles**, against `data/defaults-previous` as now. A device's slots are
+**Profiles**, against their own base. A device's slots are
 reconciled with the profile's display fields, keyed on device and slot
 number, with `start` as one more field. A slot still as shipped takes the new
 one, and a slot the user changed is theirs. Deleting a page empties its slots,
@@ -1986,19 +2003,12 @@ page. Each half is valid alone, and the page is in the library to pick.
 Each check keeps its own `.updated`, in its own folder, so each runs once per
 version.
 
-**In a release**, `tools/release.cmd` treats the pages exactly as it treats
-the defaults, at the same three points, with `tools/snapshot.py` doing both
-pairs of folders:
-
-- **Step 0** lists the shipped pages that moved since the last tag beside the
-  profiles, since a fix to a page reaches somebody who edited it only if
-  CHANGELOG.md names it.
-- **Step 3**, before the tag, checks that `data/default-pages-previous` still
-  holds the pages the last release shipped, and refuses to tag if not.
-- **Step 7**, once the tag is pushed, refreshes `data/default-pages-previous`
-  from `data/default-pages` for the next release, left unstaged with the
-  defaults' snapshot, so one snapshot branch and pull request carries both.
-  Either refresh failing warns without undoing the release, as now.
+**In a release**, `tools/release.cmd` step 0 lists the shipped pages that
+moved since the last tag beside the profiles, since a fix to a page reaches
+somebody who edited it only if CHANGELOG.md names it. Nothing in a release
+checks or refreshes the `-previous` folders any more: they are frozen (see
+the changeover above), and the per-file bases are written on the user's
+machine, not in the repo.
 
 ### Sharing pages
 

@@ -1,5 +1,5 @@
 //! Lamp rows and profile settings an update changed, taken only where the user
-//! left them as the last release shipped them.
+//! left them as the default last merged in shipped them.
 //!
 //! The same rule `profile_reconcile.rs` pins for display fields. It exists
 //! because alpha.004 shipped `follows`, `same_as_device` and an MCDU `font`,
@@ -34,7 +34,7 @@ fn scratch(name: &str) -> Scratch {
             .unwrap()
             .as_nanos()
     ));
-    for sub in ["defaults", "defaults-previous", "active"] {
+    for sub in ["defaults", "defaults-previous", "active/.base"] {
         std::fs::create_dir_all(dir.join(sub)).unwrap();
     }
     Scratch(dir)
@@ -74,12 +74,12 @@ const THEIRS: &str = r#"{ "device": "CarrierAce_MFD_L", "led": "Backlight",
 const FOLLOWS: &str = r#""follows": { "MCDU_CoPilot": "MCDU_Captain" },"#;
 const FONT: &str = r#""font": "../mcdu/f14bu-font-21x31.json","#;
 
-/// Write all three files: last release, this release, and the user's.
+/// Write all three files: the base, this release, and the user's.
 fn lay(dir: &Path, previous: (&str, &str), shipped: (&str, &str), mine: (&str, &str)) {
     let write = |sub: &str, (settings, lamp): (&str, &str)| {
         std::fs::write(dir.join(sub).join("a-10c.json"), profile(settings, lamp)).unwrap();
     };
-    write("defaults-previous", previous);
+    write("active/.base", previous);
     write("defaults", shipped);
     write("active", mine);
 }
@@ -245,7 +245,7 @@ fn a_panel_the_user_stopped_driving_still_takes_the_update() {
     assert_eq!(after.disabled_devices, vec!["CarrierAce_MFD_L".to_string()]);
 }
 
-/// With no snapshot there is no telling an untouched row from an edited one,
+/// With no base there is no telling an untouched row from an edited one,
 /// so nothing that already exists is rewritten.
 #[test]
 fn with_no_snapshot_lamps_and_settings_stay_put() {
@@ -256,7 +256,7 @@ fn with_no_snapshot_lamps_and_settings_stay_put() {
         (&format!("{FOLLOWS}{FONT}"), MATCHED),
         ("", OWN),
     );
-    std::fs::remove_dir_all(dir.join("defaults-previous")).unwrap();
+    std::fs::remove_dir_all(dir.join("active/.base")).unwrap();
 
     merge(&dir, "alpha.004");
 

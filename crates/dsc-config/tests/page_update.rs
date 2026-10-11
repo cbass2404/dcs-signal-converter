@@ -1,7 +1,7 @@
 //! What an update does to the page library and to a profile's page slots.
 //!
-//! Two checks, each against its own snapshot of what the last release
-//! shipped, neither reading the other's files. The rule is the one display
+//! Two checks, each against its own base, the shipped file as it was last
+//! merged in, neither reading the other's files. The rule is the one display
 //! fields follow: what is still as we shipped it is ours to correct, and
 //! anything the user changed, or deleted, is theirs. See docs/CONFIG.md
 //! "Updates: pages and profiles apart".
@@ -36,10 +36,10 @@ fn scratch(name: &str) -> Scratch {
     for sub in [
         "default-pages",
         "default-pages-previous",
-        "pages",
+        "pages/.base",
         "defaults",
         "defaults-previous",
-        "active",
+        "active/.base",
     ] {
         std::fs::create_dir_all(dir.join(sub)).unwrap();
     }
@@ -212,11 +212,7 @@ fn new_pages_come_in_and_deleted_ones_stay_deleted() {
     let radios = page("aaaaaa", "Radios", vec![field("0-1", "A")]);
     let fuel = page("bbbbbb", "Fuel", vec![field("24-25", "B")]);
     let nav = page("cccccc", "Nav", vec![field("48-49", "C")]);
-    write(
-        &dir,
-        "default-pages-previous",
-        vec![radios.clone(), fuel.clone()],
-    );
+    write(&dir, "pages/.base", vec![radios.clone(), fuel.clone()]);
     write(&dir, "default-pages", vec![radios.clone(), fuel, nav]);
     // The user deleted Fuel, and made a page of their own called Nav.
     write(
@@ -266,7 +262,7 @@ fn a_page_is_corrected_a_field_at_a_time_and_its_name_while_unchanged() {
     );
     let mut mine = was.clone();
     mine.fields[1] = field("24-25", "MINE");
-    write(&dir, "default-pages-previous", vec![was]);
+    write(&dir, "pages/.base", vec![was]);
     write(&dir, "default-pages", vec![now]);
     write(&dir, "pages", vec![mine]);
 
@@ -308,7 +304,7 @@ fn a_renamed_page_keeps_its_name_and_a_retired_one_goes_only_if_untouched() {
     let edited = page("cccccc", "Edited", vec![field("0-1", "C")]);
     write(
         &dir,
-        "default-pages-previous",
+        "pages/.base",
         vec![keep.clone(), retire.clone(), edited.clone()],
     );
     write(
@@ -369,7 +365,7 @@ fn profile(start: usize, slots: &[&str]) -> String {
 }
 
 fn lay(dir: &Path, previous: String, shipped: String, mine: String) {
-    std::fs::write(dir.join("defaults-previous/a-10c.json"), previous).unwrap();
+    std::fs::write(dir.join("active/.base/a-10c.json"), previous).unwrap();
     std::fs::write(dir.join("defaults/a-10c.json"), shipped).unwrap();
     std::fs::write(dir.join("active/a-10c.json"), mine).unwrap();
 }

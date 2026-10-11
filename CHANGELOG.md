@@ -8,8 +8,8 @@ own. Anything written here reaches users; development detail belongs in
 
 **When a shipped profile changes**, say so here and name the rows. An update
 never rewrites anything you have changed: a lamp row, a display field, or a
-setting such as which panel follows which. Anything still exactly as the last
-release shipped it is brought up to the new one for you. A fix to something
+setting such as which panel follows which. Anything still exactly as it was
+shipped to you is brought up to the new one for you. A fix to something
 you have touched only reaches you if you reset it, and you cannot decide to
 unless this says what moved.
 
@@ -22,6 +22,16 @@ unless this says what moved.
   a signal", Learn, "Edit page", "+ New page" or any of the buttons that
   add a piece to a field (a reading, a shared result, a switch, text, a gap
   or a rule) says what it does, as the other choices on a lamp already did.
+- **Updates reach you even if you skipped a release.** An update brings
+  forward any row you never changed, but it only recognised rows as the
+  release just before it shipped them. If you skipped a release, every
+  default changed in the one you missed looked like your own edit and was
+  kept, so those fixes never arrived. Each profile and page file now
+  remembers the default it was last given, and updates compare against
+  that. Rows you changed are still never touched. The first update to
+  this release or any up to beta.017 compares against beta.012 once, so
+  if you were already behind beta.012, a fix from a release you skipped
+  before it reaches you only through a reset.
 
 ### Profiles
 

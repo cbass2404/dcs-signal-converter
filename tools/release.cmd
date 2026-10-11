@@ -17,13 +17,10 @@ rem    3. the checks the pipeline would fail on: every version in the repo
 rem       agrees with VERSION.md, in HEAD as well as in the working tree,
 rem       every file in HEAD has the same name on disk (case included),
 rem       nothing from testing a board ships in data\devices or data\defaults,
-rem       data\nightly-only.json is current, and data\defaults-previous and
-rem       data\default-pages-previous still hold what the last release shipped
+rem       and data\nightly-only.json is current
 rem    4. CHANGELOG.md has a section for this version, or you say go anyway
 rem    5. asks for a release message; submitting an empty one cancels
 rem    6. pushes the tag
-rem    7. refreshes both snapshots for the NEXT release, and leaves them
-rem       unstaged for you to branch and open a pull request from
 rem
 rem  Pushing the tag is what triggers .github/workflows/release.yml, which
 rem  checks the tag again, runs the tests, builds and drafts the release. The
@@ -358,24 +355,6 @@ if errorlevel 1 (
 echo   ok, current.
 echo(
 
-rem data\defaults-previous is what an update compares a user's display fields
-rem against: a field still matching it was ours and can be corrected, anything
-rem else is theirs and is left alone. data\default-pages-previous is the same
-rem for the pages. Each has to hold the PREVIOUS release here, not this
-rem one, so they are checked before the tag and refreshed after the push.
-rem Drift is silent at runtime - no field matches, so no correction reaches
-rem anybody - which is why it is caught here instead.
-echo   checking the snapshots against the last release ...
-python tools\snapshot.py --check
-if errorlevel 1 (
-    echo(
-    echo ERROR: the snapshot is out of step with the last release.
-    echo   Fix it, merge it to main through a pull request, then pull and
-    echo   re-run.
-    goto :fail
-)
-echo(
-
 rem ==========================================================================
 rem  4. release notes
 rem ==========================================================================
@@ -460,32 +439,6 @@ echo   When it goes green, a draft is waiting here to be read and published:
 echo     %ORIGIN%/releases
 echo(
 
-rem ==========================================================================
-rem  7. snapshot these defaults and pages for the next release
-rem ==========================================================================
-
-rem Last, and only once the tag is pushed: the release just cut ships the
-rem PREVIOUS snapshot, and this sets up the one the NEXT release will compare
-rem against. Left unstaged deliberately. The pipeline has only just started, so
-rem nothing here is proven yet; if it goes red, throw this away and nothing ever
-rem claimed %VERSION% shipped.
-echo   snapshotting these defaults and pages for the next release ...
-python tools\snapshot.py
-if errorlevel 1 (
-    echo(
-    echo   WARNING: could not refresh data\defaults-previous or
-    echo   data\default-pages-previous. The release is fine. Run
-    echo   python tools\snapshot.py  before the next one, or updates will stop
-    echo   correcting display fields and pages.
-    goto :end
-)
-echo(
-echo   Left unstaged. Once the pipeline is green:
-echo       git switch -c snapshot-%VERSION%
-echo       git add data/defaults-previous data/default-pages-previous
-echo       git commit -m "Snapshot %VERSION% defaults and pages"
-echo   then open a pull request, so the next release compares against these.
-echo(
 goto :end
 
 :fail

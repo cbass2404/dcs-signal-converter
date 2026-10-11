@@ -31,7 +31,7 @@ fn scratch(name: &str) -> Scratch {
             .unwrap()
             .as_nanos()
     ));
-    for sub in ["defaults", "defaults-previous", "active"] {
+    for sub in ["defaults", "defaults-previous", "active/.base"] {
         std::fs::create_dir_all(dir.join(sub)).unwrap();
     }
     Scratch(dir)
@@ -68,7 +68,7 @@ fn write(dir: &Path, sub: &str, file: &str, text: String) {
 fn lay_split(dir: &Path) {
     write(
         dir,
-        "defaults-previous",
+        "active/.base",
         "a-10c.json",
         profile("A-10C", &["A-10C_2", "A-10C"], 200),
     );
@@ -205,7 +205,7 @@ fn an_added_aircraft_is_taken_only_where_nothing_flies_it() {
     let dir = scratch("added");
     write(
         &dir,
-        "defaults-previous",
+        "active/.base",
         "a-10c.json",
         profile("A-10C", &["A-10C"], 200),
     );
@@ -239,7 +239,7 @@ fn an_added_aircraft_nothing_flies_is_taken_on() {
     let dir = scratch("joined");
     write(
         &dir,
-        "defaults-previous",
+        "active/.base",
         "a-10c.json",
         profile("A-10C", &["A-10C"], 200),
     );

@@ -3750,14 +3750,18 @@ fn sort_bindings(bindings: &mut [Binding], devices: &DeviceInventory) -> bool {
 /// shadowed and no lookup order has to be explained.
 ///
 /// Seeding only ever adds, and a profile the user has is theirs. An update may
-/// still correct a field they never touched, which is what `previous` is for: a
-/// copy of the defaults as the last release shipped them, so a field can be
-/// told apart from one somebody edited. Everything else is left alone, and
-/// [`reset_to_default`] remains the only path that overwrites wholesale.
+/// still correct a field they never touched, which is what the [`BASE`] copy is
+/// for: the shipped default as it was last merged into that file, so a field
+/// can be told apart from one somebody edited. Everything else is left alone,
+/// and [`reset_to_default`] remains the only path that overwrites wholesale.
 pub struct Profiles {
     pub defaults: PathBuf,
-    /// The defaults as the last release shipped them, or empty for none.
+    /// The defaults as v1.0.0-beta.012 shipped them, or empty for none.
     ///
+    /// Deprecated: goes in beta.018 with `data/defaults-previous` (#137).
+    /// Only read for a file with no [`BASE`] copy yet, which means one last
+    /// merged by beta.012 or earlier, so it is frozen there rather than
+    /// refreshed each release: a later snapshot could match none of them.
     /// Empty, missing or stale all mean the same thing and are all safe: no
     /// field matches anything, so nothing is corrected and nothing is removed.
     pub previous: PathBuf,
@@ -3768,6 +3772,26 @@ pub struct Profiles {
 ///
 /// Not `.json`, so every path that walks the folder for profiles skips it.
 const UPDATED: &str = ".updated";
+
+/// The folder in an active folder holding, for each shipped file, the shipped
+/// default as it was last seeded or merged in there.
+///
+/// One per user file rather than one per release, so a user who skipped
+/// releases is compared against what they were actually given, not against
+/// the release before this one. A row still matching it is ours to move on;
+/// anything else is theirs. It holds the shipped file, never the merged
+/// result, so a row the user kept still differs from it next time.
+///
+/// A folder, not `.json`, so every path that walks the active folder skips it.
+pub(crate) const BASE: &str = ".base";
+
+/// Record the shipped file `from` as the base of `name` in `active`.
+pub(crate) fn keep_base(active: &Path, from: &Path, name: &str) -> Result<()> {
+    let dir = active.join(BASE);
+    std::fs::create_dir_all(&dir)?;
+    std::fs::copy(from, dir.join(name))?;
+    Ok(())
+}
 
 /// What reconciling one profile against a new release came to.
 #[derive(Default)]
@@ -3792,6 +3816,7 @@ impl FieldWork {
 }
 
 /// The snapshot folder for a defaults folder: the same name, `-previous`.
+/// Deprecated with it, and goes in beta.018.
 ///
 /// One rule rather than one per layout, because the daemon lets `--defaults`
 /// point anywhere and a snapshot that did not follow it would be read from the
@@ -3833,9 +3858,9 @@ fn same_field(a: &Readout, b: &Readout) -> bool {
 /// Bring one profile's fields up to what the default now ships, keeping
 /// anything the user has made their own.
 ///
-/// `was` is what the last release shipped and is the whole basis for telling
-/// those apart. Five cases, and the last one is the reason this needs a
-/// snapshot at all:
+/// `was` is the file's base, the default last merged into it, and is the
+/// whole basis for telling those apart. Five cases, and the last one is the
+/// reason this needs a base at all:
 ///
 /// * still what we shipped, and still shipped: take the new one
 /// * still what we shipped, no longer shipped: take it out
@@ -3923,7 +3948,7 @@ fn same_value<T: Serialize>(a: &T, b: &T) -> bool {
     }
 }
 
-/// Bring lamp rows still as the last release shipped them up to the new one.
+/// Bring lamp rows still as the base has them up to the new default.
 ///
 /// The field rule, narrowed to what lamps can do: a lamp is hardware, so its
 /// row is never added or removed here (new hardware is added on every start
@@ -4006,8 +4031,8 @@ fn reconcile_settings(profile: &mut Profile, shipped: &Profile, was: &Profile) -
     changed
 }
 
-/// Bring each device's page slots still as the last release shipped them up
-/// to the new one, a slot at a time, keyed on device and slot number, with
+/// Bring each device's page slots still as the base has them up to the new
+/// default, a slot at a time, keyed on device and slot number, with
 /// `start` as one more.
 ///
 /// The field rule again: a slot as `was` had it is ours to replace, and one
@@ -4031,7 +4056,7 @@ fn reconcile_slots(profile: &mut Profile, shipped: &Profile, was: &Profile) -> u
         let after = shipped.screens.get(&device).unwrap_or(&empty);
         let mut mine = profile.screens.get(&device).cloned().unwrap_or_default();
         // The shipped count wins; a device the release dropped keeps the
-        // user's, then the last release's.
+        // user's, then the base's.
         let len = [after.slots.len(), mine.slots.len(), before.slots.len()]
             .into_iter()
             .find(|&l| l > 0)
@@ -4149,7 +4174,7 @@ impl Profiles {
         }
     }
 
-    /// Point somewhere else for the defaults as the last release shipped them.
+    /// Point somewhere else for the frozen beta.012 defaults (deprecated).
     ///
     /// Only tests need this. Everything else takes the folder beside the
     /// defaults, which is where it ships and where `--defaults` keeps it.
@@ -4165,8 +4190,15 @@ impl Profiles {
             .map(|s| s.trim().to_string())
     }
 
-    /// What the last release shipped for this profile, or nothing.
-    fn previously_shipped(&self, name: &str) -> Option<Profile> {
+    /// The shipped default last merged into this profile, or nothing.
+    ///
+    /// Its [`BASE`] copy where it has one, and otherwise the frozen
+    /// [`previous`](Self::previous), which is how a file from before base
+    /// copies gets its first. That fallback is deprecated and goes in beta.018.
+    fn merged_from(&self, name: &str) -> Option<Profile> {
+        if let Ok(base) = Profile::load(&self.active.join(BASE).join(name)) {
+            return Some(base);
+        }
         if self.previous.as_os_str().is_empty() {
             return None;
         }
@@ -4370,6 +4402,7 @@ impl Profiles {
             // copying it is how the daemon gets to say what is wrong with it.
             let Ok(mut profile) = Profile::load(&from) else {
                 std::fs::copy(&from, &to)?;
+                keep_base(&self.active, &from, &name)?;
                 copied.push(name);
                 continue;
             };
@@ -4381,12 +4414,17 @@ impl Profiles {
             if free.is_empty() {
                 continue;
             }
+            // The shipped file is the base even when some of its aircraft
+            // stayed behind: a list short of what shipped is a decision made
+            // here, so it reads as the user's and is not refilled.
             if taken.is_empty() {
                 std::fs::copy(&from, &to)?;
+                keep_base(&self.active, &from, &name)?;
                 copied.push(name);
             } else {
                 profile.aircraft = free;
                 profile.save(&to)?;
+                keep_base(&self.active, &from, &name)?;
                 copied.push(format!(
                     "{name} without {}, which another profile has",
                     taken.join(", ")
@@ -4457,10 +4495,13 @@ impl Profiles {
     /// has been unplugged keeps its rows, because unplugging a panel for an
     /// evening is not a decision to discard its configuration.
     ///
-    /// Display fields are the one exception, and only against [`previous`]:
-    /// a field still identical to what the last release shipped is ours to
-    /// correct or retire, and anything else is the user's. See
-    /// [`reconcile_fields`] for the five cases.
+    /// Display fields, lamp rows, settings, slots and the aircraft list are the
+    /// exception, and only against the file's [`BASE`] copy: a row still
+    /// identical to the shipped default last merged in is ours to correct or
+    /// retire, and anything else is the user's. See [`reconcile_fields`] for
+    /// the five cases. Afterwards the base becomes the default just merged, so
+    /// a row the user kept still differs from it at the next release. A file
+    /// with no base yet is judged against [`previous`] once instead.
     ///
     /// That runs once per `version`, recorded in the active folder, rather than
     /// every start. Otherwise a user who puts a field back the way they liked
@@ -4468,12 +4509,6 @@ impl Profiles {
     /// after that. It is skipped entirely where the defaults and the active
     /// folder are one folder, which is a development checkout: there is nothing
     /// to reconcile against and the files are tracked.
-    ///
-    /// The cost of keeping one snapshot rather than all of them: somebody two
-    /// releases behind has fields matching a snapshot we no longer hold, so
-    /// they read as edited and stay as they are. A frozen field still works,
-    /// and the alternative is overwriting someone who deliberately went back to
-    /// an older layout.
     ///
     /// [`previous`]: Self::previous
     pub fn merge_new(&self, devices: &DeviceInventory, version: &str) -> Result<Vec<String>> {
@@ -4518,6 +4553,7 @@ impl Profiles {
             let mut from_default = 0usize;
             let mut work = FieldWork::default();
             let mut aircraft = Vec::new();
+            let mut rebase = false;
 
             if let Ok(shipped) = Profile::load(&self.defaults.join(&name)) {
                 for b in &shipped.bindings {
@@ -4527,10 +4563,11 @@ impl Profiles {
                     }
                 }
                 if upgrading {
-                    // With no snapshot there is nothing to tell an untouched
-                    // row from an edited one, so only fields go on, adding
-                    // what does not clash, and lamps and settings stay put.
-                    let was = self.previously_shipped(&name);
+                    rebase = true;
+                    // With no base there is nothing to tell an untouched row
+                    // from an edited one, so only fields go on, adding what
+                    // does not clash, and lamps and settings stay put.
+                    let was = self.merged_from(&name);
                     let fields = was.as_ref().map_or(&[][..], |w| &w.readouts[..]);
                     work = reconcile_fields(&mut profile, &shipped.readouts, fields);
                     if let Some(was) = &was {
@@ -4560,10 +4597,18 @@ impl Profiles {
             // a release that retires one field and adds another nets to zero
             // and would save nothing, and a release that retires two would
             // underflow the subtraction it used to be.
-            if added == 0 && work.nothing() && aircraft.is_empty() && !order_changed {
+            let changed = added > 0 || !work.nothing() || !aircraft.is_empty() || order_changed;
+            if changed {
+                profile.save(&path)?;
+            }
+            // After the save, so a failed one leaves the old base to judge by
+            // on the next try, and whether or not this release changed a row.
+            if rebase {
+                keep_base(&self.active, &self.defaults.join(&name), &name)?;
+            }
+            if !changed {
                 continue;
             }
-            profile.save(&path)?;
             let mut what = Vec::new();
             if added > 0 {
                 what.push(format!(
@@ -4640,6 +4685,10 @@ impl Profiles {
             return Err(Error::NotAProfileFile(file.to_string()));
         }
         std::fs::remove_file(self.active.join(file))?;
+        // The base goes with it: a profile the user later makes under the
+        // same name is theirs from the start, and a default seeded back in
+        // writes its own.
+        let _ = std::fs::remove_file(self.active.join(BASE).join(file));
         Ok(())
     }
 

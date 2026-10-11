@@ -615,7 +615,9 @@ const RENAMED: &str = ".renamed";
 /// [`Profiles`](crate::Profiles), one file per module in each.
 pub struct Pages {
     pub defaults: PathBuf,
-    /// The shipped pages as the last release shipped them, or empty for none.
+    /// The shipped pages as v1.0.0-beta.012 shipped them, or empty for none.
+    /// Only read for a module with no base copy yet. Deprecated and frozen,
+    /// as [`Profiles::previous`](crate::Profiles::previous) is.
     pub previous: PathBuf,
     pub active: PathBuf,
 }
@@ -668,6 +670,7 @@ impl Pages {
             let to = self.active.join(&name);
             if !to.exists() {
                 std::fs::copy(&from, &to)?;
+                crate::keep_base(&self.active, &from, &name)?;
                 copied.push(name);
             }
         }
@@ -726,11 +729,14 @@ impl Pages {
     /// Bring the library up to the pages this release ships, keeping every
     /// change the user made. Returns a line for each module it touched.
     ///
-    /// Against [`previous`](Self::previous), the pages as the last release
-    /// shipped them, and apart from the profiles, which reconcile their slots
-    /// against their own snapshot. Neither reads the other's files, and each
-    /// leaves the other valid whatever it decides, since a slot only names an
-    /// id. See docs/CONFIG.md "Updates: pages and profiles apart".
+    /// Each module against its base, the shipped file as it was last seeded or
+    /// merged in (see [`BASE`](crate::BASE)), or against
+    /// [`previous`](Self::previous) for one with no base yet. The snapshot
+    /// below means whichever of the two it is. Apart from the profiles, which
+    /// reconcile their slots against their own. Neither reads the other's
+    /// files, and each leaves the other valid whatever it decides, since a
+    /// slot only names an id. See docs/CONFIG.md "Updates: pages and profiles
+    /// apart".
     ///
     /// * A shipped page the snapshot lacks is new, and comes in, with a number
     ///   added to its name if a page here has it.
@@ -764,11 +770,15 @@ impl Pages {
             return Ok(Vec::new());
         }
         let shipped = PageLibrary::load_dir(&self.defaults);
-        let was = if self.previous.as_os_str().is_empty() {
+        // Each module against its own base where it has one, and the last
+        // release's pages for a module that has none yet.
+        let mut was = if self.previous.as_os_str().is_empty() {
             PageLibrary::default()
         } else {
             PageLibrary::load_dir(&self.previous)
         };
+        was.files
+            .extend(PageLibrary::load_dir(&self.active.join(crate::BASE)).files);
         let renamed = std::fs::read_to_string(self.active.join(RENAMED)).unwrap_or_default();
         let fresh: BTreeSet<&str> = renamed
             .lines()
@@ -777,6 +787,7 @@ impl Pages {
             .collect();
         let mut lib = self.library();
         let mut notes = Vec::new();
+        let mut merged = Vec::new();
 
         for (module, file) in &shipped.files {
             // A file of the user's that will not load is left alone, and one
@@ -784,6 +795,7 @@ impl Pages {
             if lib.broken(module).is_some() || !lib.files.contains_key(module) {
                 continue;
             }
+            merged.push(module);
             let (mut pages, mut added, mut updated, mut removed, mut renamed, mut retired) =
                 (0, 0, 0, 0, 0, 0);
             for s in &file.pages {
@@ -882,6 +894,12 @@ impl Pages {
                 }
             }
             notes.push(format!("pages {module}: {}", what.join(", ")));
+        }
+        // Once every file is saved, so a failed save leaves every base as it
+        // was for the retry on the next start.
+        for module in merged {
+            let name = page_file_name(module);
+            crate::keep_base(&self.active, &self.defaults.join(&name), &name)?;
         }
         std::fs::write(&marker, format!("{version}\r\n"))?;
         let _ = std::fs::remove_file(self.active.join(RENAMED));

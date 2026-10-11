@@ -1,6 +1,6 @@
 # Project status
 
-Written 2026-09-16, last updated 2026-10-08. Enough context to resume cold.
+Written 2026-09-16, last updated 2026-10-11. Enough context to resume cold.
 
 ## Resume here
 
@@ -21,6 +21,39 @@ on this machine, and a catalogue from a different DCS-BIOS release reads the
 wrong addresses silently, because addresses are allocated sequentially as
 controls are defined. Nothing needs doing after a clone: every command that
 reads the catalogue builds it first if it is missing or out of date (see below).
+
+**Built 2026-10-11, not yet released: updates judge each file against its
+own base (#137).** An update used to tell an untouched row from an edited one
+by `data/defaults-previous`, the previous release only, so a user who skipped
+releases kept every default changed in one they skipped as their own edit. A
+tester on beta.012 still had the FA-18 ICP disabled as beta.002 shipped it.
+Now seeding and each version's merge copy the shipped file into `.base` in
+the profiles or pages folder, and the next merge judges against that. The
+base is the shipped file, never the merged one, so a kept edit stays an edit.
+This reverses "One snapshot, not a history of them" further down: a frozen
+field turned out to be a bug report, not a safe default. The design is in
+"Correcting a display field an update changed" in [CONFIG.md](CONFIG.md);
+the tests are `crates/dsc-config/tests/merge_base.rs`.
+
+- **Changeover.** A file with no base is judged against `-previous` once and
+  then has one. The `-previous` folders are deprecated and frozen at
+  v1.0.0-beta.012 (Cory, 2026-10-11): a file with no base was last merged by
+  beta.012 or earlier, so refreshing them each release could only move them
+  further from every user who needs them. `tools/snapshot.py` and the
+  `release.cmd` check and refresh steps are gone already; the helpers
+  `changed_defaults.py` used from it moved into it. They ship beta.013 to
+  beta.017, five releases for users to install one, and beta.018 deletes
+  `data/defaults-previous`, `data/default-pages-previous`, their
+  `bundle.resources` entries in `editor/src-tauri/tauri.conf.json`, and the
+  fallback in `Profiles::merged_from` and `Pages::merge_new`.
+- **Behaviour change pinned:** `a_new_version_reconciles_again` expected a
+  field the user put back to be taken again by the next version shipping the
+  same default. It now stays theirs
+  (`a_field_put_back_stays_through_the_next_version`), and a version shipping
+  something new still moves an untouched field.
+- **Deleting a profile deletes its base**, so a profile later made under the
+  same name is the user's from the start. Not in the issue; added because a
+  stale base would claim its rows.
 
 **Built 2026-10-08, not yet flown: panels survive an unplug (#127).** A
 failed write used to end the run through `panels.check()`, and a key reader

@@ -17,19 +17,17 @@ same keys the update reconciles on: a lamp row on device and lamp, a follow on
 device, a page slot on device and slot number, a page on its id, a page field
 on its cells, a stored signal on its id. Rows reordered, devices added and
 profiles appearing all show as only what changed. Files are matched by
-snapshot.py's stem, so a page file renamed only by case is the same file.
+stem, so a page file renamed only by case is the same file.
 
 Compared as parsed JSON, so key order and line endings are not changes.
 """
 import argparse
 import json
 import os
+import subprocess
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import snapshot  # noqa: E402
-
-ROOT = snapshot.ROOT
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PROFILES = "defaults"
 PAGES = "default-pages"
 
@@ -38,12 +36,93 @@ PAGES = "default-pages"
 WIDE = 90
 
 
+def git(*args):
+    """Run git in the repo and hand back stdout, or None if it failed."""
+    try:
+        out = subprocess.run(
+            ["git", "-C", ROOT] + list(args),
+            capture_output=True,
+            check=True,
+        )
+    except (subprocess.CalledProcessError, OSError):
+        return None
+    return out.stdout
+
+
+def last_release_tag():
+    """The newest released version tag.
+
+    Filtered to `v*`, because the repo once tagged a pinned DCS-BIOS nightly
+    and that is not a release of this project.
+    At release time the tag being cut does not exist yet, which release.cmd
+    has already checked, so the newest here is the previous release.
+
+    `versionsort.suffix=-` puts a pre-release below its own release. Without
+    it git ranks v1.0.0-beta.001 above v1.0.0, and the release after 1.0.0
+    would be compared with a beta. Alpha below beta holds either way.
+    """
+    out = git("-c", "versionsort.suffix=-", "tag", "--list", "v*", "--sort=-v:refname")
+    if out is None:
+        return None
+    for line in out.decode("utf-8", "replace").splitlines():
+        line = line.strip()
+        if line:
+            return line
+    return None
+
+
+def names(folder):
+    if not os.path.isdir(folder):
+        return set()
+    return {n for n in os.listdir(folder) if n.endswith(".json")}
+
+
+def stem(name):
+    """A file name as `file_stem` in dsc-config writes it: lowercase, each run
+    of anything else one dash. Releases up to v1.0.0-alpha.007 named page
+    files by the module key as it is (`FA-18C_hornet.json`), so a file is
+    matched to what a tag shipped by this, not by the name as spelled."""
+    out = []
+    for c in name[: -len(".json")]:
+        if c.isascii() and c.isalnum():
+            out.append(c.lower())
+        elif not out or out[-1] != "-":
+            out.append("-")
+    return "".join(out).strip("-")
+
+
+def load(path):
+    with open(path, "rb") as f:
+        return json.loads(f.read().decode("utf-8-sig"))
+
+
+def at_tag(tag, current, name):
+    """One file of `current` as that tag shipped it, or None if it had none."""
+    out = git("show", "%s:data/%s/%s" % (tag, current, name))
+    if out is None:
+        return None
+    return json.loads(out.decode("utf-8-sig"))
+
+
+def shipped_at(tag, current):
+    """The .json files `current` held at that tag. Empty for a folder the tag
+    did not have, which is every release before it was added."""
+    out = git("ls-tree", "--name-only", "%s:data/%s" % (tag, current))
+    if out is None:
+        return set()
+    return {
+        n.strip()
+        for n in out.decode("utf-8", "replace").splitlines()
+        if n.strip().endswith(".json")
+    }
+
+
 def files_on_disk(current):
     folder = os.path.join(ROOT, "data", current)
     out = {}
-    for name in snapshot.names(folder):
+    for name in names(folder):
         try:
-            out[snapshot.stem(name)] = (name, snapshot.load(os.path.join(folder, name)))
+            out[stem(name)] = (name, load(os.path.join(folder, name)))
         except (OSError, ValueError) as e:
             print("ERROR: could not read data/%s/%s (%s)" % (current, name, e))
             sys.exit(1)
@@ -53,14 +132,14 @@ def files_on_disk(current):
 def files_at(ref, current):
     """Every .json file of data/<current> at a git ref, by stem."""
     out = {}
-    for name in snapshot.shipped_at(ref, current):
+    for name in shipped_at(ref, current):
         try:
-            data = snapshot.at_tag(ref, current, name)
+            data = at_tag(ref, current, name)
         except ValueError as e:
             print("ERROR: could not parse data/%s/%s at %s (%s)" % (current, name, ref, e))
             sys.exit(1)
         if data is not None:
-            out[snapshot.stem(name)] = (name, data)
+            out[stem(name)] = (name, data)
     return out
 
 
@@ -417,16 +496,16 @@ def main():
     )
     args = ap.parse_args()
 
-    since = args.since or snapshot.last_release_tag()
+    since = args.since or last_release_tag()
     if since is None:
         print("  no released tag yet, so there is nothing to compare against.")
         return 0
-    if snapshot.git("rev-parse", "--verify", "-q", since + "^{commit}") is None:
+    if git("rev-parse", "--verify", "-q", since + "^{commit}") is None:
         print("ERROR: %s is not a commit here." % since)
         return 1
 
     if args.ref:
-        if snapshot.git("rev-parse", "--verify", "-q", args.ref + "^{commit}") is None:
+        if git("rev-parse", "--verify", "-q", args.ref + "^{commit}") is None:
             print("ERROR: %s is not a commit here." % args.ref)
             return 1
         profiles_now = files_at(args.ref, PROFILES)

@@ -3,8 +3,8 @@
 //!
 //! This is the only code in the project that removes content from a file the
 //! user owns, so the rule is narrow and every branch of it is pinned here. A
-//! field is ours to correct only while it is still byte for byte what the last
-//! release shipped, which is what `data/defaults-previous` records. Anything
+//! field is ours to correct only while it is still byte for byte the default
+//! last merged into the file, which is what its `.base` copy records. Anything
 //! else, including a field that is simply missing, is a decision somebody made
 //! and is left exactly as it is.
 //!
@@ -30,7 +30,8 @@ impl Drop for Scratch {
     }
 }
 
-/// Three folders: what ships now, what shipped last time, and what runs.
+/// What ships now, what runs, and the defaults last merged into it. The last
+/// release's folder is there too, empty, as an install has it.
 fn scratch(name: &str) -> Scratch {
     let dir = std::env::temp_dir().join(format!(
         "dsc-reconcile-{name}-{}",
@@ -39,7 +40,7 @@ fn scratch(name: &str) -> Scratch {
             .unwrap()
             .as_nanos()
     ));
-    for sub in ["defaults", "defaults-previous", "active"] {
+    for sub in ["defaults", "defaults-previous", "active/.base"] {
         std::fs::create_dir_all(dir.join(sub)).unwrap();
     }
     Scratch(dir)
@@ -72,14 +73,10 @@ const OLD: &str = r#"{ "device": "MCDU_Captain", "display": "MCDU", "cells": "72
 const NEW: &str = r#"{ "device": "MCDU_Captain", "display": "MCDU", "cells": "72-95",
                        "divider": true, "colour": "amber" }"#;
 
-/// Write all three files. `previous` may be None to leave no snapshot at all.
+/// Write all three files. `previous` is the base, and may be None for none.
 fn lay(dir: &Path, previous: Option<&str>, shipped: &str, mine: &str) {
     if let Some(previous) = previous {
-        std::fs::write(
-            dir.join("defaults-previous/a-10c.json"),
-            profile_with(previous),
-        )
-        .unwrap();
+        std::fs::write(dir.join("active/.base/a-10c.json"), profile_with(previous)).unwrap();
     }
     std::fs::write(dir.join("defaults/a-10c.json"), profile_with(shipped)).unwrap();
     std::fs::write(dir.join("active/a-10c.json"), profile_with(mine)).unwrap();
@@ -369,7 +366,6 @@ fn a_field_the_user_changed_survives_the_default_dropping_it() {
 fn nothing_is_removed_without_a_snapshot_to_judge_by() {
     let dir = scratch("no-snapshot");
     lay(&dir, None, "", OLD);
-    std::fs::remove_dir_all(dir.join("defaults-previous")).unwrap();
 
     merge(&dir, "alpha.004");
 
@@ -488,8 +484,10 @@ fn putting_a_field_back_sticks_until_the_next_version() {
     );
 }
 
+/// Putting a field back is an edit like any other, so it outlasts the next
+/// release too: the base moved on to what was merged, and theirs differs.
 #[test]
-fn a_new_version_reconciles_again() {
+fn a_field_put_back_stays_through_the_next_version() {
     let dir = scratch("next-version");
     lay(&dir, Some(OLD), NEW, OLD);
 
@@ -499,7 +497,25 @@ fn a_new_version_reconciles_again() {
 
     assert_eq!(
         mine(&dir).readouts[0].colour.map(|c| format!("{c:?}")),
-        Some("Amber".to_string()),
+        Some("Green".to_string()),
+        "their restored field was left alone"
+    );
+}
+
+#[test]
+fn a_new_version_reconciles_again() {
+    let dir = scratch("again");
+    lay(&dir, Some(OLD), NEW, OLD);
+    let newer = r#"{ "device": "MCDU_Captain", "display": "MCDU", "cells": "72-95",
+                     "divider": true, "colour": "white" }"#;
+
+    merge(&dir, "alpha.004");
+    std::fs::write(dir.join("defaults/a-10c.json"), profile_with(newer)).unwrap();
+    merge(&dir, "alpha.005");
+
+    assert_eq!(
+        mine(&dir).readouts[0].colour.map(|c| format!("{c:?}")),
+        Some("White".to_string()),
         "a release with something to say gets its turn"
     );
 }

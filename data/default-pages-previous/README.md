@@ -1,8 +1,9 @@
-# Shipped MCDU pages, as the last release shipped them
+# Shipped pages, as v1.0.0-beta.012 shipped them
 
-What an update compares the user's pages against: a field still exactly as
-here was ours and can be corrected, and anything else is theirs. Maintained
-by `tools/snapshot.py`, which `tools/release.cmd` runs; never edited by hand.
-See docs/CONFIG.md, "Updates: pages and profiles apart".
+Deprecated, and frozen: never refreshed or edited. An update compares each
+page file against its own base in the user's pages folder, and reads this
+only for a file with no base yet, which means one last merged by beta.012 or
+earlier. It goes in beta.018, with `data/defaults-previous` (#137). See
+docs/CONFIG.md, "Updates: pages and profiles apart".
 
 Only the `.json` files are the snapshot.

@@ -269,6 +269,9 @@ export function signalPicker(opts: PickerOptions): HTMLElement {
   // half of the same question. The button is only offered with a profile open,
   // which is the only time there is a module to read signals against.
   const learn = el("button", { class: "learn-open small", type: "button" }, "Learn");
+  learn.title =
+    "Find a signal by moving it in the cockpit: press Learn with DCS running, " +
+    "flip the switch or turn the knob, then pick it from the list.";
   let panel: { node: HTMLElement; close: () => void } | null = null;
 
   // Keep the input focused while a row is being clicked.

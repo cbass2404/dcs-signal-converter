@@ -3115,8 +3115,8 @@ function caseEditor(
   });
 
   const add = el("div", { class: "chain-add" });
-  const addOne = (patch: SpanPatch, label: string): HTMLElement => {
-    const button = el("button", { class: "add small" }, label);
+  const addOne = (patch: SpanPatch, label: string, hint: string): HTMLElement => {
+    const button = el("button", { class: "add small", title: hint }, label);
     button.addEventListener("click", () => {
       views.push(resolvePiece(patch, span));
       commit();
@@ -3126,7 +3126,7 @@ function caseEditor(
     return button;
   };
   for (const k of pieceKinds(display.text_grid, true)) {
-    add.append(addOne(newSpan(k.kind), `+ ${k.label}`));
+    add.append(addOne(newSpan(k.kind), `+ ${k.label}`, k.hint));
   }
   box.append(pieces, add);
   return box;
@@ -3524,8 +3524,8 @@ function chainEditor(opts: RowOptions, refreshPreview: () => void): HTMLElement 
 
     // --- adding ------------------------------------------------------------
     const add = el("div", { class: "chain-add" });
-    const addOne = (kind: SpanKind, label: string): HTMLElement => {
-      const button = el("button", { class: "add" }, label);
+    const addOne = (kind: SpanKind, label: string, hint: string): HTMLElement => {
+      const button = el("button", { class: "add", title: hint }, label);
       button.addEventListener("click", () => {
         const next = contentOf(readout);
         next.push(newSpan(kind));
@@ -3535,7 +3535,8 @@ function chainEditor(opts: RowOptions, refreshPreview: () => void): HTMLElement 
       });
       return button;
     };
-    for (const k of pieceKinds(display.text_grid)) add.append(addOne(k.kind, `+ ${k.label}`));
+    for (const k of pieceKinds(display.text_grid))
+      add.append(addOne(k.kind, `+ ${k.label}`, k.hint));
     wrap.append(add);
 
     // --- how wide it comes out ---------------------------------------------
@@ -3990,8 +3991,8 @@ export function fieldTable(
         el("div", { class: "meta" }, extent(region.cells)),
       ),
     );
-    const add = (kind: SpanKind, label: string): HTMLElement => {
-      const button = el("button", { class: "add" }, label);
+    const add = (kind: SpanKind, label: string, hint: string): HTMLElement => {
+      const button = el("button", { class: "add", title: hint }, label);
       button.addEventListener("click", () => {
         const fresh: Readout = {
           device: device.key,
@@ -4017,7 +4018,7 @@ export function fieldTable(
     const buttons = el(
       "div",
       { class: "chain-add" },
-      ...pieceKinds(display.text_grid).map((k) => add(k.kind, `+ ${k.label}`)),
+      ...pieceKinds(display.text_grid).map((k) => add(k.kind, `+ ${k.label}`, k.hint)),
     );
     // A field the page shipped with here and the user threw away. Without
     // this there is nothing on the screen to say one was ever here.

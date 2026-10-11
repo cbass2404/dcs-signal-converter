@@ -508,6 +508,30 @@ details.device > summary .name {
   font-weight: 600;
 }
 
+/* A chevron before the name, so a closed panel reads as one that opens. The
+   flex summary drops the browser's own marker, so it is drawn here. Points
+   right while closed and down while open. */
+details.device > summary::before {
+  content: "";
+  flex: none;
+  align-self: center;
+  width: 6px;
+  height: 6px;
+  margin: 0 -4px 0 2px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(-45deg);
+  transition: transform 0.15s;
+}
+
+details.device[open] > summary::before {
+  transform: rotate(45deg);
+}
+
+details.device > summary:hover::before {
+  border-color: var(--text);
+}
+
 details[open] > summary {
   border-bottom: 1px solid var(--line);
 }
@@ -1215,6 +1239,11 @@ details.device.follows table {
 
 details.device.follows > summary {
   cursor: default;
+}
+
+/* It does not open, so it offers nothing to open. */
+details.device.follows > summary::before {
+  visibility: hidden;
 }
 
 .displays {

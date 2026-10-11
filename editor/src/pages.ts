@@ -451,11 +451,17 @@ export function pageSection(device: Device, display: DisplayInfo, ctx: PageConte
     pick.value =
       startPage !== null && free.some((p) => p.id === startPage) ? startPage : (free[0]?.id ?? "");
     const open = el("button", { class: "add" }, "Edit page");
+    open.title =
+      "Open the page chosen beside it to change its fields. Saving it changes the page " +
+      "in every profile on this aircraft that shows it.";
     open.addEventListener("click", () => {
       const page = book.saved.find((p) => p.id === pick.value);
       if (page && !openElsewhere(book, page.id, device.key)) edit(structuredClone(page), false);
     });
     const make = el("button", { class: "add" }, "+ New page");
+    make.title =
+      "Start a blank page for this screen. Once saved, any profile on this aircraft " +
+      "can put it in a slot.";
     make.addEventListener("click", () => {
       void (async () => {
         try {

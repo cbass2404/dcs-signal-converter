@@ -1641,8 +1641,15 @@ fn nightly_only(
     }
 
     let (list, unknown) = NightlyOnly::compare(&profiles, &nightly, &stable_cat);
-    for line in &unknown {
-        println!("not in the nightly either, fix the default: {line}");
+    // A signal the nightly dropped or renamed leaves a default reading nothing,
+    // and the list alone would not change for it, so this has to stop the
+    // release rather than pass it.
+    if !unknown.is_empty() {
+        anyhow::bail!(
+            "defaults read signals the nightly ({}) does not have, fix the defaults:\n  {}",
+            list.nightly,
+            unknown.join("\n  ")
+        );
     }
     println!("stable {}, nightly {}", list.stable, list.nightly);
     for (module, signals) in &list.signals {
@@ -1662,6 +1669,17 @@ fn nightly_only(
         }
     }
     let count: usize = list.signals.values().map(|s| s.len()).sum();
+    // The nightly moves on its own, so a new stamp over the same list is not
+    // a change. Rewriting for it would fail every release check in between.
+    let had = NightlyOnly::load(out).unwrap_or_default();
+    if had.stable == list.stable && had.signals == list.signals {
+        println!(
+            "{count} signal(s), unchanged since {}; {} left as it was",
+            had.nightly,
+            out.display()
+        );
+        return Ok(());
+    }
     let text = serde_json::to_string_pretty(&list)?.replace('\n', "\r\n") + "\r\n";
     std::fs::write(out, text).with_context(|| format!("writing {}", out.display()))?;
     println!("{count} signal(s) written to {}", out.display());

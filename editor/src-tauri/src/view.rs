@@ -500,6 +500,9 @@ pub struct SignalView {
     /// True for cockpit lamps, which sort first because they are the likely
     /// intent when mapping a panel lamp.
     pub lamp: bool,
+    /// The lowest number it reports. 0 for nearly every signal; a gauge value
+    /// DCS-BIOS converts to a range such as 10 to 75 starts higher.
+    pub min_value: u32,
     pub max_value: u32,
     /// True when this signal reports characters rather than a number. Decides
     /// which picker offers it, and whether a display field needs a gauge range.
@@ -540,6 +543,7 @@ impl SignalView {
                     category: sig.category.clone(),
                     control_type: sig.control_type.clone(),
                     lamp: sig.is_lamp(),
+                    min_value: out.min_value.unwrap_or(0),
                     max_value: out.max_value.unwrap_or(u16::MAX as u32),
                     text,
                     length: u32::from(out.max_length.unwrap_or(0)),

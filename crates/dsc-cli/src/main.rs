@@ -1765,7 +1765,11 @@ fn catalogue(
                 .collect::<Vec<_>>()
                 .join(" ")
         } else {
-            format!("0..{}", out.max_value.unwrap_or(0))
+            format!(
+                "{}..{}",
+                out.min_value.unwrap_or(0),
+                out.max_value.unwrap_or(0)
+            )
         };
         println!(
             "{:38} {:16} {:#06x}/{:#06x}>>{:<2} {}",

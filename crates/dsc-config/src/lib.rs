@@ -402,6 +402,10 @@ pub struct Output {
     pub mask: Option<u16>,
     #[serde(default)]
     pub shift: u8,
+    /// The lowest value it reports, where that is known and not 0: a gauge
+    /// value converted to a range such as 10 to 75.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub min_value: Option<u32>,
     pub max_value: Option<u32>,
     /// Byte length of a string output. Sized separately from `max_value`
     /// because DCS-BIOS uses `max_length` for strings, and the decoder needs it

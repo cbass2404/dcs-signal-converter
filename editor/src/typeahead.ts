@@ -161,10 +161,11 @@ export function hintFor(signal: SignalView): HTMLElement {
         signal.length > 0 ? `text, up to ${signal.length} characters` : "text",
       ),
     );
-  } else if (signal.reads) {
-    lines.append(el("span", { class: "block" }, `${signal.reads}, 0 to ${signal.max_value}`));
   } else {
-    lines.append(el("span", { class: "block" }, `0 to ${signal.max_value}`));
+    const range = `${signal.min_value} to ${signal.max_value}`;
+    lines.append(
+      el("span", { class: "block" }, signal.reads ? `${signal.reads}, ${range}` : range),
+    );
   }
   if (signal.values.length > 0) {
     const table = el("span", { class: "values block" });

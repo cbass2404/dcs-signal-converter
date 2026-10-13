@@ -984,6 +984,8 @@ export interface SignalView {
   category: string;
   control_type: string;
   lamp: boolean;
+  /** The lowest number it reports: 0 except for a gauge value converted to a range. */
+  min_value: number;
   max_value: number;
   /**
    * True when this signal reports characters rather than a number.

@@ -25,3 +25,24 @@ unless this says what moved.
   to copy another one logged its brightness but not the cockpit signal
   driving it when the panel it copies was not plugged in. That signal is
   now logged as it moves.
+- **Gauge values show the range they really read.** The AJS37, Bf-109K-4,
+  F-86F and P-51D send some gauges as the reading itself, such as coolant
+  temperature in degrees. Their signal details said 0 to 65535, the same as
+  a needle position. They now show the real range, such as 0 to 130 for
+  the Bf-109's `COOLANT_TEMPERATURE_VALUE`, and a condition on one is
+  checked against it.
+
+### Profiles
+
+- **Mosquito: the MFD backlight follows the left cockpit lamp dimmer the
+  right way round.** The centre CarrierAce MFD, and the panels that follow
+  it, got brighter as the dimmer knob turned up, but the cockpit lamp
+  comes on at full and dims from there. The backlight now stays dark until
+  the lamp comes on and dims with it. If you have changed the
+  CarrierAce_MFD_C INST_PNL_Backlight row, reset it to pick this up.
+- **Mosquito: the MCDU Cruise page shows the climb rate and heading
+  better.** The climb rate now reads to the nearest 10 ft/min, lined up on
+  the right with a fixed last zero, so it no longer flickers through the
+  ones digit. The heading now comes from the repeater compass needle
+  instead of the compass card. If you have changed that page field (the
+  airspeed line, cells 48-71), reset it to pick this up.

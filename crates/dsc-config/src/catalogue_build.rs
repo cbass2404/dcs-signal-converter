@@ -3,7 +3,9 @@
 //! DCS-BIOS ships a JSON description of every control in every module it
 //! supports. Each readable control carries an address, mask and shift, which is
 //! exactly what decoding the export stream needs, so the catalogue is a
-//! straight transform of those files with no Lua evaluation.
+//! straight transform of those files with no Lua evaluation. The one thing
+//! read from the Lua is the range of a converted gauge value, which the JSON
+//! leaves out; see [`gauge_ranges`].
 //!
 //! It is rebuilt rather than shipped because DCS-BIOS allocates addresses in
 //! the order controls are defined: one control added to a module moves every
@@ -18,6 +20,7 @@
 //! into a folder of its own that is renamed into place, so nothing ever reads
 //! half a catalogue.
 
+use std::collections::HashMap;
 use std::fs::{self, OpenOptions};
 use std::io::{self, Write as _};
 use std::path::{Path, PathBuf};
@@ -53,8 +56,8 @@ const DISCRETE_LIMIT: u64 = 8;
 /// What this builder writes. Raised when a build gains something an older
 /// catalogue lacks, so a catalogue from before is rebuilt once to gain it
 /// rather than waiting for DCS-BIOS to change. 1 added lamp colours and
-/// retired signals.
-const FORMAT: u32 = 1;
+/// retired signals; 2 added the real range of converted gauge values.
+const FORMAT: u32 = 2;
 
 /// What the version reads as when `BIOSConfig.lua` cannot be found or parsed.
 pub const UNKNOWN_VERSION: &str = "unknown";
@@ -443,7 +446,10 @@ pub fn build(bios_json: &Path, out: &Path, version: &str) -> Result<usize> {
             continue;
         }
         let raw = read_value(&bios_json.join(name))?;
-        let signals = convert_module(&raw);
+        let ranges = fs::read_to_string(module_lua(bios_json, key))
+            .map(|lua| gauge_ranges(&lua))
+            .unwrap_or_default();
+        let signals = convert_module(&raw, &ranges);
         if signals.is_empty() {
             continue;
         }
@@ -614,6 +620,9 @@ struct OutputOut {
     address: Value,
     mask: Value,
     shift: Value,
+    /// The lowest value it reports, where that is known and not 0.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    min_value: Option<u64>,
     max_value: Value,
     #[serde(rename = "type")]
     kind: Value,
@@ -632,8 +641,9 @@ struct LabelOut {
 }
 
 /// One DCS-BIOS module file to our flat signal list, sorted by category then
-/// id. Input-only controls, with nothing to read, are left out.
-fn convert_module(raw: &Value) -> Vec<SignalOut> {
+/// id. Input-only controls, with nothing to read, are left out. `ranges` is
+/// what [`gauge_ranges`] found in the module's Lua.
+fn convert_module(raw: &Value, ranges: &HashMap<String, (f64, f64)>) -> Vec<SignalOut> {
     let mut signals = Vec::new();
     let Some(categories) = raw.as_object() else {
         return signals;
@@ -650,11 +660,25 @@ fn convert_module(raw: &Value) -> Vec<SignalOut> {
                     continue;
                 };
                 let values = value_labels(control, out);
+                let mut max_value = out.get("max_value").cloned().unwrap_or(Value::Null);
+                let mut min_value = None;
+                if let (Some(&(lo, hi)), Some(word)) = (
+                    ranges.get(id),
+                    max_value.as_u64().filter(|_| is_integer(out)),
+                ) {
+                    // DCS-BIOS floors the converted value and drops anything
+                    // below 0 or past the word, so these are what arrives.
+                    let hi = (hi.floor().max(0.0) as u64).min(word);
+                    let lo = (lo.floor().max(0.0) as u64).min(hi);
+                    max_value = Value::from(hi);
+                    min_value = (lo > 0).then_some(lo);
+                }
                 outputs.push(OutputOut {
                     address: address.clone(),
                     mask: out.get("mask").cloned().unwrap_or(Value::Null),
                     shift: out.get("shift_by").cloned().unwrap_or(Value::from(0)),
-                    max_value: out.get("max_value").cloned().unwrap_or(Value::Null),
+                    min_value,
+                    max_value,
                     kind: out
                         .get("type")
                         .cloned()
@@ -709,6 +733,126 @@ fn convert_module(raw: &Value) -> Vec<SignalOut> {
     }
     signals.sort_by(|a, b| (&a.category, &a.id).cmp(&(&b.category, &b.id)));
     signals
+}
+
+/// A numeric output: DCS-BIOS's `integer`, which is also what one without a
+/// type is taken as.
+fn is_integer(out: &Value) -> bool {
+    out.get("type")
+        .and_then(Value::as_str)
+        .is_none_or(|t| t == "integer")
+}
+
+/// The Lua file a module's JSON was generated from, two levels above
+/// `doc/json` like `BIOSConfig.lua`.
+fn module_lua(bios_json: &Path, key: &str) -> PathBuf {
+    bios_json
+        .join("..")
+        .join("..")
+        .join("lib")
+        .join("modules")
+        .join("aircraft_modules")
+        .join(format!("{key}.lua"))
+}
+
+/// The range each `defineGaugeValue` in a module's Lua converts its gauge to,
+/// by identifier.
+///
+/// These signals send the reading itself, such as a coolant temperature in
+/// degrees, but the JSON gives them the same 0 to 65535 as a needle position,
+/// because that is the size of the word they travel in. Without the range a
+/// signal that only ever reads 0 to 130 is offered as reaching 65535. A
+/// range written as anything but numbers and arithmetic is skipped, and the
+/// signal keeps the JSON's.
+fn gauge_ranges(lua: &str) -> HashMap<String, (f64, f64)> {
+    lua.match_indices(":defineGaugeValue(")
+        .filter_map(|(at, call)| gauge_range(&lua[at + call.len()..]))
+        .map(|(id, lo, hi)| (id, (lo, hi)))
+        .collect()
+}
+
+/// `"ID", 27, { 0, 130 }` at the start of `args`.
+fn gauge_range(args: &str) -> Option<(String, f64, f64)> {
+    let args = args.trim_start().strip_prefix('"')?;
+    let end = args.find('"')?;
+    let id = args[..end].to_string();
+    let rest = &args[end + 1..];
+    let open = rest.find('{')?;
+    // Only the argument number comes between the name and the range.
+    if !rest[..open]
+        .chars()
+        .all(|c| c.is_ascii_digit() || c == ',' || c.is_whitespace())
+    {
+        return None;
+    }
+    let close = open + rest[open..].find('}')?;
+    let (lo, hi) = rest[open + 1..close].split_once(',')?;
+    Some((id, arithmetic(lo)?, arithmetic(hi)?))
+}
+
+/// The value of an expression of numbers, `+ - * /` and brackets, such as
+/// `65 + 10`. `None` for anything else.
+fn arithmetic(text: &str) -> Option<f64> {
+    let chars: Vec<char> = text.chars().filter(|c| !c.is_whitespace()).collect();
+    let mut at = 0;
+    let value = sum(&chars, &mut at)?;
+    (at == chars.len()).then_some(value)
+}
+
+fn sum(chars: &[char], at: &mut usize) -> Option<f64> {
+    let mut value = product(chars, at)?;
+    while let Some(&op) = chars.get(*at).filter(|c| matches!(c, '+' | '-')) {
+        *at += 1;
+        let next = product(chars, at)?;
+        value = if op == '+' {
+            value + next
+        } else {
+            value - next
+        };
+    }
+    Some(value)
+}
+
+fn product(chars: &[char], at: &mut usize) -> Option<f64> {
+    let mut value = factor(chars, at)?;
+    while let Some(&op) = chars.get(*at).filter(|c| matches!(c, '*' | '/')) {
+        *at += 1;
+        let next = factor(chars, at)?;
+        value = if op == '*' {
+            value * next
+        } else {
+            value / next
+        };
+    }
+    Some(value)
+}
+
+fn factor(chars: &[char], at: &mut usize) -> Option<f64> {
+    match chars.get(*at)? {
+        '-' => {
+            *at += 1;
+            Some(-factor(chars, at)?)
+        }
+        '(' => {
+            *at += 1;
+            let value = sum(chars, at)?;
+            if chars.get(*at) != Some(&')') {
+                return None;
+            }
+            *at += 1;
+            Some(value)
+        }
+        _ => {
+            let start = *at;
+            while chars
+                .get(*at)
+                .is_some_and(|c| c.is_ascii_digit() || *c == '.')
+            {
+                *at += 1;
+            }
+            chars[start..*at].iter().collect::<String>().parse().ok()
+        }
+    }
 }
 
 /// The value and label of every position of a discrete signal, or `None` for
@@ -948,6 +1092,46 @@ mod tests {
             .map(|l| l.label)
             .collect();
         assert_eq!(labels, ["OFF (Safe)", "Mid", "ON"]);
+    }
+
+    #[test]
+    fn gauge_value_ranges_come_from_the_lua() {
+        let lua = "Bf_109K_4:defineFloat(\"COOLANT_TEMPERATURE\", 27, { -1, 1 }, \"Indicator\", \"x\")\n\
+                   Bf_109K_4:defineGaugeValue(\"COOLANT_TEMPERATURE_VALUE\", 27, { 0, 130 }, \"Gauge Values\", \"Coolant Temp \u{b0}C\")\n\
+                   Bf_109K_4:defineGaugeValue(\"MANIFOLD_PRESSURE_VALUE\", 32, { 10, 65 + 10 }, \"Gauge Values\", \"x\")\n\
+                   Bf_109K_4:defineGaugeValue(\"ODD_VALUE\", 33, { 0, MAX }, \"Gauge Values\", \"x\")";
+        let ranges = gauge_ranges(lua);
+        assert_eq!(ranges.len(), 2);
+        assert_eq!(ranges["COOLANT_TEMPERATURE_VALUE"], (0.0, 130.0));
+        assert_eq!(ranges["MANIFOLD_PRESSURE_VALUE"], (10.0, 75.0));
+        assert_eq!(arithmetic("(2 + 3) * -4 / 2"), Some(-10.0));
+        assert_eq!(arithmetic("1 +"), None);
+    }
+
+    #[test]
+    fn a_gauge_value_reads_its_real_range() {
+        let raw = serde_json::json!({"Gauge Values": {
+            "TEMP_VALUE": {"category": "Gauge Values", "control_type": "metadata",
+                "outputs": [{"address": 2, "mask": 65535, "shift_by": 0,
+                             "max_value": 65535, "type": "integer"}]},
+            "PRESS_VALUE": {"category": "Gauge Values", "control_type": "metadata",
+                "outputs": [{"address": 4, "mask": 65535, "shift_by": 0,
+                             "max_value": 65535, "type": "integer"}]},
+            "NEEDLE": {"category": "Gauge Values", "control_type": "analog_gauge",
+                "outputs": [{"address": 6, "mask": 65535, "shift_by": 0,
+                             "max_value": 65535, "type": "integer"}]}
+        }});
+        let ranges = HashMap::from([
+            ("TEMP_VALUE".to_string(), (0.0, 130.0)),
+            ("PRESS_VALUE".to_string(), (10.0, 75.5)),
+        ]);
+        let signals = convert_module(&raw, &ranges);
+        let get = |id: &str| &signals.iter().find(|s| s.id == id).unwrap().outputs[0];
+        assert_eq!(get("TEMP_VALUE").max_value, 130);
+        assert_eq!(get("TEMP_VALUE").min_value, None);
+        assert_eq!(get("PRESS_VALUE").max_value, 75);
+        assert_eq!(get("PRESS_VALUE").min_value, Some(10));
+        assert_eq!(get("NEEDLE").max_value, 65535);
     }
 
     #[test]

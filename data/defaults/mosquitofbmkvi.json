@@ -16,10 +16,11 @@
         {
           "source": "L_SIDE_L_DIM",
           "on_when": {
-            "scale": [
-              0,
-              65535
-            ]
+            "scale": {
+              "dimmest": 65535,
+              "full": 5237,
+              "dark_below": 5237
+            }
           }
         }
       ],

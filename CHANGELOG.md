@@ -46,3 +46,16 @@ unless this says what moved.
   ones digit. The heading now comes from the repeater compass needle
   instead of the compass card. If you have changed that page field (the
   airspeed line, cells 48-71), reset it to pick this up.
+- **Bf-109K-4: the MFD backlight follows the UV cockpit lights.** The
+  centre CarrierAce MFD, and the panels that follow it, were lit all the
+  time. They now light while the UV lights are on and dim with their
+  knob, and the CDU screen follows them. If you have changed the
+  CarrierAce_MFD_C INST_PNL_Backlight row, reset it to pick this up.
+- **Bf-109K-4: the Takeoff panel shows the landing gear.** LEFT, RIGHT
+  and NOSE follow the cockpit's left green, right green and red gear
+  lamps, and the gear handle light comes on while all three are out.
+- **Bf-109K-4: a CDU Flight page.** The MCDU, CDU and PFP screens show
+  airspeed, climb, heading, course, altitude, altimeter setting, RPM,
+  prop pitch, MW-50 and boost pressure, and coolant and oil temperature.
+- **Bf-109K-4: Master Caution comes from the fuel reserve lamp** instead
+  of the bomb lamp.

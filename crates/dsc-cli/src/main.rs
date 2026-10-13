@@ -930,6 +930,7 @@ fn main() -> Result<()> {
                     dir.display()
                 );
             }
+            let web_page = paths.web_page();
             let result = run(
                 &devices.unwrap_or(paths.devices),
                 &paths.user_devices,
@@ -941,6 +942,7 @@ fn main() -> Result<()> {
                 &displays.unwrap_or(paths.displays),
                 &nightly_only.unwrap_or(paths.nightly_only),
                 &paths.settings,
+                &web_page,
                 bios,
                 dry_run,
                 verbose,
@@ -3015,6 +3017,7 @@ fn run(
     displays_dir: &PathBuf,
     nightly_path: &Path,
     settings_path: &Path,
+    web_page: &Path,
     bios: Option<&Path>,
     dry_run: bool,
     verbose: bool,
@@ -3175,11 +3178,10 @@ fn run(
         .iter()
         .any(|d| d.protocol == dsc_config::WEB_PROTOCOL)
     {
-        let page = settings_path.with_file_name(dsc_config::web::PAGE_FILE);
-        if let Err(e) = dsc_config::web::write_page(&page) {
+        if let Err(e) = dsc_config::web::write_page(web_page) {
             warn!(
                 "could not write the web view's page to {}: {e}",
-                page.display()
+                web_page.display()
             );
         }
     }

@@ -9,7 +9,17 @@ export type OnWhen =
   | { gte: number }
   | { lte: number }
   | { between: [number, number] }
-  | { scale: [number, number] };
+  | { scale: [number, number] | NamedScale };
+
+/**
+ * A scale `dsc-config` writes by name: one that dims as the knob turns up, or
+ * that is dark below a cut-off. Otherwise it is the `[dimmest, full]` pair.
+ */
+export interface NamedScale {
+  dimmest: number;
+  full: number;
+  dark_below?: number;
+}
 
 export interface Condition {
   source: string;

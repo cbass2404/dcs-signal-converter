@@ -15,6 +15,12 @@ unless this says what moved.
 
 ## 1.0.0-beta.014
 
+- **A scale can dim as the knob turns up.** Some warbird rheostats go
+  from off straight to full and dim from there as the knob keeps
+  turning. A lamp scaled across a dimmer now takes where it is dimmest
+  and where it is fully bright in either order, and an optional Dark
+  below that keeps it off under a value. Scales you already have work
+  and save exactly as before.
 - **The session log shows the signal behind a copied lamp.** A lamp set
   to copy another one logged its brightness but not the cockpit signal
   driving it when the panel it copies was not plugged in. That signal is

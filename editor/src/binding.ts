@@ -11,7 +11,16 @@ import { flagSlot } from "./flags";
 import { noteEditor } from "./note";
 import { isLampSignal, storedSignal, storedSignals } from "./stored";
 import { hintFor, infoIcon, replacedNote, signalPicker } from "./typeahead";
-import type { Binding, BlinkRate, Branch, Condition, Led, OnWhen, SignalView } from "./types";
+import type {
+  Binding,
+  BlinkRate,
+  Branch,
+  Condition,
+  Led,
+  NamedScale,
+  OnWhen,
+  SignalView,
+} from "./types";
 
 type TestKind = "equals" | "in" | "gte" | "lte" | "between" | "scale";
 
@@ -93,8 +102,21 @@ function convert(w: OnWhen, kind: TestKind, signal: SignalView | undefined): OnW
     case "between":
       return { between: [current[0] ?? 0, current[1] ?? max] };
     case "scale":
-      return { scale: [current[0] ?? 0, current[1] ?? max] };
+      return scaleWhen({ dimmest: current[0] ?? 0, full: current[1] ?? max });
   }
+}
+
+/** A scale in either of its written forms, as its three numbers. */
+function scaleOf(scale: [number, number] | NamedScale): NamedScale {
+  return Array.isArray(scale) ? { dimmest: scale[0], full: scale[1] } : scale;
+}
+
+/** A scale written as `dsc-config` writes it: the pair whenever that says it all. */
+function scaleWhen(s: NamedScale): OnWhen {
+  if (s.dark_below === undefined && s.dimmest <= s.full) return { scale: [s.dimmest, s.full] };
+  const named: NamedScale = { dimmest: s.dimmest, full: s.full };
+  if (s.dark_below !== undefined) named.dark_below = s.dark_below;
+  return { scale: named };
 }
 
 function numbersOf(w: OnWhen): number[] {
@@ -103,7 +125,8 @@ function numbersOf(w: OnWhen): number[] {
   if ("gte" in w) return [w.gte];
   if ("lte" in w) return [w.lte];
   if ("between" in w) return w.between;
-  return w.scale;
+  const s = scaleOf(w.scale);
+  return [s.dimmest, s.full];
 }
 
 function numberInput(value: number, max: number, onChange: (n: number) => void): HTMLInputElement {
@@ -173,18 +196,60 @@ function valueControls(
     return wrap;
   }
 
-  if (kind === "between" || kind === "scale") {
+  if ("scale" in condition.on_when) {
+    const s = scaleOf(condition.on_when.scale);
+    const set = (change: Partial<NamedScale>): void => {
+      const now = "scale" in condition.on_when ? scaleOf(condition.on_when.scale) : s;
+      const next = { ...now, ...change };
+      if (next.dark_below === undefined) delete next.dark_below;
+      condition.on_when = scaleWhen(next);
+      onChange();
+    };
+    const dimmest = numberInput(s.dimmest, max, (n) => set({ dimmest: n }));
+    dimmest.title = "Where the lamp is dimmest";
+    const full = numberInput(s.full, max, (n) => set({ full: n }));
+    full.title = "Where the lamp is fully bright";
+    // Empty for no cut-off, which is every scale before there was one.
+    const dark = el("input", {
+      type: "number",
+      class: "value",
+      min: "0",
+      max: String(max),
+      placeholder: "none",
+      value: s.dark_below === undefined ? "" : String(s.dark_below),
+    });
+    dark.title = "Below this the lamp is off";
+    dark.addEventListener("change", () => {
+      const n = Number(dark.value);
+      set({ dark_below: dark.value.trim() === "" || !Number.isFinite(n) ? undefined : n });
+    });
+    wrap.append(
+      dimmest,
+      el("span", { class: "sep" }, "to"),
+      full,
+      el("span", { class: "sep" }, "dark below"),
+      dark,
+      infoIcon(
+        "About scales",
+        "The lamp is dimmest at the first number and fully bright at the second. Put the " +
+          "higher number first for a knob that dims as it turns up, as some warbird " +
+          "rheostats do. Dark below keeps the lamp off under that value, for a knob that " +
+          "goes from off straight to full. Leave it empty for no cut-off.",
+      ),
+    );
+    return wrap;
+  }
+
+  if (kind === "between") {
     const [lo, hi] = numbersOf(condition.on_when);
     wrap.append(
       numberInput(lo ?? 0, max, (n) => {
-        const pair: [number, number] = [n, numbersOf(condition.on_when)[1] ?? max];
-        condition.on_when = kind === "between" ? { between: pair } : { scale: pair };
+        condition.on_when = { between: [n, numbersOf(condition.on_when)[1] ?? max] };
         onChange();
       }),
       el("span", { class: "sep" }, "to"),
       numberInput(hi ?? max, max, (n) => {
-        const pair: [number, number] = [numbersOf(condition.on_when)[0] ?? 0, n];
-        condition.on_when = kind === "between" ? { between: pair } : { scale: pair };
+        condition.on_when = { between: [numbersOf(condition.on_when)[0] ?? 0, n] };
         onChange();
       }),
     );
@@ -292,7 +357,10 @@ function describeTest(w: OnWhen, signal: SignalView | undefined): string {
   if ("gte" in w) return `is at least ${w.gte}`;
   if ("lte" in w) return `is at most ${w.lte}`;
   if ("between" in w) return `is between ${w.between[0]} and ${w.between[1]}`;
-  return `follows it, scaled from ${w.scale[0]} to ${w.scale[1]}`;
+  const s = scaleOf(w.scale);
+  const dims = s.dimmest > s.full ? ", dimming as it turns up" : "";
+  const dark = s.dark_below === undefined ? "" : `, dark below ${s.dark_below}`;
+  return `follows it, scaled from ${s.dimmest} to ${s.full}${dims}${dark}`;
 }
 
 /**

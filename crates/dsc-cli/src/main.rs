@@ -1986,7 +1986,9 @@ impl Trace {
             .bindings
             .iter()
             .filter(|b| runs(&b.device))
-            .flat_map(|b| b.sources())
+            // Through a mirror to its target, which may sit on a panel that is
+            // not plugged in: the mirror still reads its signal.
+            .flat_map(|b| profile.sources_of(b))
             // A display field reads the stream exactly as a lamp condition
             // does. Leaving it out meant a paint line appeared with nothing
             // above it saying what had moved.
@@ -2324,6 +2326,23 @@ mod tests {
             }
             Followed::Number { .. } => panic!("a string read as a number prints packed characters"),
         }
+    }
+
+    #[test]
+    fn a_mirror_follows_its_target_on_a_panel_not_plugged_in() {
+        // The target's panel is absent, but the lamp copying it is lit by the
+        // same signal, so the log has to say what moved it.
+        let (cat, mut profile) = fixture();
+        profile.bindings.push(
+            serde_json::from_str(
+                r#"{"device": "CarrierAce_UFC", "led": "INST_PNL_Backlight", "conditions": [],
+                    "same_as": "MASTER_CAUTION", "same_as_device": "PTO2"}"#,
+            )
+            .unwrap(),
+        );
+        let mut trace = Trace::default();
+        trace.follow(&profile, &cat, &["CarrierAce_UFC".to_string()]);
+        assert!(trace.sources.contains_key(&100));
     }
 
     #[test]

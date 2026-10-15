@@ -2317,12 +2317,17 @@
             },
             {
               "source": "VARIOMETER_100_G",
-              "width": 5,
+              "width": 4,
+              "align": "right",
               "reads": [
-                -4000.0,
-                4000.0
+                -400.0,
+                400.0
               ],
               "round": "down",
+              "colour": "amber"
+            },
+            {
+              "text": "0",
               "colour": "amber"
             },
             {
@@ -2368,7 +2373,7 @@
               "gap": true
             },
             {
-              "source": "COMPASS_RING",
+              "source": "REP_COMP_HDG_G",
               "width": 3,
               "align": "right",
               "reads": [
@@ -2612,6 +2617,2686 @@
               "signal": "slqd52",
               "width": 3,
               "align": "right"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "xv7k5a",
+      "name": "T1154",
+      "display": "MCDU",
+      "fields": [
+        {
+          "cells": "0-23",
+          "content": [
+            {
+              "gap": true,
+              "rule": true,
+              "label": "T1154",
+              "label_colour": "white",
+              "colour": "amber",
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "216-239",
+          "content": [
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "source": "TRANS_TYPF_SW",
+              "width": 3,
+              "align": "right",
+              "value_aliases": {
+                "0": {
+                  "text": "OFF",
+                  "colour": "red"
+                },
+                "1": {
+                  "text": "ON",
+                  "colour": "green"
+                }
+              }
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "LT_T1154_PW",
+              "width": 3,
+              "value_aliases": {
+                "0": {
+                  "text": "OFF",
+                  "colour": "red"
+                },
+                "1": {
+                  "text": "ON",
+                  "colour": "green"
+                }
+              }
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "HT_T1154_PW",
+              "width": 3,
+              "align": "right",
+              "value_aliases": {
+                "0": {
+                  "text": "OFF",
+                  "colour": "red"
+                },
+                "1": {
+                  "text": "ON",
+                  "colour": "green"
+                }
+              }
+            },
+            {
+              "gap": true,
+              "width": 1
+            }
+          ]
+        },
+        {
+          "cells": "192-215",
+          "content": [
+            {
+              "text": "TYPE-F",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 5
+            },
+            {
+              "text": "LOW",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "HIGH",
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "144-167",
+          "content": [
+            {
+              "source": "T1154_S5",
+              "width": 4,
+              "value_aliases": {
+                "0": {
+                  "text": "OFF",
+                  "colour": "red"
+                },
+                "1": {
+                  "text": "STBY",
+                  "colour": "amber"
+                },
+                "2": "TUNE",
+                "3": "CW",
+                "4": "MCW",
+                "5": "R/T"
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true,
+              "width": 4
+            },
+            {
+              "source": "T1154_FREQ_RANGE",
+              "width": 7,
+              "value_aliases": {
+                "0": {
+                  "text": "100-5.5",
+                  "colour": "cyan"
+                },
+                "1": {
+                  "text": "5.5-30",
+                  "colour": "red"
+                },
+                "2": {
+                  "text": "500-200",
+                  "colour": "yellow"
+                }
+              }
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "TYPE_J_SEL",
+              "width": 6,
+              "value_aliases": {
+                "0": "DF",
+                "1": "MF FIX",
+                "2": "NORM",
+                "3": "HF",
+                "4": "EARTH"
+              },
+              "colour": "green"
+            }
+          ]
+        },
+        {
+          "cells": "120-143",
+          "content": [
+            {
+              "text": "MAST",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "RANGE",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "AERIAL",
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "288-311",
+          "content": [
+            {
+              "switch": "T1154_FREQ_RANGE",
+              "cases": {
+                "0": [
+                  {
+                    "source": "T1154_C2_G",
+                    "width": 6,
+                    "conversions": [
+                      {
+                        "raw": [
+                          0,
+                          2728
+                        ],
+                        "reads": [
+                          5.2,
+                          5.3
+                        ]
+                      },
+                      {
+                        "raw": [
+                          2729,
+                          8883
+                        ],
+                        "reads": [
+                          5.3,
+                          5.6
+                        ]
+                      },
+                      {
+                        "raw": [
+                          8884,
+                          15247
+                        ],
+                        "reads": [
+                          5.6,
+                          6.0
+                        ]
+                      },
+                      {
+                        "raw": [
+                          15248,
+                          22451
+                        ],
+                        "reads": [
+                          6.0,
+                          6.5
+                        ]
+                      },
+                      {
+                        "raw": [
+                          22452,
+                          29096
+                        ],
+                        "reads": [
+                          6.5,
+                          7.0
+                        ]
+                      },
+                      {
+                        "raw": [
+                          29097,
+                          35111
+                        ],
+                        "reads": [
+                          7.0,
+                          7.5
+                        ]
+                      },
+                      {
+                        "raw": [
+                          35112,
+                          40426
+                        ],
+                        "reads": [
+                          7.5,
+                          8.0
+                        ]
+                      },
+                      {
+                        "raw": [
+                          40427,
+                          45812
+                        ],
+                        "reads": [
+                          8.0,
+                          8.5
+                        ]
+                      },
+                      {
+                        "raw": [
+                          45813,
+                          51337
+                        ],
+                        "reads": [
+                          8.5,
+                          9.0
+                        ]
+                      },
+                      {
+                        "raw": [
+                          51338,
+                          56023
+                        ],
+                        "reads": [
+                          9.0,
+                          9.5
+                        ]
+                      },
+                      {
+                        "raw": [
+                          56024,
+                          60639
+                        ],
+                        "reads": [
+                          9.5,
+                          10.0
+                        ]
+                      },
+                      {
+                        "raw": [
+                          60640,
+                          65535
+                        ],
+                        "reads": [
+                          10.0,
+                          10.4
+                        ]
+                      }
+                    ],
+                    "decimals": 3,
+                    "round": "down",
+                    "colour": "cyan"
+                  },
+                  {
+                    "gap": true,
+                    "width": 1
+                  },
+                  {
+                    "source": "T1154_C2_B",
+                    "value_aliases": {
+                      "0": {
+                        "text": "-",
+                        "colour": "grey"
+                      },
+                      "1": "A",
+                      "2": "B",
+                      "3": "C",
+                      "4": "D",
+                      "5": "E",
+                      "6": "F",
+                      "7": "G"
+                    },
+                    "colour": "cyan"
+                  },
+                  {
+                    "gap": true,
+                    "width": 1
+                  },
+                  {
+                    "source": "T1154_C15_G",
+                    "width": 6,
+                    "reads": [
+                      5.2,
+                      10.4
+                    ],
+                    "decimals": 3,
+                    "round": "down",
+                    "colour": "cyan"
+                  },
+                  {
+                    "gap": true,
+                    "width": 1
+                  },
+                  {
+                    "source": "T1154_C15_B",
+                    "value_aliases": {
+                      "0": {
+                        "text": "-",
+                        "colour": "grey"
+                      },
+                      "1": "A",
+                      "2": "B",
+                      "3": "C",
+                      "4": "D",
+                      "5": "E",
+                      "6": "F",
+                      "7": "G"
+                    },
+                    "colour": "cyan"
+                  },
+                  {
+                    "gap": true,
+                    "width": 2
+                  },
+                  {
+                    "source": "T1154_S3",
+                    "width": 1,
+                    "reads": [
+                      1.0,
+                      9.0
+                    ],
+                    "colour": "cyan"
+                  }
+                ],
+                "1": [
+                  {
+                    "source": "T1154_C4_G",
+                    "width": 5,
+                    "conversions": [
+                      {
+                        "raw": [
+                          0,
+                          4096
+                        ],
+                        "reads": [
+                          2.9,
+                          3.0
+                        ]
+                      },
+                      {
+                        "raw": [
+                          4097,
+                          16671
+                        ],
+                        "reads": [
+                          3.0,
+                          3.4
+                        ]
+                      },
+                      {
+                        "raw": [
+                          16672,
+                          18899
+                        ],
+                        "reads": [
+                          3.4,
+                          3.5
+                        ]
+                      },
+                      {
+                        "raw": [
+                          18900,
+                          21486
+                        ],
+                        "reads": [
+                          3.5,
+                          3.6
+                        ]
+                      },
+                      {
+                        "raw": [
+                          21487,
+                          24001
+                        ],
+                        "reads": [
+                          3.6,
+                          3.7
+                        ]
+                      },
+                      {
+                        "raw": [
+                          24002,
+                          26228
+                        ],
+                        "reads": [
+                          3.7,
+                          3.8
+                        ]
+                      },
+                      {
+                        "raw": [
+                          26229,
+                          28743
+                        ],
+                        "reads": [
+                          3.8,
+                          3.9
+                        ]
+                      },
+                      {
+                        "raw": [
+                          28744,
+                          31187
+                        ],
+                        "reads": [
+                          3.9,
+                          4.0
+                        ]
+                      },
+                      {
+                        "raw": [
+                          31188,
+                          42253
+                        ],
+                        "reads": [
+                          4.0,
+                          4.5
+                        ]
+                      },
+                      {
+                        "raw": [
+                          42254,
+                          52888
+                        ],
+                        "reads": [
+                          4.5,
+                          5.0
+                        ]
+                      },
+                      {
+                        "raw": [
+                          52889,
+                          61726
+                        ],
+                        "reads": [
+                          5.0,
+                          5.5
+                        ]
+                      },
+                      {
+                        "raw": [
+                          61727,
+                          65535
+                        ],
+                        "reads": [
+                          5.5,
+                          5.7
+                        ]
+                      }
+                    ],
+                    "decimals": 3,
+                    "round": "down",
+                    "colour": "red"
+                  },
+                  {
+                    "gap": true,
+                    "width": 2
+                  },
+                  {
+                    "source": "T1154_C4_B",
+                    "width": 1,
+                    "value_aliases": {
+                      "0": {
+                        "text": "-",
+                        "colour": "grey"
+                      },
+                      "1": "J",
+                      "2": "K",
+                      "3": "L",
+                      "4": "M",
+                      "5": "N",
+                      "6": "P",
+                      "7": "O"
+                    },
+                    "colour": "red"
+                  },
+                  {
+                    "gap": true,
+                    "width": 1
+                  },
+                  {
+                    "source": "T1154_C16_G",
+                    "width": 5,
+                    "reads": [
+                      2.9,
+                      5.7
+                    ],
+                    "decimals": 3,
+                    "round": "down",
+                    "colour": "red"
+                  },
+                  {
+                    "gap": true,
+                    "width": 2
+                  },
+                  {
+                    "source": "T1154_C16_B",
+                    "value_aliases": {
+                      "0": {
+                        "text": "-",
+                        "colour": "grey"
+                      },
+                      "1": "J",
+                      "2": "K",
+                      "3": "L",
+                      "4": "M",
+                      "5": "N",
+                      "6": "P",
+                      "7": "O"
+                    },
+                    "colour": "red"
+                  },
+                  {
+                    "gap": true,
+                    "width": 2
+                  },
+                  {
+                    "source": "T1154_S4",
+                    "reads": [
+                      1.0,
+                      9.0
+                    ],
+                    "colour": "red"
+                  }
+                ],
+                "2": [
+                  {
+                    "source": "T1154_C17_G",
+                    "width": 3,
+                    "conversions": [
+                      {
+                        "raw": [
+                          0,
+                          9845
+                        ],
+                        "reads": [
+                          180.0,
+                          200.0
+                        ]
+                      },
+                      {
+                        "raw": [
+                          9846,
+                          17318
+                        ],
+                        "reads": [
+                          200.0,
+                          220.0
+                        ]
+                      },
+                      {
+                        "raw": [
+                          17319,
+                          25941
+                        ],
+                        "reads": [
+                          220.0,
+                          250.0
+                        ]
+                      },
+                      {
+                        "raw": [
+                          25942,
+                          37510
+                        ],
+                        "reads": [
+                          250.0,
+                          300.0
+                        ]
+                      },
+                      {
+                        "raw": [
+                          37511,
+                          46205
+                        ],
+                        "reads": [
+                          300.0,
+                          350.0
+                        ]
+                      },
+                      {
+                        "raw": [
+                          46206,
+                          50732
+                        ],
+                        "reads": [
+                          350.0,
+                          380.0
+                        ]
+                      },
+                      {
+                        "raw": [
+                          50733,
+                          55259
+                        ],
+                        "reads": [
+                          380.0,
+                          420.0
+                        ]
+                      },
+                      {
+                        "raw": [
+                          55260,
+                          59427
+                        ],
+                        "reads": [
+                          420.0,
+                          460.0
+                        ]
+                      },
+                      {
+                        "raw": [
+                          59428,
+                          63164
+                        ],
+                        "reads": [
+                          460.0,
+                          500.0
+                        ]
+                      },
+                      {
+                        "raw": [
+                          63165,
+                          65535
+                        ],
+                        "reads": [
+                          500.0,
+                          520.0
+                        ]
+                      }
+                    ],
+                    "round": "down",
+                    "colour": "yellow"
+                  },
+                  {
+                    "gap": true,
+                    "width": 4
+                  },
+                  {
+                    "source": "T1154_C17_B",
+                    "value_aliases": {
+                      "0": {
+                        "text": "-",
+                        "colour": "grey"
+                      },
+                      "1": "S",
+                      "2": "T",
+                      "3": "U",
+                      "4": "V",
+                      "5": "W",
+                      "6": "X",
+                      "7": "Y"
+                    },
+                    "colour": "yellow"
+                  },
+                  {
+                    "gap": true
+                  },
+                  {
+                    "source": "T1154_S7",
+                    "width": 2,
+                    "reads": [
+                      1.0,
+                      17.0
+                    ],
+                    "colour": "yellow"
+                  },
+                  {
+                    "gap": true,
+                    "width": 1
+                  },
+                  {
+                    "source": "T1154_S6",
+                    "reads": [
+                      18.0,
+                      34.0
+                    ],
+                    "colour": "yellow"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "cells": "264-287",
+          "content": [
+            {
+              "text": "TUNE",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 3
+            },
+            {
+              "text": "P",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "text": "OUTPUT",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "text": "P",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "text": "I1",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "I2",
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "24-47",
+          "content": [
+            {
+              "gap": true
+            },
+            {
+              "text": "MAG",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "AMP",
+              "small": true
+            },
+            {
+              "gap": true
+            }
+          ]
+        },
+        {
+          "cells": "48-71",
+          "content": [
+            {
+              "gap": true
+            },
+            {
+              "source": "T1154_M1_G",
+              "width": 3,
+              "reads": [
+                0.0,
+                300.0
+              ],
+              "round": "down",
+              "value_aliases": {
+                "100..300": {
+                  "colour": "green",
+                  "reading": true
+                }
+              },
+              "colour": "red"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "T1154_M2_G",
+              "width": 3,
+              "conversions": [
+                {
+                  "raw": [
+                    0,
+                    1049
+                  ],
+                  "reads": [
+                    0.0,
+                    0.5
+                  ]
+                },
+                {
+                  "raw": [
+                    1050,
+                    4850
+                  ],
+                  "reads": [
+                    0.5,
+                    1.0
+                  ]
+                },
+                {
+                  "raw": [
+                    4851,
+                    10813
+                  ],
+                  "reads": [
+                    1.0,
+                    1.5
+                  ]
+                },
+                {
+                  "raw": [
+                    10814,
+                    20578
+                  ],
+                  "reads": [
+                    1.5,
+                    2.0
+                  ]
+                },
+                {
+                  "raw": [
+                    20579,
+                    33095
+                  ],
+                  "reads": [
+                    2.0,
+                    2.5
+                  ]
+                },
+                {
+                  "raw": [
+                    33096,
+                    47775
+                  ],
+                  "reads": [
+                    2.5,
+                    3.0
+                  ]
+                },
+                {
+                  "raw": [
+                    47776,
+                    65535
+                  ],
+                  "reads": [
+                    3.0,
+                    3.5
+                  ]
+                }
+              ],
+              "decimals": 1,
+              "value_aliases": {
+                "0..1": {
+                  "colour": "red",
+                  "reading": true
+                }
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "057ayu",
+      "name": "R1155",
+      "display": "MCDU",
+      "fields": [
+        {
+          "cells": "0-23",
+          "content": [
+            {
+              "gap": true,
+              "rule": true,
+              "label": "R1155",
+              "label_colour": "white",
+              "colour": "amber",
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "144-167",
+          "content": [
+            {
+              "source": "R1155_FREQ",
+              "width": 8,
+              "value_aliases": {
+                "0": "18/7.5",
+                "1": "7.5/3.0",
+                "2": "1500/600",
+                "3": "500/200",
+                "4": "200/75"
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "R1155_HETI",
+              "width": 3,
+              "value_aliases": {
+                "0": {
+                  "text": "OFF",
+                  "colour": "red"
+                },
+                "1": "ON"
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true,
+              "width": 3
+            },
+            {
+              "source": "R1155_MASTER",
+              "width": 4,
+              "value_aliases": {
+                "0": "OMNI",
+                "1": "AVC",
+                "2": "BAL",
+                "3": "VIS",
+                "4": "FIG8"
+              },
+              "colour": "green"
+            }
+          ]
+        },
+        {
+          "cells": "120-143",
+          "content": [
+            {
+              "text": "RANGE",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "HETI",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "text": "MAST",
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "48-71",
+          "content": [
+            {
+              "switch": "R1155_FREQ",
+              "cases": {
+                "0": {
+                  "source": "R1155_TUNER_G",
+                  "width": 6,
+                  "conversions": [
+                    {
+                      "raw": [
+                        0,
+                        5940
+                      ],
+                      "reads": [
+                        0.0,
+                        0.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        5941,
+                        9214
+                      ],
+                      "reads": [
+                        18.5,
+                        18.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        9215,
+                        12999
+                      ],
+                      "reads": [
+                        18.0,
+                        17.5
+                      ]
+                    },
+                    {
+                      "raw": [
+                        13000,
+                        16462
+                      ],
+                      "reads": [
+                        17.5,
+                        17.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        16463,
+                        19051
+                      ],
+                      "reads": [
+                        17.0,
+                        16.5
+                      ]
+                    },
+                    {
+                      "raw": [
+                        19052,
+                        21481
+                      ],
+                      "reads": [
+                        16.5,
+                        16.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        21482,
+                        23594
+                      ],
+                      "reads": [
+                        16.0,
+                        15.5
+                      ]
+                    },
+                    {
+                      "raw": [
+                        23595,
+                        25704
+                      ],
+                      "reads": [
+                        15.5,
+                        15.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        25705,
+                        27677
+                      ],
+                      "reads": [
+                        15.0,
+                        14.5
+                      ]
+                    },
+                    {
+                      "raw": [
+                        27678,
+                        29468
+                      ],
+                      "reads": [
+                        14.5,
+                        14.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        29469,
+                        31346
+                      ],
+                      "reads": [
+                        14.0,
+                        13.5
+                      ]
+                    },
+                    {
+                      "raw": [
+                        31347,
+                        31460
+                      ],
+                      "reads": [
+                        13.5,
+                        13.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        31461,
+                        34839
+                      ],
+                      "reads": [
+                        13.0,
+                        12.5
+                      ]
+                    },
+                    {
+                      "raw": [
+                        34840,
+                        36618
+                      ],
+                      "reads": [
+                        12.5,
+                        12.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        36619,
+                        38448
+                      ],
+                      "reads": [
+                        12.0,
+                        11.5
+                      ]
+                    },
+                    {
+                      "raw": [
+                        38449,
+                        40561
+                      ],
+                      "reads": [
+                        11.5,
+                        11.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        40562,
+                        42732
+                      ],
+                      "reads": [
+                        11.0,
+                        10.5
+                      ]
+                    },
+                    {
+                      "raw": [
+                        42733,
+                        45030
+                      ],
+                      "reads": [
+                        10.5,
+                        10.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        45031,
+                        47582
+                      ],
+                      "reads": [
+                        10.0,
+                        9.5
+                      ],
+                      "colour": "cyan"
+                    },
+                    {
+                      "raw": [
+                        47583,
+                        50635
+                      ],
+                      "reads": [
+                        9.5,
+                        9.0
+                      ],
+                      "colour": "cyan"
+                    },
+                    {
+                      "raw": [
+                        50636,
+                        53935
+                      ],
+                      "reads": [
+                        9.0,
+                        8.5
+                      ],
+                      "colour": "cyan"
+                    },
+                    {
+                      "raw": [
+                        53936,
+                        57990
+                      ],
+                      "reads": [
+                        8.5,
+                        8.0
+                      ],
+                      "colour": "cyan"
+                    },
+                    {
+                      "raw": [
+                        57991,
+                        63135
+                      ],
+                      "reads": [
+                        8.0,
+                        7.5
+                      ],
+                      "colour": "cyan"
+                    },
+                    {
+                      "raw": [
+                        63136,
+                        64242
+                      ],
+                      "reads": [
+                        7.5,
+                        7.4
+                      ],
+                      "colour": "cyan"
+                    },
+                    {
+                      "raw": [
+                        64243,
+                        65535
+                      ],
+                      "reads": [
+                        0.0,
+                        0.0
+                      ]
+                    }
+                  ],
+                  "decimals": 3,
+                  "round": "down",
+                  "value_aliases": {
+                    "0": "---"
+                  },
+                  "colour": "grey"
+                },
+                "1": {
+                  "source": "R1155_TUNER_G",
+                  "width": 6,
+                  "conversions": [
+                    {
+                      "raw": [
+                        0,
+                        2478
+                      ],
+                      "reads": [
+                        0.0,
+                        0.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        2479,
+                        3729
+                      ],
+                      "reads": [
+                        7.6,
+                        7.55
+                      ],
+                      "colour": "grey"
+                    },
+                    {
+                      "raw": [
+                        3730,
+                        4691
+                      ],
+                      "reads": [
+                        7.55,
+                        7.5
+                      ],
+                      "colour": "grey"
+                    },
+                    {
+                      "raw": [
+                        4692,
+                        5698
+                      ],
+                      "reads": [
+                        7.5,
+                        7.4
+                      ],
+                      "colour": "cyan"
+                    },
+                    {
+                      "raw": [
+                        5699,
+                        6965
+                      ],
+                      "reads": [
+                        7.4,
+                        7.3
+                      ],
+                      "colour": "cyan"
+                    },
+                    {
+                      "raw": [
+                        6966,
+                        8295
+                      ],
+                      "reads": [
+                        7.3,
+                        7.2
+                      ],
+                      "colour": "cyan"
+                    },
+                    {
+                      "raw": [
+                        8296,
+                        10110
+                      ],
+                      "reads": [
+                        7.2,
+                        7.1
+                      ],
+                      "colour": "cyan"
+                    },
+                    {
+                      "raw": [
+                        10111,
+                        11728
+                      ],
+                      "reads": [
+                        7.1,
+                        7.0
+                      ],
+                      "colour": "cyan"
+                    },
+                    {
+                      "raw": [
+                        11729,
+                        13424
+                      ],
+                      "reads": [
+                        7.0,
+                        6.9
+                      ],
+                      "colour": "cyan"
+                    },
+                    {
+                      "raw": [
+                        13425,
+                        16490
+                      ],
+                      "reads": [
+                        6.9,
+                        6.7
+                      ],
+                      "colour": "cyan"
+                    },
+                    {
+                      "raw": [
+                        16491,
+                        17764
+                      ],
+                      "reads": [
+                        6.7,
+                        6.6
+                      ],
+                      "colour": "cyan"
+                    },
+                    {
+                      "raw": [
+                        17765,
+                        18898
+                      ],
+                      "reads": [
+                        6.6,
+                        6.5
+                      ],
+                      "colour": "cyan"
+                    },
+                    {
+                      "raw": [
+                        18899,
+                        20126
+                      ],
+                      "reads": [
+                        6.5,
+                        6.4
+                      ],
+                      "colour": "cyan"
+                    },
+                    {
+                      "raw": [
+                        20127,
+                        24371
+                      ],
+                      "reads": [
+                        6.4,
+                        6.0
+                      ],
+                      "colour": "cyan"
+                    },
+                    {
+                      "raw": [
+                        24372,
+                        29152
+                      ],
+                      "reads": [
+                        6.0,
+                        5.5
+                      ],
+                      "colour": "cyan"
+                    },
+                    {
+                      "raw": [
+                        29153,
+                        30139
+                      ],
+                      "reads": [
+                        5.5,
+                        5.4
+                      ]
+                    },
+                    {
+                      "raw": [
+                        30140,
+                        33555
+                      ],
+                      "reads": [
+                        5.4,
+                        5.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        33556,
+                        38177
+                      ],
+                      "reads": [
+                        5.0,
+                        4.5
+                      ]
+                    },
+                    {
+                      "raw": [
+                        38178,
+                        43584
+                      ],
+                      "reads": [
+                        4.5,
+                        4.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        43585,
+                        44254
+                      ],
+                      "reads": [
+                        4.0,
+                        3.95
+                      ]
+                    },
+                    {
+                      "raw": [
+                        44255,
+                        44802
+                      ],
+                      "reads": [
+                        3.95,
+                        3.9
+                      ]
+                    },
+                    {
+                      "raw": [
+                        44803,
+                        48283
+                      ],
+                      "reads": [
+                        3.9,
+                        3.65
+                      ]
+                    },
+                    {
+                      "raw": [
+                        48284,
+                        49141
+                      ],
+                      "reads": [
+                        3.65,
+                        3.6
+                      ]
+                    },
+                    {
+                      "raw": [
+                        49142,
+                        50752
+                      ],
+                      "reads": [
+                        3.6,
+                        3.5
+                      ]
+                    },
+                    {
+                      "raw": [
+                        50753,
+                        52455
+                      ],
+                      "reads": [
+                        3.5,
+                        3.4
+                      ]
+                    },
+                    {
+                      "raw": [
+                        52456,
+                        54315
+                      ],
+                      "reads": [
+                        3.4,
+                        3.3
+                      ]
+                    },
+                    {
+                      "raw": [
+                        54316,
+                        56322
+                      ],
+                      "reads": [
+                        3.3,
+                        3.2
+                      ]
+                    },
+                    {
+                      "raw": [
+                        56323,
+                        57417
+                      ],
+                      "reads": [
+                        3.2,
+                        3.15
+                      ]
+                    },
+                    {
+                      "raw": [
+                        57418,
+                        58694
+                      ],
+                      "reads": [
+                        3.15,
+                        3.1
+                      ]
+                    },
+                    {
+                      "raw": [
+                        58695,
+                        59904
+                      ],
+                      "reads": [
+                        3.1,
+                        3.05
+                      ]
+                    },
+                    {
+                      "raw": [
+                        59905,
+                        61378
+                      ],
+                      "reads": [
+                        3.05,
+                        3.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        61379,
+                        65535
+                      ],
+                      "reads": [
+                        0.0,
+                        0.0
+                      ]
+                    }
+                  ],
+                  "decimals": 3,
+                  "round": "down",
+                  "value_aliases": {
+                    "0": {
+                      "text": "---",
+                      "colour": "grey"
+                    }
+                  },
+                  "colour": "red"
+                },
+                "2": {
+                  "source": "R1155_TUNER_G",
+                  "width": 6,
+                  "conversions": [
+                    {
+                      "raw": [
+                        0,
+                        5363
+                      ],
+                      "reads": [
+                        0.0,
+                        0.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        5364,
+                        8787
+                      ],
+                      "reads": [
+                        1500.0,
+                        1450.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        8788,
+                        13355
+                      ],
+                      "reads": [
+                        1450.0,
+                        1400.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        13356,
+                        17021
+                      ],
+                      "reads": [
+                        1400.0,
+                        1350.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        17022,
+                        20138
+                      ],
+                      "reads": [
+                        1350.0,
+                        1300.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        20139,
+                        22861
+                      ],
+                      "reads": [
+                        1300.0,
+                        1250.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        22862,
+                        25391
+                      ],
+                      "reads": [
+                        1250.0,
+                        1200.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        25392,
+                        27839
+                      ],
+                      "reads": [
+                        1200.0,
+                        1150.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        27840,
+                        30058
+                      ],
+                      "reads": [
+                        1150.0,
+                        1100.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        30059,
+                        32223
+                      ],
+                      "reads": [
+                        1100.0,
+                        1050.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        32224,
+                        34357
+                      ],
+                      "reads": [
+                        1050.0,
+                        1000.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        34358,
+                        36560
+                      ],
+                      "reads": [
+                        1000.0,
+                        950.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        36561,
+                        38705
+                      ],
+                      "reads": [
+                        950.0,
+                        900.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        38706,
+                        41416
+                      ],
+                      "reads": [
+                        900.0,
+                        850.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        41417,
+                        44311
+                      ],
+                      "reads": [
+                        850.0,
+                        800.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        44312,
+                        47408
+                      ],
+                      "reads": [
+                        800.0,
+                        750.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        47409,
+                        51128
+                      ],
+                      "reads": [
+                        750.0,
+                        700.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        51129,
+                        55798
+                      ],
+                      "reads": [
+                        700.0,
+                        650.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        55799,
+                        61915
+                      ],
+                      "reads": [
+                        650.0,
+                        600.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        61916,
+                        65535
+                      ],
+                      "reads": [
+                        0.0,
+                        0.0
+                      ]
+                    }
+                  ],
+                  "round": "down",
+                  "value_aliases": {
+                    "0": "---"
+                  },
+                  "colour": "grey"
+                },
+                "3": {
+                  "source": "R1155_TUNER_G",
+                  "width": 6,
+                  "conversions": [
+                    {
+                      "raw": [
+                        0,
+                        5885
+                      ],
+                      "reads": [
+                        0.0,
+                        0.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        5886,
+                        8784
+                      ],
+                      "reads": [
+                        500.0,
+                        490.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        8785,
+                        11449
+                      ],
+                      "reads": [
+                        490.0,
+                        480.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        11450,
+                        14051
+                      ],
+                      "reads": [
+                        480.0,
+                        470.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        14052,
+                        16416
+                      ],
+                      "reads": [
+                        470.0,
+                        460.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        16417,
+                        18594
+                      ],
+                      "reads": [
+                        460.0,
+                        450.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        18595,
+                        20467
+                      ],
+                      "reads": [
+                        450.0,
+                        440.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        20468,
+                        26880
+                      ],
+                      "reads": [
+                        440.0,
+                        400.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        26881,
+                        33157
+                      ],
+                      "reads": [
+                        400.0,
+                        350.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        33158,
+                        38193
+                      ],
+                      "reads": [
+                        350.0,
+                        310.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        38194,
+                        39639
+                      ],
+                      "reads": [
+                        310.0,
+                        300.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        39640,
+                        45687
+                      ],
+                      "reads": [
+                        300.0,
+                        260.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        45688,
+                        47462
+                      ],
+                      "reads": [
+                        260.0,
+                        250.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        47463,
+                        49690
+                      ],
+                      "reads": [
+                        250.0,
+                        240.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        49691,
+                        51469
+                      ],
+                      "reads": [
+                        240.0,
+                        230.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        51470,
+                        53995
+                      ],
+                      "reads": [
+                        230.0,
+                        220.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        53996,
+                        57072
+                      ],
+                      "reads": [
+                        220.0,
+                        210.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        57073,
+                        59864
+                      ],
+                      "reads": [
+                        210.0,
+                        200.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        59865,
+                        65535
+                      ],
+                      "reads": [
+                        0.0,
+                        0.0
+                      ]
+                    }
+                  ],
+                  "round": "down",
+                  "value_aliases": {
+                    "0": {
+                      "text": "---",
+                      "colour": "grey"
+                    }
+                  },
+                  "colour": "yellow"
+                },
+                "4": {
+                  "source": "R1155_TUNER_G",
+                  "width": 6,
+                  "conversions": [
+                    {
+                      "raw": [
+                        0,
+                        3726
+                      ],
+                      "reads": [
+                        0.0,
+                        0.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        3727,
+                        9043
+                      ],
+                      "reads": [
+                        200.0,
+                        190.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        9044,
+                        12441
+                      ],
+                      "reads": [
+                        190.0,
+                        185.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        12442,
+                        15193
+                      ],
+                      "reads": [
+                        185.0,
+                        180.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        15194,
+                        17812
+                      ],
+                      "reads": [
+                        180.0,
+                        175.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        17813,
+                        20004
+                      ],
+                      "reads": [
+                        175.0,
+                        170.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        20005,
+                        22025
+                      ],
+                      "reads": [
+                        170.0,
+                        165.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        22026,
+                        23837
+                      ],
+                      "reads": [
+                        165.0,
+                        160.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        23838,
+                        25795
+                      ],
+                      "reads": [
+                        160.0,
+                        155.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        25796,
+                        27450
+                      ],
+                      "reads": [
+                        155.0,
+                        150.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        27451,
+                        28976
+                      ],
+                      "reads": [
+                        150.0,
+                        145.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        28977,
+                        30772
+                      ],
+                      "reads": [
+                        145.0,
+                        140.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        30773,
+                        32164
+                      ],
+                      "reads": [
+                        140.0,
+                        135.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        32165,
+                        33664
+                      ],
+                      "reads": [
+                        135.0,
+                        130.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        33665,
+                        35213
+                      ],
+                      "reads": [
+                        130.0,
+                        125.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        35214,
+                        36917
+                      ],
+                      "reads": [
+                        125.0,
+                        120.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        36918,
+                        38407
+                      ],
+                      "reads": [
+                        120.0,
+                        115.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        38408,
+                        40391
+                      ],
+                      "reads": [
+                        115.0,
+                        110.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        40392,
+                        42151
+                      ],
+                      "reads": [
+                        110.0,
+                        105.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        42152,
+                        44362
+                      ],
+                      "reads": [
+                        105.0,
+                        100.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        44363,
+                        46627
+                      ],
+                      "reads": [
+                        100.0,
+                        95.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        46628,
+                        49453
+                      ],
+                      "reads": [
+                        95.0,
+                        90.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        49454,
+                        52515
+                      ],
+                      "reads": [
+                        90.0,
+                        85.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        52516,
+                        56166
+                      ],
+                      "reads": [
+                        85.0,
+                        80.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        56167,
+                        60966
+                      ],
+                      "reads": [
+                        80.0,
+                        75.0
+                      ]
+                    },
+                    {
+                      "raw": [
+                        60967,
+                        65535
+                      ],
+                      "reads": [
+                        0.0,
+                        0.0
+                      ]
+                    }
+                  ],
+                  "round": "down",
+                  "value_aliases": {
+                    "0": "---"
+                  },
+                  "colour": "grey"
+                }
+              }
+            },
+            {
+              "gap": true,
+              "width": 1
+            },
+            {
+              "source": "R1155_TUNE_ANO_G",
+              "width": 5,
+              "align": "centre",
+              "reads": [
+                0.0,
+                3.0
+              ],
+              "value_aliases": {
+                "0": "",
+                "1": {
+                  "text": "     ",
+                  "inverse": true
+                },
+                "2": {
+                  "text": "   ",
+                  "inverse": true
+                },
+                "3": {
+                  "text": " ",
+                  "inverse": true
+                }
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "R1155_VOL",
+              "width": 4,
+              "reads": [
+                0.0,
+                4.0
+              ],
+              "round": "down",
+              "value_aliases": {
+                "0": {
+                  "text": "[",
+                  "colour": "red"
+                },
+                "1": {
+                  "text": " ",
+                  "colour": "red",
+                  "inverse": true
+                },
+                "2": {
+                  "text": "  ",
+                  "colour": "amber",
+                  "inverse": true
+                },
+                "3": {
+                  "text": "   ",
+                  "colour": "yellow",
+                  "inverse": true
+                },
+                "4": {
+                  "text": "    ",
+                  "colour": "green",
+                  "inverse": true
+                }
+              }
+            }
+          ]
+        },
+        {
+          "cells": "24-47",
+          "content": [
+            {
+              "text": "FREQ",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 3
+            },
+            {
+              "text": "TUNED",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "VOL",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
+            }
+          ]
+        },
+        {
+          "cells": "216-239",
+          "content": [
+            {
+              "source": "R1155_METER_BAL",
+              "width": 4,
+              "reads": [
+                0.0,
+                10.0
+              ],
+              "value_aliases": {
+                "0..4": "PORT",
+                "5": "NEUT",
+                "6..10": "STBD"
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true,
+              "width": 3
+            },
+            {
+              "source": "R1155_METER_AMP",
+              "width": 4,
+              "reads": [
+                0.0,
+                10.0
+              ],
+              "decimals": 1,
+              "colour": "green"
+            },
+            {
+              "gap": true,
+              "width": 3
+            },
+            {
+              "source": "R1155_FILTER",
+              "width": 3,
+              "value_aliases": {
+                "0": {
+                  "text": "OFF",
+                  "colour": "red"
+                },
+                "1": "ON"
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true,
+              "width": 3
+            },
+            {
+              "source": "R1155_HETI",
+              "width": 3,
+              "value_aliases": {
+                "0": {
+                  "text": "OFF",
+                  "colour": "red"
+                },
+                "1": "ON"
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true,
+              "width": 1
+            }
+          ]
+        },
+        {
+          "cells": "192-215",
+          "content": [
+            {
+              "text": "BAL",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 4
+            },
+            {
+              "text": "AMP",
+              "small": true
+            },
+            {
+              "gap": true
+            },
+            {
+              "text": "FILT",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "text": "HETI",
+              "small": true
+            }
+          ]
+        },
+        {
+          "cells": "288-311",
+          "content": [
+            {
+              "source": "R1155_METER_DEF",
+              "width": 5,
+              "value_aliases": {
+                "0": "LOW",
+                "1": "HIGH"
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "source": "R1155_SW_SPEED",
+              "width": 4,
+              "value_aliases": {
+                "0": "HIGH",
+                "1": "LOW"
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "LOOP_ANT_LOCK",
+              "width": 4,
+              "value_aliases": {
+                "0": {
+                  "text": "LOCK",
+                  "colour": "red"
+                },
+                "1": "FREE"
+              },
+              "colour": "green"
+            },
+            {
+              "gap": true
+            },
+            {
+              "source": "LOOP_ANT_SCALE",
+              "width": 3,
+              "reads": [
+                0.0,
+                360.0
+              ],
+              "round": "down",
+              "wrap": 360.0,
+              "colour": "green"
+            },
+            {
+              "gap": true,
+              "width": 1
+            }
+          ]
+        },
+        {
+          "cells": "312-335",
+          "content": [
+            {
+              "gap": true
+            },
+            {
+              "source": "LOOP_ANT_SCALE",
+              "width": 3,
+              "conversions": [
+                {
+                  "raw": [
+                    0,
+                    16376
+                  ],
+                  "reads": [
+                    270.0,
+                    360.0
+                  ]
+                },
+                {
+                  "raw": [
+                    16377,
+                    65535
+                  ],
+                  "reads": [
+                    0.0,
+                    270.0
+                  ]
+                }
+              ],
+              "wrap": 360.0,
+              "colour": "red"
+            },
+            {
+              "gap": true,
+              "width": 1
+            }
+          ]
+        },
+        {
+          "cells": "264-287",
+          "content": [
+            {
+              "text": "DEFL",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 3
+            },
+            {
+              "text": "SPEED",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "text": "LOOP",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 2
+            },
+            {
+              "text": "HDG",
+              "small": true
+            },
+            {
+              "gap": true,
+              "width": 1
             }
           ]
         }

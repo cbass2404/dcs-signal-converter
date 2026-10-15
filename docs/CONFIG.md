@@ -147,6 +147,14 @@ This covers most of what a user will touch. In the AH-64D, **558 of 708 signals
 are discrete** and get a labelled dropdown; the remaining 150 are dials and gauges
 and get a numeric input clamped to `0..max_value`.
 
+A few warbirds (AJS37, Bf-109K-4, F-86F, P-51D) also export "Gauge Values":
+the reading itself, such as coolant temperature in degrees, rather than a
+needle position. DCS-BIOS's JSON gives these the 65535 of the word they travel
+in, so the catalogue reads their real range from the module's Lua instead
+(`defineGaugeValue`) and sets `max_value` to it, adding `min_value` where it
+does not start at 0. `COOLANT_TEMPERATURE_VALUE` reads 0 to 130, and
+`MANIFOLD_PRESSURE_VALUE` 10 to 75.
+
 ### Condition forms
 
 | `on_when`                    | Offered for | Editor control                              |

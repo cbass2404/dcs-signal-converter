@@ -13,46 +13,53 @@ shipped to you is brought up to the new one for you. A fix to something
 you have touched only reaches you if you reset it, and you cannot decide to
 unless this says what moved.
 
-## 1.0.0-beta.013
+## 1.0.0-beta.014
 
-- **Panels in the profile editor show they open.** Each panel's title now
-  has a chevron that points right while it is closed and down while it is
-  open.
-- **More buttons explain themselves.** Hovering "drive this panel", "Assign
-  a signal", Learn, "Edit page", "+ New page" or any of the buttons that
-  add a piece to a field (a reading, a shared result, a switch, text, a gap
-  or a rule) says what it does, as the other choices on a lamp already did.
-- **Updates reach you even if you skipped a release.** An update brings
-  forward any row you never changed, but it only recognised rows as the
-  release just before it shipped them. If you skipped a release, every
-  default changed in the one you missed looked like your own edit and was
-  kept, so those fixes never arrived. Each profile and page file now
-  remembers the default it was last given, and updates compare against
-  that. Rows you changed are still never touched. The first update to
-  this release or any up to beta.017 compares against beta.012 once, so
-  if you were already behind beta.012, a fix from a release you skipped
-  before it reaches you only through a reset.
+- **A scale can dim as the knob turns up.** Some warbird rheostats go
+  from off straight to full and dim from there as the knob keeps
+  turning. A lamp scaled across a dimmer now takes where it is dimmest
+  and where it is fully bright in either order, and an optional Dark
+  below that keeps it off under a value. Scales you already have work
+  and save exactly as before.
+- **The session log shows the signal behind a copied lamp.** A lamp set
+  to copy another one logged its brightness but not the cockpit signal
+  driving it when the panel it copies was not plugged in. That signal is
+  now logged as it moves.
+- **Gauge values show the range they really read.** The AJS37, Bf-109K-4,
+  F-86F and P-51D send some gauges as the reading itself, such as coolant
+  temperature in degrees. Their signal details said 0 to 65535, the same as
+  a needle position. They now show the real range, such as 0 to 130 for
+  the Bf-109's `COOLANT_TEMPERATURE_VALUE`, and a condition on one is
+  checked against it.
 
 ### Profiles
 
-- **Mosquito: the altimeter setting on the MCDU Cruise page shows a
-  decimal.** It read whole hPa only, so 1013.2 showed as 1013. It now shows
-  one decimal place. If you have changed that page field (the hPa line,
-  cells 72-95), reset it to pick this up.
-- **Mosquito: the altitude on the MCDU Cruise page no longer jumps ahead.**
-  Its ten-thousands and thousands digits rounded to the nearest, so they
-  turned over before the hundreds did: 950 ft read as 1950. Every altitude
-  digit now rounds down, and so does the climb rate beside them. If you
-  have changed that page field (the airspeed line, cells 48-71), reset it
-  to pick this up.
-- **P-51D: the MFD backlight follows the cockpit lighting.** The centre
-  CarrierAce MFD, and the two that follow it, stayed fully lit. They now
-  dim and brighten with the left fluorescent light. If you have changed
-  the CarrierAce_MFD_C INST_PNL_Backlight row, reset it to pick this up.
-- **P-51D: the Orion throttle A/A and A/G lamps show weapon state.** A/A
-  lights while the gun switch is on guns. A/G blinks slowly while bombs are
-  selected and a bomb arm switch is armed, and lights steady while rockets
-  are selected with a release mode set. Both rows were empty before.
-- **P-51D: the TakeOff panel landing gear lamp shows the gear lights.** It
-  lights steady with the green gear light and blinks slowly with the red.
-  The row was empty before.
+- **Mosquito: the MFD backlight follows the left cockpit lamp dimmer the
+  right way round.** The centre CarrierAce MFD, and the panels that follow
+  it, got brighter as the dimmer knob turned up, but the cockpit lamp
+  comes on at full and dims from there. The backlight now stays dark until
+  the lamp comes on and dims with it. If you have changed the
+  CarrierAce_MFD_C INST_PNL_Backlight row, reset it to pick this up.
+- **Mosquito: the MCDU Cruise page shows the climb rate and heading
+  better.** The climb rate now reads to the nearest 10 ft/min, lined up on
+  the right with a fixed last zero, so it no longer flickers through the
+  ones digit. The heading now comes from the repeater compass needle
+  instead of the compass card. If you have changed that page field (the
+  airspeed line, cells 48-71), reset it to pick this up.
+- **Mosquito: CDU radio pages.** The MCDU, CDU and PFP screens gain a
+  T1154 transmitter page (master, range and aerial switches, Type F
+  light, power lights and the two tuning meters) and an R1155 receiver
+  page (frequency, tuning, volume, meters, filter and the loop aerial).
+- **Bf-109K-4: the MFD backlight follows the UV cockpit lights.** The
+  centre CarrierAce MFD, and the panels that follow it, were lit all the
+  time. They now light while the UV lights are on and dim with their
+  knob, and the CDU screen follows them. If you have changed the
+  CarrierAce_MFD_C INST_PNL_Backlight row, reset it to pick this up.
+- **Bf-109K-4: the Takeoff panel shows the landing gear.** LEFT, RIGHT
+  and NOSE follow the cockpit's left green, right green and red gear
+  lamps, and the gear handle light comes on while all three are out.
+- **Bf-109K-4: a CDU Flight page.** The MCDU, CDU and PFP screens show
+  airspeed, climb, heading, course, altitude, altimeter setting, RPM,
+  prop pitch, MW-50 and boost pressure, and coolant and oil temperature.
+- **Bf-109K-4: Master Caution comes from the fuel reserve lamp** instead
+  of the bomb lamp.

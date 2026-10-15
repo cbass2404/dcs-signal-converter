@@ -7,27 +7,28 @@
     "Bf-109K-4"
   ],
   "module": "Bf-109K-4",
-  "disabled_devices": [
-    "CDU_Kneeboard"
-  ],
-  "follows": {
-    "CarrierAce_MFD_L": "CarrierAce_MFD_C",
-    "CarrierAce_MFD_R": "CarrierAce_MFD_C",
-    "MCDU_CoPilot": "MCDU_Captain",
-    "MCDU_Observer": "MCDU_Captain",
-    "PFP3N_CoPilot": "PFP3N_Captain",
-    "PFP3N_Observer": "PFP3N_Captain",
-    "PFP4_CoPilot": "PFP4_Captain",
-    "PFP4_Observer": "PFP4_Captain",
-    "PFP7_CoPilot": "PFP7_Captain",
-    "PFP7_Observer": "PFP7_Captain"
-  },
+  "font": "../mcdu/f14bu-font-21x31.json",
   "bindings": [
     {
       "device": "CarrierAce_MFD_C",
       "led": "INST_PNL_Backlight",
-      "conditions": [],
-      "always": true
+      "conditions": [
+        {
+          "source": "L_UV_BRIGHT",
+          "on_when": {
+            "scale": [
+              0,
+              65535
+            ]
+          }
+        },
+        {
+          "source": "UV_LIGHTS_ON",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "CarrierAce_MFD_L",
@@ -65,7 +66,8 @@
       "device": "CDU_Kneeboard",
       "led": "Screen_Backlight",
       "conditions": [],
-      "always": true,
+      "same_as": "INST_PNL_Backlight",
+      "same_as_device": "CarrierAce_MFD_C",
       "off": 255,
       "note": "Held at full, because at 0 the screen shows nothing. It lights only while this profile puts fields on the screen, whatever it is bound to, so a screen with nothing on it stays black."
     },
@@ -741,7 +743,26 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "Landing_gear_lights",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "LANDINGGEARREDLIGHT",
+          "on_when": {
+            "equals": 0
+          }
+        },
+        {
+          "source": "LANDINGGEARGREENLIGHTLEFT",
+          "on_when": {
+            "equals": 0
+          }
+        },
+        {
+          "source": "LANDINGGEARGREENLIGHTRIGHT",
+          "on_when": {
+            "equals": 0
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
@@ -803,7 +824,14 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "NOSE",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "LANDINGGEARREDLIGHT",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
@@ -813,12 +841,26 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "RIGHT",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "LANDINGGEARGREENLIGHTRIGHT",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "LEFT",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "LANDINGGEARGREENLIGHTLEFT",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
@@ -845,5 +887,107 @@
       "off": 255,
       "note": "Held at full, because at 0 the screen shows nothing. It lights only while this profile puts fields on the screen, whatever it is bound to, so a screen with nothing on it stays black."
     }
-  ]
+  ],
+  "disabled_devices": [
+    "CDU_Kneeboard"
+  ],
+  "follows": {
+    "CarrierAce_MFD_L": "CarrierAce_MFD_C",
+    "CarrierAce_MFD_R": "CarrierAce_MFD_C",
+    "MCDU_CoPilot": "MCDU_Captain",
+    "MCDU_Observer": "MCDU_Captain",
+    "PFP3N_CoPilot": "PFP3N_Captain",
+    "PFP3N_Observer": "PFP3N_Captain",
+    "PFP4_CoPilot": "PFP4_Captain",
+    "PFP4_Observer": "PFP4_Captain",
+    "PFP7_CoPilot": "PFP7_Captain",
+    "PFP7_Observer": "PFP7_Captain"
+  },
+  "screens": {
+    "CDU_Kneeboard": {
+      "start": 1,
+      "slots": [
+        {
+          "page": "dmdqgd",
+          "key": null
+        },
+        {
+          "page": null,
+          "key": null
+        },
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "MCDU_Captain": {
+      "start": 1,
+      "slots": [
+        {
+          "page": "dmdqgd",
+          "key": null
+        },
+        {
+          "page": null,
+          "key": null
+        },
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "PFP3N_Captain": {
+      "start": 1,
+      "slots": [
+        {
+          "page": "dmdqgd",
+          "key": null
+        },
+        {
+          "page": null,
+          "key": null
+        },
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "PFP4_Captain": {
+      "start": 1,
+      "slots": [
+        {
+          "page": "dmdqgd",
+          "key": null
+        },
+        {
+          "page": null,
+          "key": null
+        },
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "PFP7_Captain": {
+      "start": 1,
+      "slots": [
+        {
+          "page": "dmdqgd",
+          "key": null
+        },
+        {
+          "page": null,
+          "key": null
+        },
+        null,
+        null,
+        null,
+        null
+      ]
+    }
+  }
 }

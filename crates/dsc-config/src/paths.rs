@@ -96,8 +96,16 @@ impl Paths {
 
     /// Where the web view's page is kept as a file, for OpenKneeboard: beside
     /// the settings, in the folder the user's own files are written to.
+    ///
+    /// A dev checkout writes it where the installed copy does, so the tab
+    /// OpenKneeboard already points at shows the page being worked on. Written
+    /// beside the dev settings instead, it was a second copy in `data` that
+    /// nothing opened, and every change to the page was tested twice.
     pub fn web_page(&self) -> PathBuf {
-        self.settings.with_file_name(crate::web::PAGE_FILE)
+        match self.layout {
+            Layout::Dev => writable_dir().join(crate::web::PAGE_FILE),
+            _ => self.settings.with_file_name(crate::web::PAGE_FILE),
+        }
     }
 
     /// Found in this order:

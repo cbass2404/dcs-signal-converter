@@ -1102,7 +1102,10 @@
                     <td class="ed">scaled across</td>
                     <td><code>{"scale": [0, 65535]}</code></td>
                     <td>dimmers, knobs, gauges</td>
-                    <td>No threshold: brightness follows the signal. Backlights.</td>
+                    <td>
+                      No threshold: brightness follows the signal. Backlights, and warbird rheostats
+                      that dim as they turn up.
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -1166,6 +1169,17 @@
               the signal moves through the range you give. To keep a backlight dimmer than full, use
               <span class="ed">Always on</span>
               with a lower On instead, or scale across a wider range.
+            </p>
+            <p class="note">
+              A scale's first number is where the lamp is dimmest and its second is where it is
+              fully bright, so putting the higher number first makes a lamp that dims as the knob
+              turns up. Some warbird rheostats work that way: the Mosquito's flood lights are black
+              until 5237, fully bright there, and barely lit at 65535.
+              <strong>Dark below</strong> keeps the lamp off under a value, which is how that knob
+              goes from off straight to full. Pick <code>L_SIDE_L_DIM</code> above to try it. A
+              plain scale is written <code>[0, 65535]</code> as it always was; one that dims as it
+              turns up, or has a cut-off, is written by name:
+              <code>{"dimmest": 65535, "full": 5237, "dark_below": 5237}</code>.
             </p>
           </div>
         </section>
@@ -2663,9 +2677,13 @@
         else if (k === "lte") lit = value <= p;
         else if (k === "between") lit = value >= p[0] && value <= p[1];
         else {
-          const [lo, hi] = p;
-          if (hi <= lo) return off;
-          return Math.floor(((Math.min(Math.max(value, lo), hi) - lo) * max) / (hi - lo));
+          const s = Array.isArray(p) ? { dimmest: p[0], full: p[1] } : p;
+          if (s.dimmest === s.full) return off;
+          if (s.dark_below !== undefined && value < s.dark_below) return 0;
+          const lo = Math.min(s.dimmest, s.full);
+          const hi = Math.max(s.dimmest, s.full);
+          const from = Math.abs(Math.min(Math.max(value, lo), hi) - s.dimmest);
+          return Math.floor((from * max) / (hi - lo));
         }
         return lit ? Math.min(on, max) : off;
       }
@@ -2697,6 +2715,7 @@
           },
           { id: "FLAP_POS", name: "Flap Position Indicator", max: 65535 },
           { id: "LCP_CONSOLE", name: "Console Lights", max: 65535 },
+          { id: "L_SIDE_L_DIM", name: "L.H. Flood Light Dimmer (Mosquito)", max: 65535 },
         ];
         const labels = {
           equals: "is exactly",
@@ -2723,7 +2742,8 @@
           kind.textContent = "";
           const kinds = s.values ? ["equals", "in"] : ["gte", "lte", "between", "scale"];
           for (const k of kinds) kind.append(h("option", { value: k }, labels[k]));
-          kind.value = s.values ? "equals" : s.id === "LCP_CONSOLE" ? "scale" : "gte";
+          const dimmer = s.id === "LCP_CONSOLE" || s.id === "L_SIDE_L_DIM";
+          kind.value = s.values ? "equals" : dimmer ? "scale" : "gte";
           const range = $("t-value");
           range.max = s.max;
           range.value = s.values ? 1 : Math.round(s.max * 0.55);
@@ -2766,9 +2786,27 @@
             const i = num(half, () => ((when = { [k]: Number(i.value) || 0 }), draw()));
             params.append(i);
             when = { [k]: half };
+          } else if (k === "scale") {
+            // The Mosquito knob starts as it is in the cockpit.
+            const warbird = s.id === "L_SIDE_L_DIM";
+            const dim = num(warbird ? s.max : 0, set);
+            const full = num(warbird ? 5237 : s.max, set);
+            const dark = num(warbird ? 5237 : "", set);
+            dark.placeholder = "none";
+            params.append(dim, " to ", full, " dark below ", dark);
+            function set() {
+              const sc = { dimmest: Number(dim.value) || 0, full: Number(full.value) || 0 };
+              if (dark.value !== "") sc.dark_below = Number(dark.value) || 0;
+              // Written as the pair whenever that says it all, as the file is.
+              const pair = sc.dark_below === undefined && sc.dimmest <= sc.full;
+              when = { scale: pair ? [sc.dimmest, sc.full] : sc };
+              draw();
+            }
+            set();
+            return;
           } else {
-            const lo = num(k === "scale" ? 0 : Math.round(s.max * 0.3), set);
-            const hi = num(k === "scale" ? s.max : Math.round(s.max * 0.7), set);
+            const lo = num(Math.round(s.max * 0.3), set);
+            const hi = num(Math.round(s.max * 0.7), set);
             params.append(lo, " and ", hi);
             function set() {
               when = { [k]: [Number(lo.value) || 0, Number(hi.value) || 0] };
@@ -2778,6 +2816,13 @@
             return;
           }
           draw();
+        }
+        /** A scale in words, as the editor says it. */
+        function scaled(p) {
+          const sc = Array.isArray(p) ? { dimmest: p[0], full: p[1] } : p;
+          const dims = sc.dimmest > sc.full ? ", dimming as it turns up" : "";
+          const dark = sc.dark_below === undefined ? "" : `, dark below ${sc.dark_below}`;
+          return `follows it, scaled from ${sc.dimmest} to ${sc.full}${dims}${dark}`;
         }
         function draw() {
           if (!when) return;
@@ -2802,7 +2847,7 @@
           const [k, p] = Object.entries(when)[0];
           const said =
             k === "scale"
-              ? `follows it, scaled from ${p[0]} to ${p[1]}`
+              ? scaled(p)
               : `${labels[k]} ${Array.isArray(p) ? p.join(k === "between" ? " and " : ", ") : p}`;
           $("t-say").innerHTML = `The lamp is <b>${out}</b>: ${s.id} ${said}, and reads ${v}.`;
           const row = { conditions: [{ source: s.id, on_when: when }] };
@@ -4473,6 +4518,13 @@
             "readings",
           ],
           [
+            "Dark below",
+            "dark_below",
+            "Test",
+            "On a scale: below this value the lamp is off, wherever the scale would put it. For a knob that goes from off straight to full.",
+            "tests",
+          ],
+          [
             "Decimals",
             "decimals",
             "Reading",
@@ -4687,7 +4739,7 @@
             "Scaled across",
             "scale",
             "Test",
-            "No threshold: brightness follows the signal, from off to fully bright across the range you give. For backlights.",
+            "No threshold: brightness follows the signal, from dimmest at the first number to fully bright at the second. Higher first dims as the knob turns up. For backlights.",
             "tests",
           ],
           [

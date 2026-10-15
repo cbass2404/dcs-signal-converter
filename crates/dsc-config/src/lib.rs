@@ -402,6 +402,10 @@ pub struct Output {
     pub mask: Option<u16>,
     #[serde(default)]
     pub shift: u8,
+    /// The lowest value it reports, where that is known and not 0: a gauge
+    /// value converted to a range such as 10 to 75.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub min_value: Option<u32>,
     pub max_value: Option<u32>,
     /// Byte length of a string output. Sized separately from `max_value`
     /// because DCS-BIOS uses `max_length` for strings, and the decoder needs it
@@ -971,7 +975,99 @@ pub enum OnWhen {
     Gte(u32),
     Lte(u32),
     Between([u32; 2]),
-    Scale([u32; 2]),
+    Scale(Scale),
+}
+
+/// A dimmer's travel: where on the knob the lamp is dimmest and where it is
+/// fully bright, and optionally a stretch at the bottom where it is dark.
+///
+/// Either end can be the higher one. Most knobs brighten as they turn up, but
+/// some warbird rheostats go from off straight to full and dim from there as
+/// the knob keeps turning: the Mosquito's flood lights are black until 5237,
+/// full there, and barely lit at 65535. That knob is
+/// `{ "dimmest": 65535, "full": 5237, "dark_below": 5237 }`.
+///
+/// Written as the plain `[dimmest, full]` pair whenever that says it all, so
+/// every scale from before this existed reads and saves exactly as it was.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Scale {
+    pub dimmest: u32,
+    pub full: u32,
+    /// Below this the lamp is off, wherever the scale would put it.
+    pub dark_below: Option<u32>,
+}
+
+impl From<[u32; 2]> for Scale {
+    fn from([dimmest, full]: [u32; 2]) -> Self {
+        Scale {
+            dimmest,
+            full,
+            dark_below: None,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct NamedScale {
+    dimmest: u32,
+    full: u32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    dark_below: Option<u32>,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(untagged)]
+enum ScaleRepr {
+    Pair([u32; 2]),
+    Named(NamedScale),
+}
+
+impl Serialize for Scale {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> std::result::Result<S::Ok, S::Error> {
+        // Named once the pair would hide something: a cut-off, or a knob that
+        // dims as it turns up, which as a bare pair reads like a typo.
+        if self.dark_below.is_none() && self.dimmest <= self.full {
+            ScaleRepr::Pair([self.dimmest, self.full]).serialize(s)
+        } else {
+            ScaleRepr::Named(NamedScale {
+                dimmest: self.dimmest,
+                full: self.full,
+                dark_below: self.dark_below,
+            })
+            .serialize(s)
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for Scale {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> std::result::Result<Self, D::Error> {
+        Ok(match ScaleRepr::deserialize(d)? {
+            ScaleRepr::Pair(pair) => pair.into(),
+            ScaleRepr::Named(n) => Scale {
+                dimmest: n.dimmest,
+                full: n.full,
+                dark_below: n.dark_below,
+            },
+        })
+    }
+}
+
+impl Scale {
+    /// The lamp value for a raw source value, in `0..=led_max`.
+    fn resolve(&self, value: u32, led_max: u8) -> u8 {
+        if self.dark_below.is_some_and(|d| value < d) {
+            return 0;
+        }
+        let (lo, hi) = (self.dimmest.min(self.full), self.dimmest.max(self.full));
+        if hi == lo {
+            return 0;
+        }
+        // Distance from the dimmest end, whichever end that is.
+        let from_dimmest = value.clamp(lo, hi).abs_diff(self.dimmest);
+        // u64 so the multiply cannot overflow on a 0..65535 source.
+        ((from_dimmest as u64 * led_max as u64) / (hi - lo) as u64) as u8
+    }
 }
 
 impl OnWhen {
@@ -980,7 +1076,8 @@ impl OnWhen {
         match self {
             OnWhen::Equals(v) | OnWhen::Gte(v) | OnWhen::Lte(v) => Some(*v),
             OnWhen::In(vs) => vs.iter().max().copied(),
-            OnWhen::Between([lo, hi]) | OnWhen::Scale([lo, hi]) => Some((*lo).max(*hi)),
+            OnWhen::Between([lo, hi]) => Some((*lo).max(*hi)),
+            OnWhen::Scale(s) => [s.dimmest, s.full].into_iter().chain(s.dark_below).max(),
         }
     }
 
@@ -992,17 +1089,8 @@ impl OnWhen {
             OnWhen::Gte(v) => value >= *v,
             OnWhen::Lte(v) => value <= *v,
             OnWhen::Between([lo, hi]) => value >= *lo && value <= *hi,
-            OnWhen::Scale([lo, hi]) => {
-                let (lo, hi) = (*lo, *hi);
-                if hi <= lo {
-                    return off;
-                }
-                let clamped = value.clamp(lo, hi) - lo;
-                let span = hi - lo;
-                // u64 so the multiply cannot overflow on a 0..65535 source.
-                let scaled = (clamped as u64 * led_max as u64) / span as u64;
-                return scaled as u8;
-            }
+            OnWhen::Scale(s) if s.dimmest == s.full => return off,
+            OnWhen::Scale(s) => return s.resolve(value, led_max),
         };
         if lit {
             on.min(led_max)
@@ -4852,14 +4940,14 @@ mod tests {
                 Branch {
                     conditions: vec![
                         cond("STATION", OnWhen::Equals(1)),
-                        cond("CPG_BRIGHT", OnWhen::Scale([0, 65535])),
+                        cond("CPG_BRIGHT", OnWhen::Scale([0, 65535].into())),
                     ],
                     blink: Blink::Steady,
                 },
                 Branch {
                     conditions: vec![
                         cond("STATION", OnWhen::Equals(0)),
-                        cond("PLT_BRIGHT", OnWhen::Scale([0, 65535])),
+                        cond("PLT_BRIGHT", OnWhen::Scale([0, 65535].into())),
                     ],
                     blink: Blink::Steady,
                 },
@@ -4970,11 +5058,11 @@ mod tests {
             stored: None,
             any_of: vec![
                 Branch {
-                    conditions: vec![cond("PLT_KNOB", OnWhen::Scale([0, 8]))],
+                    conditions: vec![cond("PLT_KNOB", OnWhen::Scale([0, 8].into()))],
                     blink: Blink::Steady,
                 },
                 Branch {
-                    conditions: vec![cond("RIO_KNOB", OnWhen::Scale([0, 8]))],
+                    conditions: vec![cond("RIO_KNOB", OnWhen::Scale([0, 8].into()))],
                     blink: Blink::Steady,
                 },
             ],
@@ -5073,7 +5161,7 @@ mod tests {
                 Binding {
                     device: "D".into(),
                     led: "Backlight".into(),
-                    conditions: vec![cond("DIM", OnWhen::Scale([0, 65535]))],
+                    conditions: vec![cond("DIM", OnWhen::Scale([0, 65535].into()))],
                     always: false,
                     any_of: Vec::new(),
                     pick: Pick::default(),
@@ -5213,7 +5301,7 @@ mod tests {
 
     #[test]
     fn scale_maps_a_dimmer_across_the_lamp_range() {
-        let w = OnWhen::Scale([0, 65535]);
+        let w = OnWhen::Scale([0, 65535].into());
         assert_eq!(w.resolve(0, 255, 0, 255), 0);
         assert_eq!(w.resolve(65535, 255, 0, 255), 255);
         assert_eq!(w.resolve(32768, 255, 0, 255), 127);
@@ -5221,7 +5309,62 @@ mod tests {
 
     #[test]
     fn scale_with_a_degenerate_range_is_off_not_a_panic() {
-        assert_eq!(OnWhen::Scale([10, 10]).resolve(10, 255, 0, 255), 0);
+        assert_eq!(OnWhen::Scale([10, 10].into()).resolve(10, 255, 0, 255), 0);
+    }
+
+    #[test]
+    fn a_reversed_scale_dims_as_the_knob_turns_up() {
+        let w = OnWhen::Scale([65535, 0].into());
+        assert_eq!(w.resolve(0, 255, 0, 255), 255);
+        assert_eq!(w.resolve(65535, 255, 0, 255), 0);
+        assert_eq!(w.resolve(32768, 255, 0, 255), 127);
+    }
+
+    /// The Mosquito's flood dimmer: black until 5237, full there, and dimming
+    /// all the way to the stop.
+    #[test]
+    fn a_scale_is_dark_below_its_cut_off() {
+        let w = OnWhen::Scale(Scale {
+            dimmest: 65535,
+            full: 5237,
+            dark_below: Some(5237),
+        });
+        assert_eq!(w.resolve(0, 255, 0, 255), 0);
+        assert_eq!(w.resolve(3802, 255, 0, 255), 0);
+        assert_eq!(w.resolve(5237, 255, 0, 255), 255);
+        assert_eq!(w.resolve(65535, 255, 0, 255), 0);
+        assert!(w.resolve(35386, 255, 0, 255).abs_diff(127) <= 1);
+    }
+
+    #[test]
+    fn a_plain_scale_keeps_its_pair_and_any_other_is_named() {
+        let pair = r#"{"scale":[0,65535]}"#;
+        let w: OnWhen = serde_json::from_str(pair).unwrap();
+        assert_eq!(serde_json::to_string(&w).unwrap(), pair);
+
+        let reversed = r#"{"scale":{"dimmest":65535,"full":5237}}"#;
+        let w: OnWhen = serde_json::from_str(reversed).unwrap();
+        assert_eq!(serde_json::to_string(&w).unwrap(), reversed);
+
+        let cut = r#"{"scale":{"dimmest":65535,"full":5237,"dark_below":5237}}"#;
+        let w: OnWhen = serde_json::from_str(cut).unwrap();
+        assert_eq!(serde_json::to_string(&w).unwrap(), cut);
+
+        // A reversed pair from a hand-written file is read, then saved named.
+        let w: OnWhen = serde_json::from_str(r#"{"scale":[65535,5237]}"#).unwrap();
+        assert_eq!(serde_json::to_string(&w).unwrap(), reversed);
+
+        assert!(serde_json::from_str::<OnWhen>(r#"{"scale":{"dimest":1,"full":2}}"#).is_err());
+    }
+
+    #[test]
+    fn a_scale_is_checked_against_its_highest_number() {
+        let w = OnWhen::Scale(Scale {
+            dimmest: 10,
+            full: 20,
+            dark_below: Some(30),
+        });
+        assert_eq!(w.highest(), Some(30));
     }
 
     /// The field was added once there was more than one protocol to name, so

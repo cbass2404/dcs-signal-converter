@@ -46,6 +46,10 @@ unless this says what moved.
   ones digit. The heading now comes from the repeater compass needle
   instead of the compass card. If you have changed that page field (the
   airspeed line, cells 48-71), reset it to pick this up.
+- **Mosquito: CDU radio pages.** The MCDU, CDU and PFP screens gain a
+  T1154 transmitter page (master, range and aerial switches, Type F
+  light, power lights and the two tuning meters) and an R1155 receiver
+  page (frequency, tuning, volume, meters, filter and the loop aerial).
 - **Bf-109K-4: the MFD backlight follows the UV cockpit lights.** The
   centre CarrierAce MFD, and the panels that follow it, were lit all the
   time. They now light while the UV lights are on and dim with their

@@ -13,53 +13,14 @@ shipped to you is brought up to the new one for you. A fix to something
 you have touched only reaches you if you reset it, and you cannot decide to
 unless this says what moved.
 
-## 1.0.0-beta.014
-
-- **A scale can dim as the knob turns up.** Some warbird rheostats go
-  from off straight to full and dim from there as the knob keeps
-  turning. A lamp scaled across a dimmer now takes where it is dimmest
-  and where it is fully bright in either order, and an optional Dark
-  below that keeps it off under a value. Scales you already have work
-  and save exactly as before.
-- **The session log shows the signal behind a copied lamp.** A lamp set
-  to copy another one logged its brightness but not the cockpit signal
-  driving it when the panel it copies was not plugged in. That signal is
-  now logged as it moves.
-- **Gauge values show the range they really read.** The AJS37, Bf-109K-4,
-  F-86F and P-51D send some gauges as the reading itself, such as coolant
-  temperature in degrees. Their signal details said 0 to 65535, the same as
-  a needle position. They now show the real range, such as 0 to 130 for
-  the Bf-109's `COOLANT_TEMPERATURE_VALUE`, and a condition on one is
-  checked against it.
+## 1.0.0-beta.015
 
 ### Profiles
 
-- **Mosquito: the MFD backlight follows the left cockpit lamp dimmer the
-  right way round.** The centre CarrierAce MFD, and the panels that follow
-  it, got brighter as the dimmer knob turned up, but the cockpit lamp
-  comes on at full and dims from there. The backlight now stays dark until
-  the lamp comes on and dims with it. If you have changed the
-  CarrierAce_MFD_C INST_PNL_Backlight row, reset it to pick this up.
-- **Mosquito: the MCDU Cruise page shows the climb rate and heading
-  better.** The climb rate now reads to the nearest 10 ft/min, lined up on
-  the right with a fixed last zero, so it no longer flickers through the
-  ones digit. The heading now comes from the repeater compass needle
-  instead of the compass card. If you have changed that page field (the
-  airspeed line, cells 48-71), reset it to pick this up.
-- **Mosquito: CDU radio pages.** The MCDU, CDU and PFP screens gain a
-  T1154 transmitter page (master, range and aerial switches, Type F
-  light, power lights and the two tuning meters) and an R1155 receiver
-  page (frequency, tuning, volume, meters, filter and the loop aerial).
-- **Bf-109K-4: the MFD backlight follows the UV cockpit lights.** The
-  centre CarrierAce MFD, and the panels that follow it, were lit all the
-  time. They now light while the UV lights are on and dim with their
-  knob, and the CDU screen follows them. If you have changed the
-  CarrierAce_MFD_C INST_PNL_Backlight row, reset it to pick this up.
-- **Bf-109K-4: the Takeoff panel shows the landing gear.** LEFT, RIGHT
-  and NOSE follow the cockpit's left green, right green and red gear
-  lamps, and the gear handle light comes on while all three are out.
-- **Bf-109K-4: a CDU Flight page.** The MCDU, CDU and PFP screens show
-  airspeed, climb, heading, course, altitude, altimeter setting, RPM,
-  prop pitch, MW-50 and boost pressure, and coolant and oil temperature.
-- **Bf-109K-4: Master Caution comes from the fuel reserve lamp** instead
-  of the bomb lamp.
+- **MiG-21bis: a CDU Flight page.** The MCDU, CDU and PFP screens show
+  airspeed and altitude, heading, course, the RSBN/ADF needle, RSBN
+  range, the barometric altimeter setting, the RSBN and PRMG channels
+  with volume, and the ARC-10 channel, mode, squelch and volume.
+- **MiG-21bis: the Orion throttle A/A and A/G lamps follow the weapons
+  AA/AG mode switch.** They were unbound. If you have changed the
+  Orion_Throttle_Base_II A/A or A/G row, reset it to pick this up.

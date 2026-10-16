@@ -297,12 +297,26 @@
     {
       "device": "Orion_Throttle_Base_II",
       "led": "A/A",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "MODE_AA_AG",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "Orion_Throttle_Base_II",
       "led": "A/G",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "MODE_AA_AG",
+          "on_when": {
+            "equals": 0
+          }
+        }
+      ]
     },
     {
       "device": "PFP3N_Captain",
@@ -988,6 +1002,23 @@
   },
   "screens": {
     "CDU_Kneeboard": {
+      "start": 1,
+      "slots": [
+        {
+          "page": "l1cueu",
+          "key": null
+        },
+        {
+          "page": null,
+          "key": null
+        },
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "MCDU_Captain": {
       "start": 1,
       "slots": [
         {

@@ -29,3 +29,32 @@ unless this says what moved.
 - **Reset page.** A shipped page open in the page editor has a Reset page
   button that puts its name and every field back as shipped, without
   touching the rest of the profile. Save page writes it.
+- **A lamp lit by shared conditions can add its own.** Under the shared
+  conditions, "+ Add condition (and)" adds tests that must hold as well,
+  and "+ Add alternative (or)" adds other ways for the lamp to light. Use
+  one or the other: once you add to one, only that one extends. A throttle
+  A/G lamp can light by a shared BOMB READY, or by master arm with rockets
+  armed.
+- **"+ Add condition" reads "+ Add condition (and)"** under every group of
+  conditions, to match "+ Add alternative (or)".
+
+### Profiles
+
+- **F4U-1D: the Takeoff panel shows the gear, flaps, hook and bombs.**
+  LEFT, RIGHT and NOSE follow the left, right and tail wheels, lit steady
+  at one end of their travel and blinking slowly at the other, and the gear
+  handle light blinks while any wheel is moving. FLAPS lights while the
+  flaps are out, HALF near half travel and FULL at full. HOOK lights while
+  the tail hook is down. CTR, LI and RI follow the pylon, left wing and
+  right wing release switches, and LO and RO the arming switch at NOSE and
+  TAIL. JETT lights by new BOMB READY shared conditions: a release
+  selected, the arming switch off SAFE and Master Arm on.
+- **F4U-1D: the Orion throttle A/A and A/G lamps show the weapons are
+  ready.** A/A lights with Master Arm on, both gun charge switches on and
+  all three gun stations selected. A/G lights by BOMB READY, or with the
+  rocket ready light on, rockets armed and Master Arm on.
+- **F4U-1D: the CDU screen backlight follows the MFD backlight.**
+
+These F4U-1D rows were unbound. If you have changed any TAKEOFF_PLANEL_2
+row, the Orion_Throttle_Base_II A/A or A/G row, or the CDU_Kneeboard
+Screen_Backlight row, reset it to pick this up.

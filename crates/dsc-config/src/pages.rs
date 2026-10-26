@@ -1181,6 +1181,7 @@ impl Profile {
                     .find(|s| &s.id == id)
                     .map(|s| Arc::new(s.clone()))
             });
+            b.join_signal();
         }
     }
 

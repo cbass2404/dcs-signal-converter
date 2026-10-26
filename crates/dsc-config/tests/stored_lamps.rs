@@ -177,11 +177,11 @@ fn a_lamp_cannot_light_by_a_number() {
 }
 
 #[test]
-fn a_lamp_lit_by_a_signal_has_no_conditions_of_its_own() {
+fn a_lamp_lit_by_a_signal_is_not_also_always_on() {
     let found = refusals(
         &profile(
             r#"{"device": "Orion_Throttle_Base_II", "led": "A/A", "signal": "mc0001",
-                "conditions": [{"source": "PLT_MC", "on_when": {"equals": 1}}]}"#,
+                "always": true}"#,
         ),
         &lib(Vec::new()),
     );
@@ -189,6 +189,73 @@ fn a_lamp_lit_by_a_signal_has_no_conditions_of_its_own() {
         found.iter().any(|e| e.contains("it can have one")),
         "{found:?}"
     );
+}
+
+/// The caution signal and its own fuel test, with these readings.
+fn lit_with(p: &Profile, seat: u32, plt: u32, fuel: u32) -> Option<u8> {
+    let devices = devices();
+    let b = &p.bindings[0];
+    let (_, led) = devices.device(&b.device).unwrap().led(&b.led).unwrap();
+    p.resolve_binding(b, led, |id| match id {
+        "SEAT_POSITION" => Some(seat),
+        "PLT_MC" => Some(plt),
+        "CPLT_MC" => Some(0),
+        "FUEL" => Some(fuel),
+        _ => None,
+    })
+}
+
+const AND_FUEL: &str = r#"{"device": "Orion_Throttle_Base_II", "led": "A/A", "signal": "mc0001",
+    "conditions": [{"source": "FUEL", "on_when": {"gte": 1000}}]}"#;
+
+const OR_FUEL: &str = r#"{"device": "Orion_Throttle_Base_II", "led": "A/A", "signal": "mc0001",
+    "any_of": [{"conditions": [{"source": "FUEL", "on_when": {"gte": 1000}}]}]}"#;
+
+#[test]
+fn conditions_of_its_own_must_hold_as_well() {
+    let p = profile(AND_FUEL).with_pages(&lib(Vec::new()));
+    assert!(refusals(&p, &lib(Vec::new())).is_empty());
+    assert_eq!(lit_with(&p, 0, 1, 2000), Some(1), "caution and fuel");
+    assert_eq!(lit_with(&p, 0, 1, 0), Some(0), "caution, no fuel");
+    assert_eq!(lit_with(&p, 0, 0, 2000), Some(0), "fuel, no caution");
+}
+
+#[test]
+fn alternatives_of_its_own_light_it_too() {
+    // One alternative of its own is the OR form, not its own conditions.
+    let p = profile(OR_FUEL).with_pages(&lib(Vec::new()));
+    assert!(refusals(&p, &lib(Vec::new())).is_empty());
+    assert_eq!(lit_with(&p, 0, 1, 0), Some(1), "caution alone");
+    assert_eq!(lit_with(&p, 0, 0, 2000), Some(1), "fuel alone");
+    assert_eq!(lit_with(&p, 0, 0, 0), Some(0), "neither");
+}
+
+#[test]
+fn what_a_lamp_adds_is_watched_and_lights_nothing_unattached() {
+    let p = profile(AND_FUEL);
+    assert_eq!(p.sources_of(&p.bindings[0]), vec!["FUEL"]);
+    assert_eq!(lit_with(&p, 0, 1, 2000), None, "fuel alone cannot light it");
+
+    let p = p.with_pages(&lib(Vec::new()));
+    let mut read = p.sources_of(&p.bindings[0]);
+    read.sort_unstable();
+    read.dedup();
+    assert_eq!(read, vec!["CPLT_MC", "FUEL", "PLT_MC", "SEAT_POSITION"]);
+}
+
+#[test]
+fn a_missing_signal_in_what_a_lamp_adds_takes_its_own_chain() {
+    // ANDed, the whole lamp goes dark rather than lighting by the caution
+    // alone. ORed, only that alternative goes.
+    let missing = |s: &str| s.replace("\"FUEL\"", "\"NOT_IN_THIS_MODULE\"");
+    let and = profile(&missing(AND_FUEL))
+        .with_pages(&lib(Vec::new()))
+        .runnable(&module());
+    assert_eq!(lit_with(&and, 0, 1, 2000), None);
+    let or = profile(&missing(OR_FUEL))
+        .with_pages(&lib(Vec::new()))
+        .runnable(&module());
+    assert_eq!(lit_with(&or, 0, 1, 0), Some(1));
 }
 
 #[test]

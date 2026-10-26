@@ -225,7 +225,7 @@ to drive a lamp, and the editor offers each only where it can mean something:
 
 | Button                     | What it does                                                |
 | -------------------------- | ----------------------------------------------------------- |
-| **+ Add condition**        | Another test that must _also_ hold.                         |
+| **+ Add condition (and)**  | Another test that must _also_ hold.                         |
 | **+ Add alternative (or)** | Another way to light the lamp, such as from the other seat. |
 | **Always on**              | Lit whenever the aircraft is loaded, or a fixed brightness. |
 | **Match another lamp**     | Follow another dimmer, on this panel or another one.        |

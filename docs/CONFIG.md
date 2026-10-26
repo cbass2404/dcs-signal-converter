@@ -1933,8 +1933,8 @@ one of, is between, is at least, is at most, or is anything else (`else`).
 
 The second kind of stored signal is a lamp's whole logic, written once:
 `conditions`, or `any_of` and `pick`, exactly as a lamp row has them, in place
-of `terms`. A lamp row points at it with `signal` and keeps only its own `on`
-and `off`:
+of `terms`. A lamp row points at it with `signal` and keeps its own `on` and
+`off`:
 
 ```jsonc
 // in the page file's "signals"
@@ -1959,16 +1959,32 @@ and `off`:
   and each is as bright as it should be.
 - **Signals never contain signals.** A signal's conditions name DCS-BIOS
   signals only, so there is nothing to loop.
-- **A lamp lit by a signal has nothing else**: conditions of its own, always
-  on or a lamp to match beside `signal` are refused. A number signal on a lamp
-  and lamp conditions on a screen are refused too.
+- **A lamp can add to the signal, one way or the other.** `conditions` beside
+  `signal` must hold as well (AND); `any_of` beside it are more ways to light
+  the lamp (OR), even just one, which is not a spelling of `conditions` here.
+  Its own conditions go into every alternative of the signal's, and a `blink`
+  of its own overrides the signal's there. Beside its own `any_of`, the lamp's
+  `pick` chooses among the signal's alternatives and its own alike. The
+  throttle A/G lamp lights by "bomb ready" or by master arm with rockets armed:
+
+  ```jsonc
+  { "device": "Orion_Throttle_Base_II", "led": "A/G", "signal": "bmb7rd",
+    "any_of": [ { "conditions": [ { "source": "GUN_BOX_MASTER_ARM", "on_when": { "equals": 1 } },
+                                  { "source": "ROCKET_STATION_ARM_SAFE", "on_when": { "equals": 1 } } ] } ] }
+  ```
+
+- **Nothing else beside `signal`**: always on or a lamp to match is refused. A
+  number signal on a lamp and lamp conditions on a screen are refused too.
 - **Checked against the library, not the attachment.** The daemon validates a
   profile before it runs it with its pages, so a lamp's signal is looked up in
   the page file; the run attaches it. The engine indexes the lamp under every
   address the signal reads, so it is re-checked when one moves, as its own
   conditions would be. A signal reading something this DCS-BIOS lacks is
   flagged on each lamp it lights, and that lamp's copy drops the chain holding
-  it, by the same rule as a lamp's own.
+  it, by the same rule as a lamp's own. A missing signal in conditions the lamp
+  adds turns the whole lamp off rather than leaving it lit by the signal
+  alone; in an alternative it adds, only that alternative goes. Until the
+  signal is attached, the lamp lights by nothing.
 - **Deleting one** is refused while any saved profile's lamp lights by it.
 
 ### Updates: pages and profiles apart

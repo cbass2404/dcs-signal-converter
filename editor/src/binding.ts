@@ -417,9 +417,21 @@ function describeBinding(
     c.source
       ? `${c.source} ${describeTest(c.on_when, byId.get(c.source))}`
       : "an unfinished condition";
+  const flash = (g: { blink?: BlinkRate }): string => (g.blink ? `, ${FLASH_WORDS[g.blink]}` : "");
   if (b.always) lines.push("Always on, reading no signal");
   else if (b.signal) {
     lines.push(`Lights by the shared conditions ${storedSignal(b.signal)?.name ?? b.signal}`);
+    // What the lamp adds: alternatives of its own, or conditions that must
+    // also hold. Its own groups are never the plain single-group form here.
+    if (b.any_of && b.any_of.length > 0) {
+      const how = b.pick === "latest" ? "the one that changed last wins" : "the brightest wins";
+      lines.push(`or any of these, ${how}:`);
+      for (const g of b.any_of)
+        lines.push(`- ${g.conditions.map(condition).join(" and ")}${flash(g)}`);
+    } else if (b.conditions.length > 0) {
+      lines.push(`and ${b.conditions.map(condition).join("\nand ")}`);
+      if (b.blink) lines.push(`Lit ${FLASH_WORDS[b.blink]}`);
+    }
   } else if (b.same_as) {
     const elsewhere = b.same_as_device && b.same_as_device !== b.device;
     lines.push(`Matches ${b.same_as}${elsewhere ? ` on ${deviceName(b.same_as_device!)}` : ""}`);
@@ -430,10 +442,7 @@ function describeBinding(
   } else {
     const how = b.pick === "latest" ? "the one that changed last wins" : "the brightest wins";
     lines.push(`Any of these, ${how}:`);
-    for (const g of groups) {
-      const flash = g.blink ? `, ${FLASH_WORDS[g.blink]}` : "";
-      lines.push(`- ${g.conditions.map(condition).join(" and ")}${flash}`);
-    }
+    for (const g of groups) lines.push(`- ${g.conditions.map(condition).join(" and ")}${flash(g)}`);
   }
   if (b.on !== null) lines.push(`Lit at ${b.on}`);
   if (b.off !== 0) lines.push(`Off at ${b.off}`);
@@ -481,14 +490,16 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
    * condition list.
    *
    * `any_of` with one branch means exactly what `conditions` means, and leaving
-   * the file in that state would ship two spellings of one thing.
+   * the file in that state would ship two spellings of one thing. Not on a lamp
+   * lit by shared conditions, where one alternative of its own is an OR beside
+   * them and its own conditions are an AND.
    */
   function normalise(): void {
     const branches = binding.any_of ?? [];
     for (let i = branches.length - 1; i >= 0; i -= 1) {
       if ((branches[i]?.conditions.length ?? 0) === 0) branches.splice(i, 1);
     }
-    if (branches.length === 1) {
+    if (branches.length === 1 && !binding.signal) {
       binding.conditions = branches[0]?.conditions ?? [];
       // The survivor's flash goes with its conditions.
       const blink = branches[0]?.blink;
@@ -497,8 +508,8 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
       binding.any_of = [];
     }
     // Choosing between alternatives means nothing without two of them, and
-    // the profile check rejects it.
-    if (branches.length < 2) delete binding.pick;
+    // the profile check rejects it. The shared conditions are one.
+    if (branches.length < (binding.signal ? 1 : 2)) delete binding.pick;
   }
 
   function viewRow(condition: Condition, signal: SignalView | undefined): HTMLElement {
@@ -614,9 +625,11 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
             : "this unfinished condition";
           const groups = groupsOf(binding);
           const last = groups.length === 1 && group.conditions.length === 1;
-          const consequence = last
-            ? `\n\n${led.name} will be left unassigned, which means it is driven off.`
-            : `\n\n${led.name} will still need its other condition(s) to light.`;
+          const consequence = !last
+            ? `\n\n${led.name} will still need its other condition(s) to light.`
+            : binding.signal
+              ? `\n\n${led.name} will light by the shared conditions alone.`
+              : `\n\n${led.name} will be left unassigned, which means it is driven off.`;
           void confirmAction(`Delete this condition?\n\n${what}${consequence}`, "Delete").then(
             (ok) => {
               if (!ok) return;
@@ -723,8 +736,8 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
    * This lamp lights by a stored signal of lamp conditions.
    *
    * A row of its own, like a mirror: the conditions are the signal's, edited
-   * in Stored Signals at the top of the profile, and this lamp brings only
-   * its own brightness.
+   * in Shared Conditions at the top of the profile, and this lamp brings its
+   * own brightness and whatever it adds below them.
    */
   function signalRow(id: string): HTMLElement {
     const lamps = storedSignals().filter(isLampSignal);
@@ -756,7 +769,9 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
     }
     row.append(
       iconButton("cancel", "\u2715", "Stop lighting by the shared conditions", () => {
+        // Whatever the lamp added stays, as its own conditions.
         delete binding.signal;
+        normalise();
         committed();
       }),
     );
@@ -781,11 +796,14 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
    * Start a second, independent way for the lamp to light.
    *
    * The first alternative has to move the existing conditions into `any_of`,
-   * because a binding carries one form or the other and never both.
+   * because a binding carries one form or the other and never both. Beside
+   * shared conditions there is nothing to move: they are the first.
    */
   function addAlternative(): void {
     const fresh: Condition = { source: "", on_when: defaultTest(undefined, led) };
-    if (!binding.any_of || binding.any_of.length === 0) {
+    if (binding.signal) {
+      binding.any_of = [...(binding.any_of ?? []), { conditions: [fresh] }];
+    } else if (!binding.any_of || binding.any_of.length === 0) {
       // The lamp's flash goes with its conditions into the first alternative.
       const first: Branch = { conditions: binding.conditions };
       if (binding.blink) first.blink = binding.blink;
@@ -811,7 +829,7 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
       if (i > 0) block.append(el("div", { class: "and" }, "and"));
       block.append(open ? editRow(group, condition, signal) : viewRow(condition, signal));
     }
-    const add = el("button", { class: "add", type: "button" }, "+ Add condition");
+    const add = el("button", { class: "add", type: "button" }, "+ Add condition (and)");
     add.title = "Another test that must also hold for this alternative to light the lamp.";
     add.addEventListener("click", () => addCondition(group));
     block.append(add);
@@ -871,6 +889,7 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
 
     if (binding.signal) {
       host.append(signalRow(binding.signal));
+      appendAdded();
       appendFooter();
       return;
     }
@@ -943,44 +962,90 @@ export function bindingEditor(opts: BindingEditorOptions): HTMLElement {
       host.append(groupBlock(group, alternatives));
     }
 
-    const alt = el("button", { class: "add", type: "button" }, "+ Add alternative (or)");
-    alt.title = "Another way for this lamp to light, independent of the conditions above.";
-    alt.addEventListener("click", addAlternative);
-    host.append(alt);
+    host.append(alternativeButton());
 
     if (alternatives) {
-      // Brightest is OR for on/off tests. Latest is for a lamp that follows one
-      // of several knobs with nothing saying which is in use: two seats with a
-      // lighting knob each, where brightest would mean turning both down.
-      const pick = el("select", { class: "test" });
-      pick.append(
-        el("option", { value: "brightest" }, "the brightest one"),
-        el("option", { value: "latest" }, "the one whose signal moved last"),
-      );
-      pick.value = binding.pick ?? "brightest";
-      pick.addEventListener("change", () => {
-        if (pick.value === "latest") binding.pick = "latest";
-        else delete binding.pick;
-        changed();
-      });
-      host.append(
-        el(
-          "div",
-          { class: "meta with-info" },
-          "When more than one alternative could light the lamp, use ",
-          pick,
-          infoIcon(
-            "About picking an alternative",
-            "The one whose signal moved last suits a knob per seat with no signal for which seat is in use: the knob turned last drives the lamp. Until one moves, the brightest does.",
-          ),
-        ),
-        el("div", { class: "meta" }, "Within an alternative, every condition must hold."),
-      );
+      appendPick();
     } else if ((groups[0]?.conditions.length ?? 0) > 1) {
       host.append(el("div", { class: "meta" }, "The lamp lights only when every condition holds."));
     }
 
     appendFooter();
+  }
+
+  function alternativeButton(): HTMLElement {
+    const alt = el("button", { class: "add", type: "button" }, "+ Add alternative (or)");
+    alt.title = "Another way for this lamp to light, independent of the conditions above.";
+    alt.addEventListener("click", addAlternative);
+    return alt;
+  }
+
+  /** How the alternatives are picked between, under the last of them. */
+  function appendPick(): void {
+    // Brightest is OR for on/off tests. Latest is for a lamp that follows one
+    // of several knobs with nothing saying which is in use: two seats with a
+    // lighting knob each, where brightest would mean turning both down.
+    const pick = el("select", { class: "test" });
+    pick.append(
+      el("option", { value: "brightest" }, "the brightest one"),
+      el("option", { value: "latest" }, "the one whose signal moved last"),
+    );
+    pick.value = binding.pick ?? "brightest";
+    pick.addEventListener("change", () => {
+      if (pick.value === "latest") binding.pick = "latest";
+      else delete binding.pick;
+      changed();
+    });
+    host.append(
+      el(
+        "div",
+        { class: "meta with-info" },
+        "When more than one alternative could light the lamp, use ",
+        pick,
+        infoIcon(
+          "About picking an alternative",
+          "The one whose signal moved last suits a knob per seat with no signal for which seat is in use: the knob turned last drives the lamp. Until one moves, the brightest does.",
+        ),
+      ),
+      el("div", { class: "meta" }, "Within an alternative, every condition must hold."),
+    );
+  }
+
+  /**
+   * What a lamp lit by shared conditions adds of its own: conditions that
+   * must hold as well (and), or alternatives that light it too (or). Both
+   * are offered until one is used, and then only that one extends; taking
+   * its last condition away offers both again.
+   */
+  function appendAdded(): void {
+    const own = binding.any_of ?? [];
+    if (own.length > 0) {
+      for (const group of own) {
+        host.append(el("div", { class: "or" }, "or"));
+        host.append(groupBlock(group, true));
+      }
+      host.append(alternativeButton());
+      appendPick();
+      return;
+    }
+    // Shared with the binding, so adding to it adds to the lamp's own.
+    const mine: Branch = { conditions: binding.conditions };
+    if (mine.conditions.length > 0) {
+      host.append(el("div", { class: "and" }, "and"));
+      host.append(groupBlock(mine, false));
+      host.append(
+        el(
+          "div",
+          { class: "meta" },
+          "The lamp lights only when the shared conditions and every condition here hold.",
+        ),
+      );
+      return;
+    }
+    const and = el("button", { class: "add", type: "button" }, "+ Add condition (and)");
+    and.title = "A test that must hold as well as the shared conditions for this lamp to light.";
+    and.addEventListener("click", () => addCondition(mine));
+    host.append(el("div", { class: "choices" }, and, alternativeButton()));
   }
 
   /**

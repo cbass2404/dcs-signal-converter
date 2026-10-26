@@ -1193,10 +1193,10 @@
             </div>
             <div class="prose">
               <p>
-                <span class="ed">+ Add condition</span> adds a test that must <em>also</em> hold.
-                <span class="ed">+ Add alternative (or)</span> adds another way to light the lamp.
-                Together they let you say "light it when this and this are true, or when that is
-                true", which covers any rule you need.
+                <span class="ed">+ Add condition (and)</span> adds a test that must
+                <em>also</em> hold. <span class="ed">+ Add alternative (or)</span> adds another way
+                to light the lamp. Together they let you say "light it when this and this are true,
+                or when that is true", which covers any rule you need.
               </p>
               <p>
                 Two rules decide the brightness.
@@ -2211,6 +2211,17 @@
                 a dimmer. Every lamp keeps its own brightness.
               </p>
               <p>
+                A lamp lit by shared conditions can add to them, one way or the other.
+                <span class="ed">+ Add condition (and)</span> adds tests that must hold as well, and
+                <span class="ed">+ Add alternative (or)</span> adds other ways for it to light. Once
+                you use one, only that one extends; take its last condition away to get both back. A
+                throttle's A/G lamp can light by the BOMB READY shared with the bomb lamps, or by
+                master arm on with the rockets armed, so it says when any air to ground weapon is
+                ready. A flash set on conditions you add takes over from the shared ones, and with
+                alternatives, your choice of the brightest or the latest picks among the shared ones
+                and yours alike.
+              </p>
+              <p>
                 When two or more lamps in the profile light by exactly the same conditions, a banner
                 at the top of <span class="ed">Shared Conditions</span> says so.
                 <span class="ed">Make shared conditions</span> lists the lamps, saves the conditions
@@ -2263,6 +2274,43 @@
                   </div>
                   <p class="say" id="sl-say"></p>
                   <pre id="sl-json"></pre>
+                </div>
+              </div>
+            </div>
+
+            <div class="demo" id="demo-stored-or">
+              <div class="demo-head">
+                <span class="t">Shared conditions, or the lamp's own</span
+                ><span class="try">Try it</span>
+              </div>
+              <div class="demo-body">
+                <div class="controls">
+                  <div class="row">
+                    <span class="lbl">Shared</span
+                    ><button type="button" class="chip" id="so-bomb" aria-pressed="false">
+                      BOMB READY
+                    </button>
+                  </div>
+                  <div class="row">
+                    <span class="lbl">Master arm</span
+                    ><button type="button" class="chip" id="so-arm" aria-pressed="true">ON</button>
+                  </div>
+                  <div class="row">
+                    <span class="lbl">Rockets</span
+                    ><button type="button" class="chip" id="so-rkt" aria-pressed="false">
+                      ARMED
+                    </button>
+                  </div>
+                </div>
+                <div class="out">
+                  <div class="lamps">
+                    <div class="lamp">
+                      <div class="lens" id="so-a">A/G</div>
+                      <span class="val" id="so-av"></span>
+                    </div>
+                  </div>
+                  <p class="say" id="so-say"></p>
+                  <pre id="so-json"></pre>
                 </div>
               </div>
             </div>
@@ -4153,6 +4201,31 @@
         draw();
       })();
 
+      /* ------------------------------------- shared conditions, or its own */
+      (() => {
+        const bomb = toggle($("so-bomb"), draw);
+        const arm = toggle($("so-arm"), draw);
+        const rkt = toggle($("so-rkt"), draw);
+        function draw() {
+          const own = arm() && rkt();
+          const out = bomb() || own ? 1 : 0;
+          glow($("so-a"), out, 1);
+          $("so-av").textContent = `A/G: ${out}`;
+          $("so-say").innerHTML = bomb()
+            ? "BOMB READY holds, so the lamp is <b>lit by the shared conditions</b>."
+            : own
+              ? "BOMB READY does not hold, but master arm and rockets do: <b>its own alternative lights it</b>."
+              : "Neither the shared conditions nor its own alternative holds, so the lamp is off.";
+          $("so-json").textContent =
+            `{ "device": "Orion_Throttle_Base_II", "led": "A/G", "signal": "bmb7rd",\n` +
+            `  "any_of": [\n` +
+            `    { "conditions": [ { "source": "GUN_BOX_MASTER_ARM", "on_when": { "equals": 1 } },\n` +
+            `                      { "source": "ROCKET_STATION_ARM_SAFE", "on_when": { "equals": 1 } } ] }\n` +
+            `  ] }`;
+        }
+        draw();
+      })();
+
       /* ------------------------------------------------------------ pages */
       (() => {
         const panels = {
@@ -4339,7 +4412,7 @@
             "Shared conditions, on a lamp",
             "signal",
             "Lamp",
-            "Light by shared conditions in place of conditions of the lamp's own. The lamp keeps its on and off.",
+            "Light by shared conditions. The lamp keeps its on and off, and can add conditions of its own that must hold as well, or alternatives of its own that light it too, but not both.",
             "stored",
           ],
           [

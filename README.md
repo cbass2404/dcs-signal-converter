@@ -112,6 +112,7 @@ starter profile the first time you fly it, ready to fill in with the
 | OH-58D         | OH-58D Kiowa Warrior                                                               |
 | UH-1H          | UH-1H, Bell 47                                                                     |
 | UH-60L         | The UH-60L and MH-60R mods                                                         |
+| Yak-52         | Yak-52                                                                             |
 | FC3            | The Flaming Cliffs aircraft, and the mods and modules with no profile of their own |
 
 **Placeholder profiles** ship for the other aircraft DCS-BIOS supports: A-29B,

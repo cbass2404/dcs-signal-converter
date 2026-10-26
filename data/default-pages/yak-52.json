@@ -1,0 +1,18 @@
+{
+  "module": "Yak-52",
+  "pages": [],
+  "signals": [
+    {
+      "id": "ellanu",
+      "name": "MASTER CAUTION",
+      "conditions": [
+        {
+          "source": "F_STALL_WARNL",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
+    }
+  ]
+}

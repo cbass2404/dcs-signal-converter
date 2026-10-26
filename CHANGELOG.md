@@ -40,6 +40,21 @@ unless this says what moved.
 
 ### Profiles
 
+- **FW-190D9: the Takeoff panel, throttle and master caution follow the
+  aircraft.** LEFT and RIGHT follow the main wheels, lit up and blinking
+  down, with NOSE for both together, and the gear handle light comes on
+  while either wheel is between up and down. FLAPS lights while the flaps
+  are out, HALF at takeoff and FULL at landing. LI, LO, RI and RO show the
+  bomb fusing selector, and CTR its off position. JETT lights by new BOMB
+  READY shared conditions: a bomb lamp with the fusing selector off CTR.
+  On the Orion throttle, A/A lights with any gun lamp, and A/G by BOMB
+  READY or the main rocket switch on. Master caution, with FAIL on the
+  MCDU and each PFP, now lights with the fuel gauge at a fifth or below,
+  in place of the forward low fuel lamp. Backlights follow the instrument
+  lights. If you have changed a TAKEOFF_PLANEL_2 row, the
+  Orion_Throttle_Base_II A/A or A/G row, the CarrierAce_MFD_C
+  INST_PNL_Backlight row, or the Master Caution shared conditions, reset
+  it to pick this up.
 - **FW-190A8: the Takeoff panel, throttle and master caution follow the
   aircraft.** LEFT and RIGHT follow the main wheels, lit up and blinking
   down, with NOSE for both together, and the gear handle light comes on

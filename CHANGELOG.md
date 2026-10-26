@@ -40,6 +40,19 @@ unless this says what moved.
 
 ### Profiles
 
+- **I-16: the Takeoff panel, throttle and master caution follow the
+  aircraft.** LEFT and RIGHT follow the main wheels, lit up and blinking
+  down, and the gear handle light comes on while either wheel is between
+  up and down. FLAPS lights while the flaps are out, HALF at takeoff and
+  FULL at landing. JETT lights by new BOMB READY shared conditions: a
+  count set on the rockets/bombs counter with the rockets/bombs master
+  arm on. On the Orion throttle, A/G lights by BOMB READY too. Master
+  caution, with FAIL on the MCDU and each PFP, now lights with the fuel
+  gauge at a fifth or below, in place of the panel glow lights.
+  Backlights follow the cockpit light rheostat. If you have changed a
+  TAKEOFF_PLANEL_2 row, the Orion_Throttle_Base_II A/G row, the
+  CarrierAce_MFD_C INST_PNL_Backlight row, or the Master Caution shared
+  conditions, reset it to pick this up.
 - **FW-190D9: the Takeoff panel, throttle and master caution follow the
   aircraft.** LEFT and RIGHT follow the main wheels, lit up and blinking
   down, with NOSE for both together, and the gear handle light comes on

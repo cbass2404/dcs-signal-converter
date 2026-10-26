@@ -7,7 +7,25 @@
       "name": "Master Caution",
       "conditions": [
         {
-          "source": "PANEL_GLOW",
+          "source": "FUEL_GAUGE",
+          "on_when": {
+            "lte": 13107
+          }
+        }
+      ]
+    },
+    {
+      "id": "eyzavh",
+      "name": "BOMB READY",
+      "conditions": [
+        {
+          "source": "ROCK_BOMB_COUNT",
+          "on_when": {
+            "gte": 1
+          }
+        },
+        {
+          "source": "ROCK_BOMB_ARM",
           "on_when": {
             "equals": 1
           }

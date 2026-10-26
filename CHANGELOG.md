@@ -13,14 +13,19 @@ shipped to you is brought up to the new one for you. A fix to something
 you have touched only reaches you if you reset it, and you cannot decide to
 unless this says what moved.
 
-## 1.0.0-beta.015
+## 1.0.0-beta.016
 
-### Profiles
+### Fixes
 
-- **MiG-21bis: a CDU Flight page.** The MCDU, CDU and PFP screens show
-  airspeed and altitude, heading, course, the RSBN/ADF needle, RSBN
-  range, the barometric altimeter setting, the RSBN and PRMG channels
-  with volume, and the ARC-10 channel, mode, squelch and volume.
-- **MiG-21bis: the Orion throttle A/A and A/G lamps follow the weapons
-  AA/AG mode switch.** They were unbound. If you have changed the
-  Orion_Throttle_Base_II A/A or A/G row, reset it to pick this up.
+- **Reset on a profile now resets its pages too.** It used to put back only
+  the lamps and slots, leaving any page you had edited as you left it.
+  Reset now also puts the aircraft's shipped pages back as they shipped,
+  including any you deleted. Pages you made yourself are kept. The pages
+  are shared by every profile on the aircraft, and the Reset question names
+  those profiles.
+
+### Editor
+
+- **Reset page.** A shipped page open in the page editor has a Reset page
+  button that puts its name and every field back as shipped, without
+  touching the rest of the profile. Save page writes it.

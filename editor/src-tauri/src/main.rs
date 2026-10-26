@@ -504,14 +504,24 @@ fn save_profile(file: String, profile: Profile, cache: tauri::State<check::Cache
 }
 
 /// Replace one profile with its shipped default. The only call that discards
-/// the user's work, so nothing reaches it except the reset button.
+/// the user's work, so nothing reaches it except the reset button. The
+/// module's shipped pages go back with it, since a profile as it shipped
+/// includes what its screens show.
 #[tauri::command]
 fn reset_profile(file: String) -> Reply<()> {
     let paths = Paths::resolve();
     paths
         .profiles
         .reset_to_default(&file)
-        .map_err(|e| fail(&format!("resetting {file}"), e))
+        .map_err(|e| fail(&format!("resetting {file}"), e))?;
+    let module = Profile::load(&paths.profiles.defaults.join(&file))
+        .map_err(|e| fail(&format!("reading the shipped {file}"), e))?
+        .module;
+    paths
+        .pages
+        .reset_module(&module)
+        .map(|_| ())
+        .map_err(|e| fail(&format!("resetting the {module} pages"), e))
 }
 
 /// Delete a profile, giving its aircraft to the profile `give_to` first if one

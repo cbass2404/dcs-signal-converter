@@ -653,7 +653,7 @@ async function showLibrary(): Promise<void> {
       }
     }
     if (row.has_default) {
-      more.push({ label: "Reset", danger: true, run: () => void resetOne(row) });
+      more.push({ label: "Reset", danger: true, run: () => void resetOne(row, rows) });
     }
     // A shipped profile goes only when another can take its aircraft. Deleted
     // otherwise, it would be seeded straight back, so the button would be a
@@ -1135,11 +1135,21 @@ async function showMergeFrom(row: ProfileSummary, rows: ProfileSummary[]): Promi
   await load();
 }
 
-/** Reset discards the user's work, so it asks first and says exactly what it does. */
-async function resetOne(row: ProfileSummary): Promise<void> {
+/**
+ * Reset discards the user's work, so it asks first and says exactly what it
+ * does: the profile and its module's shipped pages, which every profile on the
+ * module shares.
+ */
+async function resetOne(row: ProfileSummary, rows: ProfileSummary[]): Promise<void> {
+  const sharing = rows.filter((r) => r.file !== row.file && r.module === row.module);
+  const shared =
+    sharing.length > 0
+      ? ` Those pages are shared with ${sharing.map((r) => r.name).join(", ")}, which will show them as shipped too.`
+      : "";
   const ok = await confirmAction(
-    `Replace ${row.name} with the profile that shipped with DCS Signal Converter?\n\n` +
-      `Any changes you have made to it will be lost. Profiles you created yourself are not affected.`,
+    `Replace ${row.name} and its ${row.module} pages with the versions that shipped with DCS Signal Converter?\n\n` +
+      `Any changes you have made to them will be lost, and shipped pages you deleted come back.${shared} ` +
+      `Profiles and pages you created yourself are not affected.`,
     "Reset",
   );
   if (!ok) return;

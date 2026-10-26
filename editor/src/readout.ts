@@ -1556,6 +1556,16 @@ function sameField(a: Readout, b: Readout): boolean {
 }
 
 /**
+ * Whether two pages' fields say the same things on the same cells, in any
+ * order, by the same measure as one field's reset.
+ */
+export function sameFields(a: Readout[], b: Readout[]): boolean {
+  const list = (fs: Readout[]): string =>
+    JSON.stringify(fs.map((f) => `${f.cells}\u0000${fieldShape(f)}`).sort());
+  return list(a) === list(b);
+}
+
+/**
  * The ways back for one field, each leaving every other field alone.
  *
  * Undo unsaved changes puts it back the way Save page last wrote it, and is

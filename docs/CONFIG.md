@@ -470,7 +470,13 @@ is a separate, writable one, and it starts as a copy of `data/defaults`.
   an update never rewrites its lamp rows. Display fields are reconciled, which
   is the one exception and has a section of its own below.
 - **Reset** copies one default back over the active file, except for aircraft
-  another profile has taken since, which stay where they are.
+  another profile has taken since, which stay where they are. The module's
+  shipped pages and stored signals go back with it (`Pages::reset_module`),
+  matched by id: changed ones as shipped, deleted ones returned. Pages and
+  signals the user made stay, renamed off a shipped name if they hold one,
+  because every profile on the module shares them. The page editor's Reset
+  page does the same for one shipped page, into the working copy that Save
+  page writes.
 - **Delete** removes a profile the user made, or a shipped one when another
   profile can take its aircraft. When deleting would leave an aircraft with no
   profile, the editor offers the profiles that can take it; a shipped one must

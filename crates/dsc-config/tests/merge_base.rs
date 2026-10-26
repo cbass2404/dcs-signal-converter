@@ -335,3 +335,57 @@ fn seeding_pages_writes_a_base() {
         std::fs::read_to_string(dir.join("default-pages/a-10c.json")).ok(),
     );
 }
+
+/// Reset brings every shipped page back as it shipped, the changed and the
+/// deleted alike, and keeps the user's own, renamed off a shipped name.
+#[test]
+fn resetting_pages_restores_the_shipped_and_keeps_the_users() {
+    let dir = scratch("pages-reset");
+    let radios = page("aaaaaa", "Radios", "A");
+    let fuel = page("bbbbbb", "Fuel", "B");
+    pages_in(&dir, "pages/.base", vec![radios.clone(), fuel.clone()]);
+    pages_in(&dir, "default-pages", vec![radios.clone(), fuel]);
+    // Radios edited, Fuel deleted, and a page of their own named Fuel.
+    pages_in(
+        &dir,
+        "pages",
+        vec![page("aaaaaa", "Radios", "Z"), page("cccccc", "Fuel", "C")],
+    );
+    let base = std::fs::read_to_string(dir.join("pages/.base/a-10c.json")).ok();
+
+    assert!(page_store(&dir).reset_module("A-10C").unwrap());
+
+    assert_eq!(page_ids(&dir), ["aaaaaa", "bbbbbb", "cccccc"]);
+    let lib = PageLibrary::load_dir(&dir.join("pages"));
+    assert_eq!(
+        serde_json::to_value(lib.page_on("A-10C", "aaaaaa")).unwrap(),
+        serde_json::to_value(Some(&radios)).unwrap(),
+    );
+    assert_eq!(lib.page_on("A-10C", "cccccc").unwrap().name, "Fuel 2");
+    assert_eq!(
+        std::fs::read_to_string(dir.join("pages/.base/a-10c.json")).ok(),
+        base,
+        "the base is left alone"
+    );
+}
+
+#[test]
+fn resetting_pages_replaces_a_file_that_will_not_load() {
+    let dir = scratch("pages-reset-broken");
+    pages_in(&dir, "default-pages", vec![page("aaaaaa", "Radios", "A")]);
+    std::fs::write(dir.join("pages/a-10c.json"), "{ not json").unwrap();
+
+    assert!(page_store(&dir).reset_module("A-10C").unwrap());
+
+    assert_eq!(page_ids(&dir), ["aaaaaa"]);
+}
+
+#[test]
+fn resetting_a_module_that_ships_no_pages_does_nothing() {
+    let dir = scratch("pages-reset-none");
+    pages_in(&dir, "pages", vec![page("cccccc", "Mine", "C")]);
+
+    assert!(!page_store(&dir).reset_module("A-10C").unwrap());
+
+    assert_eq!(page_ids(&dir), ["cccccc"]);
+}

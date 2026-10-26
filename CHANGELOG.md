@@ -40,6 +40,12 @@ unless this says what moved.
 
 ### Profiles
 
+- **Christen Eagle II: backlights only.** The aircraft has no warning
+  lights to show, so the placeholder Master Caution, which followed the
+  left position light, is gone, and Master Caution and FAIL stay dark.
+  Backlights hold at a fixed level. If you have changed the
+  TAKEOFF_PLANEL_2 Master_Caution row, or a FAIL row on the MCDU or a PFP,
+  reset it to pick this up.
 - **New profile: Yak-52.** The takeoff panel shows each gear leg, lit up
   and blinking down, with NOSE for the nose wheel, and the gear handle
   light comes on while any wheel is between up and down. FLAPS lights

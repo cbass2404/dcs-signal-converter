@@ -94,6 +94,7 @@ starter profile the first time you fly it, ready to fill in with the
 | AV8BNA         | AV-8B Night Attack                                                                 |
 | C-130J-30      | C-130J-30                                                                          |
 | CH-47Fbl1      | CH-47F                                                                             |
+| Christen Eagle | Christen Eagle II                                                                  |
 | F-14           | F-14A, F-14B                                                                       |
 | F-14BU         | F-14B (Upgrade)                                                                    |
 | F-15ESE        | F-15E                                                                              |
@@ -116,9 +117,9 @@ starter profile the first time you fly it, ready to fill in with the
 | FC3            | The Flaming Cliffs aircraft, and the mods and modules with no profile of their own |
 
 **Placeholder profiles** ship for the other aircraft DCS-BIOS supports: A-29B,
-AH-6J, Alphajet, Bf-109K-4, C-101, Christen Eagle II, Edge540, F-22A,
-F-4E-45MC, F-5E-3, F-86F Sabre, F4U-1D, FW-190A8, FW-190D9, I-16, Ka-50,
-L-39, MB-339, P-47D, P-51D, SA342 and Spitfire LF Mk IX. They are not
+AH-6J, Alphajet, Bf-109K-4, C-101, Edge540, F-22A, F-4E-45MC, F-5E-3,
+F-86F Sabre, F4U-1D, FW-190A8, FW-190D9, I-16, Ka-50, L-39, MB-339, P-47D,
+P-51D, SA342 and Spitfire LF Mk IX. They are not
 finished: each lights a Master Caution and holds the backlights on, and
 leaves every other lamp for you. The finished versions arrive as ordinary
 updates, so anything you change in one stays yours.

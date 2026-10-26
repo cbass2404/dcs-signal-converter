@@ -7,10 +7,104 @@
       "name": "Master Caution",
       "conditions": [
         {
-          "source": "FUEL_LOW_FWD",
+          "source": "FUELMETER",
           "on_when": {
-            "equals": 1
+            "lte": 13107
           }
+        }
+      ]
+    },
+    {
+      "id": "z7c9ho",
+      "name": "BOMB READY",
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "BOMB_1_L",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "ZSK244_READY_L",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "MASTER_ARM",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "BOMB_2_L",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "ZSK244_READY_L",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "MASTER_ARM",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "BOMB_3_L",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "ZSK244_READY_L",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "MASTER_ARM",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "BOMB_4_L",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "ZSK244_READY_L",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "MASTER_ARM",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
         }
       ]
     }

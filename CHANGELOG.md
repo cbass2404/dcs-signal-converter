@@ -40,6 +40,12 @@ unless this says what moved.
 
 ### Profiles
 
+- **New profile: La-7.** The takeoff panel shows each gear leg, lit up and
+  blinking down, with NOSE for the tail wheel, and the gear handle light
+  blinks while any wheel is moving with the gear indicator switched on.
+  FLAPS lights while the flaps are out, HALF near half travel and FULL at
+  full. Low fuel is master caution, and FAIL on the MCDU and each PFP.
+  Backlights follow the cockpit light rheostat.
 - **F4U-1D: the Takeoff panel shows the gear, flaps, hook and bombs.**
   LEFT, RIGHT and NOSE follow the left, right and tail wheels, lit steady
   at one end of their travel and blinking slowly at the other, and the gear

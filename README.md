@@ -100,6 +100,7 @@ starter profile the first time you fly it, ready to fill in with the
 | F-16           | F-16C, F-16D and variants, F-16I                                                   |
 | FA-18          | F/A-18C, and the EA-18G, E and F mods                                              |
 | JF-17          | JF-17                                                                              |
+| La-7           | La-7                                                                               |
 | M-2000C        | Mirage 2000C, 2000D                                                                |
 | Mi-24P         | Mi-24P                                                                             |
 | Mi-8MT         | Mi-8MT, Mi-8MTV2                                                                   |

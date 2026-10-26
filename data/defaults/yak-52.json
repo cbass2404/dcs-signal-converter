@@ -721,7 +721,57 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "Landing_gear_lights",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "F_L_GEAR_DOWN",
+              "on_when": {
+                "equals": 0
+              }
+            },
+            {
+              "source": "F_L_GEAR_UP",
+              "on_when": {
+                "equals": 0
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "F_N_GEAR_DOWN",
+              "on_when": {
+                "equals": 0
+              }
+            },
+            {
+              "source": "F_N_GEAR_UP",
+              "on_when": {
+                "equals": 0
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "F_R_GEAR_DOWN",
+              "on_when": {
+                "equals": 0
+              }
+            },
+            {
+              "source": "F_R_GEAR_UP",
+              "on_when": {
+                "equals": 0
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",

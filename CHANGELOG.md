@@ -41,8 +41,9 @@ unless this says what moved.
 ### Profiles
 
 - **New profile: Yak-52.** The takeoff panel shows each gear leg, lit up
-  and blinking down, with NOSE for the nose wheel, and FLAPS while the
-  flaps are down. The stall warning is master caution, and FAIL on the
+  and blinking down, with NOSE for the nose wheel, and the gear handle
+  light comes on while any wheel is between up and down. FLAPS lights
+  while the flaps are down. The stall warning is master caution, and FAIL on the
   MCDU and each PFP. Backlights hold at a fixed level.
 - **New profile: La-7.** The takeoff panel shows each gear leg, lit up and
   blinking down, with NOSE for the tail wheel, and the gear handle light

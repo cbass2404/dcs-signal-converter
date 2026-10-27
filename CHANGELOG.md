@@ -40,6 +40,20 @@ unless this says what moved.
 
 ### Profiles
 
+- **Spitfire LF Mk IX: the Takeoff panel, throttle and master caution
+  follow the aircraft.** LEFT, RIGHT and NOSE light while each main wheel
+  and the tail wheel are on the ground, and the gear handle light comes on
+  while the gear is between up and down. FLAPS lights while the flaps are
+  down. On the Orion throttle, A/A lights with the gunsight master on.
+  The bomb lamps and A/G stay dark, because the module does not model
+  bomb selection or arming. Master caution, with FAIL on the MCDU and each
+  PFP, now lights at about 18 gallons left, a bingo fuel state, in place
+  of the fuel pressure warning light. Only the lower tank is gauged, and
+  the gauge reads only while the fuel contents button is pressed, so press
+  it to check. Backlights follow the port flood lamp. If you have changed
+  a TAKEOFF_PLANEL_2 row, the Orion_Throttle_Base_II A/A row, the
+  CarrierAce_MFD_C INST_PNL_Backlight row, or the Master Caution shared
+  conditions, reset it to pick this up.
 - **P-51D: the Takeoff panel, throttle and master caution follow the
   aircraft.** LEFT, RIGHT and NOSE light while each main wheel and the
   tail wheel are on the ground, and the gear handle light comes on with

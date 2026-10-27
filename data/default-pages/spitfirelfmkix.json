@@ -7,7 +7,13 @@
       "name": "Master Caution",
       "conditions": [
         {
-          "source": "FUEL_PRESS_LIGHT",
+          "source": "FUELRESERVEGAUGE",
+          "on_when": {
+            "lte": 34000
+          }
+        },
+        {
+          "source": "FUEL_GAUGE",
           "on_when": {
             "equals": 1
           }

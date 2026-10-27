@@ -8,27 +8,21 @@
     "SpitfireLFMkIXCW"
   ],
   "module": "SpitfireLFMkIX",
-  "disabled_devices": [
-    "CDU_Kneeboard"
-  ],
-  "follows": {
-    "CarrierAce_MFD_L": "CarrierAce_MFD_C",
-    "CarrierAce_MFD_R": "CarrierAce_MFD_C",
-    "MCDU_CoPilot": "MCDU_Captain",
-    "MCDU_Observer": "MCDU_Captain",
-    "PFP3N_CoPilot": "PFP3N_Captain",
-    "PFP3N_Observer": "PFP3N_Captain",
-    "PFP4_CoPilot": "PFP4_Captain",
-    "PFP4_Observer": "PFP4_Captain",
-    "PFP7_CoPilot": "PFP7_Captain",
-    "PFP7_Observer": "PFP7_Captain"
-  },
   "bindings": [
     {
       "device": "CarrierAce_MFD_C",
       "led": "INST_PNL_Backlight",
-      "conditions": [],
-      "always": true
+      "conditions": [
+        {
+          "source": "PITLITE_LH",
+          "on_when": {
+            "scale": [
+              0,
+              65535
+            ]
+          }
+        }
+      ]
     },
     {
       "device": "CarrierAce_MFD_L",
@@ -302,7 +296,14 @@
     {
       "device": "Orion_Throttle_Base_II",
       "led": "A/A",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "GUNSIGHT_SWITCH",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "Orion_Throttle_Base_II",
@@ -742,7 +743,20 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "Landing_gear_lights",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "GEAR_DOWN",
+          "on_when": {
+            "equals": 0
+          }
+        },
+        {
+          "source": "GEAR_UP",
+          "on_when": {
+            "equals": 0
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
@@ -799,12 +813,26 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "FLAPS",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "FLAPS",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "NOSE",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "EXT_WOW_TAIL",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
@@ -814,12 +842,26 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "RIGHT",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "EXT_WOW_RIGHT",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "LEFT",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "EXT_WOW_LEFT",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
@@ -846,5 +888,20 @@
       "off": 255,
       "note": "Held at full, because at 0 the screen shows nothing. It lights only while this profile puts fields on the screen, whatever it is bound to, so a screen with nothing on it stays black."
     }
-  ]
+  ],
+  "disabled_devices": [
+    "CDU_Kneeboard"
+  ],
+  "follows": {
+    "CarrierAce_MFD_L": "CarrierAce_MFD_C",
+    "CarrierAce_MFD_R": "CarrierAce_MFD_C",
+    "MCDU_CoPilot": "MCDU_Captain",
+    "MCDU_Observer": "MCDU_Captain",
+    "PFP3N_CoPilot": "PFP3N_Captain",
+    "PFP3N_Observer": "PFP3N_Captain",
+    "PFP4_CoPilot": "PFP4_Captain",
+    "PFP4_Observer": "PFP4_Captain",
+    "PFP7_CoPilot": "PFP7_Captain",
+    "PFP7_Observer": "PFP7_Captain"
+  }
 }

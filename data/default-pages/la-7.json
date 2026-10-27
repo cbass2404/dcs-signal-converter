@@ -1,0 +1,18 @@
+{
+  "module": "La-7",
+  "pages": [],
+  "signals": [
+    {
+      "id": "t44aqj",
+      "name": "MASTER CAUTION",
+      "conditions": [
+        {
+          "source": "FUEL_NEEDLE",
+          "on_when": {
+            "lte": 13000
+          }
+        }
+      ]
+    }
+  ]
+}

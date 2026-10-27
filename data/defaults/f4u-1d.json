@@ -8,27 +8,21 @@
     "F4U-1D_CW"
   ],
   "module": "F4U-1D",
-  "disabled_devices": [
-    "CDU_Kneeboard"
-  ],
-  "follows": {
-    "CarrierAce_MFD_L": "CarrierAce_MFD_C",
-    "CarrierAce_MFD_R": "CarrierAce_MFD_C",
-    "MCDU_CoPilot": "MCDU_Captain",
-    "MCDU_Observer": "MCDU_Captain",
-    "PFP3N_CoPilot": "PFP3N_Captain",
-    "PFP3N_Observer": "PFP3N_Captain",
-    "PFP4_CoPilot": "PFP4_Captain",
-    "PFP4_Observer": "PFP4_Captain",
-    "PFP7_CoPilot": "PFP7_Captain",
-    "PFP7_Observer": "PFP7_Captain"
-  },
   "bindings": [
     {
       "device": "CarrierAce_MFD_C",
       "led": "INST_PNL_Backlight",
-      "conditions": [],
-      "always": true
+      "conditions": [
+        {
+          "source": "PILOT_DISTRO_LEFT_INSTRUMENT_BOARD_LIGHT_KNOB",
+          "on_when": {
+            "scale": [
+              0,
+              65535
+            ]
+          }
+        }
+      ]
     },
     {
       "device": "CarrierAce_MFD_L",
@@ -66,7 +60,8 @@
       "device": "CDU_Kneeboard",
       "led": "Screen_Backlight",
       "conditions": [],
-      "always": true,
+      "same_as": "INST_PNL_Backlight",
+      "same_as_device": "CarrierAce_MFD_C",
       "off": 255,
       "note": "Held at full, because at 0 the screen shows nothing. It lights only while this profile puts fields on the screen, whatever it is bound to, so a screen with nothing on it stays black."
     },
@@ -302,12 +297,74 @@
     {
       "device": "Orion_Throttle_Base_II",
       "led": "A/A",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "GUN_BOX_MASTER_ARM",
+          "on_when": {
+            "equals": 1
+          }
+        },
+        {
+          "source": "GUN_CHARGE_R",
+          "on_when": {
+            "equals": 1
+          }
+        },
+        {
+          "source": "GUN_CHARGE_L",
+          "on_when": {
+            "equals": 1
+          }
+        },
+        {
+          "source": "GUN_BOX_OUTBOARD",
+          "on_when": {
+            "equals": 1
+          }
+        },
+        {
+          "source": "GUN_BOX_CENTER",
+          "on_when": {
+            "equals": 1
+          }
+        },
+        {
+          "source": "GUN_BOX_INBOARD",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "Orion_Throttle_Base_II",
       "led": "A/G",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "ROCKET_STATION_READY_LIGHT",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "ROCKET_STATION_ARM_SAFE",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "GUN_BOX_MASTER_ARM",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        }
+      ],
+      "signal": "ys64ew"
     },
     {
       "device": "PFP3N_Captain",
@@ -742,7 +799,51 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "Landing_gear_lights",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "GEAR_L_POS_IND",
+              "on_when": {
+                "between": [
+                  500,
+                  65035
+                ]
+              }
+            }
+          ],
+          "blink": "slow"
+        },
+        {
+          "conditions": [
+            {
+              "source": "GEAR_R_POS_IND",
+              "on_when": {
+                "between": [
+                  500,
+                  65035
+                ]
+              }
+            }
+          ],
+          "blink": "slow"
+        },
+        {
+          "conditions": [
+            {
+              "source": "GEAR_TAIL_POS_IND",
+              "on_when": {
+                "between": [
+                  500,
+                  65035
+                ]
+              }
+            }
+          ],
+          "blink": "slow"
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
@@ -769,67 +870,242 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "JETT",
-      "conditions": []
+      "conditions": [],
+      "signal": "ys64ew"
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "CTR",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "BOMB_BOX_RELEASE_PYLON",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "LI",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "BOMB_BOX_RELEASE_L",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "LO",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "BOMB_BOX_ARMING",
+          "on_when": {
+            "equals": 0
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "RO",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "BOMB_BOX_ARMING",
+          "on_when": {
+            "equals": 2
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "RI",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "BOMB_BOX_RELEASE_R",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "FLAPS",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "EXT_WINGS_FLAPS_LEFT_POS",
+              "on_when": {
+                "gte": 500
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "EXT_WINGS_FLAPS_RIGHT_POS",
+              "on_when": {
+                "gte": 500
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "NOSE",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "GEAR_TAIL_POS_IND",
+              "on_when": {
+                "equals": 0
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "GEAR_TAIL_POS_IND",
+              "on_when": {
+                "equals": 65535
+              }
+            }
+          ],
+          "blink": "slow"
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "FULL",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "EXT_WINGS_FLAPS_RIGHT_POS",
+          "on_when": {
+            "equals": 65535
+          }
+        },
+        {
+          "source": "EXT_WINGS_FLAPS_LEFT_POS",
+          "on_when": {
+            "equals": 65535
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "RIGHT",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "GEAR_R_POS_IND",
+              "on_when": {
+                "equals": 0
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "GEAR_R_POS_IND",
+              "on_when": {
+                "gte": 65535
+              }
+            }
+          ],
+          "blink": "slow"
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "LEFT",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "GEAR_L_POS_IND",
+              "on_when": {
+                "equals": 0
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "GEAR_L_POS_IND",
+              "on_when": {
+                "equals": 65535
+              }
+            }
+          ],
+          "blink": "slow"
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "HALF",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "EXT_WINGS_FLAPS_LEFT_POS",
+              "on_when": {
+                "between": [
+                  26200,
+                  39400
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "EXT_WINGS_FLAPS_RIGHT_POS",
+              "on_when": {
+                "between": [
+                  26200,
+                  39400
+                ]
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "HOOK",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "EXT_GEAR_TAIL_HOOK_POS",
+          "on_when": {
+            "gte": 32768
+          }
+        }
+      ]
     },
     {
       "device": "ViperAce_ICP",
@@ -846,5 +1122,20 @@
       "off": 255,
       "note": "Held at full, because at 0 the screen shows nothing. It lights only while this profile puts fields on the screen, whatever it is bound to, so a screen with nothing on it stays black."
     }
-  ]
+  ],
+  "disabled_devices": [
+    "CDU_Kneeboard"
+  ],
+  "follows": {
+    "CarrierAce_MFD_L": "CarrierAce_MFD_C",
+    "CarrierAce_MFD_R": "CarrierAce_MFD_C",
+    "MCDU_CoPilot": "MCDU_Captain",
+    "MCDU_Observer": "MCDU_Captain",
+    "PFP3N_CoPilot": "PFP3N_Captain",
+    "PFP3N_Observer": "PFP3N_Captain",
+    "PFP4_CoPilot": "PFP4_Captain",
+    "PFP4_Observer": "PFP4_Captain",
+    "PFP7_CoPilot": "PFP7_Captain",
+    "PFP7_Observer": "PFP7_Captain"
+  }
 }

@@ -7,27 +7,13 @@
     "Christen Eagle II"
   ],
   "module": "Christen Eagle II",
-  "disabled_devices": [
-    "CDU_Kneeboard"
-  ],
-  "follows": {
-    "CarrierAce_MFD_L": "CarrierAce_MFD_C",
-    "CarrierAce_MFD_R": "CarrierAce_MFD_C",
-    "MCDU_CoPilot": "MCDU_Captain",
-    "MCDU_Observer": "MCDU_Captain",
-    "PFP3N_CoPilot": "PFP3N_Captain",
-    "PFP3N_Observer": "PFP3N_Captain",
-    "PFP4_CoPilot": "PFP4_Captain",
-    "PFP4_Observer": "PFP4_Captain",
-    "PFP7_CoPilot": "PFP7_Captain",
-    "PFP7_Observer": "PFP7_Captain"
-  },
   "bindings": [
     {
       "device": "CarrierAce_MFD_C",
       "led": "INST_PNL_Backlight",
       "conditions": [],
-      "always": true
+      "always": true,
+      "on": 125
     },
     {
       "device": "CarrierAce_MFD_L",
@@ -95,8 +81,7 @@
     {
       "device": "MCDU_Captain",
       "led": "Fail",
-      "conditions": [],
-      "signal": "b76kwk"
+      "conditions": []
     },
     {
       "device": "MCDU_Captain",
@@ -339,8 +324,7 @@
     {
       "device": "PFP3N_Captain",
       "led": "FAIL",
-      "conditions": [],
-      "signal": "b76kwk"
+      "conditions": []
     },
     {
       "device": "PFP3N_Captain",
@@ -480,8 +464,7 @@
     {
       "device": "PFP4_Captain",
       "led": "FAIL",
-      "conditions": [],
-      "signal": "b76kwk"
+      "conditions": []
     },
     {
       "device": "PFP4_Captain",
@@ -621,8 +604,7 @@
     {
       "device": "PFP7_Captain",
       "led": "FAIL",
-      "conditions": [],
-      "signal": "b76kwk"
+      "conditions": []
     },
     {
       "device": "PFP7_Captain",
@@ -762,8 +744,7 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "Master_Caution",
-      "conditions": [],
-      "signal": "b76kwk"
+      "conditions": []
     },
     {
       "device": "TAKEOFF_PLANEL_2",
@@ -845,5 +826,20 @@
       "off": 255,
       "note": "Held at full, because at 0 the screen shows nothing. It lights only while this profile puts fields on the screen, whatever it is bound to, so a screen with nothing on it stays black."
     }
-  ]
+  ],
+  "disabled_devices": [
+    "CDU_Kneeboard"
+  ],
+  "follows": {
+    "CarrierAce_MFD_L": "CarrierAce_MFD_C",
+    "CarrierAce_MFD_R": "CarrierAce_MFD_C",
+    "MCDU_CoPilot": "MCDU_Captain",
+    "MCDU_Observer": "MCDU_Captain",
+    "PFP3N_CoPilot": "PFP3N_Captain",
+    "PFP3N_Observer": "PFP3N_Captain",
+    "PFP4_CoPilot": "PFP4_Captain",
+    "PFP4_Observer": "PFP4_Captain",
+    "PFP7_CoPilot": "PFP7_Captain",
+    "PFP7_Observer": "PFP7_Captain"
+  }
 }

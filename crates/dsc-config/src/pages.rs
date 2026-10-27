@@ -905,6 +905,89 @@ impl Pages {
         let _ = std::fs::remove_file(self.active.join(RENAMED));
         Ok(notes)
     }
+
+    /// Put one module's shipped pages and stored signals back as they shipped,
+    /// for a profile's Reset. Returns whether the module ships any.
+    ///
+    /// A shipped page or signal the user changed or deleted comes back exactly,
+    /// shipped ones first in shipped order. One the user made stays after them,
+    /// with a number added to its name if a shipped one has it: every profile
+    /// on the module shares these, and a Reset of one profile never takes away
+    /// what another shows. A file that will not load is replaced whole. The
+    /// base is left alone, as [`Profiles::reset_to_default`](crate::Profiles::reset_to_default)
+    /// leaves the profile's.
+    pub fn reset_module(&self, module: &str) -> Result<bool> {
+        let name = page_file_name(module);
+        let from = self.defaults.join(&name);
+        if self.defaults == self.active || !from.is_file() {
+            return Ok(false);
+        }
+        let shipped = PageFile::load(&from)?;
+        let lib = self.library();
+        let Some(mine) = lib
+            .files
+            .get(module)
+            .filter(|_| lib.broken(module).is_none())
+        else {
+            std::fs::create_dir_all(&self.active)?;
+            std::fs::copy(&from, self.active.join(&name))?;
+            return Ok(true);
+        };
+        // A user's page or signal elsewhere that drew a shipped id stands, as
+        // in merge_new.
+        let elsewhere = |id: &str| {
+            lib.find(id).is_some_and(|(m, _)| m != module)
+                || lib.find_signal(id).is_some_and(|(m, _)| m != module)
+        };
+        let mut file = PageFile {
+            module: module.to_string(),
+            pages: shipped
+                .pages
+                .iter()
+                .filter(|p| !elsewhere(&p.id))
+                .cloned()
+                .collect(),
+            signals: shipped
+                .signals
+                .iter()
+                .filter(|s| !elsewhere(&s.id))
+                .cloned()
+                .collect(),
+        };
+        for p in &mine.pages {
+            if shipped.pages.iter().any(|s| s.id == p.id) {
+                continue;
+            }
+            let name = free_among(&p.name, |n| {
+                file.pages.iter().any(|o| same_name(&o.name, n))
+            });
+            file.pages.push(Page { name, ..p.clone() });
+        }
+        for s in &mine.signals {
+            if shipped.signals.iter().any(|o| o.id == s.id) {
+                continue;
+            }
+            let name = free_among(&s.name, |n| {
+                file.signals.iter().any(|o| same_name(&o.name, n))
+            });
+            file.signals.push(StoredSignal { name, ..s.clone() });
+        }
+        file.attach_signals();
+        file.save(&self.active.join(&name))?;
+        Ok(true)
+    }
+}
+
+/// `name`, or `name 2`, `name 3` and so on, whichever `taken` refuses first.
+fn free_among(name: &str, taken: impl Fn(&str) -> bool) -> String {
+    let base = name.trim();
+    if !taken(base) {
+        return base.to_string();
+    }
+    (2..)
+        .map(|k| format!("{base} {k}"))
+        .find(|n| !taken(n))
+        .expect("some number is free")
 }
 
 /// A caution about one of a profile's slots, worded to sit on the slot.
@@ -1098,6 +1181,7 @@ impl Profile {
                     .find(|s| &s.id == id)
                     .map(|s| Arc::new(s.clone()))
             });
+            b.join_signal();
         }
     }
 

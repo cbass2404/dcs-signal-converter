@@ -88,19 +88,38 @@ starter profile the first time you fly it, ready to fill in with the
 | -------------- | ---------------------------------------------------------------------------------- |
 | A-10C          | A-10C                                                                              |
 | A-10C2         | A-10C II                                                                           |
+| A-29B          | A-29B                                                                              |
 | A-4E-C         | A-4E-C                                                                             |
 | AH-64D         | AH-64D                                                                             |
+| AH-6J          | AH-6J                                                                              |
 | AJS37          | AJS37 Viggen                                                                       |
+| Alphajet       | Alpha Jet                                                                          |
 | AV8BNA         | AV-8B Night Attack                                                                 |
+| Bf-109K-4      | Bf 109 K-4                                                                         |
+| C-101          | C-101CC, C-101EB                                                                   |
 | C-130J-30      | C-130J-30                                                                          |
 | CH-47Fbl1      | CH-47F                                                                             |
+| Christen Eagle II | Christen Eagle II                                                               |
+| Edge540        | Edge 540, Extra 330SR                                                              |
 | F-14           | F-14A, F-14B                                                                       |
 | F-14BU         | F-14B (Upgrade)                                                                    |
 | F-15ESE        | F-15E                                                                              |
 | F-16           | F-16C, F-16D and variants, F-16I                                                   |
+| F-22A          | The F-22A mod                                                                      |
+| F-4E-45MC      | F-4E                                                                               |
+| F-5E-3         | F-5E                                                                               |
+| F-86F Sabre    | F-86F Sabre                                                                        |
+| F4U-1D         | F4U-1D, F4U-1D clipped wing                                                        |
 | FA-18          | F/A-18C, and the EA-18G, E and F mods                                              |
+| FW-190A8       | Fw 190 A-8                                                                         |
+| FW-190D9       | Fw 190 D-9                                                                         |
+| I-16           | I-16                                                                               |
 | JF-17          | JF-17                                                                              |
+| Ka-50          | Ka-50, Ka-50 III                                                                   |
+| L-39           | L-39C, L-39ZA                                                                      |
+| La-7           | La-7                                                                               |
 | M-2000C        | Mirage 2000C, 2000D                                                                |
+| MB-339         | The MB-339A and MB-339A/PAN mods                                                   |
 | Mi-24P         | Mi-24P                                                                             |
 | Mi-8MT         | Mi-8MT, Mi-8MTV2                                                                   |
 | MiG-15bis      | MiG-15bis                                                                          |
@@ -109,33 +128,30 @@ starter profile the first time you fly it, ready to fill in with the
 | MiG-29 Fulcrum | MiG-29 Fulcrum                                                                     |
 | MosquitoFBMkVI | Mosquito FB Mk VI                                                                  |
 | OH-58D         | OH-58D Kiowa Warrior                                                               |
+| P-47D-30       | P-47D-30, P-47D-30 (Early)                                                         |
+| P-47D-40       | P-47D-40                                                                           |
+| P-51D          | P-51D, TF-51D                                                                      |
+| SA342          | SA342L, M, Minigun and Mistral                                                     |
+| SpitfireLFMkIX | Spitfire LF Mk IX, Spitfire LF Mk IX clipped wing                                  |
 | UH-1H          | UH-1H, Bell 47                                                                     |
 | UH-60L         | The UH-60L and MH-60R mods                                                         |
+| Yak-52         | Yak-52                                                                             |
 | FC3            | The Flaming Cliffs aircraft, and the mods and modules with no profile of their own |
 
-**Placeholder profiles** ship for the other aircraft DCS-BIOS supports: A-29B,
-AH-6J, Alphajet, Bf-109K-4, C-101, Christen Eagle II, Edge540, F-22A,
-F-4E-45MC, F-5E-3, F-86F Sabre, F4U-1D, FW-190A8, FW-190D9, I-16, Ka-50,
-L-39, MB-339, P-47D, P-51D, SA342 and Spitfire LF Mk IX. They are not
-finished: each lights a Master Caution and holds the backlights on, and
-leaves every other lamp for you. The finished versions arrive as ordinary
-updates, so anything you change in one stays yours.
-
 The A-10C, AH-64D, CH-47F and F-14B (Upgrade) also put their own CDU on the MCDU
-screen, and on a PFP's, which is the same screen. The A-4E-C, AJS37, F-16,
-F/A-18, Mi-8, Mi-24P, MiG-15bis, Mosquito and UH-1H get pages built from their
-own readings there instead. Each of them gives the Kneeboard CDU the same
-pages, turned off until you turn it on. Most aircraft profiles also ship a
-page for the UFC, the ICP's DED, or both. Every screen is yours to change in the
+screen, and on a PFP's, which is the same screen. The A-4E-C, AJS37,
+Bf 109 K-4, F-16, F/A-18, Mi-8, Mi-24P, MiG-15bis, MiG-21bis, Mosquito and
+UH-1H get pages built from their own readings there instead. Each of them
+gives the Kneeboard CDU the same pages, turned off until you turn it on.
+Some also ship a page for the UFC, the ICP's DED, or both. Every screen is yours to change in the
 [editor](#4-make-it-yours): a label you type, a reading beside it, each in the
 colour and size you choose. Open a profile to see exactly what it drives.
 
 Every aircraft profile ties every panel backlight to one row, which follows a
 cockpit lighting knob, so every panel dims with the cockpit. Point that row at
-another knob, or set it to Always on, to change that. The Flaming Cliffs
-profile holds it at a steady brightness, since those aircraft have no knob
-DCS-BIOS can read, and so does each placeholder profile until it is
-finished. The No aircraft profile leaves the panels dark, since
+another knob, or set it to Always on, to change that. Where the aircraft has
+no knob DCS-BIOS can read, as in the Flaming Cliffs aircraft, that row holds
+a steady brightness instead. The No aircraft profile leaves the panels dark, since
 DCS-BIOS sends nothing to follow; set its backlights to Always on if you want
 them lit.
 
@@ -225,7 +241,7 @@ to drive a lamp, and the editor offers each only where it can mean something:
 
 | Button                     | What it does                                                |
 | -------------------------- | ----------------------------------------------------------- |
-| **+ Add condition**        | Another test that must _also_ hold.                         |
+| **+ Add condition (and)**  | Another test that must _also_ hold.                         |
 | **+ Add alternative (or)** | Another way to light the lamp, such as from the other seat. |
 | **Always on**              | Lit whenever the aircraft is loaded, or a fixed brightness. |
 | **Match another lamp**     | Follow another dimmer, on this panel or another one.        |
@@ -272,7 +288,8 @@ A few more things the editor does:
 - **`+ a rule`** draws a line across a row, for a page that does not fill the
   glass, and can carry a label in the middle naming what it divides. The rule
   and the label each take their own colour. The A-4E-C, A-10C, AH-64D, AJS37,
-  F-16, Mi-8, Mi-24P, MiG-15bis, Mosquito and UH-1H MCDU pages ship with one.
+  Bf 109 K-4, F-16, Mi-8, Mi-24P, MiG-15bis, MiG-21bis, Mosquito and UH-1H
+  MCDU pages ship with one.
 - **Pages.** Every screen shows pages: the MCDU, the UFC, the ICP's DED and
   the Kneeboard CDU each have six slots, each showing a page, a blank
   screen, or nothing. In flight, hold Ctrl and press a page key to swap the
@@ -286,9 +303,10 @@ A few more things the editor does:
   Import profile... and Manage Converter.
 - **Manage Converter**, under the gear, is for the rare times the converter
   needs restarting. Saving a profile is not one of them. See below.
-- **Reset** puts a profile back to the shipped one. **Reset this lamp** and
-  **Reset this field** do the same for one lamp or one field of a shipped
-  page. **Undo unsaved changes** puts one lamp or field back the way it was
+- **Reset** puts a profile back to the shipped one, its aircraft's shipped
+  pages included; pages you made yourself are kept. **Reset this lamp**,
+  **Reset this field** and **Reset page** do the same for one lamp, one
+  field of a shipped page, or a whole shipped page. **Undo unsaved changes** puts one lamp or field back the way it was
   last saved. Each shows you what it will put back before it does.
 - **Drive this panel** per panel. Untick it and the profile leaves that panel
   alone entirely, so another program can have it.
@@ -353,9 +371,9 @@ meant. If a shipped profile is wrong, please report it.
 **The panels went dark while DCS kept running.**
 The converter stopped. The DCS hook starts it when a mission begins and does not
 notice that it has gone, so it will not come back until DCS is restarted. Open
-the editor, press the gear, then **Manage Converter...** and **Restart**. The same dialog is
-where to restart it after plugging a panel in, since panels are found once at
-startup. **Kill** in that dialog is only for a converter that will not answer;
+the editor, press the gear, then **Manage Converter...** and **Restart**. A panel
+plugged in or unplugged while it runs needs no restart: it is picked up and
+repainted on its own. **Kill** in that dialog is only for a converter that will not answer;
 it cannot clear the panels, because a killed program runs none of its shutdown.
 
 **The panels stayed lit after DCS closed.**

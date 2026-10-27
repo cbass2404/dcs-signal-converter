@@ -9,7 +9,7 @@
 
 import { deletePage, newPageId, savePage } from "./api";
 import { confirmAction } from "./confirm";
-import { fieldTable, fontPicker } from "./readout";
+import { fieldTable, fontPicker, sameFields } from "./readout";
 import { setStoredSignals } from "./stored";
 import type {
   Device,
@@ -651,15 +651,57 @@ export function pageSection(device: Device, display: DisplayInfo, ctx: PageConte
 
     // The page as it shipped, when it did, on this device like the working
     // copy so a field finds its shipped self by its cells. A page made here,
-    // or saved as a new one, has an id nothing shipped with.
-    const shipped = (book.shipped.find((p) => p.id === page.id)?.fields ?? []).map((f) => ({
+    // or saved as a new one, has an id nothing shipped with. Found by id, so
+    // a renamed page still resets.
+    const shippedPage = book.shipped.find((p) => p.id === page.id);
+    const shipped = (shippedPage?.fields ?? []).map((f) => ({
       ...structuredClone(f),
       device: device.key,
       display: page.display,
     }));
+
+    // The whole page back the way it shipped, its name and every field, into
+    // the working copy as a field's reset does; Save page writes it. Offered
+    // only on a shipped page, and disabled while it already matches so that
+    // it is never a no-op.
+    const reset = el("button", { class: "danger" }, "Reset page");
+    if (shippedPage && page.name === shippedPage.name && sameFields(page.fields, shipped)) {
+      reset.setAttribute("disabled", "");
+      reset.title = "This page matches how it shipped.";
+    } else {
+      reset.title =
+        "Put the whole page back the way it shipped, its name and every field. " +
+        "Save page writes it.";
+    }
+    reset.addEventListener("click", () => {
+      void (async () => {
+        if (!shippedPage) return;
+        const named =
+          page.name === shippedPage.name ? "" : `\n\nIts name goes back to ${shippedPage.name}.`;
+        const ok = await confirmAction(
+          `Reset ${page.name} to how it shipped?` +
+            named +
+            "\n\nEvery field goes back as it shipped, and fields added since are removed. " +
+            "Nothing is written until Save page.",
+          "Reset",
+        );
+        if (!ok) return;
+        page.name = shippedPage.name;
+        page.fields = structuredClone(shipped);
+        // A field left open was one of the fields just replaced.
+        e.open.clear();
+        redrawAll(book);
+        ctx.pageChanged();
+      })();
+    });
+
     // Its height is kept where the CSS reads it, so an open field's preview
     // can stick just above it.
-    const actions = el("div", { class: "chain-add page-actions" }, save, saveAs, remove, shut);
+    const actions = el(
+      "div",
+      { class: "chain-add page-actions" },
+      ...(shippedPage ? [save, saveAs, reset, remove, shut] : [save, saveAs, remove, shut]),
+    );
     new ResizeObserver(() => {
       wrap.style.setProperty("--page-actions-h", `${actions.offsetHeight}px`);
     }).observe(actions);

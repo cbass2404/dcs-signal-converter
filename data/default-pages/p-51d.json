@@ -5,12 +5,108 @@
     {
       "id": "tcdqn4",
       "name": "Master Caution",
-      "conditions": [
+      "any_of": [
         {
-          "source": "RADAR_WARNING_LIGHT",
-          "on_when": {
-            "equals": 1
-          }
+          "conditions": [
+            {
+              "source": "FUSELAGE_FUEL_TANK_VALUE",
+              "on_when": {
+                "lte": 17
+              }
+            },
+            {
+              "source": "FUEL_SELECTOR_VALVE",
+              "on_when": {
+                "equals": 2
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "LEFT_FUEL_TANK_VALUE",
+              "on_when": {
+                "lte": 18
+              }
+            },
+            {
+              "source": "FUEL_SELECTOR_VALVE",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "RIGHT_FUEL_TANK_VALUE",
+              "on_when": {
+                "lte": 18
+              }
+            },
+            {
+              "source": "FUEL_SELECTOR_VALVE",
+              "on_when": {
+                "equals": 3
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pcfkob",
+      "name": "BOMB READY",
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "ROCKETS_BOMBS_MODES",
+              "on_when": {
+                "equals": 2
+              }
+            },
+            {
+              "source": "LEFT_BOMB_ARM_CHEM",
+              "on_when": {
+                "equals": 0
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "ROCKETS_BOMBS_MODES",
+              "on_when": {
+                "equals": 2
+              }
+            },
+            {
+              "source": "RIGHT_BOMB_ARM_CHEM",
+              "on_when": {
+                "equals": 0
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "ROCKETS_BOMBS_MODES",
+              "on_when": {
+                "equals": 3
+              }
+            },
+            {
+              "source": "RKT_REL_MODE",
+              "on_when": {
+                "gte": 1
+              }
+            }
+          ]
         }
       ]
     }

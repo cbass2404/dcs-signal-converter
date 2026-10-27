@@ -300,7 +300,7 @@ pub enum Error {
     LampSignalNotConditions(String, String),
     #[error("LED {0:?} lights by the shared conditions {1:?}, which are not among this module's shared conditions; pick others or take them off")]
     UnknownLampSignal(String, String),
-    #[error("LED {0:?} lights by shared conditions and also carries its own conditions, always on or a lamp to match; it can have one")]
+    #[error("LED {0:?} lights by shared conditions and is also always on or matches a lamp; it can have one")]
     LampSignalWithConditions(String),
     #[error("the switch on {1} of display {0:?} is decided by both a signal and a shared result; it can have one")]
     SwitchTwoDeciders(String, String),
@@ -1183,17 +1183,28 @@ pub struct Binding {
     /// follows, since its own rows are not in use.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub same_as_device: Option<String>,
-    /// A stored signal of lamp conditions this lamp lights by, in place of
-    /// conditions of its own. Its tests are read exactly as if they were
-    /// written here, against this lamp's own `on` and `off`, so one set of
-    /// conditions can drive every lamp that repeats a cockpit lamp, each as
-    /// bright as it should be.
+    /// A stored signal of lamp conditions this lamp lights by. Its tests are
+    /// read exactly as if they were written here, against this lamp's own
+    /// `on` and `off`, so one set of conditions can drive every lamp that
+    /// repeats a cockpit lamp, each as bright as it should be.
+    ///
+    /// The lamp can add to them, one way or the other: `conditions` of its
+    /// own must also hold (AND), or `any_of` alternatives of its own light it
+    /// too (OR). The A/G lamp on a throttle lights by "bomb ready" shared with
+    /// the cockpit's other bomb lamps, or by master arm and rockets armed.
+    /// An `any_of` of one alternative is the OR form here, not a spelling of
+    /// `conditions`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub signal: Option<String>,
     /// The stored signal `signal` names, attached when the profile is run
     /// with its pages. Never written.
     #[serde(skip)]
     pub stored: Option<std::sync::Arc<StoredSignal>>,
+    /// `stored` with this lamp's own conditions or alternatives joined to
+    /// it, worked out once when it is attached rather than on every change.
+    /// None where the lamp adds nothing. Never written.
+    #[serde(skip)]
+    pub joined: Option<std::sync::Arc<Joined>>,
     /// Omitted means "fully on for this lamp", resolved from the LED itself.
     ///
     /// Skipped when absent, and `off` when zero, so a profile the editor saves
@@ -1593,6 +1604,68 @@ pub struct Condition {
     pub on_when: OnWhen,
 }
 
+/// A stored signal of lamp conditions with a lamp's own joined to it: what
+/// the lamp lights by, in the form a lamp's own logic takes.
+#[derive(Debug, Clone)]
+pub struct Joined {
+    pub conditions: Vec<Condition>,
+    pub any_of: Vec<Branch>,
+    pub pick: Pick,
+    pub blink: Blink,
+}
+
+impl Joined {
+    /// `signal`'s blocks with `lamp`'s added. Its own alternatives sit beside
+    /// the signal's, picked between the lamp's way. Its own conditions go
+    /// into every block of the signal's, since a AND (b OR c) is
+    /// (a AND b) OR (a AND c), and a flash of its own overrides the signal's
+    /// there. A signal left with nothing to test, as `runnable` leaves one
+    /// reading what this DCS-BIOS lacks, joins as nothing: added conditions
+    /// alone do not light the lamp.
+    fn of(signal: &StoredSignal, lamp: &Binding) -> Joined {
+        let mut blocks: Vec<Branch> = if !signal.any_of.is_empty() {
+            signal.any_of.clone()
+        } else if !signal.conditions.is_empty() {
+            vec![Branch {
+                conditions: signal.conditions.clone(),
+                blink: signal.blink,
+            }]
+        } else {
+            Vec::new()
+        };
+        if !lamp.any_of.is_empty() {
+            blocks.extend(lamp.any_of.iter().cloned());
+            return Joined {
+                conditions: Vec::new(),
+                any_of: blocks,
+                pick: lamp.pick,
+                blink: Blink::Steady,
+            };
+        }
+        for block in &mut blocks {
+            block.conditions.extend(lamp.conditions.iter().cloned());
+            if !lamp.blink.is_steady() {
+                block.blink = lamp.blink;
+            }
+        }
+        if signal.any_of.is_empty() {
+            let block = blocks.pop().unwrap_or_default();
+            return Joined {
+                conditions: block.conditions,
+                any_of: Vec::new(),
+                pick: Pick::Brightest,
+                blink: block.blink,
+            };
+        }
+        Joined {
+            conditions: Vec::new(),
+            any_of: blocks,
+            pick: signal.pick,
+            blink: Blink::Steady,
+        }
+    }
+}
+
 impl Binding {
     /// The row a lamp starts with when a profile first meets it, in a stub or
     /// in the merge that brings an old profile up to the hardware.
@@ -1624,6 +1697,7 @@ impl Binding {
             same_as_device: None,
             signal: None,
             stored: None,
+            joined: None,
             on: None,
             off: if held { led.max_value() } else { 0 },
             note: note.to_string(),
@@ -1643,23 +1717,45 @@ impl Binding {
     }
 
     /// The conditions, alternatives and pick this lamp lights by: a stored
-    /// signal's where it names one, and its own otherwise. Everything that
-    /// reads or resolves a lamp asks this, so a signal is followed everywhere
-    /// a lamp's own conditions would be.
+    /// signal's where it names one, joined to the lamp's own where it adds
+    /// any, and its own otherwise. Everything that reads or resolves a lamp
+    /// asks this, so a signal is followed everywhere a lamp's own conditions
+    /// would be.
+    ///
+    /// Nothing while a signal it names is not attached: its own conditions
+    /// alone could light it where the signal's would not.
     pub fn logic(&self) -> (&[Condition], &[Branch], Pick) {
-        match (&self.signal, &self.stored) {
-            (Some(_), Some(s)) => (&s.conditions, &s.any_of, s.pick),
-            _ => (&self.conditions, &self.any_of, self.pick),
+        match (&self.signal, &self.joined, &self.stored) {
+            (None, ..) => (&self.conditions, &self.any_of, self.pick),
+            (Some(_), Some(j), _) => (&j.conditions, &j.any_of, j.pick),
+            (Some(_), None, Some(s)) => (&s.conditions, &s.any_of, s.pick),
+            (Some(_), None, None) => (&[], &[], Pick::Brightest),
         }
     }
 
     /// How the conditions [`logic`](Self::logic) gives flash, where there
     /// are no alternatives: a stored signal's way where it names one.
     fn own_blink(&self) -> Blink {
-        match (&self.signal, &self.stored) {
-            (Some(_), Some(s)) => s.blink,
+        match (&self.signal, &self.joined, &self.stored) {
+            (Some(_), Some(j), _) => j.blink,
+            (Some(_), None, Some(s)) => s.blink,
             _ => self.blink,
         }
+    }
+
+    /// Whether this lamp adds conditions or alternatives of its own to the
+    /// stored signal it lights by.
+    fn adds_to_signal(&self) -> bool {
+        self.signal.is_some() && !(self.conditions.is_empty() && self.any_of.is_empty())
+    }
+
+    /// Work out [`joined`](Self::joined) from what is attached. Called
+    /// wherever `stored` is set.
+    pub fn join_signal(&mut self) {
+        self.joined = match &self.stored {
+            Some(s) if self.adds_to_signal() => Some(std::sync::Arc::new(Joined::of(s, self))),
+            _ => None,
+        };
     }
 
     /// Whether any block this lamp lights by flashes, so its value can change
@@ -1684,9 +1780,19 @@ impl Binding {
     /// `any_of` arrived, the index needed no knowledge of it.
     pub fn sources(&self) -> impl Iterator<Item = &str> {
         let (conditions, any_of, _) = self.logic();
+        // Until its signal is attached a lamp lights by nothing, but what it
+        // adds of its own is still what it reads.
+        let (own, own_any): (&[Condition], &[Branch]) =
+            if self.adds_to_signal() && self.joined.is_none() {
+                (&self.conditions, &self.any_of)
+            } else {
+                (&[], &[])
+            };
         conditions
             .iter()
             .chain(any_of.iter().flat_map(|b| b.conditions.iter()))
+            .chain(own)
+            .chain(own_any.iter().flat_map(|b| b.conditions.iter()))
             .map(|c| c.source.as_str())
     }
 
@@ -2268,15 +2374,12 @@ impl Profile {
             if b.always && !(b.conditions.is_empty() && b.any_of.is_empty()) {
                 out.push(Error::AlwaysWithConditions(b.led.clone()));
             }
-            // A lamp lit by a stored signal takes all its logic from there.
-            // Looked up in the library rather than read off the binding, since
-            // the daemon checks a profile before it attaches its pages.
+            // A lamp lit by a stored signal takes its logic from there, with
+            // only conditions or alternatives of its own added. Looked up in
+            // the library rather than read off the binding, since the daemon
+            // checks a profile before it attaches its pages.
             if let Some(id) = &b.signal {
-                if b.always
-                    || b.same_as.is_some()
-                    || !b.conditions.is_empty()
-                    || !b.any_of.is_empty()
-                {
+                if b.always || b.same_as.is_some() {
                     out.push(Error::LampSignalWithConditions(b.led.clone()));
                 }
                 match pages.signals_on(&self.module).iter().find(|s| &s.id == id) {
@@ -2471,6 +2574,12 @@ impl Profile {
         for b in &mut p.bindings {
             if bad(&b.conditions) {
                 b.conditions.clear();
+                // Conditions added to a stored signal are part of its chain,
+                // which goes dark with them rather than lighting by the
+                // signal alone.
+                if b.signal.is_some() {
+                    b.stored = None;
+                }
             }
             if !b.any_of.is_empty() {
                 b.any_of.retain(|branch| !bad(&branch.conditions));
@@ -2496,6 +2605,7 @@ impl Profile {
                     b.stored = Some(std::sync::Arc::new(own));
                 }
             }
+            b.join_signal();
         }
         p.readouts
             .retain(|r| missing_in_field(module, r).is_empty());
@@ -4875,6 +4985,7 @@ mod tests {
             same_as_device: None,
             signal: None,
             stored: None,
+            joined: None,
             on,
             off: 0,
             note: String::new(),
@@ -4936,6 +5047,7 @@ mod tests {
             same_as_device: None,
             signal: None,
             stored: None,
+            joined: None,
             any_of: vec![
                 Branch {
                     conditions: vec![
@@ -5056,6 +5168,7 @@ mod tests {
             same_as_device: None,
             signal: None,
             stored: None,
+            joined: None,
             any_of: vec![
                 Branch {
                     conditions: vec![cond("PLT_KNOB", OnWhen::Scale([0, 8].into()))],
@@ -5170,6 +5283,7 @@ mod tests {
                     same_as_device: None,
                     signal: None,
                     stored: None,
+                    joined: None,
                     on: None,
                     off: 0,
                     note: String::new(),
@@ -5186,6 +5300,7 @@ mod tests {
                     same_as_device: None,
                     signal: None,
                     stored: None,
+                    joined: None,
                     on: None,
                     off: 255,
                     note: String::new(),

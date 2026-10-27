@@ -13,6 +13,87 @@
           }
         }
       ]
+    },
+    {
+      "id": "ys64ew",
+      "name": "BOMB READY",
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "BOMB_BOX_RELEASE_PYLON",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "BOMB_BOX_ARMING",
+              "on_when": {
+                "in": [
+                  0,
+                  2
+                ]
+              }
+            },
+            {
+              "source": "GUN_BOX_MASTER_ARM",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "BOMB_BOX_RELEASE_L",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "BOMB_BOX_ARMING",
+              "on_when": {
+                "in": [
+                  0,
+                  2
+                ]
+              }
+            },
+            {
+              "source": "GUN_BOX_MASTER_ARM",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "BOMB_BOX_RELEASE_R",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "BOMB_BOX_ARMING",
+              "on_when": {
+                "in": [
+                  0,
+                  2
+                ]
+              }
+            },
+            {
+              "source": "GUN_BOX_MASTER_ARM",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }

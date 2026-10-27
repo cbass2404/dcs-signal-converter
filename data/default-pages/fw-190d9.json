@@ -7,10 +7,100 @@
       "name": "Master Caution",
       "conditions": [
         {
-          "source": "FUEL_LOW_FWD",
+          "source": "FUELMETER",
           "on_when": {
-            "equals": 1
+            "lte": 13107
           }
+        }
+      ]
+    },
+    {
+      "id": "ilggxv",
+      "name": "BOMB READY",
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "BMB_FUSE_SEL",
+              "on_when": {
+                "in": [
+                  0,
+                  1,
+                  3,
+                  4
+                ]
+              }
+            },
+            {
+              "source": "BMB1",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "BMB_FUSE_SEL",
+              "on_when": {
+                "in": [
+                  0,
+                  1,
+                  3,
+                  4
+                ]
+              }
+            },
+            {
+              "source": "BMB2",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "BMB_FUSE_SEL",
+              "on_when": {
+                "in": [
+                  0,
+                  1,
+                  3,
+                  4
+                ]
+              }
+            },
+            {
+              "source": "BMB3",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "BMB_FUSE_SEL",
+              "on_when": {
+                "in": [
+                  0,
+                  1,
+                  3,
+                  4
+                ]
+              }
+            },
+            {
+              "source": "BMB4",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
         }
       ]
     }

@@ -516,6 +516,7 @@ fn an_unassigned_lamp_is_swept_off_and_never_driven() {
         same_as_device: None,
         signal: None,
         stored: None,
+        joined: None,
         on: None,
         off: 0,
         note: "not decided yet".to_string(),

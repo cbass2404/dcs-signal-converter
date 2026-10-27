@@ -13,6 +13,150 @@
           }
         }
       ]
+    },
+    {
+      "id": "wgx67x",
+      "name": "BLOCK 40 BOMB READY",
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "ARM_B_HAND",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "B_WING_BOMB_SW",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "OAP_SEL_SW",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "OAP_READY_SW",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "ARM_L_HAND",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "L_WING_BOMB_SW",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "OAP_SEL_SW",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "OAP_READY_SW",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "ARM_R_HAND",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "R_WING_BOMB_SW",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "OAP_SEL_SW",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "OAP_READY_SW",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "leo0uv",
+      "name": "BLOCK 30 BOMB READY",
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "ARM_B_HAND",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "B_WING_BOMB_SW",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "ARM_L_HAND",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "L_WING_BOMB_SW",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "ARM_R_HAND",
+              "on_when": {
+                "equals": 1
+              }
+            },
+            {
+              "source": "R_WING_BOMB_SW",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }

@@ -15,7 +15,7 @@
       "led": "INST_PNL_Backlight",
       "conditions": [
         {
-          "source": "LEFT_FLUORESCENT_LIGHT",
+          "source": "COCKPIT_LIGHTS",
           "on_when": {
             "scale": [
               0,
@@ -24,8 +24,7 @@
           }
         }
       ],
-      "on": 150,
-      "off": 100
+      "on": 150
     },
     {
       "device": "CarrierAce_MFD_L",
@@ -312,58 +311,7 @@
       "device": "Orion_Throttle_Base_II",
       "led": "A/G",
       "conditions": [],
-      "any_of": [
-        {
-          "conditions": [
-            {
-              "source": "ROCKETS_BOMBS_MODES",
-              "on_when": {
-                "equals": 2
-              }
-            },
-            {
-              "source": "LEFT_BOMB_ARM_CHEM",
-              "on_when": {
-                "equals": 0
-              }
-            }
-          ],
-          "blink": "slow"
-        },
-        {
-          "conditions": [
-            {
-              "source": "ROCKETS_BOMBS_MODES",
-              "on_when": {
-                "equals": 2
-              }
-            },
-            {
-              "source": "RIGHT_BOMB_ARM_CHEM",
-              "on_when": {
-                "equals": 0
-              }
-            }
-          ],
-          "blink": "slow"
-        },
-        {
-          "conditions": [
-            {
-              "source": "ROCKETS_BOMBS_MODES",
-              "on_when": {
-                "equals": 3
-              }
-            },
-            {
-              "source": "RKT_REL_MODE",
-              "on_when": {
-                "gte": 1
-              }
-            }
-          ]
-        }
-      ]
+      "signal": "pcfkob"
     },
     {
       "device": "PFP3N_Captain",
@@ -798,28 +746,12 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "Landing_gear_lights",
-      "conditions": [],
-      "any_of": [
+      "conditions": [
         {
-          "conditions": [
-            {
-              "source": "LANDING_GEAR_GREEN",
-              "on_when": {
-                "equals": 1
-              }
-            }
-          ]
-        },
-        {
-          "conditions": [
-            {
-              "source": "LANDING_GEAR_RED",
-              "on_when": {
-                "equals": 1
-              }
-            }
-          ],
-          "blink": "slow"
+          "source": "LANDING_GEAR_RED",
+          "on_when": {
+            "equals": 1
+          }
         }
       ]
     },
@@ -848,7 +780,8 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "JETT",
-      "conditions": []
+      "conditions": [],
+      "signal": "pcfkob"
     },
     {
       "device": "TAKEOFF_PLANEL_2",
@@ -858,52 +791,125 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "LI",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "LEFT_BOMB_ARM_CHEM",
+          "on_when": {
+            "equals": 0
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "LO",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "RKT_REL_MODE",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "RO",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "RKT_REL_MODE",
+          "on_when": {
+            "equals": 2
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "RI",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "RIGHT_BOMB_ARM_CHEM",
+          "on_when": {
+            "equals": 0
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "FLAPS",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "FLAPS_CONTROL_HANDLE",
+          "on_when": {
+            "lte": 65035
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "NOSE",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "EXT_WOW_TAIL",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "FULL",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "FLAPS_CONTROL_HANDLE",
+          "on_when": {
+            "equals": 0
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "RIGHT",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "EXT_WOW_RIGHT",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "LEFT",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "EXT_WOW_LEFT",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "HALF",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "FLAPS_CONTROL_HANDLE",
+          "on_when": {
+            "between": [
+              25713,
+              26713
+            ]
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",

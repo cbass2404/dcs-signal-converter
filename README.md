@@ -128,7 +128,8 @@ starter profile the first time you fly it, ready to fill in with the
 | MiG-29 Fulcrum | MiG-29 Fulcrum                                                                     |
 | MosquitoFBMkVI | Mosquito FB Mk VI                                                                  |
 | OH-58D         | OH-58D Kiowa Warrior                                                               |
-| P-47D          | P-47D-30, P-47D-40                                                                 |
+| P-47D-30       | P-47D-30, P-47D-30 (Early)                                                         |
+| P-47D-40       | P-47D-40                                                                           |
 | P-51D          | P-51D, TF-51D                                                                      |
 | SA342          | SA342L, M, Minigun and Mistral                                                     |
 | SpitfireLFMkIX | Spitfire LF Mk IX, Spitfire LF Mk IX clipped wing                                  |

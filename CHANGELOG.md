@@ -40,6 +40,23 @@ unless this says what moved.
 
 ### Profiles
 
+- **P-47D: the D-30 and D-40 have their own profiles, and the Takeoff
+  panel, throttle and backlights follow the aircraft.** P-47D-30 covers
+  the D-30 and D-30 (Early), and the new P-47D-40 covers the D-40. In
+  both, LEFT, RIGHT and NOSE light while each main wheel and the tail
+  wheel are on the ground, and the gear handle light comes on with the
+  landing warning light. JETT lights by new BOMB READY shared conditions:
+  a bomb arming handle pulled with its bomb switch on, and on the D-40 the
+  OAP selector and ready switches on as well. CTR, LI and RI show the
+  belly, left and right bomb switches; on the D-30 they flash while the
+  switch cover is up. On the D-40, LO and RO show the rocket release mode.
+  On the Orion throttle, A/A lights with the guns switch on and the gear
+  lever up, and A/G by BOMB READY, or on the D-40 also with rockets set to
+  release and the OAP selector off. Backlights follow the UV instrument
+  lights. If you have changed a TAKEOFF_PLANEL_2 row, the
+  Orion_Throttle_Base_II A/A or A/G row, or the CarrierAce_MFD_C
+  INST_PNL_Backlight row, reset it to pick this up. If you had changed
+  anything in P-47D for the D-40, make it again in P-47D-40.
 - **I-16: the Takeoff panel, throttle and master caution follow the
   aircraft.** LEFT and RIGHT follow the main wheels, lit up and blinking
   down, and the gear handle light comes on while either wheel is between

@@ -187,9 +187,9 @@ to read and nothing lights. Install it as its own instructions say, into
 without it DCS-BIOS is installed and sending nothing.
 
 **Stable or nightly both work.** The shipped profiles were written against a
-DCS-BIOS nightly. On a stable release everything works except the few lamps and
-fields that need a newer DCS-BIOS. The editor names any that are affected, and
-they come back on their own when you update DCS-BIOS.
+DCS-BIOS nightly. On a stable release everything works except any lamps and
+fields that need a newer DCS-BIOS than it has. The editor names any that are
+affected, and they come back on their own when you update DCS-BIOS.
 
 ### 2. Install
 

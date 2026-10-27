@@ -29,6 +29,11 @@ stream, with every panel connected and driven. Each scenario was measured
 for 60 seconds, after 3 seconds of warmup that absorb the startup and
 module-load flood, in one pass. Peaks are the busiest 1-second sample.
 
+**The A-10C II is the baseline** because it is among the modules most
+often flown, and middling in how much its profile reads: lamps on every
+panel and one MCDU page that passes the CDU's own text through. It stands
+for the average user, and every release is measured with it.
+
 | Scenario | Frames/s | CPU avg | CPU peak | Working set | Private |
 |---|---|---|---|---|---|
 | idle | 0 | 0.14% | 0.17% | 69.3 MB | 61.9 MB |
@@ -46,6 +51,32 @@ Where the CPU goes, by thread, same pass:
 Typical moves more between passes than the others: a second pass the same
 day read 1.25%, with the main loop at 0.47%, the writers at 0.42% and the
 key readers at 0.36%. Take typical as 1.0 to 1.25%.
+
+### The most data-intensive profile
+
+The Mosquito FB Mk VI reads the most: four MCDU pages and a UFC and DED
+page, all built from its readings, so nearly every gauge it has is on a
+screen. Measured once, 2026-10-26, on the same build and machine as the
+A-10C II above, to show that more pages and more readings do not cost
+noticeably more. Not repeated each release.
+
+| Scenario | A-10C II | Mosquito | Mosquito main loop | Mosquito private |
+|---|---|---|---|---|
+| idle | 0.14% | 0.14% | 0.14% | 61.9 MB |
+| typical | 1.0 to 1.25% | 1.43% | 0.53% | 62.4 MB |
+| stress | 4.11% | 3.03% | 0.91% | 62.0 MB |
+
+- **Only the page on the screen is worked out.** The engine resolves the
+  fields showing on a driven screen and nothing else, so the three MCDU
+  pages not showing cost nothing. The main loop is about 0.1% above the
+  A-10C II's at typical.
+- **What it adds at typical is MCDU writes.** Its page is drawn from
+  readings, and the random stream moves one nearly every frame, so the
+  MCDU was sent 377 reports a second against 192. In flight its gauges
+  move far less: two minutes in the Mosquito on beta.004 sent 185 to 207.
+- **Stress is lower** because fewer of the signals it binds to lamps
+  change: the ICP was sent 112 reports a second against 245, and the
+  PTO2 116 against 149.
 
 These are with Ctrl as the page modifier. A controller button costs more;
 see [A controller button as the page modifier](#a-controller-button-as-the-page-modifier).
@@ -352,6 +383,7 @@ python tools/bench_daemon.py                  # all three scenarios, 30 s each
 python tools/bench_daemon.py --seconds 60     # the tables above
 python tools/bench_daemon.py --scenario stress
 python tools/bench_daemon.py --module F-16C_50 --aircraft F-16C_50
+python tools/bench_daemon.py --module Mosquito --aircraft MosquitoFBMkVI
 python tools/bench_daemon.py --affinity 0xff  # P-cores only on a 12900K
 python tools/bench_daemon.py --exe ..\dsc-baseline\target\release\dcs-signal.exe
 ```

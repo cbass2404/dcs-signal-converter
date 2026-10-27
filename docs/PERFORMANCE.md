@@ -1,6 +1,6 @@
 # Performance and install size
 
-The daemon was measured 2026-10-08, at 1.0.0-beta.011 in development, on an
+The daemon was measured 2026-10-26, at 1.0.0-beta.016 in development, on an
 i9-12900KF with 64 GB, Windows 11, release builds from rustc 1.98.1, with
 nothing else open: no browser, no chat. Every figure is from the panels
 driven for real; the benchmark has no dry run, since writing to the panels
@@ -10,12 +10,12 @@ release.
 
 ## Summary
 
-- The daemon uses about 55 MB of private memory and about 1.6% of one core
-  in flight, 0.4% deciding what to send and the rest writing to the panels
-  and reading their keys. Waiting for DCS it uses about 0.15%. Under a
-  stream far heavier than DCS produces, every lamp and screen changing
-  every frame, it uses 4.4%. On an i5-12400F, the most common gaming CPU,
-  expect about 1.2 times these figures (estimated, see
+- The daemon uses about 62 MB of private memory and about 1.0 to 1.25% of
+  one core in flight, 0.4% deciding what to send and the rest writing to
+  the panels and reading their keys. Waiting for DCS it uses about 0.15%.
+  Under a stream far heavier than DCS produces, every lamp and screen
+  changing every frame, it uses 4.1%. On an i5-12400F, the most common
+  gaming CPU, expect about 1.2 times these figures (estimated, see
   [Other CPUs](#other-cpus)).
 - The editor uses about 165 MB, almost all of it WebView2. It uses no CPU while
   idle.
@@ -31,17 +31,21 @@ module-load flood, in one pass. Peaks are the busiest 1-second sample.
 
 | Scenario | Frames/s | CPU avg | CPU peak | Working set | Private |
 |---|---|---|---|---|---|
-| idle | 0 | 0.15% | 0.18% | 62.6 MB | 54.9 MB |
-| typical | 30 | 1.57% | 2.88% | 63.3 MB | 55.1 MB |
-| stress | 60 | 4.44% | 5.38% | 62.8 MB | 55.5 MB |
+| idle | 0 | 0.14% | 0.17% | 69.3 MB | 61.9 MB |
+| typical | 30 | 1.02% | 2.53% | 69.8 MB | 62.4 MB |
+| stress | 60 | 4.11% | 4.72% | 70.0 MB | 62.4 MB |
 
 Where the CPU goes, by thread, same pass:
 
 | Scenario | Main loop | Panel writers | Page key readers | Windows' threads |
 |---|---|---|---|---|
-| idle | 0.15% | 0% | 0% | 0% |
-| typical | 0.37% | 0.62% | 0.59% | 0% |
-| stress | 1.14% | 2.21% | 1.08% | 0% |
+| idle | 0.14% | 0% | 0% | 0% |
+| typical | 0.38% | 0.38% | 0.26% | 0% |
+| stress | 1.17% | 2.04% | 0.90% | 0% |
+
+Typical moves more between passes than the others: a second pass the same
+day read 1.25%, with the main loop at 0.47%, the writers at 0.42% and the
+key readers at 0.36%. Take typical as 1.0 to 1.25%.
 
 These are with Ctrl as the page modifier. A controller button costs more;
 see [A controller button as the page modifier](#a-controller-button-as-the-page-modifier).
@@ -85,14 +89,20 @@ drives its panel, so with no aircraft loaded none runs, and idle fell from
   only when they differ, which cannot lose a press: the same bytes hold the
   same keys. Measured before and after, the readers came down by about
   0.1% of a core together.
-- **What is left is waking up.** In flight, about 0.1% of a core each for
-  the UFC, ICP and MCDU: the UFC, written to least, read 0.11% at typical.
-  Windows buffers reports, so a reader could wake 30 times a second and take
+- **Only a panel with a page to swap to is read.** Since beta.012 a reader
+  runs only when its panel's screen has a second page, since page keys
+  have nothing to do otherwise. The A-10C II's UFC has none, so its reader,
+  0.11% at typical on beta.011, no longer runs, and the readers came down
+  from 0.59% to between 0.26 and 0.36% at typical.
+- **What is left is waking up.** In flight, about 0.1% of a core for each
+  panel that is read. Windows buffers reports, so a reader could wake 30
+  times a second and take
   several at once, for up to 33 ms more before a page key acts. Not done: it
   would save perhaps another 0.2%.
 - **They climb while their panel is written to**, since its input reports
   then change and a repeat can no longer be passed over: the MCDU's to
-  0.25% at typical and 0.35% under stress, the ICP's to 0.64% under stress.
+  0.11 to 0.22% at typical and 0.39% under stress, the ICP's to 0.51%
+  under stress.
 - **The Kneeboard CDU is not in these figures.** The benchmark's profile
   leaves it off, so neither its key reader nor its web page runs. Its page
   keys are the keyboard's digits, which Windows hands over only when a key
@@ -154,17 +164,17 @@ profiles and nothing that runs per frame.
   from 0.4 reports a second to 37 and the PTO2 from 95 to 149. The main
   loop and the key readers are unchanged. In flight the knob sits still.
 
-What each panel was sent, per second, on beta.011. Busy is the share of
+What each panel was sent, per second, on beta.016. Busy is the share of
 each second its writer spent blocked on USB, which holds up nothing else:
 
 | Panel | Typical | Busy | Stress | Busy |
 |---|---|---|---|---|
-| MCDU Captain | 190 reports | 19% | 434 reports | 44% |
-| ViperAce ICP | 17 reports | 1.7% | 242 reports | 25% |
-| PTO2 | 7 reports | 0.7% | 150 reports | 15% |
-| Orion Rudder Pedals | 2.5 reports | 0.3% | 55 reports | 6% |
-| CarrierAce UFC | 2 reports | 0.2% | 37 reports | 4% |
-| Orion Throttle | 1.7 reports | 0.2% | 35 reports | 4% |
+| MCDU Captain | 192 reports | 19% | 428 reports | 43% |
+| ViperAce ICP | 19 reports | 1.9% | 245 reports | 25% |
+| PTO2 | 7.4 reports | 0.8% | 149 reports | 15% |
+| Orion Rudder Pedals | 2.8 reports | 0.3% | 55 reports | 6% |
+| CarrierAce UFC | 2.3 reports | 0.2% | 37 reports | 4% |
+| Orion Throttle | 1.9 reports | 0.2% | 35 reports | 4% |
 
 - **The MCDU costs most because a text screen is always sent whole**, 16
   reports. Under stress it paints about 24 screens a second against a cap
@@ -180,6 +190,10 @@ from the log's status lines: the MCDU took 185 to 207 reports a second,
 about 12 screens, against typical's 185, with its writer busy 18 to 21% of
 each second. The longest main loop pass was 2 ms, aircraft load included,
 so the 94 ms pass under stress belongs to that scenario and not to flying.
+
+**Memory is up about 7 MB since beta.011**, 54.9 MB private at idle
+then and 61.9 MB on beta.016, over five releases that added profiles and
+the DSC board support. Not profiled.
 
 **Memory is up about 11 MB since beta.005, almost all of it in
 beta.006.** Idle passes of each release, back to back on 2026-10-04, read
@@ -206,9 +220,10 @@ every module, and they are worth far more than a few megabytes.
 
 ## Release runs
 
-Every release is benchmarked before it ships, and gets a row here whether
-or not anything changed, so a later change can be dated to the releases
-between which it appeared. Live, quiet machine, A-10C II profile, one 60 s
+Every release that changes code is benchmarked before it ships, and gets
+a row here whether or not anything changed, so a later change can be
+dated to the releases between which it appeared. A release that changes
+only profiles is not run, and its row says so. Live, quiet machine, A-10C II profile, one 60 s
 pass per scenario. Memory is private memory at idle; the 2026-10-04 column
 was measured for every release back to back, so those compare with each
 other.
@@ -223,6 +238,11 @@ other.
 | beta.009 | 2026-10-05 | 0.45% | 1.41% | 4.38% | 47.5 MB | not measured | Ctrl as modifier. Stress up 0.8%: the backlights follow a knob that stress moves every frame. A controller button as modifier adds about 2.5% throughout |
 | beta.010 | 2026-10-07 | 0.50% | 1.50% | 4.52% | 50.8 MB | not measured | No notable change. Memory up 3.3 MB, but not from the eight new profiles' size: on a dry run one profile commits 48.6 MB, beta.009's 19 commit 46.0 MB and these 27 commit 49.0 MB, so it moves with startup heap layout, not with data |
 | beta.011 | 2026-10-08 | 0.15% | 1.57% | 4.44% | 54.9 MB | not measured | Idle down 0.35%: page key readers run only while their panel is driven, so none runs with no aircraft loaded. Typical and stress unchanged. Memory up 4.1 MB with the Kneeboard CDU and 22 placeholder profiles; not profiled |
+| beta.012 | not run | not run | not run | not run | not run | not measured | Profiles, plus DSC board support, which drives no panel here; the reader gating below was first measured in beta.016 |
+| beta.013 | not run | not run | not run | not run | not run | not measured | Profiles only |
+| beta.014 | not run | not run | not run | not run | not run | not measured | Profiles only |
+| beta.015 | not run | not run | not run | not run | not run | not measured | Profiles only |
+| beta.016 | 2026-10-26 | 0.14% | 1.02% | 4.11% | 61.9 MB | not measured | Typical down about 0.4%: since beta.012 a page key reader runs only when its panel has a second page, so the A-10C II's UFC reader no longer runs. A second typical pass read 1.25%. Stress down 0.3%, within a pass's spread. Memory up 7 MB since beta.011; not profiled |
 
 - **beta.005's two memory figures differ** because the first is a
   development build before release, and the second is the release build.
@@ -265,9 +285,9 @@ Estimated, not measured: the only machine measured is the i9-12900KF above.
 
 | Scenario | i9-12900KF, measured | i5-12400F, estimated |
 |---|---|---|
-| idle | 0.15% | about 0.2% |
-| typical | 1.57% | about 1.9% |
-| stress | 4.44% | about 5.3% |
+| idle | 0.14% | about 0.2% |
+| typical | 1.02 to 1.25% | about 1.2 to 1.5% |
+| stress | 4.11% | about 4.9% |
 
 - **How.** The daemon's threads each do a little, on whichever core is
   free, and none comes near filling one, so what it costs follows how fast a

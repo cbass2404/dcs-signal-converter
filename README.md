@@ -99,7 +99,7 @@ starter profile the first time you fly it, ready to fill in with the
 | C-101          | C-101CC, C-101EB                                                                   |
 | C-130J-30      | C-130J-30                                                                          |
 | CH-47Fbl1      | CH-47F                                                                             |
-| Christen Eagle | Christen Eagle II                                                                  |
+| Christen Eagle II | Christen Eagle II                                                               |
 | Edge540        | Edge 540, Extra 330SR                                                              |
 | F-14           | F-14A, F-14B                                                                       |
 | F-14BU         | F-14B (Upgrade)                                                                    |
@@ -139,11 +139,11 @@ starter profile the first time you fly it, ready to fill in with the
 | FC3            | The Flaming Cliffs aircraft, and the mods and modules with no profile of their own |
 
 The A-10C, AH-64D, CH-47F and F-14B (Upgrade) also put their own CDU on the MCDU
-screen, and on a PFP's, which is the same screen. The A-4E-C, AJS37, F-16,
-F/A-18, Mi-8, Mi-24P, MiG-15bis, Mosquito and UH-1H get pages built from their
-own readings there instead. Each of them gives the Kneeboard CDU the same
-pages, turned off until you turn it on. Most aircraft profiles also ship a
-page for the UFC, the ICP's DED, or both. Every screen is yours to change in the
+screen, and on a PFP's, which is the same screen. The A-4E-C, AJS37,
+Bf 109 K-4, F-16, F/A-18, Mi-8, Mi-24P, MiG-15bis, MiG-21bis, Mosquito and
+UH-1H get pages built from their own readings there instead. Each of them
+gives the Kneeboard CDU the same pages, turned off until you turn it on.
+Some also ship a page for the UFC, the ICP's DED, or both. Every screen is yours to change in the
 [editor](#4-make-it-yours): a label you type, a reading beside it, each in the
 colour and size you choose. Open a profile to see exactly what it drives.
 
@@ -288,7 +288,8 @@ A few more things the editor does:
 - **`+ a rule`** draws a line across a row, for a page that does not fill the
   glass, and can carry a label in the middle naming what it divides. The rule
   and the label each take their own colour. The A-4E-C, A-10C, AH-64D, AJS37,
-  F-16, Mi-8, Mi-24P, MiG-15bis, Mosquito and UH-1H MCDU pages ship with one.
+  Bf 109 K-4, F-16, Mi-8, Mi-24P, MiG-15bis, MiG-21bis, Mosquito and UH-1H
+  MCDU pages ship with one.
 - **Pages.** Every screen shows pages: the MCDU, the UFC, the ICP's DED and
   the Kneeboard CDU each have six slots, each showing a page, a blank
   screen, or nothing. In flight, hold Ctrl and press a page key to swap the
@@ -302,9 +303,10 @@ A few more things the editor does:
   Import profile... and Manage Converter.
 - **Manage Converter**, under the gear, is for the rare times the converter
   needs restarting. Saving a profile is not one of them. See below.
-- **Reset** puts a profile back to the shipped one. **Reset this lamp** and
-  **Reset this field** do the same for one lamp or one field of a shipped
-  page. **Undo unsaved changes** puts one lamp or field back the way it was
+- **Reset** puts a profile back to the shipped one, its aircraft's shipped
+  pages included; pages you made yourself are kept. **Reset this lamp**,
+  **Reset this field** and **Reset page** do the same for one lamp, one
+  field of a shipped page, or a whole shipped page. **Undo unsaved changes** puts one lamp or field back the way it was
   last saved. Each shows you what it will put back before it does.
 - **Drive this panel** per panel. Untick it and the profile leaves that panel
   alone entirely, so another program can have it.
@@ -369,9 +371,9 @@ meant. If a shipped profile is wrong, please report it.
 **The panels went dark while DCS kept running.**
 The converter stopped. The DCS hook starts it when a mission begins and does not
 notice that it has gone, so it will not come back until DCS is restarted. Open
-the editor, press the gear, then **Manage Converter...** and **Restart**. The same dialog is
-where to restart it after plugging a panel in, since panels are found once at
-startup. **Kill** in that dialog is only for a converter that will not answer;
+the editor, press the gear, then **Manage Converter...** and **Restart**. A panel
+plugged in or unplugged while it runs needs no restart: it is picked up and
+repainted on its own. **Kill** in that dialog is only for a converter that will not answer;
 it cannot clear the panels, because a killed program runs none of its shutdown.
 
 **The panels stayed lit after DCS closed.**

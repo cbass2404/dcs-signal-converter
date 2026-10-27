@@ -40,6 +40,21 @@ unless this says what moved.
 
 ### Profiles
 
+- **P-51D: the Takeoff panel, throttle and master caution follow the
+  aircraft.** LEFT, RIGHT and NOSE light while each main wheel and the
+  tail wheel are on the ground, and the gear handle light comes on with
+  the red gear warning light only. FLAPS lights while the flaps are out,
+  HALF near half travel and FULL at full. LI and RI show the left and
+  right bomb arming switches, and LO and RO the rocket release mode,
+  single and auto. JETT lights by new BOMB READY shared conditions: the
+  bombs/rockets selector on bombs with a bomb arming switch on, or on
+  rockets with a release mode set. On the Orion throttle, A/G lights by
+  BOMB READY too. Master caution, with FAIL on the MCDU and each PFP, now
+  lights with the tank the fuel selector draws from at a fifth or below,
+  in place of the radar warning light. Backlights follow the cockpit
+  lights rheostat. If you have changed a TAKEOFF_PLANEL_2 row, the
+  Orion_Throttle_Base_II A/G row, the CarrierAce_MFD_C INST_PNL_Backlight
+  row, or the Master Caution shared conditions, reset it to pick this up.
 - **P-47D: the D-30 and D-40 have their own profiles, and the Takeoff
   panel, throttle and backlights follow the aircraft.** P-47D-30 covers
   the D-30 and D-30 (Early), and the new P-47D-40 covers the D-40. In
@@ -131,6 +146,9 @@ unless this says what moved.
   all three gun stations selected. A/G lights by BOMB READY, or with the
   rocket ready light on, rockets armed and Master Arm on.
 - **F4U-1D: the CDU screen backlight follows the MFD backlight.**
+- **F4U-1D: backlights follow the left instrument board light**, in
+  place of holding at a fixed level. If you have changed the
+  CarrierAce_MFD_C INST_PNL_Backlight row, reset it to pick this up.
 
 These F4U-1D rows were unbound. If you have changed any TAKEOFF_PLANEL_2
 row, the Orion_Throttle_Base_II A/A or A/G row, or the CDU_Kneeboard

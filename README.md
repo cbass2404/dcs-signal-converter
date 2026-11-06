@@ -132,6 +132,7 @@ starter profile the first time you fly it, ready to fill in with the
 | MiG-19P        | MiG-19P                                                                            |
 | MiG-21Bis      | MiG-21bis                                                                          |
 | MiG-29 Fulcrum | MiG-29 Fulcrum                                                                     |
+| MirageF1       | Mirage F1BE, F1CE, F1EE                                                            |
 | MosquitoFBMkVI | Mosquito FB Mk VI                                                                  |
 | OH-58D         | OH-58D Kiowa Warrior                                                               |
 | P-47D-30       | P-47D-30, P-47D-30 (Early)                                                         |

@@ -950,7 +950,7 @@
         {
           "source": "PLT_CONTROLS_FLAPS_SLATS",
           "on_when": {
-            "gte": 1
+            "equals": 2
           }
         }
       ]

@@ -274,6 +274,7 @@ other.
 | beta.014 | not run | not run | not run | not run | not run | not measured | Profiles only |
 | beta.015 | not run | not run | not run | not run | not run | not measured | Profiles only |
 | beta.016 | 2026-10-26 | 0.14% | 1.02% | 4.11% | 61.9 MB | not measured | Typical down about 0.4%: since beta.012 a page key reader runs only when its panel has a second page, so the A-10C II's UFC reader no longer runs. A second typical pass read 1.25%. Stress down 0.3%, within a pass's spread. Memory up 7 MB since beta.011; not profiled |
+| beta.017 | 2026-11-06 | 0.14% | 1.53% | 4.84% | 62.2 MB | not measured | No notable change. Typical and stress read higher than beta.016's run, but beta.016's own build, run back to back the same day, read 1.67% and 5.01%, and a second beta.017 pass 1.61% and 5.06%: the machine, not the code. The Total Controls MPDs are skipped (`--skip-protocol tc`), since they store every level they are sent |
 
 - **beta.005's two memory figures differ** because the first is a
   development build before release, and the second is the release build.

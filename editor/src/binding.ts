@@ -22,10 +22,11 @@ import type {
   SignalView,
 } from "./types";
 
-type TestKind = "equals" | "in" | "gte" | "lte" | "between" | "scale";
+type TestKind = "equals" | "not_equals" | "in" | "gte" | "lte" | "between" | "scale";
 
 const TEST_LABELS: Record<TestKind, string> = {
   equals: "is exactly",
+  not_equals: "is not",
   in: "is one of",
   gte: "is at least",
   lte: "is at most",
@@ -93,6 +94,8 @@ function convert(w: OnWhen, kind: TestKind, signal: SignalView | undefined): OnW
   switch (kind) {
     case "equals":
       return { equals: first };
+    case "not_equals":
+      return { not_equals: first };
     case "in":
       return { in: current.length > 0 ? current : [first] };
     case "gte":
@@ -121,6 +124,7 @@ function scaleWhen(s: NamedScale): OnWhen {
 
 function numbersOf(w: OnWhen): number[] {
   if ("equals" in w) return [w.equals];
+  if ("not_equals" in w) return [w.not_equals];
   if ("in" in w) return w.in;
   if ("gte" in w) return [w.gte];
   if ("lte" in w) return [w.lte];
@@ -161,7 +165,7 @@ function valueControls(
 
   const discrete = signal && signal.values.length > 0;
 
-  if (kind === "equals" && discrete && signal) {
+  if ((kind === "equals" || kind === "not_equals") && discrete && signal) {
     const select = el("select", { class: "value" });
     for (const v of signal.values) {
       const option = el("option", { value: String(v.value) }, `${v.value} = ${v.label}`);
@@ -169,7 +173,8 @@ function valueControls(
     }
     select.value = String(numbersOf(condition.on_when)[0] ?? 0);
     select.addEventListener("change", () => {
-      condition.on_when = { equals: Number(select.value) };
+      const n = Number(select.value);
+      condition.on_when = kind === "equals" ? { equals: n } : { not_equals: n };
       onChange();
     });
     wrap.append(select);
@@ -259,7 +264,13 @@ function valueControls(
   wrap.append(
     numberInput(numbersOf(condition.on_when)[0] ?? 0, max, (n) => {
       condition.on_when =
-        kind === "equals" ? { equals: n } : kind === "gte" ? { gte: n } : { lte: n };
+        kind === "equals"
+          ? { equals: n }
+          : kind === "not_equals"
+            ? { not_equals: n }
+            : kind === "gte"
+              ? { gte: n }
+              : { lte: n };
       onChange();
     }),
   );
@@ -353,6 +364,7 @@ function describeTest(w: OnWhen, signal: SignalView | undefined): string {
     return hit ? `${n}, ${hit.label}` : String(n);
   };
   if ("equals" in w) return `is exactly ${label(w.equals)}`;
+  if ("not_equals" in w) return `is not ${label(w.not_equals)}`;
   if ("in" in w) return `is one of ${w.in.map(label).join("; ")}`;
   if ("gte" in w) return `is at least ${w.gte}`;
   if ("lte" in w) return `is at most ${w.lte}`;

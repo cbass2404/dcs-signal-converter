@@ -757,7 +757,14 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "Landing_gear_lights",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "GEAR_HND_L",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
@@ -784,67 +791,221 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "JETT",
-      "conditions": []
+      "conditions": [],
+      "always": true
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "CTR",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "WP_STAT3_L",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "WP_STAT4_L",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "LI",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "WP_STAT2_L",
+          "on_when": {
+            "equals": 1
+          }
+        },
+        {
+          "source": "WP_STAT2_G",
+          "on_when": {
+            "not_equals": 39321
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "LO",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "WP_STAT1_L",
+          "on_when": {
+            "equals": 1
+          }
+        },
+        {
+          "source": "WP_STAT1_G",
+          "on_when": {
+            "not_equals": 39321
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "RO",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "WP_STAT6_L",
+          "on_when": {
+            "equals": 1
+          }
+        },
+        {
+          "source": "WP_STAT6_G",
+          "on_when": {
+            "not_equals": 39321
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "RI",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "WP_STAT5_L",
+          "on_when": {
+            "equals": 1
+          }
+        },
+        {
+          "source": "WP_STAT5_G",
+          "on_when": {
+            "not_equals": 39321
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "FLAPS",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "FLAP_G",
+          "on_when": {
+            "gte": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "NOSE",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "NOSE_GEAR_L",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "FULL",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "FW_FLAPS_LVR",
+              "on_when": {
+                "equals": 0
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "AFT_FLAPS_LVR",
+              "on_when": {
+                "equals": 0
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "RIGHT",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "RIGHT_GEAR_L",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "LEFT",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "LEFT_GEAR_L",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "HALF",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "FW_FLAPS_LVR",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "AFT_FLAPS_LVR",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "HOOK",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "WP_MASTER_ARM_L",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "ViperAce_ICP",

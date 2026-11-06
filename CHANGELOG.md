@@ -23,3 +23,8 @@ unless this says what moved.
   light changes in steps, about half a second after the knob stops. Every
   shipped profile lights them from the same source as its other backlights.
   They go dark when the converter stops, as the other panels do.
+
+### Editor
+
+- **"is not" test.** A condition can light its lamp on every value but one,
+  such as a station light that is on but not green.

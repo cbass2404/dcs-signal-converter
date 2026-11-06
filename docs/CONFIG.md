@@ -160,6 +160,7 @@ does not start at 0. `COOLANT_TEMPERATURE_VALUE` reads 0 to 130, and
 | `on_when`                    | Offered for | Editor control                              |
 | ---------------------------- | ----------- | ------------------------------------------- |
 | `{ "equals": 1 }`            | discrete    | dropdown of labelled values                 |
+| `{ "not_equals": 1 }`        | discrete    | dropdown of labelled values                 |
 | `{ "in": [1, 2] }`           | discrete    | multi-select of labelled values             |
 | `{ "gte": 32768 }`           | continuous  | number input, clamped to the signal's range |
 | `{ "lte": 1000 }`            | continuous  | number input, clamped to the signal's range |

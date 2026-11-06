@@ -33,8 +33,17 @@
     {
       "device": "CarrierAce_MFD_C",
       "led": "INST_PNL_Backlight",
-      "conditions": [],
-      "always": true
+      "conditions": [
+        {
+          "source": "FW_LIGHT_INSTRUMENT",
+          "on_when": {
+            "scale": [
+              0,
+              65535
+            ]
+          }
+        }
+      ]
     },
     {
       "device": "CarrierAce_MFD_L",
@@ -867,7 +876,7 @@
     "PFP4_Observer": "PFP4_Captain",
     "PFP7_CoPilot": "PFP7_Captain",
     "PFP7_Observer": "PFP7_Captain",
-    "TC_APACHE_MPD_LEFT": "TC_APACHE_MPD_CENTER",
-    "TC_APACHE_MPD_RIGHT": "TC_APACHE_MPD_CENTER"
+    "TC_APACHE_MPD_CENTER": "TC_APACHE_MPD_LEFT",
+    "TC_APACHE_MPD_RIGHT": "TC_APACHE_MPD_LEFT"
   }
 }

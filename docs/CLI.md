@@ -36,6 +36,7 @@ installed program and the profiles folder chosen at install.
 | `--devices <DIR>` | `data/devices` | Hardware inventory, one file per maker: which LEDs exist, and what values each accepts. |
 | `--log-dir <DIR>` | `Saved Games\DCS\Logs` installed, `data/logs` in a checkout | Where the session log goes. |
 | `--no-log` | off | Writes no session log at all. |
+| `--skip-protocol <NAME>` | none | Leaves every device of that protocol alone, as if unplugged. Repeatable. The benchmark passes `tc`, because the Total Controls panels store every level they are sent. |
 
 From a checkout, the two runs worth knowing. Both are the `run` command, which
 is the daemon; everything after the bare `--` is passed to it rather than to

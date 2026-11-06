@@ -104,6 +104,14 @@ fn connected_devices() -> Reply<Vec<String>> {
         .iter()
         .map(|d| d.product_id)
         .collect();
+    let tc_pids: Vec<u16> = api
+        .device_list()
+        .filter(|d| {
+            d.vendor_id() == dsc_config::TC_VENDOR_ID
+                && d.manufacturer_string() == Some(dsc_config::TC_MANUFACTURER)
+        })
+        .map(|d| d.product_id())
+        .collect();
     Ok(inv
         .devices
         .iter()
@@ -111,6 +119,7 @@ fn connected_devices() -> Reply<Vec<String>> {
             d.protocol == dsc_config::WEB_PROTOCOL
                 || d.protocol == dsc_config::DSC_PROTOCOL
                 || (d.protocol == dsc_config::DEFAULT_PROTOCOL && pids.contains(&d.usb_pid))
+                || (d.protocol == dsc_config::TC_PROTOCOL && tc_pids.contains(&d.usb_pid))
         })
         .map(|d| d.key.clone())
         .collect())

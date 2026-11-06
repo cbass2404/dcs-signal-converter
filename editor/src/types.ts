@@ -5,6 +5,7 @@
 /** `{ "equals": 1 }`, `{ "between": [21000, 25000] }`, and so on. */
 export type OnWhen =
   | { equals: number }
+  | { not_equals: number }
   | { in: number[] }
   | { gte: number }
   | { lte: number }

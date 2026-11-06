@@ -1,0 +1,78 @@
+{
+  "_comment": "Total Controls panels. Vendor id 0x04D8 (Microchip, shared with other makers), manufacturer string \"Total Controls\". The only host command is the backlight: feature report 'B' then the level 0 to 3, given by the maker 2026-11-06. See crates/dsc-cli/src/panels/tc.rs.",
+  "_status": "Apache MPD Left (0xE7ED), Right (0xE7EC) and Center (0xE7C1) verified 2026-11-06: levels 0 off, 1 dim, 2 medium, 3 full, each panel separately. One unit is any of the three: a button combo reboots it into another identity. A set level survives a power cycle, so every write is treated as stored and only a settled, changed level is sent.",
+  "devices": [
+    {
+      "key": "TC_APACHE_MPD_CENTER",
+      "display_name": "Apache MPD Center",
+      "product_name": "TC Apache MPD Center",
+      "protocol": "tc",
+      "usb_pid": 59329,
+      "parts": [
+        {
+          "part_id": 59329,
+          "name": "Apache MPD Center",
+          "leds": [
+            {
+              "index": 0,
+              "name": "Backlight",
+              "label": "Frame backlight",
+              "kind": "dimmer",
+              "max": 255,
+              "verified": true,
+              "backlight": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "TC_APACHE_MPD_LEFT",
+      "display_name": "Apache MPD Left",
+      "product_name": "TC Apache MPD Left",
+      "protocol": "tc",
+      "usb_pid": 59373,
+      "parts": [
+        {
+          "part_id": 59373,
+          "name": "Apache MPD Left",
+          "leds": [
+            {
+              "index": 0,
+              "name": "Backlight",
+              "label": "Frame backlight",
+              "kind": "dimmer",
+              "max": 255,
+              "verified": true,
+              "backlight": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "TC_APACHE_MPD_RIGHT",
+      "display_name": "Apache MPD Right",
+      "product_name": "TC Apache MPD Right",
+      "protocol": "tc",
+      "usb_pid": 59372,
+      "parts": [
+        {
+          "part_id": 59372,
+          "name": "Apache MPD Right",
+          "leds": [
+            {
+              "index": 0,
+              "name": "Backlight",
+              "label": "Frame backlight",
+              "kind": "dimmer",
+              "max": 255,
+              "verified": true,
+              "backlight": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

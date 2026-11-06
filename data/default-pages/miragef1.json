@@ -1,0 +1,32 @@
+{
+  "module": "MirageF1",
+  "pages": [],
+  "signals": [
+    {
+      "id": "oyv550",
+      "name": "MASTER CAUTION",
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "P_WL_M_FAIL_L_L",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "P_WL_M_FAIL_R_L",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

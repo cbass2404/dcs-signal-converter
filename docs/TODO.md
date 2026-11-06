@@ -338,9 +338,8 @@ numbers move and the words do not.
       switches" in PROTOCOL-DSC.md.
 
       The same protocol can serve small commercial makers. Total Controls
-      (Apache MPDs and other panels) is being asked (2026-10-08) about putting
-      it in their firmware; their MPDs have no host brightness control today,
-      only key combos. So the spec comes first and is written as its own
+      answered with a command of their own instead (2026-11-06): their Apache
+      MPDs are driven by the `tc` backend, #165. So the spec comes first and is written as its own
       document beside PROTOCOL-WINCTRL.md, with a capability report (the
       device says what lamps and channels it has) and a version byte from
       the start, because outside firmware will ship against it. A

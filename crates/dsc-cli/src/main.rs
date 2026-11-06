@@ -311,6 +311,10 @@ enum Command {
         /// Do not write a session log at all.
         #[arg(long)]
         no_log: bool,
+        /// Leave every device of this protocol alone, as the benchmark does
+        /// with `tc`, whose panels store every level they are sent. Repeatable.
+        #[arg(long, value_name = "PROTOCOL")]
+        skip_protocol: Vec<String>,
     },
     /// Catalogue summary, or one module's signals.
     Catalogue {
@@ -886,6 +890,7 @@ fn main() -> Result<()> {
             exit_when_idle,
             log_dir,
             no_log,
+            skip_protocol,
         } => {
             // The lock first, before anything is read or opened, and the log
             // straight after it. Which process ends up driving the panels is
@@ -948,6 +953,7 @@ fn main() -> Result<()> {
                 verbose,
                 seconds,
                 exit_when_idle,
+                &skip_protocol,
                 lock,
             );
             // Logged before it is returned, because returning it prints it to a
@@ -3027,6 +3033,7 @@ fn run(
     verbose: bool,
     seconds: Option<u64>,
     exit_when_idle: Option<u64>,
+    skip_protocols: &[String],
     // The single-instance lock, held for the lifetime of the run, or None for
     // a dry run. Taken by the caller before anything here is loaded, so that a
     // second daemon neither opens the panels nor touches the log.
@@ -3152,6 +3159,10 @@ fn run(
     // Only drive hardware that is actually plugged in. A shared profile may
     // name panels this user does not own, which is not an error.
     let mut protocols = panels::all(settings_path)?;
+    protocols.retain(|p| !skip_protocols.iter().any(|s| s == p.name()));
+    for name in skip_protocols {
+        kept!("panels   skipping every {name} device, as asked");
+    }
     // Everything of every known brand that is plugged in, known to this build
     // or not. A panel missing from the inventory and a panel nobody plugged in
     // look identical from the profile's side, and only this separates them.
@@ -3195,6 +3206,9 @@ fn run(
         // A device naming a protocol this build cannot drive is a newer
         // inventory, not a broken one. Say so once and carry on with the rest,
         // rather than failing the run over a panel the user may not even own.
+        if skip_protocols.contains(&spec.protocol) {
+            continue;
+        }
         let Some(protocol) = protocols.iter().find(|p| p.name() == spec.protocol) else {
             warn!(
                 "{} asks for the {} protocol, which this build cannot drive. Skipped.",

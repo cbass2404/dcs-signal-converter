@@ -691,6 +691,16 @@ pub const WEB_PROTOCOL: &str = "web";
 /// See docs/PROTOCOL-DSC.md.
 pub const DSC_PROTOCOL: &str = "dsc";
 
+/// The protocol of the Total Controls panels: a backlight level in a feature
+/// report. See crates/dsc-cli/src/panels/tc.rs.
+pub const TC_PROTOCOL: &str = "tc";
+
+/// Microchip's vendor id, which Total Controls builds on. Other makers use it
+/// too, so a device is only theirs if its manufacturer string is also
+/// [`TC_MANUFACTURER`].
+pub const TC_VENDOR_ID: u16 = 0x04D8;
+pub const TC_MANUFACTURER: &str = "Total Controls";
+
 /// Where the converter answers a web device's page with the screen: this
 /// machine only.
 pub const WEB_ADDRESS: &str = "127.0.0.1:8310";
@@ -971,6 +981,7 @@ impl DeviceInventory {
 #[serde(rename_all = "snake_case")]
 pub enum OnWhen {
     Equals(u32),
+    NotEquals(u32),
     In(Vec<u32>),
     Gte(u32),
     Lte(u32),
@@ -1074,7 +1085,7 @@ impl OnWhen {
     /// The highest source value this condition tests or scales against.
     pub fn highest(&self) -> Option<u32> {
         match self {
-            OnWhen::Equals(v) | OnWhen::Gte(v) | OnWhen::Lte(v) => Some(*v),
+            OnWhen::Equals(v) | OnWhen::NotEquals(v) | OnWhen::Gte(v) | OnWhen::Lte(v) => Some(*v),
             OnWhen::In(vs) => vs.iter().max().copied(),
             OnWhen::Between([lo, hi]) => Some((*lo).max(*hi)),
             OnWhen::Scale(s) => [s.dimmest, s.full].into_iter().chain(s.dark_below).max(),
@@ -1085,6 +1096,7 @@ impl OnWhen {
     pub fn resolve(&self, value: u32, on: u8, off: u8, led_max: u8) -> u8 {
         let lit = match self {
             OnWhen::Equals(v) => value == *v,
+            OnWhen::NotEquals(v) => value != *v,
             OnWhen::In(vs) => vs.contains(&value),
             OnWhen::Gte(v) => value >= *v,
             OnWhen::Lte(v) => value <= *v,
@@ -5398,6 +5410,16 @@ mod tests {
         let w = OnWhen::Equals(1);
         assert_eq!(w.resolve(1, 255, 0, 255), 255);
         assert_eq!(w.resolve(0, 255, 0, 255), 0);
+    }
+
+    #[test]
+    fn not_equals_lights_on_every_other_value() {
+        let w = OnWhen::NotEquals(1);
+        assert_eq!(w.resolve(1, 255, 0, 255), 0);
+        assert_eq!(w.resolve(0, 255, 0, 255), 255);
+        assert_eq!(w.resolve(2, 255, 0, 255), 255);
+        let read: OnWhen = serde_json::from_str(r#"{"not_equals": 1}"#).unwrap();
+        assert!(matches!(read, OnWhen::NotEquals(1)));
     }
 
     #[test]

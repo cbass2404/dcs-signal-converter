@@ -1075,6 +1075,12 @@
                     <td>A cockpit lamp copied across, a switch in one position.</td>
                   </tr>
                   <tr>
+                    <td class="ed">is not</td>
+                    <td><code>{"not_equals": 1}</code></td>
+                    <td>switches, selectors, lamps</td>
+                    <td>Anything but one value: a station whose light is not green.</td>
+                  </tr>
+                  <tr>
                     <td class="ed">is one of</td>
                     <td><code>{"in": [1, 2]}</code></td>
                     <td>switches, selectors</td>
@@ -2720,6 +2726,7 @@
         const [k, p] = Object.entries(when)[0];
         let lit;
         if (k === "equals") lit = value === p;
+        else if (k === "not_equals") lit = value !== p;
         else if (k === "in") lit = p.includes(value);
         else if (k === "gte") lit = value >= p;
         else if (k === "lte") lit = value <= p;
@@ -2767,6 +2774,7 @@
         ];
         const labels = {
           equals: "is exactly",
+          not_equals: "is not",
           in: "is one of",
           gte: "is at least",
           lte: "is at most",
@@ -2788,7 +2796,9 @@
         function offerTests() {
           const s = sig();
           kind.textContent = "";
-          const kinds = s.values ? ["equals", "in"] : ["gte", "lte", "between", "scale"];
+          const kinds = s.values
+            ? ["equals", "not_equals", "in"]
+            : ["gte", "lte", "between", "scale"];
           for (const k of kinds) kind.append(h("option", { value: k }, labels[k]));
           const dimmer = s.id === "LCP_CONSOLE" || s.id === "L_SIDE_L_DIM";
           kind.value = s.values ? "equals" : dimmer ? "scale" : "gte";
@@ -2809,11 +2819,11 @@
           const k = kind.value;
           params.textContent = "";
           const half = Math.round(s.max / 2);
-          if (k === "equals") {
+          if (k === "equals" || k === "not_equals") {
             const pick = h("select");
             for (const [v, l] of s.values) pick.append(h("option", { value: v }, `${v}, ${l}`));
             pick.value = "1";
-            const set = () => ((when = { equals: Number(pick.value) }), draw());
+            const set = () => ((when = { [k]: Number(pick.value) }), draw());
             pick.addEventListener("change", set);
             params.append(pick);
             set();
@@ -4696,6 +4706,13 @@
             "tests",
           ],
           ["is one of", "in", "Test", "The signal reports any of several values.", "tests"],
+          [
+            "is not",
+            "not_equals",
+            "Test",
+            "The signal reports anything but one value. Offered with the positions named.",
+            "tests",
+          ],
           [
             "Label",
             "label, label_colour",

@@ -13,157 +13,62 @@ shipped to you is brought up to the new one for you. A fix to something
 you have touched only reaches you if you reset it, and you cannot decide to
 unless this says what moved.
 
-## 1.0.0-beta.016
+## 1.0.0-beta.017
 
-### Fixes
+### Panels
 
-- **Reset on a profile now resets its pages too.** It used to put back only
-  the lamps and slots, leaving any page you had edited as you left it.
-  Reset now also puts the aircraft's shipped pages back as they shipped,
-  including any you deleted. Pages you made yourself are kept. The pages
-  are shared by every profile on the aircraft, and the Reset question names
-  those profiles.
+- **Total Controls Apache MPDs.** The left, right and center MPD frames'
+  backlights follow the cockpit's lighting, like every other panel's
+  backlight. The frame has four steps, off, dim, medium and full, so the
+  light changes in steps, about half a second after the knob stops. Every
+  shipped profile lights them from the same source as its other backlights,
+  and points the center and right MPDs at the left, so a setup with two
+  needs only the left one bound. They go dark when the converter stops, as
+  the other panels do.
 
 ### Editor
 
-- **Reset page.** A shipped page open in the page editor has a Reset page
-  button that puts its name and every field back as shipped, without
-  touching the rest of the profile. Save page writes it.
-- **A lamp lit by shared conditions can add its own.** Under the shared
-  conditions, "+ Add condition (and)" adds tests that must hold as well,
-  and "+ Add alternative (or)" adds other ways for the lamp to light. Use
-  one or the other: once you add to one, only that one extends. A throttle
-  A/G lamp can light by a shared BOMB READY, or by master arm with rockets
-  armed.
-- **"+ Add condition" reads "+ Add condition (and)"** under every group of
-  conditions, to match "+ Add alternative (or)".
+- **"is not" test.** A condition can light its lamp on every value but one,
+  such as a station light that is on but not green.
 
 ### Profiles
 
-- **Spitfire LF Mk IX: the Takeoff panel, throttle and master caution
-  follow the aircraft.** LEFT, RIGHT and NOSE light while each main wheel
-  and the tail wheel are on the ground, and the gear handle light comes on
-  while the gear is between up and down. FLAPS lights while the flaps are
-  down. On the Orion throttle, A/A lights with the gunsight master on.
-  The bomb lamps and A/G stay dark, because the module does not model
-  bomb selection or arming. Master caution, with FAIL on the MCDU and each
-  PFP, now lights at about 18 gallons left, a bingo fuel state, in place
-  of the fuel pressure warning light. Only the lower tank is gauged, and
-  the gauge reads only while the fuel contents button is pressed, so press
-  it to check. Backlights follow the port flood lamp. If you have changed
-  a TAKEOFF_PLANEL_2 row, the Orion_Throttle_Base_II A/A row, the
-  CarrierAce_MFD_C INST_PNL_Backlight row, or the Master Caution shared
-  conditions, reset it to pick this up.
-- **P-51D: the Takeoff panel, throttle and master caution follow the
-  aircraft.** LEFT, RIGHT and NOSE light while each main wheel and the
-  tail wheel are on the ground, and the gear handle light comes on with
-  the red gear warning light only. FLAPS lights while the flaps are out,
-  HALF near half travel and FULL at full. LI and RI show the left and
-  right bomb arming switches, and LO and RO the rocket release mode,
-  single and auto. JETT lights by new BOMB READY shared conditions: the
-  bombs/rockets selector on bombs with a bomb arming switch on, or on
-  rockets with a release mode set. On the Orion throttle, A/G lights by
-  BOMB READY too. Master caution, with FAIL on the MCDU and each PFP, now
-  lights with the tank the fuel selector draws from at a fifth or below,
-  in place of the radar warning light. Backlights follow the cockpit
-  lights rheostat. If you have changed a TAKEOFF_PLANEL_2 row, the
-  Orion_Throttle_Base_II A/G row, the CarrierAce_MFD_C INST_PNL_Backlight
-  row, or the Master Caution shared conditions, reset it to pick this up.
-- **P-47D: the D-30 and D-40 have their own profiles, and the Takeoff
-  panel, throttle and backlights follow the aircraft.** P-47D-30 covers
-  the D-30 and D-30 (Early), and the new P-47D-40 covers the D-40. In
-  both, LEFT, RIGHT and NOSE light while each main wheel and the tail
-  wheel are on the ground, and the gear handle light comes on with the
-  landing warning light. JETT lights by new BOMB READY shared conditions:
-  a bomb arming handle pulled with its bomb switch on, and on the D-40 the
-  OAP selector and ready switches on as well. CTR, LI and RI show the
-  belly, left and right bomb switches; on the D-30 they flash while the
-  switch cover is up. On the D-40, LO and RO show the rocket release mode.
-  On the Orion throttle, A/A lights with the guns switch on and the gear
-  lever up, and A/G by BOMB READY, or on the D-40 also with rockets set to
-  release and the OAP selector off. Backlights follow the UV instrument
-  lights. If you have changed a TAKEOFF_PLANEL_2 row, the
-  Orion_Throttle_Base_II A/A or A/G row, or the CarrierAce_MFD_C
-  INST_PNL_Backlight row, reset it to pick this up. If you had changed
-  anything in P-47D for the D-40, make it again in P-47D-40.
-- **I-16: the Takeoff panel, throttle and master caution follow the
-  aircraft.** LEFT and RIGHT follow the main wheels, lit up and blinking
-  down, and the gear handle light comes on while either wheel is between
-  up and down. FLAPS lights while the flaps are out, HALF at takeoff and
-  FULL at landing. JETT lights by new BOMB READY shared conditions: a
-  count set on the rockets/bombs counter with the rockets/bombs master
-  arm on. On the Orion throttle, A/G lights by BOMB READY too. Master
-  caution, with FAIL on the MCDU and each PFP, now lights with the fuel
-  gauge at a fifth or below, in place of the panel glow lights.
-  Backlights follow the cockpit light rheostat. If you have changed a
-  TAKEOFF_PLANEL_2 row, the Orion_Throttle_Base_II A/G row, the
-  CarrierAce_MFD_C INST_PNL_Backlight row, or the Master Caution shared
-  conditions, reset it to pick this up.
-- **FW-190D9: the Takeoff panel, throttle and master caution follow the
-  aircraft.** LEFT and RIGHT follow the main wheels, lit up and blinking
-  down, with NOSE for both together, and the gear handle light comes on
-  while either wheel is between up and down. FLAPS lights while the flaps
-  are out, HALF at takeoff and FULL at landing. LI, LO, RI and RO show the
-  bomb fusing selector, and CTR its off position. JETT lights by new BOMB
-  READY shared conditions: a bomb lamp with the fusing selector off CTR.
-  On the Orion throttle, A/A lights with any gun lamp, and A/G by BOMB
-  READY or the main rocket switch on. Master caution, with FAIL on the
-  MCDU and each PFP, now lights with the fuel gauge at a fifth or below,
-  in place of the forward low fuel lamp. Backlights follow the instrument
-  lights. If you have changed a TAKEOFF_PLANEL_2 row, the
-  Orion_Throttle_Base_II A/A or A/G row, the CarrierAce_MFD_C
-  INST_PNL_Backlight row, or the Master Caution shared conditions, reset
-  it to pick this up.
-- **FW-190A8: the Takeoff panel, throttle and master caution follow the
-  aircraft.** LEFT and RIGHT follow the main wheels, lit up and blinking
-  down, with NOSE for both together, and the gear handle light comes on
-  while either wheel is between up and down. FLAPS lights while the flaps
-  are out, HALF at takeoff and FULL at landing. LI, LO, RI and RO show the
-  bomb fusing selector with the ZSK 244 ready, and CTR its off position,
-  where the ZSK 244 stays dark. JETT lights by new BOMB READY shared conditions: a bomb lamp,
-  the ZSK 244 ready and Master Arm on. On the Orion throttle, A/A lights
-  with any gun lamp, and A/G by BOMB READY or the main rocket switch on.
-  Master caution, with FAIL on the MCDU and each PFP, now lights with the
-  fuel gauge at a fifth or below, in place of the forward low fuel lamp.
-  Backlights follow the instrument lights. If you have changed a
-  TAKEOFF_PLANEL_2 row, the Orion_Throttle_Base_II A/A or A/G row, the
-  CarrierAce_MFD_C INST_PNL_Backlight row, or the Master Caution shared
-  conditions, reset it to pick this up.
-- **Christen Eagle II: backlights only.** The aircraft has no warning
-  lights to show, so the placeholder Master Caution, which followed the
-  left position light, is gone, and Master Caution and FAIL stay dark.
-  Backlights hold at a fixed level. If you have changed the
-  TAKEOFF_PLANEL_2 Master_Caution row, or a FAIL row on the MCDU or a PFP,
-  reset it to pick this up.
-- **New profile: Yak-52.** The takeoff panel shows each gear leg, lit up
-  and blinking down, with NOSE for the nose wheel, and the gear handle
-  light comes on while any wheel is between up and down. FLAPS lights
-  while the flaps are down. The stall warning is master caution, and FAIL on the
-  MCDU and each PFP. Backlights hold at a fixed level.
-- **New profile: La-7.** The takeoff panel shows each gear leg, lit up and
-  blinking down, with NOSE for the tail wheel, and the gear handle light
-  blinks while any wheel is moving with the gear indicator switched on.
-  FLAPS lights while the flaps are out, HALF near half travel and FULL at
-  full. Low fuel is master caution, and FAIL on the MCDU and each PFP.
-  Backlights follow the cockpit light rheostat.
-- **F4U-1D: the Takeoff panel shows the gear, flaps, hook and bombs.**
-  LEFT, RIGHT and NOSE follow the left, right and tail wheels, lit steady
-  at one end of their travel and blinking slowly at the other, and the gear
-  handle light blinks while any wheel is moving. FLAPS lights while the
-  flaps are out, HALF near half travel and FULL at full. HOOK lights while
-  the tail hook is down. CTR, LI and RI follow the pylon, left wing and
-  right wing release switches, and LO and RO the arming switch at NOSE and
-  TAIL. JETT lights by new BOMB READY shared conditions: a release
-  selected, the arming switch off SAFE and Master Arm on.
-- **F4U-1D: the Orion throttle A/A and A/G lamps show the weapons are
-  ready.** A/A lights with Master Arm on, both gun charge switches on and
-  all three gun stations selected. A/G lights by BOMB READY, or with the
-  rocket ready light on, rockets armed and Master Arm on.
-- **F4U-1D: the CDU screen backlight follows the MFD backlight.**
-- **F4U-1D: backlights follow the left instrument board light**, in
-  place of holding at a fixed level. If you have changed the
+- **New profile: Mirage F1.** Covers the F1BE, F1CE and F1EE. LEFT, RIGHT
+  and NOSE light while each wheel is on the ground. JETT lights with the
+  jettison selector cover open and the armament master on, and CTR, LI and
+  RI show the jettison selector position while its cover is open. Either
+  master failure light is master caution, and FAIL on the MCDU and each
+  PFP. Backlights follow whichever seat's instrument lighting knob moved
+  last.
+- **F-4E: the Takeoff panel and throttle follow the aircraft.** LEFT, RIGHT
+  and NOSE follow the gear position indicators, and the gear handle light
+  comes on with the light in the gear lever. FLAPS lights while the flaps
+  are out, and HALF and FULL follow the flaps and slats switch at half and
+  at full. CTR, LI, LO, RI and RO show the selected stations, CTR also
+  with the gun selected. JETT lights with the jettison selector off its safe position,
+  and HOOK while the hook is down. On the Orion throttle, A/A and A/G light
+  with Master Arm on and the HUD in its air-to-air or air-to-ground mode.
+  Backlights follow whichever seat's instrument panel lights knob moved
+  last, in place of holding at a fixed level. If you have changed a
+  TAKEOFF_PLANEL_2 row, the Orion_Throttle_Base_II A/A or A/G row, or the
   CarrierAce_MFD_C INST_PNL_Backlight row, reset it to pick this up.
-
-These F4U-1D rows were unbound. If you have changed any TAKEOFF_PLANEL_2
-row, the Orion_Throttle_Base_II A/A or A/G row, or the CDU_Kneeboard
-Screen_Backlight row, reset it to pick this up.
+- **L-39: the Takeoff panel follows the aircraft.** LEFT, RIGHT and NOSE
+  light while each wheel is on the ground, and the gear handle light comes
+  on with either seat's gear transit lamp. FULL and HALF follow either
+  seat's flaps down and takeoff lamps. JETT lights with either seat's
+  emergency jettison cover open. Backlights follow whichever seat's
+  instrument lighting knob moved last, in place of holding at a fixed
+  level. If you have changed a TAKEOFF_PLANEL_2 row or the CarrierAce_MFD_C
+  INST_PNL_Backlight row, reset it to pick this up.
+- **MB-339: the Takeoff panel follows the aircraft.** LEFT, RIGHT and NOSE
+  follow the gear lights, and the gear handle light comes on with the light
+  in the gear handle. FLAPS lights while the flaps are out, and FULL and
+  HALF follow either seat's flap lever. LO, LI, RI and RO light while their
+  station's light is on but not green, and CTR with station 3 or 4. HOOK
+  lights with Master Arm on, and JETT stays on. Backlights follow
+  whichever seat's instrument lighting knob moved last, in place of holding
+  at a fixed level. If you have changed a TAKEOFF_PLANEL_2 row or the
+  CarrierAce_MFD_C INST_PNL_Backlight row, reset it to pick this up.
+- **F-14: the F-14A-95-GR flies the F-14 profile.** It shares every signal
+  with the F-14A and F-14B. If you flew it before this release, it already
+  has a starter profile of its own, and that one keeps flying it.

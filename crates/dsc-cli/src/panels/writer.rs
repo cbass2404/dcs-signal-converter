@@ -188,6 +188,12 @@ fn run(mut panel: Box<dyn Panel>, shared: &Shared) {
                     break;
                 }
                 if mb.closing && mb.screens.is_empty() {
+                    drop(mb);
+                    if let Err(e) = panel.finish() {
+                        let mut mb = shared.mailbox.lock().expect("mailbox poisoned");
+                        mb.failed = Some(format!("{e:#}"));
+                    }
+                    *shared.sent.lock().expect("sent poisoned") = panel.sent();
                     return;
                 }
                 if next_check.is_some_and(|t| now >= t) {
@@ -306,6 +312,10 @@ mod tests {
             self.log.lock().unwrap().push("check".into());
             Ok(())
         }
+        fn finish(&mut self) -> Result<()> {
+            self.log.lock().unwrap().push("finish".into());
+            Ok(())
+        }
     }
 
     fn lamp(index: u8, value: u8) -> LedWrite {
@@ -343,7 +353,7 @@ mod tests {
         w.finish(LIMIT).unwrap();
         assert_eq!(
             *log.lock().unwrap(),
-            ["lamp 1 = 5", "lamp 2 = 7", "screen A", "flush"]
+            ["lamp 1 = 5", "lamp 2 = 7", "screen A", "flush", "finish"]
         );
     }
 
@@ -372,7 +382,14 @@ mod tests {
 
         assert_eq!(
             *log.lock().unwrap(),
-            ["lamp 1 = 1", "flush", "lamp 1 = 3", "screen C", "flush"]
+            [
+                "lamp 1 = 1",
+                "flush",
+                "lamp 1 = 3",
+                "screen C",
+                "flush",
+                "finish"
+            ]
         );
         assert_eq!(sent.superseded, 1);
     }
@@ -396,7 +413,7 @@ mod tests {
         let sent = w.finish(LIMIT).unwrap();
         assert_eq!(
             *log.lock().unwrap(),
-            ["lamp 1 = 1", "flush", "screen B", "flush"]
+            ["lamp 1 = 1", "flush", "screen B", "flush", "finish"]
         );
         assert_eq!(sent.superseded, 1);
     }
@@ -410,7 +427,7 @@ mod tests {
         let w = Writer::start("PANEL", Box::new(fake)).unwrap();
         w.post(&[lamp(1, 5)], &[]);
         w.finish(LIMIT).unwrap();
-        assert_eq!(*log.lock().unwrap(), ["lamp 1 = 5", "flush"]);
+        assert_eq!(*log.lock().unwrap(), ["lamp 1 = 5", "flush", "finish"]);
     }
 
     #[test]
@@ -424,8 +441,10 @@ mod tests {
         std::thread::sleep(Duration::from_millis(90));
         w.finish(LIMIT).unwrap();
         let log = log.lock().unwrap();
-        assert!(log.len() >= 2, "{log:?}");
-        assert!(log.iter().all(|l| l == "check"), "{log:?}");
+        assert_eq!(log.last().map(String::as_str), Some("finish"));
+        let checks = &log[..log.len() - 1];
+        assert!(checks.len() >= 2, "{log:?}");
+        assert!(checks.iter().all(|l| l == "check"), "{log:?}");
     }
 
     #[test]

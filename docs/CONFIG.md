@@ -160,6 +160,7 @@ does not start at 0. `COOLANT_TEMPERATURE_VALUE` reads 0 to 130, and
 | `on_when`                    | Offered for | Editor control                              |
 | ---------------------------- | ----------- | ------------------------------------------- |
 | `{ "equals": 1 }`            | discrete    | dropdown of labelled values                 |
+| `{ "not_equals": 1 }`        | discrete    | dropdown of labelled values                 |
 | `{ "in": [1, 2] }`           | discrete    | multi-select of labelled values             |
 | `{ "gte": 32768 }`           | continuous  | number input, clamped to the signal's range |
 | `{ "lte": 1000 }`            | continuous  | number input, clamped to the signal's range |
@@ -917,7 +918,9 @@ follows, under its own name, when the engine loads the profile. Rules:
 Two-seat aircraft such as the AH-64D and CH-47F can follow too: the seat on
 each field picks the source, so every MCDU name carries the same fields and a
 follower loses nothing. Every shipped default points the MCDU Co-Pilot and
-Observer at the Captain, and the MFD L and R at the MFD C.
+Observer at the Captain, the MFD L and R at the MFD C, and the Apache MPD
+Center and Right at the Apache MPD Left, since an Apache setup often has
+only two.
 
 In the editor it is the **uses** dropdown in the panel's header, offered only
 on a panel that has variants. A panel that follows stays closed and says

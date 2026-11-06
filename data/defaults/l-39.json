@@ -34,7 +34,35 @@
       "device": "CarrierAce_MFD_C",
       "led": "INST_PNL_Backlight",
       "conditions": [],
-      "always": true
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "BACK_INST_LIGHT_INTENS",
+              "on_when": {
+                "scale": [
+                  0,
+                  65535
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "FRONT_INST_LIGHT_INTENS",
+              "on_when": {
+                "scale": [
+                  0,
+                  65535
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "pick": "latest"
     },
     {
       "device": "CarrierAce_MFD_L",

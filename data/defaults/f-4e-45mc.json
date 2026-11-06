@@ -33,7 +33,35 @@
       "device": "CarrierAce_MFD_C",
       "led": "INST_PNL_Backlight",
       "conditions": [],
-      "always": true
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "PLT_INT_LIGHT_INSTRUMENT_PANEL",
+              "on_when": {
+                "scale": [
+                  0,
+                  65535
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "WSO_INT_LIGHT_INSTRUMENT_PANEL",
+              "on_when": {
+                "scale": [
+                  0,
+                  65535
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "pick": "latest"
     },
     {
       "device": "CarrierAce_MFD_L",
@@ -307,12 +335,38 @@
     {
       "device": "Orion_Throttle_Base_II",
       "led": "A/A",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "PLT_HUD_MODE",
+          "on_when": {
+            "equals": 4
+          }
+        },
+        {
+          "source": "PLT_WPN_MASTER_ARM",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "Orion_Throttle_Base_II",
       "led": "A/G",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "PLT_HUD_MODE",
+          "on_when": {
+            "equals": 3
+          }
+        },
+        {
+          "source": "PLT_WPN_MASTER_ARM",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "PFP3N_Captain",
@@ -747,7 +801,14 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "Landing_gear_lights",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "PLT_GEAR_LEVER_LIGHT",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
@@ -774,67 +835,173 @@
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "JETT",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "PLT_WEAPON_JETTISON_SELECT",
+          "on_when": {
+            "not_equals": 0
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "CTR",
-      "conditions": []
+      "conditions": [],
+      "any_of": [
+        {
+          "conditions": [
+            {
+              "source": "PLT_WPN_CENTER_SELECTED",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "PLT_WPN_GUN_SELECTED",
+              "on_when": {
+                "equals": 1
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "LI",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "PLT_WPN_LI_SELECTED",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "LO",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "PLT_WPN_LO_SELECTED",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "RO",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "PLT_WPN_RO_SELECTED",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "RI",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "PLT_WPN_RI_SELECTED",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "FLAPS",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "PLT_CONTROLS_FLAPS_INDICATOR_RAW",
+          "on_when": {
+            "gte": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "NOSE",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "PLT_GEAR_INDICATOR_NOSE",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "FULL",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "PLT_CONTROLS_FLAPS_SLATS",
+          "on_when": {
+            "gte": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "RIGHT",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "PLT_GEAR_INDICATOR_RIGHT",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "LEFT",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "PLT_GEAR_INDICATOR_LEFT",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "HALF",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "PLT_CONTROLS_FLAPS_SLATS",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "TAKEOFF_PLANEL_2",
       "led": "HOOK",
-      "conditions": []
+      "conditions": [
+        {
+          "source": "PLT_WCA_HOOK_DOWN",
+          "on_when": {
+            "equals": 1
+          }
+        }
+      ]
     },
     {
       "device": "ViperAce_ICP",

@@ -33,17 +33,36 @@
     {
       "device": "CarrierAce_MFD_C",
       "led": "INST_PNL_Backlight",
-      "conditions": [
+      "conditions": [],
+      "any_of": [
         {
-          "source": "FW_LIGHT_INSTRUMENT",
-          "on_when": {
-            "scale": [
-              0,
-              65535
-            ]
-          }
+          "conditions": [
+            {
+              "source": "FW_LIGHT_INSTRUMENT",
+              "on_when": {
+                "scale": [
+                  0,
+                  65535
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "source": "AFT_LIGHT_INSTRUMENT",
+              "on_when": {
+                "scale": [
+                  0,
+                  65535
+                ]
+              }
+            }
+          ]
         }
-      ]
+      ],
+      "pick": "latest"
     },
     {
       "device": "CarrierAce_MFD_L",

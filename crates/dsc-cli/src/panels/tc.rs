@@ -5,9 +5,8 @@
 //! `'B'` then the level 0 to 3 as a raw byte. The report has no id, so it
 //! goes out as id 0 and then the eight bytes the descriptor declares.
 //!
-//! A level set this way survives a power cycle, so the panel stores it, and
-//! nothing says whether every write is stored. Storage wears, so this side
-//! assumes every write is: a level goes out only once it has held for
+//! Every write is stored in the panel's EEPROM and wears it (the maker,
+//! 2026-11-06), so a level goes out only once it has held for
 //! [`SETTLE`], and only if the panel does not already have it. A dimmer swept
 //! from full to off crosses four levels and costs one write.
 //!

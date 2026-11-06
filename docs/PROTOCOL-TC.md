@@ -44,9 +44,9 @@ undocumented and may switch the panel's identity or start its bootloader.
 ## Why it is written sparingly
 
 A level set this way survives a power cycle (set dim, unplugged 30 s, came
-back dim), so the panel stores it. Whether it stores every write, and in
-EEPROM or flash, is not known, so the backend assumes every write is stored
-and wears the part:
+back dim), so the panel stores it. The maker confirmed (2026-11-06) that
+every write goes to EEPROM and wears it, so the backend keeps writes to the
+few a dimmer actually needs:
 
 - The engine's brightness maps onto the four levels: 0 is off, and 1 to 255
   in thirds is dim, medium and full.

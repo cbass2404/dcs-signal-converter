@@ -7,22 +7,28 @@
     "F-4E-45MC"
   ],
   "module": "F-4E",
-  "disabled_devices": [
-    "CDU_Kneeboard"
-  ],
-  "follows": {
-    "CarrierAce_MFD_L": "CarrierAce_MFD_C",
-    "CarrierAce_MFD_R": "CarrierAce_MFD_C",
-    "MCDU_CoPilot": "MCDU_Captain",
-    "MCDU_Observer": "MCDU_Captain",
-    "PFP3N_CoPilot": "PFP3N_Captain",
-    "PFP3N_Observer": "PFP3N_Captain",
-    "PFP4_CoPilot": "PFP4_Captain",
-    "PFP4_Observer": "PFP4_Captain",
-    "PFP7_CoPilot": "PFP7_Captain",
-    "PFP7_Observer": "PFP7_Captain"
-  },
   "bindings": [
+    {
+      "device": "TC_APACHE_MPD_CENTER",
+      "led": "Backlight",
+      "conditions": [],
+      "same_as": "INST_PNL_Backlight",
+      "same_as_device": "CarrierAce_MFD_C"
+    },
+    {
+      "device": "TC_APACHE_MPD_LEFT",
+      "led": "Backlight",
+      "conditions": [],
+      "same_as": "INST_PNL_Backlight",
+      "same_as_device": "CarrierAce_MFD_C"
+    },
+    {
+      "device": "TC_APACHE_MPD_RIGHT",
+      "led": "Backlight",
+      "conditions": [],
+      "same_as": "INST_PNL_Backlight",
+      "same_as_device": "CarrierAce_MFD_C"
+    },
     {
       "device": "CarrierAce_MFD_C",
       "led": "INST_PNL_Backlight",
@@ -845,5 +851,22 @@
       "off": 255,
       "note": "Held at full, because at 0 the screen shows nothing. It lights only while this profile puts fields on the screen, whatever it is bound to, so a screen with nothing on it stays black."
     }
-  ]
+  ],
+  "disabled_devices": [
+    "CDU_Kneeboard"
+  ],
+  "follows": {
+    "CarrierAce_MFD_L": "CarrierAce_MFD_C",
+    "CarrierAce_MFD_R": "CarrierAce_MFD_C",
+    "MCDU_CoPilot": "MCDU_Captain",
+    "MCDU_Observer": "MCDU_Captain",
+    "PFP3N_CoPilot": "PFP3N_Captain",
+    "PFP3N_Observer": "PFP3N_Captain",
+    "PFP4_CoPilot": "PFP4_Captain",
+    "PFP4_Observer": "PFP4_Captain",
+    "PFP7_CoPilot": "PFP7_Captain",
+    "PFP7_Observer": "PFP7_Captain",
+    "TC_APACHE_MPD_LEFT": "TC_APACHE_MPD_CENTER",
+    "TC_APACHE_MPD_RIGHT": "TC_APACHE_MPD_CENTER"
+  }
 }

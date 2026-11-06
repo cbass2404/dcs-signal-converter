@@ -691,6 +691,16 @@ pub const WEB_PROTOCOL: &str = "web";
 /// See docs/PROTOCOL-DSC.md.
 pub const DSC_PROTOCOL: &str = "dsc";
 
+/// The protocol of the Total Controls panels: a backlight level in a feature
+/// report. See crates/dsc-cli/src/panels/tc.rs.
+pub const TC_PROTOCOL: &str = "tc";
+
+/// Microchip's vendor id, which Total Controls builds on. Other makers use it
+/// too, so a device is only theirs if its manufacturer string is also
+/// [`TC_MANUFACTURER`].
+pub const TC_VENDOR_ID: u16 = 0x04D8;
+pub const TC_MANUFACTURER: &str = "Total Controls";
+
 /// Where the converter answers a web device's page with the screen: this
 /// machine only.
 pub const WEB_ADDRESS: &str = "127.0.0.1:8310";

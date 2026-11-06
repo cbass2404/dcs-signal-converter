@@ -24,6 +24,8 @@ run, since writing to the panels is most of what the daemon costs in flight
 and a dry run cannot see it. Stress is as safe as typical: the frame cap holds
 lamps and screens to 25 sends a second however fast the stream runs. The run
 needs the panels to itself, so stop any daemon the editor started first.
+The Total Controls panels are left alone (--skip-protocol tc): they store
+each level they are sent, so a run would wear them.
 
 The daemon's own output goes to NUL, since printing it would be the thing
 measured, and its log to a temporary folder, so a run never rotates the log
@@ -307,7 +309,10 @@ def memory(handle):
 def measure(args, scenario):
     exe = args.exe
     logs = tempfile.mkdtemp(prefix="dcs-signal-bench-")
-    cmd = [exe, "run", "--seconds", str(int(args.seconds + args.warmup) + 2), "--log-dir", logs]
+    # The Total Controls panels store every level they are sent, so a benchmark
+    # would only wear them. Their writes are a few a session in flight.
+    cmd = [exe, "run", "--seconds", str(int(args.seconds + args.warmup) + 2), "--log-dir", logs,
+           "--skip-protocol", "tc"]
     launched = time.perf_counter()
     proc = subprocess.Popen(
         cmd, cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL

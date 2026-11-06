@@ -25,6 +25,7 @@ use dsc_config::{DeviceSpec, DisplayCatalogue};
 use dsc_engine::{LcdWrite, LedWrite};
 
 mod dsc;
+mod tc;
 mod wctrl;
 mod web;
 mod writer;
@@ -42,6 +43,7 @@ pub fn all(settings: &Path) -> Result<Vec<Box<dyn Protocol>>> {
         Box::new(wctrl::Wctrl::new()?),
         Box::new(web::Web::new()),
         Box::new(dsc::Dsc::new(settings.to_path_buf())?),
+        Box::new(tc::Tc::new()?),
     ])
 }
 
@@ -159,6 +161,12 @@ pub trait Panel: Send {
     /// Ask the device whether it holds what it was sent, and put it right if
     /// not. An error drops the panel, as a failed write does.
     fn check(&mut self) -> Result<()> {
+        Ok(())
+    }
+
+    /// The writer is stopping: write anything held back, such as a lamp
+    /// level waiting to settle, so the exit's clearing writes are not lost.
+    fn finish(&mut self) -> Result<()> {
         Ok(())
     }
 }

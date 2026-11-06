@@ -917,7 +917,8 @@ follows, under its own name, when the engine loads the profile. Rules:
 Two-seat aircraft such as the AH-64D and CH-47F can follow too: the seat on
 each field picks the source, so every MCDU name carries the same fields and a
 follower loses nothing. Every shipped default points the MCDU Co-Pilot and
-Observer at the Captain, and the MFD L and R at the MFD C.
+Observer at the Captain, the MFD L and R at the MFD C, and the Apache MPD
+Left and Right at the Apache MPD Center.
 
 In the editor it is the **uses** dropdown in the panel's header, offered only
 on a panel that has variants. A panel that follows stays closed and says

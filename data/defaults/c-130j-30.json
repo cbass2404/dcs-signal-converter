@@ -10,6 +10,27 @@
   "font": "../mcdu/f14bu-font-21x31.json",
   "bindings": [
     {
+      "device": "TC_APACHE_MPD_CENTER",
+      "led": "Backlight",
+      "conditions": [],
+      "same_as": "INST_PNL_Backlight",
+      "same_as_device": "CarrierAce_MFD_C"
+    },
+    {
+      "device": "TC_APACHE_MPD_LEFT",
+      "led": "Backlight",
+      "conditions": [],
+      "same_as": "INST_PNL_Backlight",
+      "same_as_device": "CarrierAce_MFD_C"
+    },
+    {
+      "device": "TC_APACHE_MPD_RIGHT",
+      "led": "Backlight",
+      "conditions": [],
+      "same_as": "INST_PNL_Backlight",
+      "same_as_device": "CarrierAce_MFD_C"
+    },
+    {
       "device": "CarrierAce_MFD_C",
       "led": "INST_PNL_Backlight",
       "conditions": [],
@@ -1033,7 +1054,9 @@
     "PFP4_CoPilot": "PFP4_Captain",
     "PFP4_Observer": "PFP4_Captain",
     "PFP7_CoPilot": "PFP7_Captain",
-    "PFP7_Observer": "PFP7_Captain"
+    "PFP7_Observer": "PFP7_Captain",
+    "TC_APACHE_MPD_LEFT": "TC_APACHE_MPD_CENTER",
+    "TC_APACHE_MPD_RIGHT": "TC_APACHE_MPD_CENTER"
   },
   "screens": {
     "ViperAce_ICP": {

@@ -368,6 +368,11 @@
       .group-list li:last-child {
         border-bottom: 0;
       }
+      .group-list.stacked li {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+      }
       .gi-name {
         font-family: "IBM Plex Mono", monospace;
         font-weight: 600;
@@ -757,8 +762,8 @@
     <section style="padding-top: 0">
       <div class="wrap">
         <div class="section-head">
-          <span class="eyebrow">Ships ready to fly</span>
-          <h2>Your panels, these aircraft, already set up</h2>
+          <span class="eyebrow">Supported devices</span>
+          <h2>Your panels, already set up</h2>
         </div>
         <div class="groups">
           <div class="group">
@@ -799,33 +804,88 @@
               <li><span class="gi-name">Apache MPD</span><span class="gi-pct">L C R</span></li>
             </ul>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="padding-top: 0">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="eyebrow">Ships ready to fly</span>
+          <h2>51 aircraft, already set up</h2>
+        </div>
+        <div class="prose">
+          <p>
+            Anything else gets a blank starter profile the first time you fly it, ready to fill in.
+          </p>
+        </div>
+        <div class="groups">
           <div class="group">
             <div class="group-head">
-              <span class="group-title">Aircraft profiles</span>
-              <span class="group-count">51</span>
+              <span class="group-title">Warbirds</span>
+              <span class="group-count">11</span>
             </div>
-            <p class="group-why">
-              Anything else gets a blank starter profile the first time you fly it, ready to fill
-              in.
-            </p>
-            <ul class="group-list">
+            <ul class="group-list stacked">
+              <li><span class="gi-name">Bf 109 K-4</span><span class="gi-pct">Flight</span></li>
+              <li><span class="gi-name">F4U-1D</span></li>
+              <li><span class="gi-name">Fw 190 A-8</span></li>
+              <li><span class="gi-name">Fw 190 D-9</span></li>
+              <li><span class="gi-name">I-16</span></li>
+              <li><span class="gi-name">La-7</span></li>
+              <li>
+                <span class="gi-name">Mosquito FB Mk VI</span
+                ><span class="gi-pct">War · Cruise · UFC · DED</span>
+              </li>
+              <li><span class="gi-name">P-47D-30</span></li>
+              <li><span class="gi-name">P-47D-40</span></li>
+              <li><span class="gi-name">P-51D / TF-51D</span></li>
+              <li><span class="gi-name">Spitfire LF Mk IX</span></li>
+            </ul>
+          </div>
+          <div class="group">
+            <div class="group-head">
+              <span class="group-title">Rotary</span>
+              <span class="group-count">10</span>
+            </div>
+            <ul class="group-list stacked">
+              <li><span class="gi-name">AH-6J</span></li>
+              <li><span class="gi-name">AH-64D</span><span class="gi-pct">KU · UFC · DED</span></li>
+              <li>
+                <span class="gi-name">CH-47F</span><span class="gi-pct">CDU · UFC · DED</span>
+              </li>
+              <li><span class="gi-name">Ka-50</span></li>
+              <li>
+                <span class="gi-name">Mi-8MT / MTV2</span><span class="gi-pct">Flight · DED</span>
+              </li>
+              <li>
+                <span class="gi-name">Mi-24P</span><span class="gi-pct">Radios · UFC · DED</span>
+              </li>
+              <li><span class="gi-name">OH-58D</span><span class="gi-pct">DED</span></li>
+              <li><span class="gi-name">SA342</span></li>
+              <li>
+                <span class="gi-name">UH-1H / Bell 47</span
+                ><span class="gi-pct">Radios · UFC · DED</span>
+              </li>
+              <li><span class="gi-name">UH-60L / MH-60R mods</span></li>
+            </ul>
+          </div>
+          <div class="group">
+            <div class="group-head">
+              <span class="group-title">Fixed wing</span>
+              <span class="group-count">30</span>
+            </div>
+            <ul class="group-list stacked">
               <li><span class="gi-name">A-4E-C</span><span class="gi-pct">Flight</span></li>
               <li><span class="gi-name">A-10C</span><span class="gi-pct">CDU · DED</span></li>
               <li><span class="gi-name">A-29B</span></li>
-              <li><span class="gi-name">AH-6J</span></li>
-              <li><span class="gi-name">AH-64D</span><span class="gi-pct">KU · UFC · DED</span></li>
               <li>
                 <span class="gi-name">AJS37 Viggen</span
                 ><span class="gi-pct">Flight · UFC · DED</span>
               </li>
               <li><span class="gi-name">Alpha Jet</span></li>
               <li><span class="gi-name">AV-8B Night Attack</span></li>
-              <li><span class="gi-name">Bf 109 K-4</span><span class="gi-pct">Flight</span></li>
               <li><span class="gi-name">C-101CC / EB</span></li>
               <li><span class="gi-name">C-130J-30</span><span class="gi-pct">DED</span></li>
-              <li>
-                <span class="gi-name">CH-47F</span><span class="gi-pct">CDU · UFC · DED</span>
-              </li>
               <li><span class="gi-name">Christen Eagle II</span></li>
               <li><span class="gi-name">Edge 540 / Extra 330SR</span></li>
               <li><span class="gi-name">F-4E</span></li>
@@ -845,42 +905,15 @@
                 <span class="gi-name">F/A-18C + mods</span
                 ><span class="gi-pct">IFEI · UFC · DED</span>
               </li>
-              <li><span class="gi-name">F4U-1D</span></li>
-              <li><span class="gi-name">Fw 190 A-8</span></li>
-              <li><span class="gi-name">Fw 190 D-9</span></li>
-              <li><span class="gi-name">I-16</span></li>
               <li><span class="gi-name">JF-17</span></li>
-              <li><span class="gi-name">Ka-50</span></li>
               <li><span class="gi-name">L-39C / ZA</span></li>
-              <li><span class="gi-name">La-7</span></li>
               <li><span class="gi-name">MB-339 mods</span></li>
-              <li>
-                <span class="gi-name">Mi-8MT / MTV2</span><span class="gi-pct">Flight · DED</span>
-              </li>
-              <li>
-                <span class="gi-name">Mi-24P</span><span class="gi-pct">Radios · UFC · DED</span>
-              </li>
               <li><span class="gi-name">MiG-15bis</span><span class="gi-pct">Radio · DED</span></li>
               <li><span class="gi-name">MiG-19P</span></li>
               <li><span class="gi-name">MiG-21bis</span><span class="gi-pct">Flight</span></li>
               <li><span class="gi-name">MiG-29 Fulcrum</span></li>
               <li><span class="gi-name">Mirage 2000C / 2000D</span></li>
               <li><span class="gi-name">Mirage F1BE / CE / EE</span></li>
-              <li>
-                <span class="gi-name">Mosquito FB Mk VI</span
-                ><span class="gi-pct">War · Cruise · UFC · DED</span>
-              </li>
-              <li><span class="gi-name">OH-58D</span><span class="gi-pct">DED</span></li>
-              <li><span class="gi-name">P-47D-30</span></li>
-              <li><span class="gi-name">P-47D-40</span></li>
-              <li><span class="gi-name">P-51D / TF-51D</span></li>
-              <li><span class="gi-name">SA342</span></li>
-              <li><span class="gi-name">Spitfire LF Mk IX</span></li>
-              <li>
-                <span class="gi-name">UH-1H / Bell 47</span
-                ><span class="gi-pct">Radios · UFC · DED</span>
-              </li>
-              <li><span class="gi-name">UH-60L / MH-60R mods</span></li>
               <li><span class="gi-name">Yak-52</span></li>
               <li><span class="gi-name">Flaming Cliffs</span></li>
             </ul>
